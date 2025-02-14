@@ -1,0 +1,280 @@
+---
+title: "Relatório completo da base de dados"
+subtitle: "Ampla"
+author: "Vitor Taira"
+date: "`r format(Sys.time(), '%d/%m/%Y - %H:%M:%S')`"
+knitr:
+  opts_chunk:
+    warning: false
+    message: false
+output: 
+  html_document:
+    code_folding: hide
+    highlight: tango
+    self_contained: true
+    theme: cerulean
+    toc: true
+    toc_depth: 4
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    number_sections: true
+#encoding: UTF-8
+---
+
+```{r setup, message = F, results = F, warning = F}
+# Exclui todos os objetos do ambiente
+rm(list = ls())
+
+# Define o diretório de trabalho
+setwd(
+  "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/Ampla_R"
+)
+
+# Carrega os pacotes necessários
+library(DT) # Tabelas dinâmicas
+library(here) # Facilita a identificação de caminhos
+library(htmltools) # Ferramentas para HTML
+library(htmlwidgets) # Ferramentas de personalização do HTML
+library(kableExtra) # Ferramentas para tabelas kable
+library(magrittr) # Ferramentas sintáticas ao dplyr, e.g. %<>%
+library(openxlsx) # Ler, escrever e editar arquivos xlsx
+library(pdftools) # Extração de dados em PDF
+library(plotly) # Gráficos interativos
+library(readr) # Importação de arquivos, e.g. read_csv()
+library(readxl) # Importação de arquivos em Excel, e.g. read_excel()
+library(scales) # Ferramentas para configurar escalas em gráficos
+library(styler) # Formatar códigos, e.g. style_file()
+library(tabulapdf) # Extrair tabelas de PDFs
+library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2
+library(visNetwork) # Grafos
+
+# Carrega as funções que foram criadas
+source(here("dados", "funcoes", "extrair_dados_arquivo_ecn.R"))
+source(here("dados", "funcoes", "extrair_caminhos_relatorio_ciweb.R"))
+source(here("dados", "funcoes", "extrair_dados_relatorio.R"))
+source(here("dados", "funcoes", "ig_vcxve.R"))
+
+# Formatando o código de uma maneira mais legível
+style_file(here("dados", "Base de dados.Rmd"))
+
+# Determinando o tipo do relatório
+tipo.consulta_c <- c("Todos", "Mais recentes")[2]
+
+# Lista de caminhos para os relatórios a serem reportados
+caminhos.relatorio_l <- extrair_caminhos_relatorio_ciweb(quais.c = tipo.consulta_c)
+
+# Lista com os dados do relatório
+dados.relatorio_l <- extrair_dados_relatorio(caminhos.relatorio_l)
+```
+
+```{r fluxograma, message = F, warning = F, fig.dpi = 600, fig.width = 18, fig.height = 12}
+source(here("Fluxo dos dados.R"))
+dados_gnw
+```
+
+```{r conteudo, results='asis', message = F, warning = F}
+# Criar lista para armazenar os outputs a serem apresentados
+output <- tagList()
+# Iterar por empreendimento
+for (empreendimento.c in caminhos.relatorio_l$Empreendimentos) {
+  ## Adicionar título
+  output <-
+    tagAppendChild(
+      output,
+      tags$h1(paste0(
+        match(
+          empreendimento.c,
+          caminhos.relatorio_l$Empreendimentos
+        ),
+        ". ",
+        empreendimento.c
+      ))
+    )
+  ## Iterar por tipos de relatório
+  tipos_vc <-
+    names(caminhos.relatorio_l[!names(caminhos.relatorio_l) %in%
+      c("Empreendimentos", "Contagem")])
+  for (t in seq_along(tipos_vc)) {
+    ### Adicionar subtítulo
+    output <- tagAppendChild(output, tags$h2(tipos_vc[t]))
+    ### Iterar por quantidade de relatórios de um mesmo tipo
+    for (i in seq_along(caminhos.relatorio_l[[t]][[empreendimento.c]])) {
+      #### Extrair e formatar subsubtítulos
+      subsubtitulo_vc <-
+        basename(caminhos.relatorio_l[[t]][[empreendimento.c]][i]) %>%
+        str_sub(1, 6) %>%
+        paste0("01") %>%
+        as.Date(format = "%Y%m%d") %>%
+        format("%Y-%m") %>%
+        unname()
+      #### Adicionar subsubtítulo
+      output <- tagAppendChild(output, tags$h3(subsubtitulo_vc))
+      #### Adicionar gráfico de valor creditado x valor do empréstimo
+      ig.vcxve <- ig_vcxve(dados.relatorio_l)
+      output <- tagAppendChild(output, ig.vcxve)
+      #### Renderizar tabela do empreendimento como kable()
+      empreendimento_t <-
+        dados.relatorio_l[[empreendimento.c]][[t]][[i]]$Empreendimento %>%
+        kable() %>%
+        kable_styling(
+          full_width = FALSE,
+          bootstrap_options = c("bordered"),
+          position = "left"
+        )
+      #### Acrescentar título da tabela do empreendimento
+      output <- tagAppendChild(output, tags$h4("[Tabela] Empreendimento"))
+      #### Converter kable para HTML e acrescentar objeto ao output
+      output <- tagAppendChild(output, HTML(as.character(empreendimento_t)))
+      #### Renderizar tabela do empréstimo como kable()
+      emprestimo_t <-
+        dados.relatorio_l[[empreendimento.c]][[t]][[i]]$Emprestimo %>%
+        mutate(across(
+          where(is.numeric),
+          ~ number_format(
+            accuracy = 0.01,
+            big.mark = ".",
+            decimal.mark = ","
+          )(.)
+        )) %>%
+        kable() %>%
+        kable_styling(
+          full_width = FALSE,
+          bootstrap_options = c("bordered"),
+          position = "left"
+        )
+      #### Acrescentar título da tabela do empreendimento
+      output <- tagAppendChild(output, tags$h4("[Tabela] Empréstimo"))
+      #### Converter kable para HTML e acrescentar objeto ao output
+      output <- tagAppendChild(output, HTML(as.character(emprestimo_t)))
+      #### Renderizar a tabela das unidades como uma datatable()
+      unidades_t <-
+        tagList(
+          tags$h4("[Tabela] Unidades"),
+          dados.relatorio_l[[empreendimento.c]][[t]][[i]]$Unidades %>%
+            mutate(across(
+              where(is.numeric),
+              ~ number_format(
+                accuracy = 0.01,
+                big.mark = ".",
+                decimal.mark = ","
+              )(.)
+            )) %>%
+            datatable(
+              options = list(pageLength = 5, class = "cell-border")
+            )
+        )
+      #### Gráfico: Unidades - Histograma do financiamento
+      unidades_g <-
+        ggplot(
+          data = dados.relatorio_l[[empreendimento.c]][[t]][[i]]$Unidades,
+          aes(Financiamento)
+        ) +
+        geom_histogram(
+          color = "black",
+          fill = "lightgray"
+        ) +
+        geom_vline(aes(xintercept = mean(Financiamento)),
+          color = "red"
+        ) +
+        xlab("Financiamento (em R$)") +
+        scale_x_continuous(labels = scales::label_number(
+          big.mark = ".",
+          decimal.mark = ",",
+          accuracy = 1
+        )) +
+        ylab("Contagem") +
+        scale_y_continuous(labels = scales::label_number(accuracy = 1)) +
+        theme_minimal()
+      unidades_ig <- tagList(
+        tags$h4("[Gráfico] Unidades: Financiamento"),
+        ggplotly(unidades_g)
+      )
+      output <- tagAppendChild(output, unidades_t)
+      output <- tagAppendChild(output, unidades_ig)
+      #### Renderizar a tabela de informações consolidadas como uma datatable()
+      consolidado_t <-
+        tagList(
+          tags$h4("[Tabela] Informações consolidadas"),
+          dados.relatorio_l[[empreendimento.c]][[t]][[i]]$Consolidado %>%
+            mutate(
+              across(
+                where(is.numeric),
+                ~ number_format(
+                  accuracy = 0.01,
+                  big.mark = ".",
+                  decimal.mark = ","
+                )(.)
+              )
+            ) %>%
+            datatable(
+              options = list(pageLength = 5, class = "cell-border")
+            )
+        )
+      #### Gráfico: Valor creditado x Valor do empréstimo
+      #g_creditadoxemprestimo()
+      #### Gráfico: Consolidado -
+      consolidado_gdf <-
+        dados.relatorio_l[[empreendimento.c]][[t]][[i]]$Consolidado %>%
+        summarise(
+          sum(`Valor Creditado`),
+          sum(`Valor Desbloqueado`),
+          sum(`Valor Amortizado`),
+          sum(`Encargo Quitado do PJ`)
+        ) %>%
+        rbind(c(
+          "Valor Creditado",
+          "Valor Desbloqueado",
+          "Valor Amortizado",
+          "Encargo Quitado do PJ"
+        )) %>%
+        t() %>%
+        unname() %>%
+        as.data.frame() %>%
+        mutate(
+          Variavel = V2,
+          Valor = V1 %>%
+            as.numeric(),
+          .keep = "unused"
+        )
+      consolidado_g <-
+        ggplot(
+          data = consolidado_gdf,
+          aes(
+            x = Variavel,
+            y = Valor
+          )
+        ) +
+        geom_bar(
+          stat = "identity",
+          color = "black",
+          fill = "lightgray"
+        ) +
+        geom_text(
+          aes(label = scales::label_comma(
+            big.mark = ".",
+            decimal.mark = ",",
+            accuracy = 1
+          )(Valor)),
+          nudge_y = -20, size = 4
+        ) +
+        xlab("") +
+        ylab("Valor (em R$)") +
+        scale_y_continuous(labels = scales::label_number(
+          big.mark = ".",
+          decimal.mark = ",",
+          accuracy = 1
+        )) +
+        theme_minimal()
+      consolidado_ig <- tagList(
+        tags$h4("[Gráfico] Informações consolidadas"),
+        ggplotly(consolidado_g)
+      )
+      output <- tagAppendChild(output, consolidado_t)
+      output <- tagAppendChild(output, consolidado_ig)
+    }
+  }
+}
+# Renderizar todo o conteúdo do HTML
+browsable(output)
+```
