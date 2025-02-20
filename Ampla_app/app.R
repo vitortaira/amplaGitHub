@@ -1,4 +1,5 @@
 # app.R (or server.R + ui.R as you prefer)
+library(here)
 library(shiny)
 library(plotly)
 library(dplyr)
@@ -10,7 +11,8 @@ source(
 )
 
 dados.pasta.informakon.despesas <- 
-  extrair_dados_pasta_informakon()
+  read_csv(here("Ampla_app", "dados.pasta.informakon.despesas.csv"))
+  
 
 ui <- fluidPage(
   titlePanel("[Gráfico] Trajetória das despesas"),
