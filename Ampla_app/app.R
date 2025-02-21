@@ -1,8 +1,11 @@
 # app.R (or server.R + ui.R as you prefer)
 library(here)
-library(shiny)
+library(readr)
 library(plotly)
-library(dplyr)
+library(shiny)
+library(tidyverse)
+
+here::i_am("Ampla_app/app.R")
 
 source(
   here(
