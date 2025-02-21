@@ -76,6 +76,7 @@ source(
 )
 source(here("dados", "funcoes", "ig_vcxve.R"))
 source(here("dados", "funcoes", "ig_despesas_por_centro.R"))
+source(here("dados", "funcoes", "ig_receitas_trajetoria.R"))
 # Formatando o código de uma maneira mais legível
 style_file(
   here("relatorios", "base de dados", "Relatorio completo da base de dados.Rmd")
@@ -142,6 +143,16 @@ output %<>%
 # h2
 output %<>%
   tagAppendChild(tags$h2("1.2. Receitas"))
+# Gráfico de receitas por centro
+# ig_receitas.por.empreendimento <-
+#  ig_receitas_trajetoria(dados.pasta.informakon_l[["Receitas.BP"]])
+# output %<>%
+#  tagAppendChild(
+#    tags$div(
+#      style = "display: block; margin-bottom: 550px; clear: both",
+#      ig_receitas.por.empreendimento
+#    )
+#  )
 # Tabela de receitas
 receitas_t <-
   tagList(

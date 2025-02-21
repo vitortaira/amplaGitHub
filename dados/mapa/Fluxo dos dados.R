@@ -10,27 +10,27 @@ dados_gnw <-
     nodes_df, 
     edges_df, 
     width = "100%", 
-    height = "800px",
+    height = "500px",
     main = "Fluxo dos dados",
     footer = "Da informação à decisão."
   ) %>%
   # Ajustes globais dos nodes (forma "box", quebra de texto automática)
   visNodes(
     shape = "box",
-    widthConstraint = list(maximum = 160), 
+    widthConstraint = list(maximum = 250), 
     font = list(multi = TRUE)
   ) %>%
   # Ajustes globais das edges
   visEdges(
     arrows = "to",
-    color = "white"
+    width = 5
   ) %>%
   # Layout hierárquico com espaçamento maior
   visHierarchicalLayout(
     enabled = TRUE, 
     direction = "LR",
-    levelSeparation = 1200,  # Aumenta o espaçamento vertical
-    nodeSpacing = 250,      # Aumenta o espaçamento horizontal entre nós irmãos
+    levelSeparation = 300,  # Aumenta o espaçamento vertical
+    nodeSpacing = 200,      # Aumenta o espaçamento horizontal entre nós irmãos
     blockShifting = FALSE,
     parentCentralization = FALSE,
     edgeMinimization = TRUE,  # Ensures edges are less likely to cross
@@ -58,7 +58,6 @@ dados_gnw <-
     main = "Legendas:",
     useGroups = FALSE,
     addNodes = nodes.legends_df,
-    addEdges = edges.legends_df,
     zoom = FALSE
   ) %>% 
   onRender(
@@ -69,7 +68,7 @@ dados_gnw <-
         var graphArea = el.querySelector('div[id^=\"graphhtmlwidget-\"]');
         if (graphArea) {
           // Set the background color of the main plot area to black
-          graphArea.style.backgroundColor = 'black';
+          graphArea.style.backgroundColor = 'lightgray';
         }
       }, 500); // Increased delay to ensure all elements are rendered
     }
