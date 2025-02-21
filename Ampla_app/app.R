@@ -1,20 +1,13 @@
 # app.R (or server.R + ui.R as you prefer)
-library(here)
 library(readr)
 library(plotly)
 library(shiny)
 library(tidyverse)
 
-here::i_am("Ampla_app/app.R")
-
-source(
-  here(
-    "dados", "funcoes", "extrair_dados_pasta_informakon.R"
-  )
-)
+source("extrair_dados_pasta_informakon.R")
 
 dados.pasta.informakon.despesas <- 
-  read_csv(here("Ampla_app", "dados.pasta.informakon.despesas.csv"))
+  read_csv("dados.pasta.informakon.despesas.csv")
   
 
 ui <- fluidPage(
