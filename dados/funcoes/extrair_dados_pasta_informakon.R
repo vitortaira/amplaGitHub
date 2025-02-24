@@ -516,3 +516,4 @@ extrair_dados_pasta_informakon <-
 #str(extrair_dados_pasta_informakon())
 #View(extrair_dados_pasta_informakon()$Despesas)
 #View(extrair_dados_pasta_informakon()$Receitas)
+#dados.pasta.informakon.despesas <- extrair_dados_pasta_informakon()$Despesas
