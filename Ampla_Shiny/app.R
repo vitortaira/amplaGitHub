@@ -8,7 +8,7 @@ library(tidyverse)
 #source(here("dados", "funcoes", "extrair_dados_pasta_informakon.R"))
 print(here)
 dados.pasta.informakon.despesas <-
-  read_csv(here("Ampla_Shiny", "dados.pasta.informakon.despesas.csv"))
+  read_csv(here("dados.pasta.informakon.despesas.csv"))
 ui <- fluidPage(
   titlePanel("[Gráfico] Trajetória das despesas"),
   sidebarLayout(
