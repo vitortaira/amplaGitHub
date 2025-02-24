@@ -1,1 +1,0 @@
-print("Meu primeiro commit no GitHub via RStudio!")
