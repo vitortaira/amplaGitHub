@@ -19,7 +19,7 @@ output:
       collapsed: true
       smooth_scroll: true
     number_sections: true
-runtime: shiny
+#runtime: shiny
 #encoding: UTF-8
 ---
 
@@ -96,7 +96,7 @@ dados.pasta.informakon_l <-
   extrair_dados_pasta_informakon(caminhos.relatorio.informakon_l)
 ```
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 # Place the slider input and the plot output in the document.
 # In a Shiny Rmd, inputs and outputs are rendered inline.
 sliderInput("n", "Number of points", min = 10, max = nrow(mtcars), value = 20)
@@ -105,7 +105,7 @@ plotlyOutput("scatterPlot")
 output$scatterPlot <- renderPlotly({
   # Ensure the slider value is available.
   req(input$n)
-  
+
   # Create a scatter plot using the first 'n' rows of the mtcars dataset.
   plot_ly(
     data = mtcars[1:input$n, ],
@@ -113,7 +113,7 @@ output$scatterPlot <- renderPlotly({
     y = ~mpg,
     type = "scatter",
     mode = "markers"
-  ) %>% 
+  ) %>%
     layout(
       title = "Mtcars: Weight vs MPG",
       xaxis = list(title = "Weight (1000 lbs)"),
