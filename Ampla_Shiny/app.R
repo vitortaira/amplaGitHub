@@ -4,8 +4,9 @@ library(readr)
 library(plotly)
 library(shiny)
 library(tidyverse)
-source(here::here("here_config.R"))
-source(here("dados", "funcoes", "extrair_dados_pasta_informakon.R"))
+#source(here::here("here_config.R"))
+#source(here("dados", "funcoes", "extrair_dados_pasta_informakon.R"))
+print(here)
 dados.pasta.informakon.despesas <-
   read_csv(here("Ampla_Shiny", "dados.pasta.informakon.despesas.csv"))
 ui <- fluidPage(
