@@ -531,6 +531,8 @@ extrair_dados_arquivo_ecn <-
     ### Nomeando o arquivo
     nome.arquivo <-
       paste0(
+        dirname(caminho_arquivo_ecn.c),
+        "/",
         empreendimento_c,
         " ECN ",
         format(data.consulta_p, "%Y_%m_%d %H_%M_%S"),
