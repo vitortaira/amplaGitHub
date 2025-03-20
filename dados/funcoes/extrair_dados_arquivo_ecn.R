@@ -19,7 +19,6 @@
 library(magrittr) # Ferramentas sintáticas ao dplyr, e.g. %<>%
 library(openxlsx) # Funções para preencher arquivos .xlsx
 library(pdftools) # Funções para extração de dados em PDF
-library(readr) # Funções para a importação de arquivos, e.g. read_csv()
 library(readxl) # Funções para a importação de arquivos em Excel, e.g. read_excel()
 library(styler) # Funções para formatar códigos, e.g. style_file()
 library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2

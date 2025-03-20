@@ -190,7 +190,39 @@ nodes_df <-
           )),
       )
   )
-
+# Titles
+#titles.arquivos_vc <- 
+#  c(
+#    # desp
+#    "Data Doc Pagto", "Data Liberação", "Credor", "Cod. Centro",
+#    "Centro de Negócio", "Agente Financeiro", "N° Conta", "N° Entrada",
+#    "Documento", "Parcela", "Data Vencimento", "Data Vencimento Origem",
+#    "Valor Título", "Acréscimos", "Descontos", "Encargos",
+#    "Descontos Adiant.", "Multa", "Total Pago",
+#    # rec
+#    "Empreendimento", "Cliente", "Contrato", "Torre", "Apto", "Esp",
+#    "Parcela", "Elemento", "Vencimento", "Data Pagto", "R/F", "Agente",
+#    "Principal", "Juros", "Reajuste", "Encargos", "Juros de Mora", "Multa",
+#    "Seguro", "Desconto", "Cart.", "Total",
+#    # ecn
+#      # Empreendimento
+#    "Contrato", "APF", "Valor Aporte", "Total de Unidade",
+#    "Unidades Comercializadas", "Unidades Financiadas Construção",
+#    "Unidades Complementares", "Data Término de Obra", "Data Ini - Enc Fiador",
+#      # Empréstimo PJ
+#    "Número", "Data da Assinatura", "Valor Empréstimo", "Valor Reduzido",
+#    "Valor Utilizado", "Saldo Devedor",
+#      # Unidades
+#    "Contrato", "TP", "Data de Assinatura", "Data de Inclusão",
+#    "Data de Registro", "Financiamento", "Desconto Subsídio", "FGTS",
+#    "Recursos Próprios", "Compra / Venda", "Valor de Avaliação",
+#    "Valor Liberado Terreno", "Valor Liberado Obra", "Amortização",
+#      # Consolidado
+#    "Período", "Unidade", "Valor Creditado", "Valor Desbloqueado",
+#    "Valor Amortizado", "Encargo Quitado do PJ",
+#    # fre
+#    "fre"
+#  )
 # nodes.legends_df
 nodes.levels_vn <- sort(unique(nodes_df$level))
 nodes.levels.labels_vc <-

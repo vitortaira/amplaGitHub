@@ -68,7 +68,7 @@ source(here("dados", "funcoes", "extrair_dados_arquivo_ecn.R"))
 source(here("dados", "funcoes", "extrair_caminhos_relatorio_ciweb.R"))
 source(
   here(
-    "relatorios", "base de dados", "funcoes", "extrair_dados_relatorio_ciweb.R"
+    "relatorios", "funcoes", "extrair_dados_relatorio_ciweb.R"
   )
 )
 source(
