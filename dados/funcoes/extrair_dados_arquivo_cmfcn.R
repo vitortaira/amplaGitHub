@@ -1,0 +1,217 @@
+# Descrição ---------------------------------------------------------------
+
+### RESUMO ###
+
+# extrair_dados_arquivo_cmfcn() extrai os dados de um arquivo CMF_CN.
+
+### UTILIZAÇÃO ###
+
+# extrair_dados_arquivo_cmfcn(
+#   f_f_caminho.arquivo.cmfcn_c
+# )
+
+### ARGUMENTOS ###
+
+# f_caminho.arquivo.cmfcn_c: String do caminho do arquivo CMF_CN.
+
+# Pacotes -----------------------------------------------------------------
+
+library(magrittr) # Ferramentas sintáticas ao dplyr, e.g. %<>%
+library(pdftools) # Funções para extração de dados em PDF
+library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2
+
+# Função ------------------------------------------------------------------
+
+# Define a função
+extrair_dados_arquivo_cmfcn <- 
+  function(f_caminho.arquivo.cmfcn_c) {
+    
+    # paginas_l e linhas_c ----------------------------------------------------
+    
+    paginas_l <- 
+      pdf_text(f_caminho.arquivo.cmfcn_c) %>% 
+      map(
+        ~ str_split(.x, "\n")[[1]] %>% 
+          str_squish() %>% 
+          discard(~ .x == "")
+      )
+    emitente_c <- paginas_l[[1]] %>% last() %>% str_remove("^Emitente: ")
+    linhas_c <- 
+      unlist(paginas_l, use.names = FALSE) %>%
+      keep(~ !str_starts(.x, "Emitente:")) %>% 
+      as_tibble_col(column_name = "Linhas") %>%
+      # Concatenar linhas do cabeçalho
+      mutate(
+        Linhas = 
+          if_else(str_detect(Linhas, "^CONTRATO"),
+                  str_c(Linhas, lead(Linhas), sep = " "),
+                  Linhas),
+        Drop = lag(str_detect(Linhas, "^CONTRATO"), default = FALSE)
+      ) %>% 
+      filter(!Drop) %>% 
+      select(Linhas) %>%
+      # Concatenar linhas iniciadas em contratos com iniciadas em conta SIDEC/NSGD
+      mutate(
+        Linhas = 
+          if_else(str_detect(Linhas, "^[0-9]{12}"),
+                  str_c(Linhas, lead(Linhas), sep = " "),
+                  Linhas),
+        Drop = lag(str_detect(Linhas, "^[0-9]{12}"), default = FALSE)
+      ) %>% 
+      filter(!Drop) %>%
+      mutate(Grupo = cumsum(!str_detect(Linhas, "^(CIF|CL)"))) %>% 
+      group_by(Grupo) %>% 
+      summarise(Linhas = str_c(Linhas, collapse = "; "), .groups = "drop") %>% 
+      pull(Linhas)
+    # Lançamentos
+    lancamentos_t <- 
+      tibble(Linhas = linhas_c %>% head(str_which(linhas_c, "^TOTAIS")[1])) %>% 
+      #tibble(Linhas = linhas_c) %>%
+      filter(str_detect(Linhas, "^[0-9]{12}")) %>% 
+      mutate(
+        CONTRATO = Linhas %>% str_extract("^[0-9]{12}"),
+        Linhas = Linhas %>% str_remove("^[0-9]{12}") %>% str_trim,
+        `DT. LANCTO` = 
+          Linhas %>% 
+          str_extract("^\\d{2}/\\d{2}/\\d{4}") %>% 
+          as.Date(format = "%d/%m/%Y"),
+        Linhas = 
+          Linhas %>% str_remove("^\\d{2}/\\d{2}/\\d{4}") %>% str_trim,
+        `DT. REMES.` = 
+          Linhas %>% 
+          str_extract("^\\d{2}/\\d{2}/\\d{4}") %>% 
+          as.Date(format = "%d/%m/%Y"),
+        Linhas = 
+          Linhas %>% str_remove("^\\d{2}/\\d{2}/\\d{4}") %>% str_trim,
+        `MOT.` = Linhas %>% str_sub(-2, -1) %>% as.integer,
+        Linhas = Linhas %>% str_sub(1, -3) %>% str_trim,
+        SITUACAO = 
+          Linhas %>% str_remove(".*\\d{1,3}(?:\\.\\d{3})*,\\d{2}") %>% str_trim,
+        VALOR = 
+          Linhas %>%
+          str_extract("\\d{1,3}(?:\\.\\d{3})*,\\d{2}") %>% 
+          str_trim() %>% 
+          str_remove_all("\\.") %>% 
+          str_replace("\\,", "\\.") %>% 
+          as.numeric,
+        Linhas =
+          Linhas %>% str_remove("\\d{1,3}(?:\\.\\d{3})*,\\d{2}.*") %>% str_trim,
+        `CONTA SIDEC/NSGD` = 
+          if_else(
+            Linhas %>% str_detect("\\d{5}\\."),
+            Linhas %>% str_extract("\\d{5}\\..*"),
+            NA
+          ),
+        Linhas = 
+          if_else(
+            Linhas %>% str_detect("\\d{5}\\."),
+            Linhas %>% str_remove("\\d{5}\\..*") %>% str_trim,
+            Linhas
+          ),
+        NP = Linhas %>% str_sub(-2, -1) %>% as.integer,
+        LANCAMENTOS = Linhas %>% str_sub(1, -3) %>% str_trim
+      ) %>% 
+      select(
+        CONTRATO, `DT. LANCTO`, `DT. REMES.`, LANCAMENTOS, NP, 
+        `CONTA SIDEC/NSGD`, VALOR, SITUACAO, `MOT.`
+      )
+    # TOTAL DT. REM
+    max.cols_i <- 
+      max(str_count(linhas_c[str_which(linhas_c, "^TOTAL")], fixed(";"))) + 1
+    nomes.cols_c <- str_c("Col", seq_len(max.cols_i))
+    
+    total.dt.rem_t <-
+      tibble(Linhas = linhas_c %>% head(str_which(linhas_c, "^TOTAIS")[1])) %>%
+      #tibble(Linhas = linhas_c) %>%
+      filter(str_detect(Linhas, "^TOTAL")) %>% 
+      separate(
+        col = Linhas,
+        into = nomes.cols_c,
+        sep = ";",
+        fill = "right"
+      ) %>% 
+      mutate(
+        Col1 = Col1 %>% str_remove("^TOTAL DT.REM "),
+        `DT. REMES.` = Col1 %>% word %>% as.Date(format = "%d/%m/%Y"),
+        Col1 = Col1 %>% str_remove(word(.)) %>% str_trim
+      ) %>% 
+      pivot_longer(
+        cols = starts_with("Col"),
+        names_to = "Var",
+        values_to = "Linhas"
+      ) %>% 
+      extract(
+        col = Linhas,
+        into = c("Descricao", "Valor"),
+        regex = "^(.*?)(?=\\d{1,3}(?:\\.\\d{3})*,\\d{2})",
+        remove = FALSE
+      ) %>% 
+      select(-Var) %>% 
+      filter(!is.na(Linhas)) %>% 
+      mutate(
+        Linhas = Linhas %>% str_trim(),
+        VALOR = 
+          Linhas %>%
+            word(-1) %>% 
+            str_remove_all("\\.") %>% 
+            str_replace("\\,", "\\.") %>% 
+            as.numeric,
+        DESCRICAO = 
+          Linhas %>% 
+            str_remove(str_c(word(., - 1), "$")) %>% 
+            str_trim() %>% 
+            str_remove_all(" "),
+      ) %>% 
+      select(-Linhas)
+###############################################################################
+#    teste.datas.lancamentos_t <- 
+#      lancamentos_t %>% 
+#      group_by(`DT. REMES.`) %>% 
+#      summarise(Total.lancamentos = sum(VALOR))
+#    teste.datas.total_t <- 
+#      total.dt.rem_t %>% 
+#      group_by(`DT. REMES.`) %>% 
+#      summarise(Total.total = sum(VALOR))
+#    teste.datas_t <- 
+#      full_join(
+#        teste.lancamentos_t,
+#        teste.total_t,
+#        by = "DT. REMES."
+#      ) %>% 
+#      mutate(
+#        Igual = if_else(near(Total.lancamentos, Total.total), TRUE, FALSE)
+#        #`L>T` = 
+#        #  if_else(
+#        #    (Total.lancamentos > Total.total) 
+#        #      & !near(Total.lancamentos, Total.total),
+#        #    TRUE,
+#        #    FALSE
+#        #  ),
+#        #`L<T` = 
+#        #  if_else(
+#        #    (Total.lancamentos < Total.total) 
+#        #      & !near(Total.lancamentos, Total.total),
+#        #    TRUE,
+#        #    FALSE
+#        #  )
+#      )
+###############################################################################
+  return(lancamentos_t)
+  }
+
+# Teste -------------------------------------------------------------------
+
+comeco.linhas_c <- word(linhas_c)
+comeco.linhas.letras_c <- 
+  comeco.linhas_c %>%
+  keep(~ str_detect(.x, "^[A-Z]") & !str_detect(.x, "^CIF|^CL"))
+comeco.linhas.numeros_c <- 
+  comeco.linhas_c %>% keep(~ str_detect(.x, "^\\d"))
+sort(unique(diff(str_which(linhas.lancamentos_c, "^CONTRATO"))))
+f_caminho.arquivo.cmfcn_c <- 
+  here("..", "..", "Relatórios - Documentos", "Relatorios - CIWEB",
+       "2. UP Jardim Prudencia", "11.03.25",
+       "CMF", "20250311_123907_698_PP_177770016646_MOV_FINANC_CN.pdf"
+  )
+#extrair_dados_arquivo_cmfcn(f_caminho.arquivo.cmfcn_c)
+#shell.exec(f_caminho.arquivo.cmfcn_c)
