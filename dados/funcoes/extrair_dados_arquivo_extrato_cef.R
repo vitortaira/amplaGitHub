@@ -8,7 +8,7 @@
 ### UTILIZAÇÃO ###
 
 # extrair_dados_arquivo_extrato_cef(
-#   f_f_caminho.arquivo.extrato.cef_c
+#   f_caminho.arquivo.extrato.cef_c
 # )
 
 ### ARGUMENTOS ###
