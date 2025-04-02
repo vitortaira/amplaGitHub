@@ -2,17 +2,18 @@
 
 ### RESUMO ###
 
-# dados_cef_epr() extrai os dados de um relatório EPR da CEF em PDF.
+# dados_cef_epr_pasta() extrai e consolida os dados dos relatórios EPR da CEF
+# que estão na pasta "Relatorios - CIWEB".
 
 ### UTILIZAÇÃO ###
 
-# dados_cef_epr(
-#   f_caminho.epr_c
+# dados_cef_epr_pasta(
+#   f_caminho.pasta.ciweb_c
 # )
 
 ### ARGUMENTOS ###
 
-# f_caminho.epr_c: String do caminho de um relatório EPR.
+# f_caminho.pasta.ciweb_c: String do caminho da pasta "Relatorios - CIWEB".
 
 # Pacotes -----------------------------------------------------------------
 
@@ -23,11 +24,11 @@ library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplo
 # Função ------------------------------------------------------------------
 
 # Define a função
-dados_cef_epr <- 
-  function(f_caminho.epr_c) {
+dados_cef_epr_pasta <- 
+  function(f_caminho.pasta.ciweb_c) {
     # Define paginas_l
     paginas_l <- 
-      pdf_text(f_caminho.epr_c) %>% 
+      pdf_text(f_caminho.pasta.ciweb_c) %>% 
       map(
         ~ str_split(.x, "\n")[[1]] %>% 
           str_squish() %>% 
@@ -101,7 +102,7 @@ dados_cef_epr <-
 
 # Teste -------------------------------------------------------------------
 
-#f_caminho.epr_c <-
+#f_caminho.pasta.ciweb_c <-
 #  here("..", "..", "Relatórios - Documentos", "Relatorios - CIWEB",
 #    "1. UP Vila Sonia", "11.03.25", "EPR",
 #    "20250311_123902_696_PP_177770014920_CONTRATOS_EMPREEND.pdf"
@@ -109,5 +110,5 @@ dados_cef_epr <-
 #  here("..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
 #    "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
 #  )
-#extrato <- dados_epr(f_caminho.epr_c)
-#shell.exec(f_caminho.epr_c)
+#extrato <- dados_epr(f_caminho.pasta.ciweb_c)
+#shell.exec(f_caminho.pasta.ciweb_c)
