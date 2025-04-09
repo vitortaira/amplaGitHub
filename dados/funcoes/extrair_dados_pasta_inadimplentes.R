@@ -6,9 +6,10 @@ library(readxl) # Importação de arquivos em Excel, e.g. read_excel()
 library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2
 library(viridisLite) # Mapeamento de cores
 
+#source(here("Controladoria - Documentos", "Ampla_Github", "dados", "funcoes", "extrair_dados_arquivo_inadimplentes.R"))
 source(here("dados", "funcoes", "extrair_dados_arquivo_inadimplentes.R"))
 
-extrair_dados_pasta_inadimplentes <- 
+extrair_dados_pasta_inadimplentes <-
   function(
     caminho_pasta_inadimplentes.c = here("dados", "cef", "inadimplentes"),
     xlsx = TRUE
@@ -17,21 +18,21 @@ extrair_dados_pasta_inadimplentes <-
 # Formatar todos os arquivos da pasta -------------------------------------
 
     # Todos os arquivos na pasta "inadimplentes"
-    arquivos.caminhos.todos_vc <- 
+    arquivos.caminhos.todos_vc <-
       list.files(caminho_pasta_inadimplentes.c, full.names = T)
     # Arquivos a serem desconsiderados
     arquivos.caminhos.excluir_vc <-
       # Pasta "formatados"
-      here("dados", "cef", "inadimplentes", "formatados")
+      here("Controladoria - Documentos", "Ampla_Github", "dados", "cef", "inadimplentes", "formatados")
     # Arquivos a serem analisados
-    arquivos.caminhos.analisar_vc <- 
+    arquivos.caminhos.analisar_vc <-
       setdiff(arquivos.caminhos.todos_vc, arquivos.caminhos.excluir_vc)
     # Extrair todos os dados dos arquivos relevantes da pasta "inadimplentes"
-    dados.pasta_df <- 
-      arquivos.caminhos.analisar_vc %>% 
+    dados.pasta_df <-
+      arquivos.caminhos.analisar_vc %>%
       map(
         ~ {
-          dados.pasta_df <- 
+          dados.pasta_df <-
             tryCatch(
               extrair_dados_arquivo_inadimplentes(.x),
               error = function(e) {
@@ -41,15 +42,15 @@ extrair_dados_pasta_inadimplentes <-
             )
             if (!is.null(dados.pasta_df)) {
               message(.x, " extraído com sucesso.")
-              
+
             }
           dados.pasta_df
         }
-      ) %>% 
+      ) %>%
       bind_rows(.)
-  
+
     # Salvando num xlsx -------------------------------------------------------
-    
+
     if (xlsx == TRUE) {
       # Definindo o nome do arquivo dinamicamente
       nome.xlsx_c <-
@@ -60,13 +61,13 @@ extrair_dados_pasta_inadimplentes <-
         )
       # Criando uma cópia de "Template.xlsx"
       file.copy(
-        here("dados", "cef", "inadimplentes", "formatados", "Template.xlsx"),
+        here("Controladoria - Documentos", "Ampla_Github", "dados", "cef", "inadimplentes", "formatados", "Template.xlsx"),
         #here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c),
         paste0("C:/Users/Ampla/Documents/", nome.xlsx_c),
         overwrite = T
       )
       # Definir a cópia criada como o workbook ativo
-      xlsx <- 
+      xlsx <-
         loadWorkbook(
           paste0("C:/Users/Ampla/Documents/", nome.xlsx_c)
           #here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c)
@@ -90,7 +91,7 @@ extrair_dados_pasta_inadimplentes <-
       addStyle(
         xlsx,
         sheet = "Parcelas",
-        style = 
+        style =
           createStyle(
             border = "TopBottomLeftRight",
             halign = "center",
@@ -114,7 +115,7 @@ extrair_dados_pasta_inadimplentes <-
         rows = 1,
         cols = 1:ncol(dados.pasta_df)
       )
-      # Formatar cabeçalho 
+      # Formatar cabeçalho
       addStyle(
         xlsx,
         sheet = "Parcelas",
@@ -136,7 +137,7 @@ extrair_dados_pasta_inadimplentes <-
       addStyle(
         xlsx,
         sheet = "Parcelas",
-        style = 
+        style =
           createStyle(
             border = "TopBottomLeftRight",
             halign = "left",
@@ -151,7 +152,7 @@ extrair_dados_pasta_inadimplentes <-
       addStyle(
         xlsx,
         sheet = "Parcelas",
-        style = 
+        style =
           createStyle(
             border = "TopBottomLeftRight",
             halign = "center",
@@ -166,7 +167,7 @@ extrair_dados_pasta_inadimplentes <-
       addStyle(
         xlsx,
         sheet = "Parcelas",
-        style = 
+        style =
           createStyle(
             border = "TopBottomLeftRight",
             halign = "center",
@@ -181,7 +182,7 @@ extrair_dados_pasta_inadimplentes <-
       addStyle(
         xlsx,
         sheet = "Parcelas",
-        style = 
+        style =
           createStyle(
             border = "TopBottomLeftRight",
             halign = "center",
@@ -189,7 +190,7 @@ extrair_dados_pasta_inadimplentes <-
             numFmt = "#,##0.00"
           ),
         rows = 1:nrow(dados.pasta_df) + 1,
-        cols = 
+        cols =
           which(
             colnames(dados.pasta_df) %in%
               c("Principal", "Juros", "Encargos", "Juros de Mora", "Multa",
@@ -206,11 +207,11 @@ extrair_dados_pasta_inadimplentes <-
         overwrite = T
       )
       # Caminho da planilha na pasta local
-      caminho.xlsx_c <- 
-        paste0("C:/Users/Ampla/Documents/", nome.xlsx_c) %>% 
+      caminho.xlsx_c <-
+        paste0("C:/Users/Ampla/Documents/", nome.xlsx_c) %>%
         normalizePath(winslash = "/", mustWork = F)
       # Comando no PowerShell para clicar em "Atualizar tudo" na planilha
-      ps_cmd <- 
+      ps_cmd <-
         paste0(
           "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8;",
           "$excel = New-Object -ComObject Excel.Application;",
@@ -229,15 +230,17 @@ extrair_dados_pasta_inadimplentes <-
       system2("powershell", args = c("-Command", ps_cmd))
       # Movendo a planilha da pasta local para o OneDrive
       file.rename(
-        caminho.xlsx_c, 
-        here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c)
+        caminho.xlsx_c,
+        here("Controladoria - Documentos", "Ampla_Github", "dados", "cef", "inadimplentes", "formatados", nome.xlsx_c)
       )
     }
     return(dados.pasta_df)
   }
+
 
   # Teste -------------------------------------------------------------------
 
 #caminho_arquivo_inadimplentes.c <-
 #  here("dados", "cef", "inadimplentes", "inads. pomp.xlsx")
 #str(extrair_dados_inadimplentes(caminho_arquivo_inadimplentes.c))
+#teste=extrair_dados_pasta_inadimplentes(xlsx=F)
