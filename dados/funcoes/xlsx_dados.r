@@ -25,7 +25,7 @@ xlsx_dados <-
              )) {
     # Valida existência dos pacotes necessários
     if (!requireNamespace("openxlsx", quietly = TRUE)) {
-      stop("The 'openxlsx' package is required but not installed. Please install it first.")
+      stop("O pacote 'openxlsx' é necessário, mas não está instalado. Por favor, instale-o primeiro.")
     }
     # Valida argumentos
     if (!dir.exists(f_caminho.pasta.dados_c)) {

@@ -129,12 +129,12 @@ dados_ik <-
     #      "^Informakon"
     #      )
     #  ]
-    dados.ik_l <- list()
+    dados.pasta.informakon_l <- list()
     for (caminho_arquivo_informakon.c in caminhos.arquivos.informakon_vc) {
       # Despesas ----------------------------------------------------------------
 
       if (caminho_arquivo_informakon.c %>% basename() %>% str_detect("^despesas")) {
-        dados.ik_l[["desp"]] <-
+        dados.pasta.informakon_l[["Despesas"]] <-
           read_excel(caminho_arquivo_informakon.c) %>%
           mutate(
             `a/c`                    = as.character(`a/c`),
@@ -166,7 +166,7 @@ dados_ik <-
       # Receitas ----------------------------------------------------------------
 
       if (caminho_arquivo_informakon.c %>% basename() %>% str_detect("^receitas")) {
-        dados.ik_l[["rec_ps"]] <-
+        dados.pasta.informakon_l[["Receitas"]] <-
           read_excel(caminho_arquivo_informakon.c, skip = 3) %>%
           mutate(
             Agente          = as.character(Agente),
@@ -200,7 +200,7 @@ dados_ik <-
     #
     #    # Despesas
     #    dados.despesas.bp.informakon_df <-
-    #      dados.ik_l[["Despesas"]] %>%
+    #      dados.pasta.informakon_l[["Despesas"]] %>%
     #      group_by(`Centro de Negócio`, Mês) %>%
     #      summarise(
     #        `Total Pago no Mês` = sum(`Total Pago`, na.rm = T),
@@ -209,22 +209,22 @@ dados_ik <-
     #      ungroup()
     #    # Receitas
     #    dados.receitas.bp.informakon_df <-
-    #      dados.ik_l[["Receitas"]] %>%
+    #      dados.pasta.informakon_l[["Receitas"]] %>%
     #      group_by(Empreendimento, Mês) %>%
     #      summarise(
     #        Total = sum(Total, na.rm = T),
     #        .groups = "drop"
     #      ) %>%
     #      ungroup()
-    #    # Adicionando a dados.ik_l
+    #    # Adicionando a dados.pasta.informakon_l
     #    dados.pasta.informakon.bp_l <-
     #      c(
-    #        dados.ik_l,
+    #        dados.pasta.informakon_l,
     #        list(Despesas.BP = dados.despesas.bp.informakon_df),
     #        list(Receitas.BP = dados.receitas.bp.informakon_df)
     #      )
 
-    return(dados.ik_l)
+    return(dados.pasta.informakon_l)
   }
 
 # Teste -------------------------------------------------------------------
