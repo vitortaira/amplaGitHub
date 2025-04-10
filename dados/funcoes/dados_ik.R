@@ -8,12 +8,12 @@
 ### UTILIZAÇÃO ###
 
 # dados_ik(
-#   caminho_pasta_informakon.c
+#   f_caminho.pasta.ik_c
 # )
 
 ### ARGUMENTOS ###
 
-# caminho_pasta_informakon.c: String do caminho da pasta "informakon".
+# f_caminho.pasta.ik_c: String do caminho da pasta "informakon".
 
 # Pacotes -----------------------------------------------------------------
 
@@ -27,12 +27,12 @@ library(styler) # Funções para formatar códigos, e.g. style_file()
 library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2
 
 dados_ik <-
-  function(caminho_pasta_informakon.c =
+  function(f_caminho.pasta.ik_c =
              here("Controladoria - Documentos", "Ampla_Github", "dados", "informakon"),
            xlsx = FALSE) {
     extrair_caminhos_relatorio_informakon <-
-      function(caminho_pasta_informakon.c = here("Controladoria - Documentos", "Ampla_Github", "dados", "informakon")) {
-        if (!dir.exists(caminho_pasta_informakon.c)) {
+      function(f_caminho.pasta.ik_c = here("Controladoria - Documentos", "Ampla_Github", "dados", "informakon")) {
+        if (!dir.exists(f_caminho.pasta.ik_c)) {
           stop("A pasta 'informakon' não foi encontrada.")
         }
         # Despesas
@@ -113,11 +113,12 @@ dados_ik <-
         return(caminhos.relatorio.informakon_l)
       }
     caminhos.arquivos.informakon_vc <-
-      extrair_caminhos_relatorio_informakon()
+      extrair_caminhos_relatorio_informakon() %>%
+      unlist()
     ###############################################################################
     # caminhos.arquivos.informakon_vc <-
     #  list.files(
-    #    caminho_pasta_informakon.c,
+    #    f_caminho.pasta.ik_c,
     #    full.names = T,
     #    recursive = T
     #  )
@@ -128,12 +129,12 @@ dados_ik <-
     #      "^Informakon"
     #      )
     #  ]
-    dados.pasta.informakon_l <- list()
+    dados.ik_l <- list()
     for (caminho_arquivo_informakon.c in caminhos.arquivos.informakon_vc) {
       # Despesas ----------------------------------------------------------------
 
       if (caminho_arquivo_informakon.c %>% basename() %>% str_detect("^despesas")) {
-        dados.pasta.informakon_l[["Despesas"]] <-
+        dados.ik_l[["desp"]] <-
           read_excel(caminho_arquivo_informakon.c) %>%
           mutate(
             `a/c`                    = as.character(`a/c`),
@@ -159,14 +160,13 @@ dados_ik <-
             Parcela                  = as.character(Parcela),
             `Total Pago`             = as.numeric(`Total Pago`),
             `Valor Titulo`           = as.numeric(`Valor Titulo`)
-          ) %>%
-          filter(!is.na(`Cod. Centro`))
+          )
       }
 
       # Receitas ----------------------------------------------------------------
 
       if (caminho_arquivo_informakon.c %>% basename() %>% str_detect("^receitas")) {
-        dados.pasta.informakon_l[["Receitas"]] <-
+        dados.ik_l[["rec_ps"]] <-
           read_excel(caminho_arquivo_informakon.c, skip = 3) %>%
           mutate(
             Agente          = as.character(Agente),
@@ -197,323 +197,34 @@ dados_ik <-
     }
 
     # Balanço patrimonial -----------------------------------------------------
+    #
+    #    # Despesas
+    #    dados.despesas.bp.informakon_df <-
+    #      dados.ik_l[["Despesas"]] %>%
+    #      group_by(`Centro de Negócio`, Mês) %>%
+    #      summarise(
+    #        `Total Pago no Mês` = sum(`Total Pago`, na.rm = T),
+    #        .groups = "drop"
+    #      ) %>%
+    #      ungroup()
+    #    # Receitas
+    #    dados.receitas.bp.informakon_df <-
+    #      dados.ik_l[["Receitas"]] %>%
+    #      group_by(Empreendimento, Mês) %>%
+    #      summarise(
+    #        Total = sum(Total, na.rm = T),
+    #        .groups = "drop"
+    #      ) %>%
+    #      ungroup()
+    #    # Adicionando a dados.ik_l
+    #    dados.pasta.informakon.bp_l <-
+    #      c(
+    #        dados.ik_l,
+    #        list(Despesas.BP = dados.despesas.bp.informakon_df),
+    #        list(Receitas.BP = dados.receitas.bp.informakon_df)
+    #      )
 
-    # Despesas
-    dados.despesas.bp.informakon_df <-
-      dados.pasta.informakon_l[["Despesas"]] %>%
-      group_by(`Centro de Negócio`, Mês) %>%
-      summarise(
-        `Total Pago no Mês` = sum(`Total Pago`, na.rm = T),
-        .groups = "drop"
-      ) %>%
-      ungroup()
-    # Receitas
-    dados.receitas.bp.informakon_df <-
-      dados.pasta.informakon_l[["Receitas"]] %>%
-      group_by(Empreendimento, Mês) %>%
-      summarise(
-        Total = sum(Total, na.rm = T),
-        .groups = "drop"
-      ) %>%
-      ungroup()
-    # Adicionando a dados.pasta.informakon_l
-    dados.pasta.informakon_l <-
-      c(
-        dados.pasta.informakon_l,
-        list(Despesas.BP = dados.despesas.bp.informakon_df),
-        list(Receitas.BP = dados.receitas.bp.informakon_df)
-      )
-
-    # xlsx --------------------------------------------------------------------
-
-    if (xlsx) {
-      # Criando o arquivo xlsx
-      xlsx <-
-        createWorkbook()
-      # Aba "Despesas"
-      addWorksheet(
-        xlsx,
-        sheet = "Despesas",
-        gridLines = F,
-        tabColour = "red"
-      )
-      # Popular a aba
-      writeData(
-        xlsx,
-        sheet = "Despesas",
-        dados.pasta.informakon_l[["Despesas"]]
-      )
-      # Congelar a primeira linha
-      freezePane(xlsx, "Despesas", firstRow = T)
-      # Adicionar filtro à tabela
-      addFilter(
-        xlsx,
-        "Despesas",
-        rows = 1,
-        cols = 1:ncol(dados.pasta.informakon_l[["Despesas"]])
-      )
-      # Formatar largura das colunas da tabela
-      setColWidths(
-        xlsx,
-        sheet = "Despesas",
-        cols = 1:ncol(dados.pasta.informakon_l[["Despesas"]]),
-        widths = 18
-      )
-      # Formatação geral da tabela
-      addStyle(
-        xlsx,
-        sheet = "Despesas",
-        rows = 1:nrow(dados.pasta.informakon_l[["Despesas"]]) + 1,
-        cols = 1:ncol(dados.pasta.informakon_l[["Despesas"]]),
-        gridExpand = T,
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "center",
-            valign = "center"
-          )
-      )
-      # Formatar cabeçalho
-      addStyle(
-        xlsx,
-        sheet = "Despesas",
-        rows = 1,
-        cols = 1:ncol(dados.pasta.informakon_l[["Despesas"]]),
-        gridExpand = T,
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            fontColour = "white",
-            fontSize = 12,
-            textDecoration = "bold",
-            fgFill = "darkgray",
-            halign = "center",
-            valign = "center",
-            wrapText = T
-          )
-      )
-      # Formatar colunas do tipo data
-      addStyle(
-        xlsx,
-        sheet = "Despesas",
-        rows = 1:nrow(dados.pasta.informakon_l[["Despesas"]]) + 1,
-        cols =
-          dados.pasta.informakon_l[["Despesas"]] %>%
-            summarise(across(everything(), ~ inherits(.x, "Date"))) %>%
-            unlist() %>%
-            which(),
-        gridExpand = T,
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "center",
-            valign = "center",
-            numFmt = "DD/MM/YYYY"
-          )
-      )
-      # Formatar colunas do tipo numérico
-      addStyle(
-        xlsx,
-        sheet = "Despesas",
-        rows = 1:nrow(dados.pasta.informakon_l[["Despesas"]]) + 1,
-        cols =
-          dados.pasta.informakon_l[["Despesas"]] %>%
-            summarise(across(everything(), ~ inherits(.x, "numeric"))) %>%
-            unlist() %>%
-            which(),
-        gridExpand = T,
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "center",
-            valign = "center",
-            numFmt = "#,##0.00"
-          )
-      )
-      # Formatar colunas do tipo inteiro
-      addStyle(
-        xlsx,
-        sheet = "Despesas",
-        rows = 1:nrow(dados.pasta.informakon_l[["Despesas"]]) + 1,
-        cols =
-          dados.pasta.informakon_l[["Despesas"]] %>%
-            summarise(across(everything(), ~ inherits(.x, "integer"))) %>%
-            unlist() %>%
-            which(),
-        gridExpand = T,
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "center",
-            valign = "center",
-            numFmt = "#,##0"
-          )
-      )
-      # Formatar colunas do tipo texto
-      addStyle(
-        xlsx,
-        sheet = "Despesas",
-        rows = 1:nrow(dados.pasta.informakon_l[["Despesas"]]) + 1,
-        cols =
-          dados.pasta.informakon_l[["Despesas"]] %>%
-            summarise(across(everything(), ~ inherits(.x, "character"))) %>%
-            unlist() %>%
-            which(),
-        gridExpand = T,
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "left",
-            valign = "center"
-          )
-      )
-      # Aba "Receitas"
-      addWorksheet(
-        xlsx,
-        sheet = "Receitas",
-        gridLines = F,
-        tabColour = "green"
-      )
-      # Popular a aba
-      writeData(
-        xlsx,
-        sheet = "Receitas",
-        dados.pasta.informakon_l[["Receitas"]]
-      )
-      # Congelar a primeira linha
-      freezePane(xlsx, "Receitas", firstRow = T)
-      # Adicionar filtro à tabela
-      addFilter(
-        xlsx,
-        "Receitas",
-        rows = 1,
-        cols = 1:ncol(dados.pasta.informakon_l[["Receitas"]])
-      )
-      # Formatar largura das colunas da tabela
-      setColWidths(
-        xlsx,
-        sheet = "Receitas",
-        cols = 1:ncol(dados.pasta.informakon_l[["Receitas"]]),
-        widths = 18
-      )
-      # Formatação geral da tabela
-      addStyle(
-        xlsx,
-        sheet = "Receitas",
-        rows = 1:nrow(dados.pasta.informakon_l[["Receitas"]]) + 1,
-        cols = 1:ncol(dados.pasta.informakon_l[["Receitas"]]),
-        gridExpand = T,
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "center",
-            valign = "center"
-          )
-      )
-      # Formatar cabeçalho
-      addStyle(
-        xlsx,
-        sheet = "Receitas",
-        rows = 1,
-        cols = 1:ncol(dados.pasta.informakon_l[["Receitas"]]),
-        gridExpand = T,
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            fontColour = "white",
-            fontSize = 12,
-            textDecoration = "bold",
-            fgFill = "darkgray",
-            halign = "center",
-            valign = "center",
-            wrapText = T
-          )
-      )
-      # Formatar colunas do tipo data
-      addStyle(
-        xlsx,
-        sheet = "Receitas",
-        rows = 1:nrow(dados.pasta.informakon_l[["Receitas"]]) + 1,
-        cols =
-          dados.pasta.informakon_l[["Receitas"]] %>%
-            summarise(across(everything(), ~ inherits(.x, "Date"))) %>%
-            unlist() %>%
-            which(),
-        gridExpand = T,
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "center",
-            valign = "center",
-            numFmt = "DD/MM/YYYY"
-          )
-      )
-      # Formatar colunas do tipo numérico
-      addStyle(
-        xlsx,
-        sheet = "Receitas",
-        rows = 1:nrow(dados.pasta.informakon_l[["Receitas"]]) + 1,
-        cols =
-          dados.pasta.informakon_l[["Receitas"]] %>%
-            summarise(across(everything(), ~ inherits(.x, "numeric"))) %>%
-            unlist() %>%
-            which(),
-        gridExpand = T,
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "center",
-            valign = "center",
-            numFmt = "#,##0.00"
-          )
-      )
-      # Formatar colunas do tipo inteiro
-      addStyle(
-        xlsx,
-        sheet = "Receitas",
-        rows = 1:nrow(dados.pasta.informakon_l[["Receitas"]]) + 1,
-        cols =
-          dados.pasta.informakon_l[["Receitas"]] %>%
-            summarise(across(everything(), ~ inherits(.x, "integer"))) %>%
-            unlist() %>%
-            which(),
-        gridExpand = T,
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "center",
-            valign = "center",
-            numFmt = "#,##0"
-          )
-      )
-      # Formatar colunas do tipo texto
-      addStyle(
-        xlsx,
-        sheet = "Receitas",
-        rows = 1:nrow(dados.pasta.informakon_l[["Receitas"]]) + 1,
-        cols =
-          dados.pasta.informakon_l[["Receitas"]] %>%
-            summarise(across(everything(), ~ inherits(.x, "character"))) %>%
-            unlist() %>%
-            which(),
-        gridExpand = T,
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "left",
-            valign = "center"
-          )
-      )
-      nome.xlsx_c <-
-        paste0(
-          "Controladoria - Documentos/Ampla_Github/dados/informakon/Informakon ",
-          Sys.time() %>% str_sub(1, -10),
-          ".xlsx"
-        ) %>%
-        str_remove_all("\\:")
-      saveWorkbook(xlsx, nome.xlsx_c, overwrite = T)
-    }
-    return(dados.pasta.informakon_l)
+    return(dados.ik_l)
   }
 
 # Teste -------------------------------------------------------------------
