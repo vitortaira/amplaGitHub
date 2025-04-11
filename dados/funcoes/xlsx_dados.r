@@ -41,29 +41,45 @@ xlsx_dados <-
     # Criando o arquivo xlsx
     wb_x <- createWorkbook()
     # Define nomes e cores das abas
-    wb.abas_t <- tibble(
-      Aba =
-        c("desp", "rec_ps"),
-      Fonte =
-        c(rep("ik", 2)),
-      Cor =
-        c(rep("darkgreen", 2))
-    )
+    wb.abas_l <-
+      list(
+        Aba =
+          c(
+            # Abas da CEF
+            c("ecnC", "ecnE", "ecnPJ", "ecnU"),
+            # Abas do Informakon
+            c("desp", "recPS")
+          ),
+        Fonte =
+          c(
+            # Abas da CEF
+            c(rep("cef", 4)),
+            # Abas do Informakon
+            c(rep("ik", 2))
+          ),
+        Cor =
+          c(
+            # Abas da CEF
+            c(rep("darkblue", 4)),
+            # Abas do Informakon
+            c(rep("darkgreen", 2))
+          )
+      )
     # Adicionando e populando abas dinamicamente
     pwalk(
-      wb.abas_t,
-      ~ {
+      wb.abas_l,
+      function(Aba, Fonte, Cor) {
         addWorksheet(
           wb_x,
-          sheet = ..1,
+          sheet = Aba,
           gridLines = FALSE,
-          tabColour = ..3
+          tabColour = Cor
         )
         writeDataTable(
           wb_x,
-          sheet = ..1,
-          dados_l[[..2]][[..1]],
-          tableName = ..1,
+          sheet = Aba,
+          as.data.frame(dados_l[[Fonte]][[Aba]]),
+          tableName = Aba,
         )
       }
     )

@@ -9,6 +9,7 @@ dados <-
   function() {
     dados_l <-
       list(
+        "cef" = dados_cef(),
         "ik" = dados_ik()
       )
     return(dados_l)

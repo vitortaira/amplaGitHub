@@ -134,7 +134,7 @@ dados_ik <-
       # Despesas ----------------------------------------------------------------
 
       if (caminho_arquivo_informakon.c %>% basename() %>% str_detect("^despesas")) {
-        dados.pasta.informakon_l[["Despesas"]] <-
+        dados.pasta.informakon_l[["desp"]] <-
           read_excel(caminho_arquivo_informakon.c) %>%
           mutate(
             `a/c`                    = as.character(`a/c`),
@@ -166,7 +166,7 @@ dados_ik <-
       # Receitas ----------------------------------------------------------------
 
       if (caminho_arquivo_informakon.c %>% basename() %>% str_detect("^receitas")) {
-        dados.pasta.informakon_l[["Receitas"]] <-
+        dados.pasta.informakon_l[["recPS"]] <-
           read_excel(caminho_arquivo_informakon.c, skip = 3) %>%
           mutate(
             Agente          = as.character(Agente),
