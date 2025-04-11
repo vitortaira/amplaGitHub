@@ -15,7 +15,7 @@
 
 # f_caminho.pasta.ciweb_c: String do caminho da pasta "Relatorios - CIWEB".
 
-source(here("dados", "funcoes", "dados_cef_epr.R"))
+source(here("Controladoria - Documentos", "Ampla_Github", "dados", "funcoes", "dados_cef_epr.R"))
 
 # Pacotes -----------------------------------------------------------------
 
@@ -26,15 +26,14 @@ library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplo
 # Função ------------------------------------------------------------------
 
 # Define a função
-dados_cef_epr_pasta <- 
-  function(
-    f_caminho.pasta.ciweb_c = 
-      here("..", "..", "Relatórios - Documentos", "Relatorios - CIWEB")
-  ) {
+dados_cef_epr_pasta <-
+  function(f_caminho.pasta.ciweb_c =
+             here("Relatórios - Documentos", "Relatorios - CIWEB")) {
     # Consolida os dados dos relatórios EPR da CEF na pasta "Relatorios - CIWEB"
-    caminhos.cef.epr_c <- 
+    caminhos.cef.epr_c <-
       list.files(
-        f_caminho.pasta.ciweb_c, full.names = TRUE, recursive = T
+        f_caminho.pasta.ciweb_c,
+        full.names = TRUE, recursive = T
       ) %>%
       keep(~ str_ends(.x, "CONTRATOS_EMPREEND.pdf"))
     eprs_l <- list()
@@ -42,18 +41,18 @@ dados_cef_epr_pasta <-
     for (
       i_caminho.cef.epr_c in caminhos.cef.epr_c
     ) {
-      eprs_l[[i_caminho.cef.epr_c]] <- 
+      eprs_l[[i_caminho.cef.epr_c]] <-
         dados_cef_epr(i_caminho.cef.epr_c)
-      eprs_t <- 
+      eprs_t <-
         bind_rows(eprs_t, eprs_l[[i_caminho.cef.epr_c]])
     }
-    eprs_t %<>% distinct
+    eprs_t %<>% distinct %>% as_tibble()
     return(eprs_t)
   }
 
 # Teste -------------------------------------------------------------------
 
-#f_caminho.pasta.ciweb_c <-
+# f_caminho.pasta.ciweb_c <-
 #  here("..", "..", "Relatórios - Documentos", "Relatorios - CIWEB",
 #    "1. UP Vila Sonia", "11.03.25", "EPR",
 #    "20250311_123902_696_PP_177770014920_CONTRATOS_EMPREEND.pdf"
@@ -61,5 +60,5 @@ dados_cef_epr_pasta <-
 #  here("..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
 #    "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
 #  )
-#eprs_t <- dados_cef_epr_pasta()
-#shell.exec(f_caminho.pasta.ciweb_c)
+# eprs_t <- dados_cef_epr_pasta()
+# shell.exec(f_caminho.pasta.ciweb_c)
