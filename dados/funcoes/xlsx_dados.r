@@ -46,21 +46,21 @@ xlsx_dados <-
         Aba =
           c(
             # Abas da CEF
-            c("ecnC", "ecnE", "ecnPJ", "ecnU"),
+            c("cmfcn", "ecnC", "ecnE", "ecnPJ", "ecnU", "extCEF"),
             # Abas do Informakon
             c("desp", "recPS")
           ),
         Fonte =
           c(
             # Abas da CEF
-            c(rep("cef", 4)),
+            c(rep("cef", 6)),
             # Abas do Informakon
             c(rep("ik", 2))
           ),
         Cor =
           c(
             # Abas da CEF
-            c(rep("darkblue", 4)),
+            c(rep("darkblue", 6)),
             # Abas do Informakon
             c(rep("darkgreen", 2))
           )
@@ -79,7 +79,7 @@ xlsx_dados <-
           wb_x,
           sheet = Aba,
           as.data.frame(dados_l[[Fonte]][[Aba]]),
-          tableName = Aba,
+          tableName = Aba
         )
       }
     )

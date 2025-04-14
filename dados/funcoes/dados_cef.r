@@ -8,10 +8,12 @@ dados_cef <-
   function() {
     dados.cef_l <-
       list(
+        cmfcn = dados_cef_cmfcns(),
         ecnE = dados_cef_ecn()$Empreendimento,
         ecnPJ = dados_cef_ecn()$Emprestimo,
         ecnU = dados_cef_ecn()$Unidades,
-        ecnC = dados_cef_ecn()$Consolidado
+        ecnC = dados_cef_ecn()$Consolidado,
+        extCEF = dados_cef_extratos()
       )
     return(dados.cef_l)
   }
