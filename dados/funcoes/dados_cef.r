@@ -13,6 +13,7 @@ dados_cef <-
         ecnPJ = dados_cef_ecn()$Emprestimo,
         ecnU = dados_cef_ecn()$Unidades,
         ecnC = dados_cef_ecn()$Consolidado,
+        epr = dados_cef_eprs(),
         extCEF = dados_cef_extratos()
       )
     return(dados.cef_l)

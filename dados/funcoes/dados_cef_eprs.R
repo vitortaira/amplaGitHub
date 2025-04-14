@@ -2,12 +2,12 @@
 
 ### RESUMO ###
 
-# dados_cef_epr_pasta() extrai e consolida os dados dos relatórios EPR da CEF
+# dados_cef_eprs() extrai e consolida os dados dos relatórios EPR da CEF
 # que estão na pasta "Relatorios - CIWEB".
 
 ### UTILIZAÇÃO ###
 
-# dados_cef_epr_pasta(
+# dados_cef_eprs(
 #   f_caminho.pasta.ciweb_c
 # )
 
@@ -19,14 +19,12 @@ source(here("Controladoria - Documentos", "Ampla_Github", "dados", "funcoes", "d
 
 # Pacotes -----------------------------------------------------------------
 
-library(magrittr) # Ferramentas sintáticas ao dplyr, e.g. %<>%
 library(pdftools) # Funções para extração de dados em PDF
-library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2
 
 # Função ------------------------------------------------------------------
 
 # Define a função
-dados_cef_epr_pasta <-
+dados_cef_eprs <-
   function(f_caminho.pasta.ciweb_c =
              here("Relatórios - Documentos", "Relatorios - CIWEB")) {
     # Consolida os dados dos relatórios EPR da CEF na pasta "Relatorios - CIWEB"
@@ -60,5 +58,5 @@ dados_cef_epr_pasta <-
 #  here("..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
 #    "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
 #  )
-# eprs_t <- dados_cef_epr_pasta()
+# eprs_t <- dados_cef_eprs()
 # shell.exec(f_caminho.pasta.ciweb_c)
