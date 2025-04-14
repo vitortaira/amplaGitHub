@@ -359,5 +359,5 @@ dados_cef_extrato <-
 #  here("..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
 #    "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
 #  )
-extrato <- dados_cef_extrato(f_caminho.arquivo.extrato_cef_c)
+# extrato <- dados_cef_extrato(f_caminho.arquivo.extrato_cef_c)
 # shell.exec(f_caminho.arquivo.extrato_cef_c)

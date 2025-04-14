@@ -1,9 +1,31 @@
 source(
   here(
     "Controladoria - Documentos", "Ampla_Github", "dados", "funcoes",
+    "dados_cef_cmfcns.R"
+  )
+)
+
+source(
+  here(
+    "Controladoria - Documentos", "Ampla_Github", "dados", "funcoes",
     "dados_cef_ecn.R"
   )
 )
+
+source(
+  here(
+    "Controladoria - Documentos", "Ampla_Github", "dados", "funcoes",
+    "dados_cef_eprs.R"
+  )
+)
+
+source(
+  here(
+    "Controladoria - Documentos", "Ampla_Github", "dados", "funcoes",
+    "dados_cef_extratos.R"
+  )
+)
+
 dados_cef <-
   function() {
     dados.cef_l <-

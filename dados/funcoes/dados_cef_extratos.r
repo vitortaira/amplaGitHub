@@ -1,3 +1,5 @@
+source(here("Controladoria - Documentos", "Ampla_Github", "dados", "funcoes", "dados_cef_extrato.R"))
+
 dados_cef_extratos <-
   function(f_caminho.pasta.extratos_c =
              here("Relatórios - Documentos", "Relatorios - Extratos")) {
@@ -30,4 +32,3 @@ dados_cef_extratos <-
       as_tibble()
     return(extratos_t)
   }
-View(dados_cef_extratos())

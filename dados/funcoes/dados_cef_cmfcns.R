@@ -1,3 +1,7 @@
+source(here("Controladoria - Documentos", "Ampla_Github", "dados", "funcoes", "dados_cef_cmfcn.R"))
+
+library(pdftools)
+
 dados_cef_cmfcns <- function(
     f_caminho.pasta.ciweb_c =
       here("Relatórios - Documentos", "Relatorios - CIWEB")) {
