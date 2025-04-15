@@ -132,25 +132,33 @@ dados_cef_dcd_resumo <-
       str_remove("\\s?[A-Za-z].*$")
     # Segunda coluna
     `EMPREENDIMENTO` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)numero do contrato")) %>%
+      str_remove("(?i)numero do contrato\\s?")
     `CODIGO DO PEDIDO` <- linhas.resumo_c %>%
-    `` <- linhas.resumo_c %>%
-    `` <- linhas.resumo_c %>%
-    `` <- linhas.resumo_c %>%
-    `` <- linhas.resumo_c %>%
-    `` <- linhas.resumo_c %>%
-    `` <- linhas.resumo_c %>%
-    `` <- linhas.resumo_c %>%
-    `` <- linhas.resumo_c %>%
-    `` <- linhas.resumo_c %>%
-    `` <- linhas.resumo_c %>%
-    `` <- linhas.resumo_c %>%
-    `` <- linhas.resumo_c %>%
-    `` <- linhas.resumo_c %>%
-    `` <- linhas.resumo_c %>%
-    `` <- linhas.resumo_c %>%
-    `` <- linhas.resumo_c %>%
-    # Consolidando todas as variéveis em uma tabela
-    dados.cef.dcd.resumo_t <-
+      `SITUACAO DO PEDIDO`() <- linhas.resumo_c %>%
+      `DATA TERMINO SUSPENSIVA`() <- linhas.resumo_c %>%
+      `DT INICIO ROTINA ATRASO OBRA`() <- linhas.resumo_c %>%
+      `APOLICE SEGURO SGC`() <- linhas.resumo_c %>%
+      `APOLICE SEGURO SRE`() <- linhas.resumo_c %>%
+      `APOLICE SEGURO SGP`() <- linhas.resumo_c %>%
+      `APOLICE SEGURO SGT`() <- linhas.resumo_c %>%
+      `QUANTIDADE UNID FINANCIADAS`() <- linhas.resumo_c %>%
+      `TOTAL DE FINANCIAMENTO`() <- linhas.resumo_c %>%
+      `TOTAL DE FGTS`() <- linhas.resumo_c %>%
+      `TOTAL R. PROPRIO MUTUARIO`() <- linhas.resumo_c %>%
+      `PERC OBRA EXECUTADA`() <- linhas.resumo_c %>%
+      `DATA DE ASSINATURA`() <- linhas.resumo_c %>%
+      `DATA INICIO OBRA`() <- linhas.resumo_c %>%
+      `DATA TERMINO OBRA ORIGINAL`() <- linhas.resumo_c %>%
+      `DATA TERMINO OBRA ATUAL`() <- linhas.resumo_c %>%
+      `SUBSIDIO CONVENIOS`() <- linhas.resumo_c %>%
+      `REDUCAO MAX GERAL (PJ)`() <- linhas.resumo_c %>%
+      `REDUCAO MAX ETAPA (PJ)`() <- linhas.resumo_c %>%
+      `AMORT. RECOMP. ETAPA (PJ)`() <- linhas.resumo_c %>%
+      `PERC ANTEC (PJ)`() <- linhas.resumo_c %>%
+      # Terceira coluna
+      # Consolidando todas as variéveis em uma tabela
+      dados.cef.dcd.resumo_t() <-
       tibble(
         # Primeira coluna
         `NUMERO DO CONTRATO` = "NUMERO DO CONTRATO",
