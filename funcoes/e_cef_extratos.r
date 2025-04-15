@@ -1,6 +1,10 @@
-source(here("Controladoria - Documentos", "Ampla_Github", "dados", "funcoes", "dados_cef_extrato.R"))
+source(
+  here(
+    "Controladoria - Documentos", "Ampla_Github", "funcoes", "e_cef_extrato.R"
+  )
+)
 
-dados_cef_extratos <-
+e_cef_extratos <-
   function(f_caminho.pasta.extratos_c =
              here("Relatórios - Documentos", "Relatorios - Extratos")) {
     # Consolida os dados dos extratos da CEF na pasta "Relatorios - Extratos"
@@ -20,7 +24,7 @@ dados_cef_extratos <-
       i_caminho.extrato.cef_c in caminhos.extratos.cef_c
     ) {
       extratos_l[[i_caminho.extrato.cef_c]] <-
-        dados_cef_extrato(i_caminho.extrato.cef_c)
+        e_cef_extrato(i_caminho.extrato.cef_c)
       extratos_t <-
         bind_rows(extratos_t, extratos_l[[i_caminho.extrato.cef_c]])
     }

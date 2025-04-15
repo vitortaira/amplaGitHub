@@ -2,12 +2,12 @@
 
 ### RESUMO ###
 
-# dados_cef_extrato() extrai os dados de um arquivo de extrato
+# e_cef_extrato() extrai os dados de um arquivo de extrato
 # da CEF em PDF.
 
 ### UTILIZAÇÃO ###
 
-# dados_cef_extrato(
+# e_cef_extrato(
 #   f_caminho.arquivo_c
 # )
 
@@ -18,13 +18,12 @@
 
 # Pacotes -----------------------------------------------------------------
 
-library(magrittr) # Ferramentas sintáticas ao dplyr, e.g. %<>%
 library(pdftools) # Funções para extração de dados em PDF
 
 # Função ------------------------------------------------------------------
 
 # Define a função
-dados_cef_extrato <-
+e_cef_extrato <-
   function(f_caminho.arquivo.extrato_cef_c) {
     # Define paginas_l
     paginas_l <-
@@ -359,5 +358,5 @@ dados_cef_extrato <-
 #  here("..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
 #    "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
 #  )
-# extrato <- dados_cef_extrato(f_caminho.arquivo.extrato_cef_c)
+# extrato <- e_cef_extrato(f_caminho.arquivo.extrato_cef_c)
 # shell.exec(f_caminho.arquivo.extrato_cef_c)

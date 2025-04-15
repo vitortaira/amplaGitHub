@@ -2,12 +2,12 @@
 
 ### RESUMO ###
 
-# dados_ik() extrai os dados dos arquivos na pasta
+# e_ik() extrai os dados dos arquivos na pasta
 # "Informakon", os preenche numa planilha xlsx, e os retorna numa lista.
 
 ### UTILIZAÇÃO ###
 
-# dados_ik(
+# e_ik(
 #   f_caminho.pasta.ik_c
 # )
 
@@ -26,7 +26,7 @@ library(readxl) # Funções para a importação de arquivos em Excel, e.g. read_
 library(styler) # Funções para formatar códigos, e.g. style_file()
 library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2
 
-dados_ik <-
+e_ik <-
   function(f_caminho.pasta.ik_c =
              here("Controladoria - Documentos", "Ampla_Github", "dados", "informakon"),
            xlsx = FALSE) {
@@ -231,8 +231,8 @@ dados_ik <-
 
 # caminho_arquivo_informakon.c <-
 #  here("informakon", "receitas_informakon_20180101_20250131.xlsx")
-# dados.ik_l <- dados_ik()
-# str(dados_ik())
-# View(dados_ik()$Despesas)
-# View(dados_ik()$Receitas)
-# dados.pasta.informakon.despesas <- dados_ik()$Despesas
+# dados.ik_l <- e_ik()
+# str(e_ik())
+# View(e_ik()$Despesas)
+# View(e_ik()$Receitas)
+# dados.pasta.informakon.despesas <- e_ik()$Despesas

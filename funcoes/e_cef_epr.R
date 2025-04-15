@@ -2,11 +2,11 @@
 
 ### RESUMO ###
 
-# dados_cef_epr() extrai os dados de um relatório EPR da CEF em PDF.
+# e_cef_epr() extrai os dados de um relatório EPR da CEF em PDF.
 
 ### UTILIZAÇÃO ###
 
-# dados_cef_epr(
+# e_cef_epr(
 #   f_caminho.epr_c
 # )
 
@@ -21,7 +21,7 @@ library(pdftools) # Funções para extração de dados em PDF
 # Função ------------------------------------------------------------------
 
 # Define a função
-dados_cef_epr <-
+e_cef_epr <-
   function(f_caminho.epr_c) {
     # Define paginas_l
     paginas_l <-

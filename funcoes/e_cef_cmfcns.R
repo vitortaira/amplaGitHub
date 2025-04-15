@@ -1,8 +1,10 @@
-source(here("Controladoria - Documentos", "Ampla_Github", "dados", "funcoes", "dados_cef_cmfcn.R"))
+source(
+  here("Controladoria - Documentos", "Ampla_Github", "funcoes", "e_cef_cmfcn.R")
+)
 
 library(pdftools)
 
-dados_cef_cmfcns <- function(
+e_cef_cmfcns <- function(
     f_caminho.pasta.ciweb_c =
       here("Relatórios - Documentos", "Relatorios - CIWEB")) {
   # Consolida os dados dos relatórios CMF_CN na pasta "Relatorios - CIWEB"
@@ -18,7 +20,7 @@ dados_cef_cmfcns <- function(
     i_caminho.cmfcn_c in caminhos.cmfcns_c
   ) {
     cmfcns_l[[i_caminho.cmfcn_c]] <-
-      dados_cef_cmfcn(i_caminho.cmfcn_c)
+      e_cef_cmfcn(i_caminho.cmfcn_c)
     cmfcns_t <-
       bind_rows(cmfcns_t, cmfcns_l[[i_caminho.cmfcn_c]])
   }

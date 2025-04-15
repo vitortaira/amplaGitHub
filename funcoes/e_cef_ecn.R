@@ -2,11 +2,11 @@
 
 ### RESUMO ###
 
-# dados_cef_ecn_arquivo() extrai os dados de um arquivo ECN.
+# e_cef_ecn() extrai os dados de um arquivo ECN.
 
 ### UTILIZAÇÃO ###
 
-# dados_cef_ecn_arquivo(
+# e_cef_ecn(
 #   caminho.ecn_c
 # )
 
@@ -16,15 +16,12 @@
 
 # Pacotes -----------------------------------------------------------------
 
-library(magrittr) # Ferramentas sintáticas ao dplyr, e.g. %<>%
 library(openxlsx) # Funções para preencher arquivos .xlsx
 library(pdftools) # Funções para extração de dados em PDF
 library(readxl) # Funções para a importação de arquivos em Excel
-library(styler) # Funções para formatar códigos, e.g. style_file()
-library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2
 
 # Criando função para extrair os dados dos arquivos ECN em PDF
-dados_cef_ecn_arquivo <-
+e_cef_ecn <-
   function(caminho.ecn_c, xlsx = FALSE) {
     # paginas_l e linhas_vc -------------------------------------------------
 
@@ -374,7 +371,7 @@ dados_cef_ecn_arquivo <-
         `Data de consulta`,
         Arquivo
       )
-    ## Criando a lista a ser retornada pela função dados_cef_ecn_arquivo()
+    ## Criando a lista a ser retornada pela função e_cef_ecn()
     dados.arquivo.ecn_l <- list(
       Empreendimento = empreendimento_df,
       Emprestimo = emprestimo_df,
@@ -578,7 +575,7 @@ dados_cef_ecn_arquivo <-
         caminho.ecn_c
       ))
     }
-    ### Definindo a lista como o retorno da função dados_cef_ecn_arquivo()
+    ### Definindo a lista como o retorno da função e_cef_ecn()
     return(dados.arquivo.ecn_l)
   }
 # Teste -------------------------------------------------------------------
@@ -589,4 +586,4 @@ dados_cef_ecn_arquivo <-
 #    "Relatorios - CIWEB/3. UP Estação Vila Sonia/02.01.25/ECN/",
 #    "20250102_121821_000_PP_177770020232_RELATORIO_EMPREENDIMENTO_CONSTRUCAO.PDF"
 #  )
-# str(dados_cef_ecn_arquivo(caminho.ecn_c))
+# str(e_cef_ecn(caminho.ecn_c))

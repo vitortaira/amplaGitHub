@@ -2,12 +2,12 @@
 
 ### RESUMO ###
 
-# dados_cef_ecn() extrai e consolida os dados dos relatórios ECN da CEF
+# e_cef_ecns() extrai e consolida os dados dos relatórios ECN da CEF
 # que estão na pasta "Relatorios - CIWEB".
 
 ### UTILIZAÇÃO ###
 
-# dados_cef_ecn(
+# e_cef_ecns(
 #   f_caminho.pasta.ciweb_c
 # )
 
@@ -17,21 +17,18 @@
 
 source(
   here(
-    "Controladoria - Documentos", "Ampla_Github", "dados", "funcoes",
-    "dados_cef_ecn_arquivo.R"
+    "Controladoria - Documentos", "Ampla_Github", "funcoes", "e_cef_ecn.R"
   )
 )
 
 # Pacotes -----------------------------------------------------------------
 
-library(magrittr) # Ferramentas sintáticas ao dplyr, e.g. %<>%
 library(pdftools) # Funções para extração de dados em PDF
-library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2
 
 # Função ------------------------------------------------------------------
 
 # Define a função
-dados_cef_ecn <-
+e_cef_ecns <-
   function(f_caminho.pasta.ciweb_c =
              here("Relatórios - Documentos", "Relatorios - CIWEB")) {
     # Consolida os dados dos relatórios ECN da CEF na pasta "Relatorios - CIWEB"
@@ -40,19 +37,19 @@ dados_cef_ecn <-
       keep(~ str_ends(.x, "(?i)empreendimento_construcao.pdf"))
     ecns.empreendimento_t <-
       caminhos.ecn_c %>%
-      map_dfr(~ dados_cef_ecn_arquivo(.x)$Empreendimento) %>%
+      map_dfr(~ e_cef_ecn(.x)$Empreendimento) %>%
       distinct()
     ecns.emprestimo_t <-
       caminhos.ecn_c %>%
-      map_dfr(~ dados_cef_ecn_arquivo(.x)$Emprestimo) %>%
+      map_dfr(~ e_cef_ecn(.x)$Emprestimo) %>%
       distinct()
     ecns.consolidado_t <-
       caminhos.ecn_c %>%
-      map_dfr(~ dados_cef_ecn_arquivo(.x)$Consolidado) %>%
+      map_dfr(~ e_cef_ecn(.x)$Consolidado) %>%
       distinct()
     ecns.unidades_t <-
       caminhos.ecn_c %>%
-      map_dfr(~ dados_cef_ecn_arquivo(.x)$Unidades) %>%
+      map_dfr(~ e_cef_ecn(.x)$Unidades) %>%
       distinct()
     ecns_l <-
       list(
@@ -74,5 +71,5 @@ dados_cef_ecn <-
 #  here("..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
 #    "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
 #  )
-# ecns_t <- dados_cef_ecn()
+# ecns_t <- e_cef_ecns()
 # shell.exec(f_caminho.pasta.ciweb_c)

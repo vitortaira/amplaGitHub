@@ -2,11 +2,11 @@
 
 ### RESUMO ###
 
-# dados_cef_dcd_resumo() extrai os dados de um relatório DCD da CEF em PDF.
+# e_cef_dcd_resumo() extrai os dados de um relatório DCD da CEF em PDF.
 
 ### UTILIZAÇÃO ###
 
-# dados_cef_dcd_resumo(
+# e_cef_dcd_resumo(
 #   f_caminho.arquivo_c
 # )
 
@@ -21,7 +21,7 @@ library(pdftools) # Funções para extração de dados em PDF
 # Função ------------------------------------------------------------------
 
 # Define a função
-dados_cef_dcd_resumo <-
+e_cef_dcd_resumo <-
   function(f_caminho.arquivo_c) {
     # Define paginas_l
     paginas_l <-

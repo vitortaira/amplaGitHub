@@ -2,11 +2,11 @@
 
 ### RESUMO ###
 
-# dados_cef_cmfcn() extrai os dados de um arquivo CMF_CN.
+# e_cef_cmfcn() extrai os dados de um arquivo CMF_CN.
 
 ### UTILIZAÇÃO ###
 
-# dados_cef_cmfcn(
+# e_cef_cmfcn(
 #   f_f_caminho.arquivo.cmfcn_c
 # )
 
@@ -21,7 +21,7 @@ library(pdftools) # Funções para extração de dados em PDF
 # Função ------------------------------------------------------------------
 
 # Define a função
-dados_cef_cmfcn <-
+e_cef_cmfcn <-
   function(f_caminho.arquivo.cmfcn_c) {
     # paginas_l e linhas_c ----------------------------------------------------
 
@@ -213,5 +213,5 @@ dados_cef_cmfcn <-
 #    "Relatórios - Documentos", "Relatorios - CIWEB", "2. UP Jardim Prudencia",
 #    "11.03.25", "CMF", "20250311_123907_698_PP_177770016646_MOV_FINANC_CN.pdf"
 #  )
-# dados_cef_cmfcn(f_caminho.arquivo.cmfcn_c)
+# e_cef_cmfcn(f_caminho.arquivo.cmfcn_c)
 # shell.exec(f_caminho.arquivo.cmfcn_c)

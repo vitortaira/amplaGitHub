@@ -1,0 +1,21 @@
+source(
+  here(
+    "Controladoria - Documentos", "Ampla_Github", "funcoes", "e_cef.R"
+  )
+)
+
+source(
+  here(
+    "Controladoria - Documentos", "Ampla_Github", "funcoes", "e_ik.R"
+  )
+)
+
+e_dados <-
+  function() {
+    dados_l <-
+      list(
+        "cef" = e_cef(),
+        "ik" = e_ik()
+      )
+    return(dados_l)
+  }
