@@ -8,7 +8,7 @@ source(
 source(
   here(
     "Controladoria - Documentos", "Ampla_Github", "funcoes",
-    "e_cef_ecn.R"
+    "e_cef_ecns.R"
   )
 )
 

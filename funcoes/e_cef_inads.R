@@ -1,21 +1,15 @@
-
-library(here) # Facilita a identificação de caminhos
-library(magrittr) # Ferramentas sintáticas ao dplyr, e.g. %<>%
 library(openxlsx) # Funções para preencher arquivos .xlsx
 library(readxl) # Importação de arquivos em Excel, e.g. read_excel()
-library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2
 library(viridisLite) # Mapeamento de cores
 
-#source(here("Controladoria - Documentos", "Ampla_Github", "dados", "funcoes", "extrair_dados_arquivo_inadimplentes.R"))
+# source(here("Controladoria - Documentos", "Ampla_Github", "dados", "funcoes", "extrair_dados_arquivo_inadimplentes.R"))
 source(here("dados", "funcoes", "extrair_dados_arquivo_inadimplentes.R"))
 
-extrair_dados_pasta_inadimplentes <-
+e_cef_inads <-
   function(
-    caminho_pasta_inadimplentes.c = here("dados", "cef", "inadimplentes"),
-    xlsx = TRUE
-  ) {
-
-# Formatar todos os arquivos da pasta -------------------------------------
+      caminho_pasta_inadimplentes.c = here("dados", "cef", "inadimplentes"),
+      xlsx = TRUE) {
+    # Formatar todos os arquivos da pasta -------------------------------------
 
     # Todos os arquivos na pasta "inadimplentes"
     arquivos.caminhos.todos_vc <-
@@ -40,10 +34,9 @@ extrair_dados_pasta_inadimplentes <-
                 NULL
               }
             )
-            if (!is.null(dados.pasta_df)) {
-              message(.x, " extraído com sucesso.")
-
-            }
+          if (!is.null(dados.pasta_df)) {
+            message(.x, " extraído com sucesso.")
+          }
           dados.pasta_df
         }
       ) %>%
@@ -62,7 +55,7 @@ extrair_dados_pasta_inadimplentes <-
       # Criando uma cópia de "Template.xlsx"
       file.copy(
         here("Controladoria - Documentos", "Ampla_Github", "dados", "cef", "inadimplentes", "formatados", "Template.xlsx"),
-        #here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c),
+        # here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c),
         paste0("C:/Users/Ampla/Documents/", nome.xlsx_c),
         overwrite = T
       )
@@ -70,7 +63,7 @@ extrair_dados_pasta_inadimplentes <-
       xlsx <-
         loadWorkbook(
           paste0("C:/Users/Ampla/Documents/", nome.xlsx_c)
-          #here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c)
+          # here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c)
         )
       deleteNamedRegion(xlsx, name = "parcelas")
       # Preenchendo os dados da aba "Parcelas"
@@ -193,8 +186,10 @@ extrair_dados_pasta_inadimplentes <-
         cols =
           which(
             colnames(dados.pasta_df) %in%
-              c("Principal", "Juros", "Encargos", "Juros de Mora", "Multa",
-                "Seguro", "Total")
+              c(
+                "Principal", "Juros", "Encargos", "Juros de Mora", "Multa",
+                "Seguro", "Total"
+              )
           ),
         gridExpand = T
       )
@@ -238,9 +233,9 @@ extrair_dados_pasta_inadimplentes <-
   }
 
 
-  # Teste -------------------------------------------------------------------
+# Teste -------------------------------------------------------------------
 
-#caminho_arquivo_inadimplentes.c <-
+# caminho_arquivo_inadimplentes.c <-
 #  here("dados", "cef", "inadimplentes", "inads. pomp.xlsx")
-#str(extrair_dados_inadimplentes(caminho_arquivo_inadimplentes.c))
-#teste=extrair_dados_pasta_inadimplentes(xlsx=F)
+# str(extrair_dados_inadimplentes(caminho_arquivo_inadimplentes.c))
+# teste=e_cef_inads(xlsx=F)

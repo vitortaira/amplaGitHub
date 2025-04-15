@@ -1,20 +1,17 @@
 # Descrição ---------------------------------------------------------------
 
 # Condições para o funcionamento:
-  # Arquivos em ".xlsx":
-    # (1) Estejam na pasta ".../Controladoria - Docmentos/Ampla_Github/dados/cef
-    # /inadimplentes
-    # (2) Sejam nomeados somente com um breve nome do empreendimento
-    # (eg "sonia1", "pompeia", etc.)
+# Arquivos em ".xlsx":
+# (1) Estejam na pasta ".../Controladoria - Docmentos/Ampla_Github/dados/cef
+# /inadimplentes
+# (2) Sejam nomeados somente com um breve nome do empreendimento
+# (eg "sonia1", "pompeia", etc.)
 
-library(here) # Facilita a identificação de caminhos
-library(magrittr) # Ferramentas sintáticas ao dplyr, e.g. %<>%
 library(openxlsx) # Funções para preencher arquivos .xlsx
 library(readxl) # Importação de arquivos em Excel, e.g. read_excel()
-library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2
 library(viridisLite) # Mapeamento de cores
 
-extrair_dados_arquivo_inadimplentes <-
+e_cef_inad <-
   function(caminho_arquivo_inadimplentes.c) {
     # Extraindo o vetor de linhas
     linhas_vc <-
@@ -101,9 +98,9 @@ extrair_dados_arquivo_inadimplentes <-
     indice.parcelas_vn <- indice.parcelas_l %>% unlist()
     parcelas_df <-
       linhas_vc[indice.parcelas_vn] %>%
-      #str_remove("Imobiliaria/Corretor:") %>%
-      #keep(~ .x != "") %>%
-      str_trim %>%
+      # str_remove("Imobiliaria/Corretor:") %>%
+      # keep(~ .x != "") %>%
+      str_trim() %>%
       as_tibble() %>%
       separate_wider_delim(
         cols = everything(),
@@ -124,39 +121,39 @@ extrair_dados_arquivo_inadimplentes <-
         `R/F` = as.character(`R/F`),
         Principal =
           Principal %>%
-          str_remove_all("\\.") %>%
-          str_replace("\\,", "\\.") %>%
-          as.numeric(),
+            str_remove_all("\\.") %>%
+            str_replace("\\,", "\\.") %>%
+            as.numeric(),
         Juros =
           Juros %>%
-          str_remove_all("\\.") %>%
-          str_replace("\\,", "\\.") %>%
-          as.numeric(),
+            str_remove_all("\\.") %>%
+            str_replace("\\,", "\\.") %>%
+            as.numeric(),
         Encargos =
           Encargos %>%
-          str_remove_all("\\.") %>%
-          str_replace("\\,", "\\.") %>%
-          as.numeric(),
+            str_remove_all("\\.") %>%
+            str_replace("\\,", "\\.") %>%
+            as.numeric(),
         `Juros de Mora` =
           `Juros de Mora` %>%
-          str_remove_all("\\.") %>%
-          str_replace("\\,", "\\.") %>%
-          as.numeric(),
+            str_remove_all("\\.") %>%
+            str_replace("\\,", "\\.") %>%
+            as.numeric(),
         Multa =
           Multa %>%
-          str_remove_all("\\.") %>%
-          str_replace("\\,", "\\.") %>%
-          as.numeric(),
+            str_remove_all("\\.") %>%
+            str_replace("\\,", "\\.") %>%
+            as.numeric(),
         Seguro =
           Seguro %>%
-          str_remove_all("\\.") %>%
-          str_replace("\\,", "\\.") %>%
-          as.numeric(),
+            str_remove_all("\\.") %>%
+            str_replace("\\,", "\\.") %>%
+            as.numeric(),
         Total =
           Total %>%
-          str_remove_all("\\.") %>%
-          str_replace("\\,", "\\.") %>%
-          as.numeric(),
+            str_remove_all("\\.") %>%
+            str_replace("\\,", "\\.") %>%
+            as.numeric(),
         `Data da consulta` =
           as.POSIXct(data.impressao_p, format = "%Y-%m-%d %H:%M:%S"),
         Atraso = as.integer(Atraso),
@@ -176,12 +173,12 @@ extrair_dados_arquivo_inadimplentes <-
 
 # Teste -------------------------------------------------------------------
 
-#caminho_arquivo_inadimplentes.c <-
+# caminho_arquivo_inadimplentes.c <-
 #  here(
 #    "Controladoria - Documentos", "Ampla_Github", "dados", "cef",
 #    "inadimplentes", "prudência.xlsx"
 #  )
-#prudencia_t=extrair_dados_arquivo_inadimplentes(caminho_arquivo_inadimplentes.c)
-#str(extrair_dados_arquivo_inadimplentes(caminho_arquivo_inadimplentes.c))
-#View(extrair_dados_arquivo_inadimplentes(caminho_arquivo_inadimplentes.c)$Parcelas)
-#View(extrair_dados_arquivo_inadimplentes(caminho_arquivo_inadimplentes.c)$Consolidado)
+# prudencia_t=e_cef_inad(caminho_arquivo_inadimplentes.c)
+# str(e_cef_inad(caminho_arquivo_inadimplentes.c))
+# View(e_cef_inad(caminho_arquivo_inadimplentes.c)$Parcelas)
+# View(e_cef_inad(caminho_arquivo_inadimplentes.c)$Consolidado)

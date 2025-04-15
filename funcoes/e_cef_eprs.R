@@ -42,7 +42,7 @@ e_cef_eprs <-
       i_caminho.cef.epr_c in caminhos.cef.epr_c
     ) {
       eprs_l[[i_caminho.cef.epr_c]] <-
-        dados_cef_epr(i_caminho.cef.epr_c)
+        e_cef_epr(i_caminho.cef.epr_c)
       eprs_t <-
         bind_rows(eprs_t, eprs_l[[i_caminho.cef.epr_c]])
     }
