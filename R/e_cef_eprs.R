@@ -15,10 +15,6 @@
 
 # f_caminho.pasta.ciweb_c: String do caminho da pasta "Relatorios - CIWEB".
 
-source(
-  here("Controladoria - Documentos", "AmplaR", "R", "e_cef_epr.R")
-)
-
 # Pacotes -----------------------------------------------------------------
 
 library(pdftools) # Funções para extração de dados em PDF

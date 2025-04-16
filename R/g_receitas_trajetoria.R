@@ -1,15 +1,14 @@
 ig_despesas_trajetoria <- function(dados_pasta_informakon.df, stack_var) {
-  
   # Check column names
-  print(colnames(dados_pasta_informakon.df))  # Debugging step
-  
+  print(colnames(dados_pasta_informakon.df)) # Debugging step
+
   # Ensure correct column reference
   p <- ggplot(
     data = dados_pasta_informakon.df,
     aes(
-      x    = Mês,
-      y    = .data[["Total Pago"]],  # Corrected column reference
-      fill = .data[[stack_var]]      # Dynamically selecting the grouping variable
+      x    = `Mês`,
+      y    = .data[["Total Pago"]], # Corrected column reference
+      fill = .data[[stack_var]] # Dynamically selecting the grouping variable
     )
   ) +
     geom_bar(stat = "identity", position = "stack") +
@@ -27,11 +26,11 @@ ig_despesas_trajetoria <- function(dados_pasta_informakon.df, stack_var) {
       axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
       legend.position = "bottom"
     )
-  
+
   # Convert to plotly
   p_plotly <- ggplotly(p) %>%
     layout(width = 1200, height = 900, autosize = FALSE)
-  
+
   # If you’re using tagList within a Shiny app:
   tagList(
     tags$h4("[Gráfico] Trajetória das despesas"),

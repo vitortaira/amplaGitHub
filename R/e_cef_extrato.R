@@ -53,10 +53,6 @@
 #'
 #' @export
 
-# Pacotes -----------------------------------------------------------------
-
-library(pdftools) # Funções para extração de dados em PDF
-
 e_cef_extrato <-
   function(f_caminho.arquivo_c) {
     # Define paginas_l

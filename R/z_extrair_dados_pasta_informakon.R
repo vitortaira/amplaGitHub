@@ -26,10 +26,10 @@ library(readxl) # Funções para a importação de arquivos em Excel, e.g. read_
 library(styler) # Funções para formatar códigos, e.g. style_file()
 library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2
 
-extrair_dados_pasta_informakon <- 
+extrair_dados_pasta_informakon <-
   function(caminho_pasta_informakon.c = here("dados", "informakon")) {
-###############################################################################
-    extrair_caminhos_relatorio_informakon <- 
+    ###############################################################################
+    extrair_caminhos_relatorio_informakon <-
       function(caminho_pasta_informakon.c = here("dados", "informakon")) {
         if (!dir.exists(caminho_pasta_informakon.c)) {
           stop("A pasta 'informakon' não foi encontrada.")
@@ -39,22 +39,25 @@ extrair_dados_pasta_informakon <-
           setdiff(
             list.files(here("dados", "informakon"), full.names = T)[
               list.files(here("dados", "informakon"), full.names = T) %>%
-                basename() %>% 
+                basename() %>%
                 str_which("^despesas")
             ],
             c(
               list.files(here("dados", "informakon"),
-                         full.names = T)[str_which(list.files(here("dados", "informakon")),
-                                                   "^Informakon.*")]
+                full.names = T
+              )[str_which(
+                list.files(here("dados", "informakon")),
+                "^Informakon.*"
+              )]
             )
           )
         data.final.despesas_vd <- c()
         for (caminho_arquivo_despesas.c in caminhos.arquivos.despesas_vc) {
-          data.final.despesas_vd[caminho_arquivo_despesas.c] <- 
+          data.final.despesas_vd[caminho_arquivo_despesas.c] <-
             basename(caminho_arquivo_despesas.c) %>%
             str_extract("[^_]+$") %>%
-            str_remove(".xlsx") %>% 
-            unname() %>% 
+            str_remove(".xlsx") %>%
+            unname() %>%
             as.Date(format = "%Y%m%d")
         }
         data.final.despesas_vd %<>% unname %>% as.Date()
@@ -64,14 +67,17 @@ extrair_dados_pasta_informakon <-
           setdiff(
             list.files(here("dados", "informakon"), full.names = T)[
               list.files(here("dados", "informakon"), full.names = T) %>%
-                basename() %>% 
+                basename() %>%
                 str_which("^receitas")
             ],
             c(
               list.files(
                 here("dados", "informakon"),
-                full.names = T)[str_which(list.files(here("dados", "informakon")),
-                                          "^Informakon.*")]
+                full.names = T
+              )[str_which(
+                list.files(here("dados", "informakon")),
+                "^Informakon.*"
+              )]
             )
           )
         data.final.receitas_vd <- c()
@@ -79,23 +85,23 @@ extrair_dados_pasta_informakon <-
           data.final.receitas_vd[caminho_arquivo_receitas.c] <-
             basename(caminho_arquivo_receitas.c) %>%
             str_extract("[^_]+$") %>%
-            str_remove(".xlsx") %>% 
+            str_remove(".xlsx") %>%
             unname() %>%
             as.Date(format = "%Y%m%d")
         }
         data.final.receitas_vd %<>% unname %>% as.Date()
         data.final.receitas_d <- max(data.final.receitas_vd) %>% format("%Y%m%d")
         # Mais recentes
-        caminhos.relatorio.informakon_l <- 
+        caminhos.relatorio.informakon_l <-
           list(
-            "Despesas" = 
+            "Despesas" =
               caminhos.arquivos.despesas_vc[
                 str_which(
                   caminhos.arquivos.despesas_vc,
                   data.final.despesas_d
                 )
               ],
-            "Receitas" = 
+            "Receitas" =
               caminhos.arquivos.receitas_vc[
                 str_which(
                   caminhos.arquivos.receitas_vc,
@@ -103,18 +109,18 @@ extrair_dados_pasta_informakon <-
                 )
               ]
           )
-        return(caminhos.relatorio.informakon_l)  
+        return(caminhos.relatorio.informakon_l)
       }
-    caminhos.arquivos.informakon_vc <- 
+    caminhos.arquivos.informakon_vc <-
       extrair_caminhos_relatorio_informakon()
-###############################################################################
-    #caminhos.arquivos.informakon_vc <- 
+    ###############################################################################
+    # caminhos.arquivos.informakon_vc <-
     #  list.files(
     #    caminho_pasta_informakon.c,
     #    full.names = T,
     #    recursive = T
     #  )
-    #caminhos.arquivos.informakon_vc <- 
+    # caminhos.arquivos.informakon_vc <-
     #  caminhos.arquivos.informakon_vc[
     #    - str_which(
     #      basename(caminhos.arquivos.informakon_vc),
@@ -123,105 +129,104 @@ extrair_dados_pasta_informakon <-
     #  ]
     dados.pasta.informakon_l <- list()
     for (caminho_arquivo_informakon.c in caminhos.arquivos.informakon_vc) {
+      # Despesas ----------------------------------------------------------------
 
-# Despesas ----------------------------------------------------------------
-
-      if (caminho_arquivo_informakon.c %>% basename %>% str_detect("^despesas")) {
-        dados.pasta.informakon_l[["Despesas"]] <- 
-          read_excel(caminho_arquivo_informakon.c) %>% 
+      if (caminho_arquivo_informakon.c %>% basename() %>% str_detect("^despesas")) {
+        dados.pasta.informakon_l[["Despesas"]] <-
+          read_excel(caminho_arquivo_informakon.c) %>%
           mutate(
-            `a/c`                    = as.character(`a/c`),
-            Acréscimos               = as.numeric(Acréscimos),
-            `Agente Financeiro`      = as.character(`Agente Financeiro`),
-            `Centro de Negócio`      = as.character(`Centro de Negócio`),
-            `Cod. Centro`            = as.character(`Cod. Centro`),
-            Credor                   = as.character(Credor),
-            `Data Doc Pagto`         = as.Date(`Data Doc Pagto`),
-            `Data Liberação`         = as.Date(`Data Liberação`),
-            `Data Vencimento`        = as.Date(`Data Vencimento`),
+            `a/c` = as.character(`a/c`),
+            `Acréscimos` = as.numeric(`Acréscimos`),
+            `Agente Financeiro` = as.character(`Agente Financeiro`),
+            `Centro de Negócio` = as.character(`Centro de Negócio`),
+            `Cod. Centro` = as.character(`Cod. Centro`),
+            Credor = as.character(Credor),
+            `Data Doc Pagto` = as.Date(`Data Doc Pagto`),
+            `Data Liberação` = as.Date(`Data Liberação`),
+            `Data Vencimento` = as.Date(`Data Vencimento`),
             `Data Vencimento Origem` = as.Date(`Data Vencimento Origem`),
-            Descontos                = as.numeric(Descontos),
-            `Descontos Adiant.`      = as.numeric(`Descontos Adiant.`),
-            Documento                = as.character(`Documento`),
-            Empresa                  = `Cod. Centro` %>% str_sub(1,3),
-            Encargos                 = as.numeric(Encargos),
-            Mês                      = floor_date(`Data Doc Pagto`, "month"),
-            Multa                    = as.numeric(Multa),
-            `N° Conta`               = as.character(`N° Conta`),
-            `Nº Entrada`             = as.integer(`Nº Entrada`),
-            Observação               = as.character(Observação),
-            Parcela                  = as.character(Parcela),
-            `Total Pago`             = as.numeric(`Total Pago`),
-            `Valor Titulo`           = as.numeric(`Valor Titulo`)
-          ) %>% 
+            Descontos = as.numeric(Descontos),
+            `Descontos Adiant.` = as.numeric(`Descontos Adiant.`),
+            Documento = as.character(`Documento`),
+            Empresa = `Cod. Centro` %>% str_sub(1, 3),
+            Encargos = as.numeric(Encargos),
+            `Mês` = floor_date(`Data Doc Pagto`, "month"),
+            Multa = as.numeric(Multa),
+            `N° Conta` = as.character(`N° Conta`),
+            `Nº Entrada` = as.integer(`Nº Entrada`),
+            `Observação` = as.character(`Observação`),
+            Parcela = as.character(Parcela),
+            `Total Pago` = as.numeric(`Total Pago`),
+            `Valor Titulo` = as.numeric(`Valor Titulo`)
+          ) %>%
           filter(!is.na(`Cod. Centro`))
       }
 
-# Receitas ----------------------------------------------------------------
+      # Receitas ----------------------------------------------------------------
 
-      if (caminho_arquivo_informakon.c %>% basename %>% str_detect("^receitas")) {
-        dados.pasta.informakon_l[["Receitas"]] <- 
-          read_excel(caminho_arquivo_informakon.c, skip = 3) %>% 
+      if (caminho_arquivo_informakon.c %>% basename() %>% str_detect("^receitas")) {
+        dados.pasta.informakon_l[["Receitas"]] <-
+          read_excel(caminho_arquivo_informakon.c, skip = 3) %>%
           mutate(
-            Agente          = as.character(Agente),
-            Apto            = as.integer(Apto),
-            `Cart.`         = as.factor(`Cart.`),
-            Cliente         = as.character(Cliente),
-            Contrato        = as.character(Contrato),
-            `Data Pagto`    = as.Date(`Data Pagto`, format = "%d/%m/%Y"),
-            Desconto        = as.numeric(Desconto),
-            Elemento        = as.character(Elemento),
-            Empreendimento  = as.character(Empreendimento),
-            Encargos        = as.numeric(Encargos),
-            Esp             = as.character(Esp),
-            Juros           = as.numeric(Juros),
+            Agente = as.character(Agente),
+            Apto = as.integer(Apto),
+            `Cart.` = as.factor(`Cart.`),
+            Cliente = as.character(Cliente),
+            Contrato = as.character(Contrato),
+            `Data Pagto` = as.Date(`Data Pagto`, format = "%d/%m/%Y"),
+            Desconto = as.numeric(Desconto),
+            Elemento = as.character(Elemento),
+            Empreendimento = as.character(Empreendimento),
+            Encargos = as.numeric(Encargos),
+            Esp = as.character(Esp),
+            Juros = as.numeric(Juros),
             `Juros de Mora` = as.numeric(`Juros de Mora`),
-            Mês             = floor_date(`Data Pagto`, "month"),
-            Multa           = as.numeric(Multa),
-            Parcela         = as.character(Parcela),
-            Principal       = as.numeric(Principal),
-            `R/F`           = as.factor(`R/F`),
-            Reajuste        = as.numeric(Reajuste),
-            Seguro          = as.numeric(Seguro),
-            Torre           = as.character(Torre),
-            Total           = as.numeric(Total),
-            Vencimento      = as.Date(Vencimento)
+            `Mês` = floor_date(`Data Pagto`, "month"),
+            Multa = as.numeric(Multa),
+            Parcela = as.character(Parcela),
+            Principal = as.numeric(Principal),
+            `R/F` = as.factor(`R/F`),
+            Reajuste = as.numeric(Reajuste),
+            Seguro = as.numeric(Seguro),
+            Torre = as.character(Torre),
+            Total = as.numeric(Total),
+            Vencimento = as.Date(Vencimento)
           )
       }
     }
 
-# Balanço patrimonial -----------------------------------------------------
-    
+    # Balanço patrimonial -----------------------------------------------------
+
     # Despesas
-    dados.despesas.bp.informakon_df <- 
+    dados.despesas.bp.informakon_df <-
       dados.pasta.informakon_l[["Despesas"]] %>%
-      group_by(`Centro de Negócio`, Mês) %>% 
+      group_by(`Centro de Negócio`, `Mês`) %>%
       summarise(
         `Total Pago no Mês` = sum(`Total Pago`, na.rm = T),
         .groups = "drop"
-      ) %>% 
+      ) %>%
       ungroup()
     # Receitas
-    dados.receitas.bp.informakon_df <- 
+    dados.receitas.bp.informakon_df <-
       dados.pasta.informakon_l[["Receitas"]] %>%
-      group_by(Empreendimento, Mês) %>% 
+      group_by(Empreendimento, `Mês`) %>%
       summarise(
         Total = sum(Total, na.rm = T),
         .groups = "drop"
-      ) %>% 
+      ) %>%
       ungroup()
     # Adicionando a dados.pasta.informakon_l
-    dados.pasta.informakon_l <- 
+    dados.pasta.informakon_l <-
       c(
         dados.pasta.informakon_l,
         list(Despesas.BP = dados.despesas.bp.informakon_df),
         list(Receitas.BP = dados.receitas.bp.informakon_df)
       )
 
-# xlsx --------------------------------------------------------------------
+    # xlsx --------------------------------------------------------------------
 
     # Criando o arquivo xlsx
-    xlsx <- 
+    xlsx <-
       createWorkbook()
     # Aba "Despesas"
     addWorksheet(
@@ -230,29 +235,29 @@ extrair_dados_pasta_informakon <-
       gridLines = F,
       tabColour = "red"
     )
-      # Popular a aba
+    # Popular a aba
     writeData(
       xlsx,
       sheet = "Despesas",
       dados.pasta.informakon_l[["Despesas"]]
     )
-      # Congelar a primeira linha
+    # Congelar a primeira linha
     freezePane(xlsx, "Despesas", firstRow = T)
-      # Adicionar filtro à tabela
+    # Adicionar filtro à tabela
     addFilter(
       xlsx,
       "Despesas",
       rows = 1,
       cols = 1:ncol(dados.pasta.informakon_l[["Despesas"]])
     )
-      # Formatar largura das colunas da tabela
+    # Formatar largura das colunas da tabela
     setColWidths(
       xlsx,
       sheet = "Despesas",
       cols = 1:ncol(dados.pasta.informakon_l[["Despesas"]]),
       widths = 18
     )
-      # Formatação geral da tabela
+    # Formatação geral da tabela
     addStyle(
       xlsx,
       sheet = "Despesas",
@@ -266,7 +271,7 @@ extrair_dados_pasta_informakon <-
           valign = "center"
         )
     )
-      # Formatar cabeçalho
+    # Formatar cabeçalho
     addStyle(
       xlsx,
       sheet = "Despesas",
@@ -285,16 +290,16 @@ extrair_dados_pasta_informakon <-
           wrapText = T
         )
     )
-      # Formatar colunas do tipo data
+    # Formatar colunas do tipo data
     addStyle(
       xlsx,
       sheet = "Despesas",
       rows = 1:nrow(dados.pasta.informakon_l[["Despesas"]]) + 1,
-      cols = 
+      cols =
         dados.pasta.informakon_l[["Despesas"]] %>%
-        summarise(across(everything(), ~ inherits(.x, "Date"))) %>% 
-        unlist() %>% 
-        which(),
+          summarise(across(everything(), ~ inherits(.x, "Date"))) %>%
+          unlist() %>%
+          which(),
       gridExpand = T,
       style =
         createStyle(
@@ -304,16 +309,16 @@ extrair_dados_pasta_informakon <-
           numFmt = "DD/MM/YYYY"
         )
     )
-      # Formatar colunas do tipo numérico
+    # Formatar colunas do tipo numérico
     addStyle(
       xlsx,
       sheet = "Despesas",
       rows = 1:nrow(dados.pasta.informakon_l[["Despesas"]]) + 1,
-      cols = 
+      cols =
         dados.pasta.informakon_l[["Despesas"]] %>%
-        summarise(across(everything(), ~ inherits(.x, "numeric"))) %>% 
-        unlist() %>% 
-        which(),
+          summarise(across(everything(), ~ inherits(.x, "numeric"))) %>%
+          unlist() %>%
+          which(),
       gridExpand = T,
       style =
         createStyle(
@@ -323,16 +328,16 @@ extrair_dados_pasta_informakon <-
           numFmt = "#,##0.00"
         )
     )
-      # Formatar colunas do tipo inteiro
+    # Formatar colunas do tipo inteiro
     addStyle(
       xlsx,
       sheet = "Despesas",
       rows = 1:nrow(dados.pasta.informakon_l[["Despesas"]]) + 1,
-      cols = 
+      cols =
         dados.pasta.informakon_l[["Despesas"]] %>%
-        summarise(across(everything(), ~ inherits(.x, "integer"))) %>% 
-        unlist() %>% 
-        which(),
+          summarise(across(everything(), ~ inherits(.x, "integer"))) %>%
+          unlist() %>%
+          which(),
       gridExpand = T,
       style =
         createStyle(
@@ -342,16 +347,16 @@ extrair_dados_pasta_informakon <-
           numFmt = "#,##0"
         )
     )
-      # Formatar colunas do tipo texto
+    # Formatar colunas do tipo texto
     addStyle(
       xlsx,
       sheet = "Despesas",
       rows = 1:nrow(dados.pasta.informakon_l[["Despesas"]]) + 1,
-      cols = 
+      cols =
         dados.pasta.informakon_l[["Despesas"]] %>%
-        summarise(across(everything(), ~ inherits(.x, "character"))) %>% 
-        unlist() %>% 
-        which(),
+          summarise(across(everything(), ~ inherits(.x, "character"))) %>%
+          unlist() %>%
+          which(),
       gridExpand = T,
       style =
         createStyle(
@@ -367,29 +372,29 @@ extrair_dados_pasta_informakon <-
       gridLines = F,
       tabColour = "green"
     )
-      # Popular a aba
+    # Popular a aba
     writeData(
       xlsx,
       sheet = "Receitas",
       dados.pasta.informakon_l[["Receitas"]]
     )
-      # Congelar a primeira linha
+    # Congelar a primeira linha
     freezePane(xlsx, "Receitas", firstRow = T)
-      # Adicionar filtro à tabela
+    # Adicionar filtro à tabela
     addFilter(
       xlsx,
       "Receitas",
       rows = 1,
       cols = 1:ncol(dados.pasta.informakon_l[["Receitas"]])
     )
-      # Formatar largura das colunas da tabela
+    # Formatar largura das colunas da tabela
     setColWidths(
       xlsx,
       sheet = "Receitas",
       cols = 1:ncol(dados.pasta.informakon_l[["Receitas"]]),
       widths = 18
     )
-      # Formatação geral da tabela
+    # Formatação geral da tabela
     addStyle(
       xlsx,
       sheet = "Receitas",
@@ -403,7 +408,7 @@ extrair_dados_pasta_informakon <-
           valign = "center"
         )
     )
-      # Formatar cabeçalho
+    # Formatar cabeçalho
     addStyle(
       xlsx,
       sheet = "Receitas",
@@ -422,16 +427,16 @@ extrair_dados_pasta_informakon <-
           wrapText = T
         )
     )
-      # Formatar colunas do tipo data
+    # Formatar colunas do tipo data
     addStyle(
       xlsx,
       sheet = "Receitas",
       rows = 1:nrow(dados.pasta.informakon_l[["Receitas"]]) + 1,
-      cols = 
+      cols =
         dados.pasta.informakon_l[["Receitas"]] %>%
-        summarise(across(everything(), ~ inherits(.x, "Date"))) %>% 
-        unlist() %>% 
-        which(),
+          summarise(across(everything(), ~ inherits(.x, "Date"))) %>%
+          unlist() %>%
+          which(),
       gridExpand = T,
       style =
         createStyle(
@@ -441,16 +446,16 @@ extrair_dados_pasta_informakon <-
           numFmt = "DD/MM/YYYY"
         )
     )
-      # Formatar colunas do tipo numérico
+    # Formatar colunas do tipo numérico
     addStyle(
       xlsx,
       sheet = "Receitas",
       rows = 1:nrow(dados.pasta.informakon_l[["Receitas"]]) + 1,
-      cols = 
+      cols =
         dados.pasta.informakon_l[["Receitas"]] %>%
-        summarise(across(everything(), ~ inherits(.x, "numeric"))) %>% 
-        unlist() %>% 
-        which(),
+          summarise(across(everything(), ~ inherits(.x, "numeric"))) %>%
+          unlist() %>%
+          which(),
       gridExpand = T,
       style =
         createStyle(
@@ -460,16 +465,16 @@ extrair_dados_pasta_informakon <-
           numFmt = "#,##0.00"
         )
     )
-      # Formatar colunas do tipo inteiro
+    # Formatar colunas do tipo inteiro
     addStyle(
       xlsx,
       sheet = "Receitas",
       rows = 1:nrow(dados.pasta.informakon_l[["Receitas"]]) + 1,
-      cols = 
+      cols =
         dados.pasta.informakon_l[["Receitas"]] %>%
-        summarise(across(everything(), ~ inherits(.x, "integer"))) %>% 
-        unlist() %>% 
-        which(),
+          summarise(across(everything(), ~ inherits(.x, "integer"))) %>%
+          unlist() %>%
+          which(),
       gridExpand = T,
       style =
         createStyle(
@@ -479,16 +484,16 @@ extrair_dados_pasta_informakon <-
           numFmt = "#,##0"
         )
     )
-      # Formatar colunas do tipo texto
+    # Formatar colunas do tipo texto
     addStyle(
       xlsx,
       sheet = "Receitas",
       rows = 1:nrow(dados.pasta.informakon_l[["Receitas"]]) + 1,
-      cols = 
+      cols =
         dados.pasta.informakon_l[["Receitas"]] %>%
-        summarise(across(everything(), ~ inherits(.x, "character"))) %>% 
-        unlist() %>% 
-        which(),
+          summarise(across(everything(), ~ inherits(.x, "character"))) %>%
+          unlist() %>%
+          which(),
       gridExpand = T,
       style =
         createStyle(
@@ -500,9 +505,9 @@ extrair_dados_pasta_informakon <-
     nome.xlsx_c <-
       paste0(
         "dados/informakon/Informakon ",
-        Sys.time() %>% str_sub(1,-10),
+        Sys.time() %>% str_sub(1, -10),
         ".xlsx"
-      ) %>% 
+      ) %>%
       str_remove_all("\\:")
     saveWorkbook(xlsx, nome.xlsx_c, overwrite = T)
     return(dados.pasta.informakon_l)
@@ -510,9 +515,9 @@ extrair_dados_pasta_informakon <-
 
 # Teste -------------------------------------------------------------------
 
-#caminho_arquivo_informakon.c <- 
+# caminho_arquivo_informakon.c <-
 #  here("informakon", "receitas_informakon_20180101_20250131.xlsx")
 # dados.pasta.informakon_l <- extrair_dados_pasta_informakon()
-#str(extrair_dados_pasta_informakon())
-#View(extrair_dados_pasta_informakon()$Despesas)
-#View(extrair_dados_pasta_informakon()$Receitas)
+# str(extrair_dados_pasta_informakon())
+# View(extrair_dados_pasta_informakon()$Despesas)
+# View(extrair_dados_pasta_informakon()$Receitas)

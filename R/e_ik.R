@@ -137,29 +137,29 @@ e_ik <-
         dados.pasta.informakon_l[["desp"]] <-
           read_excel(caminho_arquivo_informakon.c) %>%
           mutate(
-            `a/c`                    = as.character(`a/c`),
-            Acréscimos               = as.numeric(Acréscimos),
-            `Agente Financeiro`      = as.character(`Agente Financeiro`),
-            `Centro de Negócio`      = as.character(`Centro de Negócio`),
-            `Cod. Centro`            = as.character(`Cod. Centro`),
-            Credor                   = as.character(Credor),
-            `Data Doc Pagto`         = as.Date(`Data Doc Pagto`),
-            `Data Liberação`         = as.Date(`Data Liberação`),
-            `Data Vencimento`        = as.Date(`Data Vencimento`),
+            `a/c` = as.character(`a/c`),
+            `Acréscimos` = as.numeric(`Acréscimos`),
+            `Agente Financeiro` = as.character(`Agente Financeiro`),
+            `Centro de Negócio` = as.character(`Centro de Negócio`),
+            `Cod. Centro` = as.character(`Cod. Centro`),
+            Credor = as.character(Credor),
+            `Data Doc Pagto` = as.Date(`Data Doc Pagto`),
+            `Data Liberação` = as.Date(`Data Liberação`),
+            `Data Vencimento` = as.Date(`Data Vencimento`),
             `Data Vencimento Origem` = as.Date(`Data Vencimento Origem`),
-            Descontos                = as.numeric(Descontos),
-            `Descontos Adiant.`      = as.numeric(`Descontos Adiant.`),
-            Documento                = as.character(`Documento`),
-            Empresa                  = `Cod. Centro` %>% str_sub(1, 3),
-            Encargos                 = as.numeric(Encargos),
-            Mês                      = floor_date(`Data Doc Pagto`, "month"),
-            Multa                    = as.numeric(Multa),
-            `N° Conta`               = as.character(`N° Conta`),
-            `Nº Entrada`             = as.integer(`Nº Entrada`),
-            Observação               = as.character(Observação),
-            Parcela                  = as.character(Parcela),
-            `Total Pago`             = as.numeric(`Total Pago`),
-            `Valor Titulo`           = as.numeric(`Valor Titulo`)
+            Descontos = as.numeric(Descontos),
+            `Descontos Adiant.` = as.numeric(`Descontos Adiant.`),
+            Documento = as.character(`Documento`),
+            Empresa = `Cod. Centro` %>% str_sub(1, 3),
+            Encargos = as.numeric(Encargos),
+            `Mês` = floor_date(`Data Doc Pagto`, "month"),
+            Multa = as.numeric(Multa),
+            `N° Conta` = as.character(`N° Conta`),
+            `Nº Entrada` = as.integer(`Nº Entrada`),
+            `Observação` = as.character(`Observação`),
+            Parcela = as.character(Parcela),
+            `Total Pago` = as.numeric(`Total Pago`),
+            `Valor Titulo` = as.numeric(`Valor Titulo`)
           )
       }
 
@@ -169,29 +169,29 @@ e_ik <-
         dados.pasta.informakon_l[["recPS"]] <-
           read_excel(caminho_arquivo_informakon.c, skip = 3) %>%
           mutate(
-            Agente          = as.character(Agente),
-            Apto            = as.integer(Apto),
-            `Cart.`         = as.factor(`Cart.`),
-            Cliente         = as.character(Cliente),
-            Contrato        = as.character(Contrato),
-            `Data Pagto`    = as.Date(`Data Pagto`, format = "%d/%m/%Y"),
-            Desconto        = as.numeric(Desconto),
-            Elemento        = as.character(Elemento),
-            Empreendimento  = as.character(Empreendimento),
-            Encargos        = as.numeric(Encargos),
-            Esp             = as.character(Esp),
-            Juros           = as.numeric(Juros),
+            Agente = as.character(Agente),
+            Apto = as.integer(Apto),
+            `Cart.` = as.factor(`Cart.`),
+            Cliente = as.character(Cliente),
+            Contrato = as.character(Contrato),
+            `Data Pagto` = as.Date(`Data Pagto`, format = "%d/%m/%Y"),
+            Desconto = as.numeric(Desconto),
+            Elemento = as.character(Elemento),
+            Empreendimento = as.character(Empreendimento),
+            Encargos = as.numeric(Encargos),
+            Esp = as.character(Esp),
+            Juros = as.numeric(Juros),
             `Juros de Mora` = as.numeric(`Juros de Mora`),
-            Mês             = floor_date(`Data Pagto`, "month"),
-            Multa           = as.numeric(Multa),
-            Parcela         = as.character(Parcela),
-            Principal       = as.numeric(Principal),
-            `R/F`           = as.factor(`R/F`),
-            Reajuste        = as.numeric(Reajuste),
-            Seguro          = as.numeric(Seguro),
-            Torre           = as.character(Torre),
-            Total           = as.numeric(Total),
-            Vencimento      = as.Date(Vencimento)
+            `Mês` = floor_date(`Data Pagto`, "month"),
+            Multa = as.numeric(Multa),
+            Parcela = as.character(Parcela),
+            Principal = as.numeric(Principal),
+            `R/F` = as.factor(`R/F`),
+            Reajuste = as.numeric(Reajuste),
+            Seguro = as.numeric(Seguro),
+            Torre = as.character(Torre),
+            Total = as.numeric(Total),
+            Vencimento = as.Date(Vencimento)
           )
       }
     }
@@ -201,16 +201,16 @@ e_ik <-
     #    # Despesas
     #    dados.despesas.bp.informakon_df <-
     #      dados.pasta.informakon_l[["Despesas"]] %>%
-    #      group_by(`Centro de Negócio`, Mês) %>%
+    #      group_by(`Centro de Negócio`, `Mês`) %>%
     #      summarise(
-    #        `Total Pago no Mês` = sum(`Total Pago`, na.rm = T),
+    #        `Total Pago no `Mês`` = sum(`Total Pago`, na.rm = T),
     #        .groups = "drop"
     #      ) %>%
     #      ungroup()
     #    # Receitas
     #    dados.receitas.bp.informakon_df <-
     #      dados.pasta.informakon_l[["Receitas"]] %>%
-    #      group_by(Empreendimento, Mês) %>%
+    #      group_by(Empreendimento, `Mês`) %>%
     #      summarise(
     #        Total = sum(Total, na.rm = T),
     #        .groups = "drop"
