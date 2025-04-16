@@ -358,7 +358,7 @@ e_cef_ecn <-
         `Valor Liberado Obra` = str_remove_all(`Valor Liberado Obra`, "\\.") %>%
           str_replace_all("\\,", "\\.") %>%
           as.numeric(),
-        Amortização = str_remove_all(Amortização, "\\.") %>%
+        `Amortização` = str_remove_all(`Amortização`, "\\.") %>%
           str_replace_all("\\,", "\\.") %>%
           as.numeric(),
         Empreendimento = empreendimento_c,
