@@ -1,7 +1,5 @@
 # Descrição ---------------------------------------------------------------
 
-#' @md
-#'
 #' @title Extração dos dados do PDF de um relatório EPR da CEF
 #'
 #' @description
