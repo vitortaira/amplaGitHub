@@ -1,44 +1,44 @@
 # Descrição ---------------------------------------------------------------
 
-#' @title Extração dos dados do PDF de um extrato da CEF
+#' @title Extra\u00e7\u00e3o dos dados do PDF de um extrato da CEF
 #'
 #' @description
-#' Extrai e organiza dados de um extrato bancário da CEF em PDF.
+#' Extrai e organiza dados de um extrato banc\u00e1rio da CEF em PDF.
 #'
 #' @param f_caminho.arquivo_c Caminho completo para o arquivo PDF contendo o
 #' extrato da CEF.
 #'
 #' @details
 #' Utiliza o pacote pdftools para ler o arquivo e manipular o texto,
-#' identificando padrões que auxiliam na extração das informações.
+#' identificando padr\u00f5es que auxiliam na extra\u00e7\u00e3o das informa\u00e7\u00f5es.
 #'
 #' @return
 #' Retorna uma tibble com as seguintes colunas:
-#'   - Data de lançamento  : Date
+#'   - Data de lan\u00e7amento  : Date
 #'   - Data de movimento   : Date
 #'   - Documento           : Character
-#'   - Histórico           : Character
+#'   - Hist\u00f3rico           : Character
 #'   - Valor               : Numeric
 #'   - Saldo               : Numeric
 #'   - Conta_interno       : Character
 #'   - Conta               : Character
-#'   - Agência             : Character
+#'   - Ag\u00eancia             : Character
 #'   - Produto             : Character
 #'   - CNPJ                : Character
 #'   - Cliente             : Character
-#'   - Período_início      : Date
-#'   - Período_fim         : Date
+#'   - Per\u00edodo_in\u00edcio      : Date
+#'   - Per\u00edodo_fim         : Date
 #'   - Data_consulta       : POSIXct
 #'
 #' @examples
 #' \dontrun{
-#' # Exemplo 1: Uso básico
+#' # Exemplo 1: Uso b\u00e1sico
 #' extrato <- e_cef_extrato(
 #'   f_caminho.arquivo_c = "caminho/para/o/extrato.pdf"
 #' )
 #' print(extrato)
 #'
-#' # Exemplo 2: Integrando com outras funções de tratamento de dados
+#' # Exemplo 2: Integrando com outras fun\u00e7\u00f5es de tratamento de dados
 #' library(dplyr)
 #' extrato_filtrado <- e_cef_extrato("caminho/para/o/extrato.pdf") %>%
 #'   filter(Valor > 0)
@@ -49,7 +49,7 @@
 #' Consulte \code{\link{e_cef_extratos}}.
 #'
 #' @references
-#' Consulte \code{\link{pdf_text}} para extração de texto de arquivos PDF.
+#' Consulte \code{\link{pdf_text}} para extra\u00e7\u00e3o de texto de arquivos PDF.
 #'
 #' @export
 
@@ -218,20 +218,20 @@ e_cef_extrato <-
                 .
               ) %>%
               as.numeric(),
-          Histórico =
+          `Histórico` =
             Linhas %>% str_remove("\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?"),
           `Data Lanc.` = NA,
           # Metadados
           Conta = conta_c %>% word(-1) %>% str_trim(),
-          Agência = conta_c %>% str_sub(1, 4),
+          `Agência` = conta_c %>% str_sub(1, 4),
           Produto = conta_c %>% str_sub(6, -1) %>% str_extract("\\s\\d{4}\\s"),
           CNPJ = NA,
           Cliente = cliente_c,
-          Período_início =
+          `Período_início` =
             periodo.consultado_c %>%
               str_remove("-.*") %>%
               as.Date(format = "%d/%m/%Y"),
-          Período_fim =
+          `Período_fim` =
             periodo.consultado_c %>%
               str_remove(".*-") %>%
               as.Date(format = "%d/%m/%Y"),
@@ -242,10 +242,10 @@ e_cef_extrato <-
               str_extract("\\d{4}")
         ) %>%
         select(
-          `Data Lanc.`, `Data Mov.`, `Nr. Doc`, Histórico, Valor, Saldo,
+          `Data Lanc.`, `Data Mov.`, `Nr. Doc`, `Histórico`, Valor, Saldo,
           # Metadados
-          Conta_interno, Conta, Agência, Produto, CNPJ, Cliente, Período_início,
-          Período_fim, Data_consulta
+          Conta_interno, Conta, `Agência`, Produto, CNPJ, Cliente, `Período_início`,
+          `Período_fim`, Data_consulta
         ) %>%
         rename(
           `Data de lançamento` = `Data Lanc.`,
@@ -340,7 +340,7 @@ e_cef_extrato <-
           Linhas = Linhas %>% str_remove("\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
           Documento = Linhas %>% str_remove("[A-Za-z].*") %>% str_trim(),
           Linhas = Linhas %>% str_extract("(?i)[A-Za-z].*") %>% str_trim(),
-          Histórico = Linhas %>% str_remove("R\\$.*") %>% str_trim(),
+          `Histórico` = Linhas %>% str_remove("R\\$.*") %>% str_trim(),
           Linhas = Linhas %>% str_extract("(?<=R\\$).*") %>% str_trim(),
           `Valor(R$)` =
             Linhas %>% str_remove("R\\$.*") %>% str_remove_all("\\.") %>%
@@ -349,16 +349,16 @@ e_cef_extrato <-
             Linhas %>% str_extract("(?<=R\\$).*") %>% str_trim() %>%
               str_remove_all("\\.") %>% str_replace("\\,", "\\.") %>% as.numeric(),
           # Metadados
-          Agência = agencia_c,
+          `Agência` = agencia_c,
           Cliente = cliente_c,
           CNPJ = cnpj_c,
           Conta = conta_c,
           Data_consulta = data.consulta_h,
-          Período_início =
+          `Período_início` =
             periodo.consultado_c %>%
               str_remove("-.*") %>%
               as.Date(format = "%d/%m/%Y"),
-          Período_fim =
+          `Período_fim` =
             periodo.consultado_c %>%
               str_remove(".*-") %>%
               as.Date(format = "%d/%m/%Y"),
@@ -369,11 +369,11 @@ e_cef_extrato <-
               str_extract("\\d{4}")
         ) %>%
         select(
-          `Data de lançamento`, `Data de movimento`, Documento, Histórico,
+          `Data de lançamento`, `Data de movimento`, Documento, `Histórico`,
           `Valor(R$)`, `Saldo(R$)`,
           # Metadados
-          Conta_interno, Conta, Agência, Produto, CNPJ, Cliente, Período_início,
-          Período_fim, Data_consulta
+          Conta_interno, Conta, `Agência`, Produto, CNPJ, Cliente, `Período_início`,
+          `Período_fim`, Data_consulta
         ) %>%
         rename(
           Saldo = `Saldo(R$)`,
