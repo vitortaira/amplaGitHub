@@ -2,7 +2,7 @@
 
 # Condições para o funcionamento:
 # Arquivos em ".xlsx":
-# (1) Estejam na pasta ".../Controladoria - Docmentos/Ampla_Github/dados/cef
+# (1) Estejam na pasta ".../Controladoria - Docmentos/AmplaGithub/dados/cef
 # /inadimplentes
 # (2) Sejam nomeados somente com um breve nome do empreendimento
 # (eg "sonia1", "pompeia", etc.)
@@ -175,7 +175,7 @@ e_cef_inad <-
 
 # caminho_arquivo_inadimplentes.c <-
 #  here(
-#    "Controladoria - Documentos", "Ampla_Github", "dados", "cef",
+#    "Controladoria - Documentos", "AmplaGithub", "dados", "cef",
 #    "inadimplentes", "prudência.xlsx"
 #  )
 # prudencia_t=e_cef_inad(caminho_arquivo_inadimplentes.c)

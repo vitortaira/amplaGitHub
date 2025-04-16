@@ -20,12 +20,12 @@
 # f_caminho.pasta.inadimplentes_c: Caminho da pasta "inadimplentes/formatados"
 # f_caminho.pasta.ciweb_c: Caminho da pasta "Relatorios - CIWEB"
 
-#source(
+# source(
 #  here(
-#    "Controladoria - Documentos", "Ampla_Github", "dados", "funcoes",
+#    "Controladoria - Documentos", "AmplaGithub", "dados", "funcoes",
 #    "extrair_dados_pasta_inadimplentes.R"
 #  )
-#)
+# )
 source(
   here(
     "dados", "funcoes", "extrair_dados_pasta_inadimplentes.R"
@@ -131,7 +131,7 @@ relacao.contratos_t <-
       Empreendimento == "Prudência" ~ "prudência",
       TRUE ~ NA_character_
     )
-  ) %>% 
+  ) %>%
   rename(Contrato_6 = "Contrato_Ampla")
 
 rm(
@@ -140,9 +140,8 @@ rm(
 )
 
 cruzar_inadimplentes_repasses <-
-  function(
-      f_caminho.pasta.inadimplentes_c =
-        here("dados", "cef", "inadimplentes")) {
+  function(f_caminho.pasta.inadimplentes_c =
+             here("dados", "cef", "inadimplentes")) {
     # Consolida os dados dos inadimplentes da pasta "inadimplentes"
     inadimplentes_t <-
       extrair_dados_pasta_inadimplentes(xlsx = FALSE) %>%
@@ -157,9 +156,9 @@ cruzar_inadimplentes_repasses <-
       mutate(
         Repassado = if_else(Repassado == "Repassado", "Sim", "Não")
       ) %>%
-      distinct
-      #select(-Contrato_CEF) %>%
-      #arrange(Empreendimento, Repassado, Contrato_6)
+      distinct()
+    # select(-Contrato_CEF) %>%
+    # arrange(Empreendimento, Repassado, Contrato_6)
     #    # Consolida os dados dos relatórios ECN da pasta "Relatorios - CIWEB"
     #    pastas.empreendimentos_c <-
     #      list.dirs(f_caminho.pasta.ciweb_c, recursive = FALSE) %>%

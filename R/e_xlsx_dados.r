@@ -12,7 +12,7 @@
 
 source(
   here(
-    "Controladoria - Documentos", "Ampla_Github", "dados", "funcoes", "dados.R"
+    "Controladoria - Documentos", "AmplaGithub", "dados", "funcoes", "dados.R"
   )
 )
 
