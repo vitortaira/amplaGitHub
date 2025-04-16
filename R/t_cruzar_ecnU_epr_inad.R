@@ -28,7 +28,7 @@
 # )
 source(
   here(
-    "R", "extrair_dados_pasta_inadimplentes.R"
+    "Controladoria - Documentos", "AmplaR", "R", "extrair_dados_pasta_inadimplentes.R"
   )
 )
 
@@ -49,7 +49,7 @@ library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplo
 relacao.contratos.estacao_t <-
   read_delim(
     here(
-      "dados", "cef", "inadimplentes", "formatados", "Relacao de contratos - Estacao.csv"
+      "Controladoria - Documentos", "AmplaR", "dados", "cef", "inadimplentes", "formatados", "Relacao de contratos - Estacao.csv"
     ),
     locale = locale(encoding = "UTF-8"),
     delim = ";",
@@ -72,7 +72,7 @@ relacao.contratos.estacao_t <-
 relacao.contratos.sonia1_t <-
   read_excel(
     here(
-      "dados",
+      "Controladoria - Documentos", "AmplaR", "dados",
       "cef", "inadimplentes", "formatados", "Relacao de contratos - Sonia1.xlsx"
     ),
     sheet = 1,
@@ -96,7 +96,7 @@ relacao.contratos.sonia1_t <-
 relacao.contratos.prudencia_t <-
   read_excel(
     here(
-      "dados",
+      "Controladoria - Documentos", "AmplaR", "dados",
       "cef", "inadimplentes", "formatados",
       "Relacao de contratos - Prudencia.xlsx"
     ),
@@ -141,7 +141,7 @@ rm(
 
 cruzar_inadimplentes_repasses <-
   function(f_caminho.pasta.inadimplentes_c =
-             here("dados", "cef", "inadimplentes")) {
+             here("Controladoria - Documentos", "AmplaR", "dados", "cef", "inadimplentes")) {
     # Consolida os dados dos inadimplentes da pasta "inadimplentes"
     inadimplentes_t <-
       extrair_dados_pasta_inadimplentes(xlsx = FALSE) %>%
@@ -712,21 +712,21 @@ cruzar_inadimplentes_repasses <-
     #  )
     return(extratos.cruzados_t)
   }
-cruzar_extrato_cmfcn()
+
 # Teste -------------------------------------------------------------------
 
 # cruzar_extrato_cmfcn()
-f_caminho.arquivo.extrato_cef_c <-
-  here(
-    "..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
-    "Estação", "Fevereiro 2025", "CAIXA -  2419 - FEVEREIRO.pdf"
-  )
-f_caminho.arquivo.extrato_cef_c <-
-  here(
-    "..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
-    "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
-  )
-View(extrair_dados_arquivo_extrato_cef(caminhos.extratos.cef_c[2])$Dados)
+# f_caminho.arquivo.extrato_cef_c <-
+#   here(
+#     "..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
+#     "Estação", "Fevereiro 2025", "CAIXA -  2419 - FEVEREIRO.pdf"
+#   )
+# f_caminho.arquivo.extrato_cef_c <-
+#   here(
+#     "..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
+#     "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
+#   )
+# View(extrair_dados_arquivo_extrato_cef(caminhos.extratos.cef_c[2])$Dados)
 # extrato <- extrair_dados_arquivo_extrato_cef(f_caminho.arquivo.extrato_cef_c)
 # teste <- extrair_dados_arquivo_extrato_cef(f_caminho.arquivo.extrato_cef_c)
 # shell.exec(f_caminho.arquivo.extrato_cef_c)
