@@ -17,7 +17,7 @@
 
 source(
   here(
-    "Controladoria - Documentos", "AmplaGithub", "funcoes", "e_cef_ecn.R"
+    "Controladoria - Documentos", "AmplaR", "R", "e_cef_ecn.R"
   )
 )
 

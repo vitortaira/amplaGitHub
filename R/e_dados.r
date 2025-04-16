@@ -1,15 +1,15 @@
 source(
   here(
-    "Controladoria - Documentos", "AmplaGithub", "funcoes", "e_cef.R"
+    "Controladoria - Documentos", "AmplaR", "R", "e_cef.R"
   )
 )
 
 source(
   here(
-    "Controladoria - Documentos", "AmplaGithub", "funcoes", "e_ik.R"
+    "Controladoria - Documentos", "AmplaR", "R", "e_ik.R"
   )
 )
-usethis::create_package("Controladoria - Documentos/AmplaGithub/AmplaR")
+usethis::create_package("Controladoria - Documentos/AmplaR/AmplaR")
 
 e_dados <-
   function() {

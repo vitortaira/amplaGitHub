@@ -2,7 +2,7 @@
 
 # Condições para o funcionamento:
 # Arquivos em ".xlsx":
-# (1) Estejam na pasta ".../Controladoria - Docmentos/AmplaGithub/dados/cef
+# (1) Estejam na pasta ".../Controladoria - Docmentos/AmplaR/dados/cef
 # /inadimplentes
 # (2) Sejam nomeados somente com um breve nome do empreendimento
 # (eg "sonia1", "pompeia", etc.)

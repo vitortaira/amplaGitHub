@@ -1,27 +1,27 @@
 source(
   here(
-    "Controladoria - Documentos", "AmplaGithub", "funcoes",
+    "Controladoria - Documentos", "AmplaR", "R",
     "e_cef_cmfcns.R"
   )
 )
 
 source(
   here(
-    "Controladoria - Documentos", "AmplaGithub", "funcoes",
+    "Controladoria - Documentos", "AmplaR", "R",
     "e_cef_ecns.R"
   )
 )
 
 source(
   here(
-    "Controladoria - Documentos", "AmplaGithub", "funcoes",
+    "Controladoria - Documentos", "AmplaR", "R",
     "e_cef_eprs.R"
   )
 )
 
 source(
   here(
-    "Controladoria - Documentos", "AmplaGithub", "funcoes",
+    "Controladoria - Documentos", "AmplaR", "R",
     "e_cef_extratos.R"
   )
 )

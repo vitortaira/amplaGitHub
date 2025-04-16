@@ -2,8 +2,8 @@ library(openxlsx) # Funções para preencher arquivos .xlsx
 library(readxl) # Importação de arquivos em Excel, e.g. read_excel()
 library(viridisLite) # Mapeamento de cores
 
-# source(here("Controladoria - Documentos", "Ampla_Github", "dados", "funcoes", "extrair_dados_arquivo_inadimplentes.R"))
-source(here("dados", "funcoes", "extrair_dados_arquivo_inadimplentes.R"))
+# source(here("Controladoria - Documentos", "Ampla_Github", "R", "extrair_dados_arquivo_inadimplentes.R"))
+source(here("R", "extrair_dados_arquivo_inadimplentes.R"))
 
 e_cef_inads <-
   function(

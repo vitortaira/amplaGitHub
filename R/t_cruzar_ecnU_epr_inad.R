@@ -22,13 +22,13 @@
 
 # source(
 #  here(
-#    "Controladoria - Documentos", "AmplaGithub", "dados", "funcoes",
+#    "Controladoria - Documentos", "AmplaR", "R",
 #    "extrair_dados_pasta_inadimplentes.R"
 #  )
 # )
 source(
   here(
-    "dados", "funcoes", "extrair_dados_pasta_inadimplentes.R"
+    "R", "extrair_dados_pasta_inadimplentes.R"
   )
 )
 
