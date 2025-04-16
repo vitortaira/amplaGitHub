@@ -6,17 +6,17 @@ library(stringr) # Funções para formatar códigos, e.g. style_file()
 library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2
 library(viridisLite) # Mapeamento de cores
 
-source(here("R", "e_cef_inad0.R"))
+source(here("Controladoria - Documentos", "AmplaR", "R", "z_extrair_dados_arquivo_inadimplentes0.R"))
 
 extrair_dados_pasta_inadimplentes <-
-  function(caminho_pasta_inadimplentes.c = here("dados", "cef", "inadimplentes")) {
+  function(caminho_pasta_inadimplentes.c = here("Controladoria - Documentos", "AmplaR", "dados", "cef", "inadimplentes")) {
     # Formatar todos os arquivos da pasta -------------------------------------
 
     caminhos.arquivos_vc <-
       setdiff(
         list.files(caminho_pasta_inadimplentes.c, full.names = T),
         c(
-          here("dados", "cef", "inadimplentes", "formatados"),
+          here("Controladoria - Documentos", "AmplaR", "dados", "cef", "inadimplentes", "formatados"),
           list.files(
             caminho_pasta_inadimplentes.c,
             full.names = T
@@ -314,7 +314,7 @@ extrair_dados_pasta_inadimplentes <-
       )
     saveWorkbook(
       xlsx,
-      paste0(here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c)),
+      paste0(here("Controladoria - Documentos", "AmplaR", "dados", "cef", "inadimplentes", "formatados", nome.xlsx_c)),
       overwrite = T
     )
   }
