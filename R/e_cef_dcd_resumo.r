@@ -191,13 +191,13 @@ e_cef_dcd_resumo <-
 
 # Teste -------------------------------------------------------------------
 
-caminhos.dcds_c <-
-  list.files(
-    here("Relatórios - Documentos", "Relatorios - CIWEB"),
-    full.names = TRUE, recursive = T
-  ) %>%
-  keep(~ str_detect(.x, "_DEMONST_CRONOGRAMA.pdf"))
-f_caminho.arquivo_c <- caminhos.dcds_c[1]
+# caminhos.dcds_c <-
+#  list.files(
+#    here("Relatórios - Documentos", "Relatorios - CIWEB"),
+#    full.names = TRUE, recursive = T
+#  ) %>%
+#  keep(~ str_detect(.x, "_DEMONST_CRONOGRAMA.pdf"))
+# f_caminho.arquivo_c <- caminhos.dcds_c[1]
 #  here(
 #    "Relatórios - Documentos", "Relatorios - Extratos",
 #    "Estação", "Fevereiro 2025", "CAIXA -  2419 - FEVEREIRO.pdf"
@@ -205,5 +205,5 @@ f_caminho.arquivo_c <- caminhos.dcds_c[1]
 #  here("..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
 #    "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
 #  )
-extrato <- dados_cef_extrato(f_caminho.arquivo.extrato_cef_c)
+# extrato <- dados_cef_extrato(f_caminho.arquivo.extrato_cef_c)
 # shell.exec(f_caminho.arquivo.extrato_cef_c)
