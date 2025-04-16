@@ -12,7 +12,7 @@
 
 source(
   here(
-    "Controladoria - Documentos", "AmplaR", "R", "dados.R"
+    "Controladoria - Documentos", "AmplaR", "R", "e_dados.R"
   )
 )
 
@@ -37,7 +37,7 @@ xlsx_dados <-
       )
     }
     # Carregando os dados
-    dados_l <- dados()
+    dados_l <- e_dados()
     # Criando o arquivo xlsx
     wb_x <- createWorkbook()
     # Define nomes e cores das abas
