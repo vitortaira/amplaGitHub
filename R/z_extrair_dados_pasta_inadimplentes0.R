@@ -324,4 +324,3 @@ extrair_dados_pasta_inadimplentes <-
 # caminho_arquivo_inadimplentes.c <-
 #  here("dados", "cef", "inadimplentes", "inads. pomp.xlsx")
 # str(extrair_dados_inadimplentes(caminho_arquivo_inadimplentes.c))
-extrair_dados_pasta_inadimplentes()
