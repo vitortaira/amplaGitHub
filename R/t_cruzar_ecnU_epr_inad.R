@@ -28,7 +28,7 @@
 # )
 source(
   here(
-    "Controladoria - Documentos", "AmplaR", "R", "extrair_dados_pasta_inadimplentes.R"
+    "Controladoria - Documentos", "AmplaR", "R", "e_cef_inads.R"
   )
 )
 
