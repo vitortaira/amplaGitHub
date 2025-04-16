@@ -6,7 +6,7 @@ library(stringr) # Funções para formatar códigos, e.g. style_file()
 library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2
 library(viridisLite) # Mapeamento de cores
 
-source(here("R", "extrair_dados_arquivo_inadimplentes0.R"))
+source(here("R", "e_cef_inad0.R"))
 
 extrair_dados_pasta_inadimplentes <-
   function(caminho_pasta_inadimplentes.c = here("dados", "cef", "inadimplentes")) {
@@ -30,7 +30,7 @@ extrair_dados_pasta_inadimplentes <-
     dados.pasta_df <- c()
     for (caminho_arquivo.c in caminhos.arquivos_vc) {
       dados.pasta_l[[basename(caminho_arquivo.c)]] <-
-        extrair_dados_arquivo_inadimplentes(caminho_arquivo.c)
+        e_cef_inad(caminho_arquivo.c)
       print(paste(caminho_arquivo.c, "extraído com sucesso."))
       dados.pasta_df <-
         rbind(dados.pasta_df, dados.pasta_l[[basename(caminho_arquivo.c)]][["Parcelas"]])

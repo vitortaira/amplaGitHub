@@ -2,13 +2,12 @@ library(openxlsx) # Funções para preencher arquivos .xlsx
 library(readxl) # Importação de arquivos em Excel, e.g. read_excel()
 library(viridisLite) # Mapeamento de cores
 
-# source(here("Controladoria - Documentos", "Ampla_Github", "R", "extrair_dados_arquivo_inadimplentes.R"))
-source(here("R", "extrair_dados_arquivo_inadimplentes.R"))
+# source(here("Controladoria - Documentos", "Ampla_Github", "R", "e_cef_inad.R"))
+source(here("R", "e_cef_inad.R"))
 
 e_cef_inads <-
-  function(
-      caminho_pasta_inadimplentes.c = here("dados", "cef", "inadimplentes"),
-      xlsx = TRUE) {
+  function(caminho_pasta_inadimplentes.c = here("dados", "cef", "inadimplentes"),
+           xlsx = TRUE) {
     # Formatar todos os arquivos da pasta -------------------------------------
 
     # Todos os arquivos na pasta "inadimplentes"
@@ -28,7 +27,7 @@ e_cef_inads <-
         ~ {
           dados.pasta_df <-
             tryCatch(
-              extrair_dados_arquivo_inadimplentes(.x),
+              e_cef_inad(.x),
               error = function(e) {
                 warning(paste0("Erro ao extrair ", .x, ":", e$message))
                 NULL
