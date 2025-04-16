@@ -247,7 +247,7 @@ e_cef_ecn <-
       ) %>%
       ### Garantindo que as colunas sejam da classe adequada
       mutate(
-        Período = format(as.Date(Período, format = "%d/%m/%Y"), "%d/%m/%Y"),
+        `Período` = format(as.Date(`Período`, format = "%d/%m/%Y"), "%d/%m/%Y"),
         Unidade = as.character(Unidade),
         `Valor Creditado` = str_remove_all(`Valor Creditado`, "\\.") %>%
           str_replace_all("\\,", "\\.") %>%
