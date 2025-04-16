@@ -9,7 +9,6 @@ source(
     "Controladoria - Documentos", "AmplaR", "R", "e_ik.R"
   )
 )
-usethis::create_package("Controladoria - Documentos/AmplaR/AmplaR")
 
 e_dados <-
   function() {
