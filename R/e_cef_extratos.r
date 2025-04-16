@@ -1,3 +1,49 @@
+# Descrição ---------------------------------------------------------------
+
+#' @title Consolidação dos dados dos extratos da CEF
+#'
+#' @description
+#' Consolida e processa dados de múltiplos extratos em PDF da CEF,
+#' combinando-os em um único data frame.
+#'
+#' @param f_caminho.pasta.extratos_c Caminho completo para a pasta que
+#'   contém os arquivos PDF dos extratos.
+#'
+#' @details
+#' A função percorre a pasta especificada buscando arquivos PDF que
+#' contenham os códigos 2429, 2419 ou 2245, ignorando aqueles que contenham
+#' a palavra "fundo". Para cada arquivo encontrado, chama a função
+#' \code{e_cef_extrato} para realizar a extração dos dados e, posteriormente,
+#' consolida os resultados em um único tibble.
+#'
+#' @return
+#' Retorna um tibble com as seguintes colunas:
+#'   - Data de lançamento: Date.
+#'   - Data de movimento: Date.
+#'   - Documento: Character.
+#'   - Histórico: Character.
+#'   - Valor: Numeric.
+#'   - Saldo: Numeric.
+#'   - Conta_interno: Character.
+#'   - Conta: Character.
+#'   - Agência: Character.
+#'   - Produto: Character.
+#'   - CNPJ: Character.
+#'   - Cliente: Character.
+#'   - Período_início: Date.
+#'   - Período_fim: Date.
+#'   - Data_consulta: POSIXct.
+#'
+#' @examples
+#' \dontrun{
+#' extratos <- e_cef_extratos(
+#'   f_caminho.pasta.extratos_c = "caminho/para/a/pasta/dos/extratos"
+#' )
+#' print(extratos)
+#' }
+#'
+#' @export
+
 source(
   here(
     "Controladoria - Documentos", "AmplaGithub", "funcoes", "e_cef_extrato.R"

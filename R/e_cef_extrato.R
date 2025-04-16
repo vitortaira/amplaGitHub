@@ -1,33 +1,67 @@
 # Descrição ---------------------------------------------------------------
 
-### RESUMO ###
-
-# e_cef_extrato() extrai os dados de um arquivo de extrato
-# da CEF em PDF.
-
-### UTILIZAÇÃO ###
-
-# e_cef_extrato(
-#   f_caminho.arquivo_c
-# )
-
-### ARGUMENTOS ###
-
-# f_caminho.arquivo_c: String do caminho de um arquivo de extrato
-# da CEF em PDF.
+#' @title Extração dos dados do PDF de um extrato da CEF
+#'
+#' @description
+#' Extrai e organiza dados de um extrato bancário da CEF em PDF.
+#'
+#' @param f_caminho.arquivo_c Caminho completo para o arquivo PDF contendo o
+#' extrato da CEF.
+#'
+#' @details
+#' Utiliza o pacote pdftools para ler o arquivo e manipular o texto,
+#' identificando padrões que auxiliam na extração das informações.
+#'
+#' @return
+#' Retorna uma tibble com as seguintes colunas:
+#'   - Data de lançamento  : Date
+#'   - Data de movimento   : Date
+#'   - Documento           : Character
+#'   - Histórico           : Character
+#'   - Valor               : Numeric
+#'   - Saldo               : Numeric
+#'   - Conta_interno       : Character
+#'   - Conta               : Character
+#'   - Agência             : Character
+#'   - Produto             : Character
+#'   - CNPJ                : Character
+#'   - Cliente             : Character
+#'   - Período_início      : Date
+#'   - Período_fim         : Date
+#'   - Data_consulta       : POSIXct
+#'
+#' @examples
+#' \dontrun{
+#' # Exemplo 1: Uso básico
+#' extrato <- e_cef_extrato(
+#'   f_caminho.arquivo_c = "caminho/para/o/extrato.pdf"
+#' )
+#' print(extrato)
+#'
+#' # Exemplo 2: Integrando com outras funções de tratamento de dados
+#' library(dplyr)
+#' extrato_filtrado <- e_cef_extrato("caminho/para/o/extrato.pdf") %>%
+#'   filter(Valor > 0)
+#' summary(extrato_filtrado)
+#' }
+#'
+#' @seealso
+#' Consulte \code{\link{e_cef_extratos}}.
+#'
+#' @references
+#' Consulte \code{\link{pdf_text}} para extração de texto de arquivos PDF.
+#'
+#' @export
 
 # Pacotes -----------------------------------------------------------------
 
 library(pdftools) # Funções para extração de dados em PDF
 
-# Função ------------------------------------------------------------------
-
-# Define a função
 e_cef_extrato <-
-  function(f_caminho.arquivo.extrato_cef_c) {
+  function(f_caminho.arquivo_c) {
     # Define paginas_l
     paginas_l <-
-      pdf_text(f_caminho.arquivo.extrato_cef_c) %>%
+      pdf_text(f_caminho.arquivo_c) %>%
       map(
         ~ str_split(.x, "\n")[[1]] %>%
           str_squish() %>%
@@ -203,7 +237,7 @@ e_cef_extrato <-
               as.Date(format = "%d/%m/%Y"),
           Data_consulta = data.consulta_h,
           Conta_interno =
-            f_caminho.arquivo.extrato_cef_c %>%
+            f_caminho.arquivo_c %>%
               basename() %>%
               str_extract("\\d{4}")
         ) %>%
@@ -330,7 +364,7 @@ e_cef_extrato <-
               as.Date(format = "%d/%m/%Y"),
           Produto = produto_c,
           Conta_interno =
-            f_caminho.arquivo.extrato_cef_c %>%
+            f_caminho.arquivo_c %>%
               basename() %>%
               str_extract("\\d{4}")
         ) %>%
@@ -351,12 +385,12 @@ e_cef_extrato <-
 
 # Teste -------------------------------------------------------------------
 
-# f_caminho.arquivo.extrato_cef_c <- caminhos.extratos.cef_c[1]
+# f_caminho.arquivo_c <- caminhos.extratos.cef_c[1]
 #  here("Relatórios - Documentos", "Relatorios - Extratos",
 #    "Estação", "Fevereiro 2025", "CAIXA -  2419 - FEVEREIRO.pdf"
 #  )
 #  here("..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
 #    "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
 #  )
-# extrato <- e_cef_extrato(f_caminho.arquivo.extrato_cef_c)
-# shell.exec(f_caminho.arquivo.extrato_cef_c)
+# extrato <- e_cef_extrato(f_caminho.arquivo_c)
+# shell.exec(f_caminho.arquivo_c)
