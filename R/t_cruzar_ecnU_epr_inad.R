@@ -141,7 +141,7 @@ rm(
 
 cruzar_inadimplentes_repasses <-
   function(f_caminho.pasta.inadimplentes_c =
-             here::here("Controladoria - Documentos", "AmplaR", "dados", "cef", "inadimplentes")) {
+             here::here("dados", "cef", "inadimplentes")) {
     # Consolida os dados dos inadimplentes da pasta "inadimplentes"
     inadimplentes_t <-
       extrair_dados_pasta_inadimplentes(xlsx = FALSE) %>%

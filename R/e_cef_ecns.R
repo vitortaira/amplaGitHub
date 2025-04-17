@@ -26,7 +26,7 @@ source(
 # Define a função
 e_cef_ecns <-
   function(f_caminho.pasta.ciweb_c =
-             here::here("Relatórios - Documentos", "Relatorios - CIWEB")) {
+             file.path(dirname(dirname(here())), "Relatórios - Documentos", "Relatorios - CIWEB")) {
     # Consolida os dados dos relatórios ECN da CEF na pasta "Relatorios - CIWEB"
     caminhos.ecn_c <-
       list.files(f_caminho.pasta.ciweb_c, full.names = TRUE, recursive = T) %>%

@@ -5,7 +5,8 @@
 \title{Consolida\u00e7\u00e3o dos dados dos extratos da CEF}
 \usage{
 e_cef_extratos(
-  f_caminho.pasta.extratos_c = here("Relatórios - Documentos", "Relatorios - Extratos")
+  f_caminho.pasta.extratos_c = here::here("Relatórios - Documentos",
+    "Relatorios - Extratos")
 )
 }
 \arguments{

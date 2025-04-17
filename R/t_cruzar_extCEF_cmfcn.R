@@ -34,7 +34,7 @@ cruzar_extrato_cmfcn <-
   function(f_caminho.pasta.extratos_c =
              here::here("Relatórios - Documentos", "Relatorios - Extratos"),
            f_caminho.pasta.ciweb_c =
-             here::here("Relatórios - Documentos", "Relatorios - CIWEB")) {
+             file.path(dirname(dirname(here())), "Relatórios - Documentos", "Relatorios - CIWEB")) {
     # Consolida os dados dos extratos da CEF na pasta "Relatorios - Extratos"
     caminhos.extratos.cef_c <-
       list.files(

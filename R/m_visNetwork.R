@@ -1,8 +1,8 @@
 library(htmlwidgets)
 library(visNetwork)
 
-source(here::here("Controladoria - Documentos", "AmplaR", "R", "m_nodes_df.R"))
-source(here::here("Controladoria - Documentos", "AmplaR", "R", "m_edges_df.R"))
+source(here::here("R", "m_nodes_df.R"))
+source(here::here("R", "m_edges_df.R"))
 
 # Renderização do grafo com visNetwork
 dados_gnw <-
