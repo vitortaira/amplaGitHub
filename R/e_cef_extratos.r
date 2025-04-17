@@ -1,37 +1,37 @@
 # Descrição ---------------------------------------------------------------
 
-#' @title Consolida\u00e7\u00e3o dos dados dos extratos da CEF
+#' @title Consolidação dos dados dos extratos da CEF
 #'
 #' @description
-#' Consolida e processa dados de m\u00faltiplos extratos em PDF da CEF,
-#' combinando-os em um \u00fanico data frame.
+#' Consolida e processa dados de múltiplos extratos em PDF da CEF,
+#' combinando-os em um único data frame.
 #'
 #' @param f_caminho.pasta.extratos_c Caminho completo para a pasta que
-#'   cont\u00e9m os arquivos PDF dos extratos.
+#'   contém os arquivos PDF dos extratos.
 #'
 #' @details
-#' A fun\u00e7\u00e3o percorre a pasta especificada buscando arquivos PDF que
-#' contenham os c\u00f3digos 2429, 2419 ou 2245, ignorando aqueles que contenham
-#' a palavra \u0022fundo\u0022. Para cada arquivo encontrado, chama a fun\u00e7\u00e3o
-#' \code{e_cef_extrato} para realizar a extra\u00e7\u00e3o dos dados e, posteriormente,
-#' consolida os resultados em um \u00fanico tibble.
+#' A função percorre a pasta especificada buscando arquivos PDF que
+#' contenham os códigos 2429, 2419 ou 2245, ignorando aqueles que contenham
+#' a palavra "fundo". Para cada arquivo encontrado, chama a função
+#' \code{e_cef_extrato} para realizar a extração dos dados e, posteriormente,
+#' consolida os resultados em um único tibble.
 #'
 #' @return
 #' Retorna um tibble com as seguintes colunas:
-#'   - Data de lan\u00e7amento: Date.
+#'   - Data de lançamento: Date.
 #'   - Data de movimento: Date.
 #'   - Documento: Character.
-#'   - Hist\u00f3rico: Character.
+#'   - Histórico: Character.
 #'   - Valor: Numeric.
 #'   - Saldo: Numeric.
 #'   - Conta_interno: Character.
 #'   - Conta: Character.
-#'   - Ag\u00eAncia: Character.
+#'   - Agência: Character.
 #'   - Produto: Character.
 #'   - CNPJ: Character.
 #'   - Cliente: Character.
-#'   - Per\u00edodo_in\u00edcio: Date.
-#'   - Per\u00edodo_fim: Date.
+#'   - Período_início: Date.
+#'   - Período_fim: Date.
 #'   - Data_consulta: POSIXct.
 #'
 #' @examples

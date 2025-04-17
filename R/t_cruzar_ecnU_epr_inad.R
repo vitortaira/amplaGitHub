@@ -22,13 +22,13 @@
 
 # source(
 #  here::here(
-#    "Controladoria - Documentos", "AmplaR", "R",
+#    "R",
 #    "extrair_dados_pasta_inadimplentes.R"
 #  )
 # )
 source(
   here::here(
-    "Controladoria - Documentos", "AmplaR", "R", "e_cef_inads.R"
+    "R", "e_cef_inads.R"
   )
 )
 
@@ -49,7 +49,7 @@ library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplo
 relacao.contratos.estacao_t <-
   read_delim(
     here::here(
-      "Controladoria - Documentos", "AmplaR", "dados", "cef", "inadimplentes", "formatados", "Relacao de contratos - Estacao.csv"
+      "dados", "cef", "inadimplentes", "formatados", "Relacao de contratos - Estacao.csv"
     ),
     locale = locale(encoding = "UTF-8"),
     delim = ";",
@@ -72,7 +72,7 @@ relacao.contratos.estacao_t <-
 relacao.contratos.sonia1_t <-
   read_excel(
     here::here(
-      "Controladoria - Documentos", "AmplaR", "dados",
+      "dados",
       "cef", "inadimplentes", "formatados", "Relacao de contratos - Sonia1.xlsx"
     ),
     sheet = 1,
@@ -96,7 +96,7 @@ relacao.contratos.sonia1_t <-
 relacao.contratos.prudencia_t <-
   read_excel(
     here::here(
-      "Controladoria - Documentos", "AmplaR", "dados",
+      "dados",
       "cef", "inadimplentes", "formatados",
       "Relacao de contratos - Prudencia.xlsx"
     ),

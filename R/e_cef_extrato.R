@@ -1,44 +1,44 @@
 # Descrição ---------------------------------------------------------------
 
-#' @title Extra\u00e7\u00e3o dos dados do PDF de um extrato da CEF
+#' @title Extração dos dados do PDF de um extrato da CEF
 #'
 #' @description
-#' Extrai e organiza dados de um extrato banc\u00e1rio da CEF em PDF.
+#' Extrai e organiza dados de um extrato bancário da CEF em PDF.
 #'
 #' @param f_caminho.arquivo_c Caminho completo para o arquivo PDF contendo o
 #' extrato da CEF.
 #'
 #' @details
 #' Utiliza o pacote pdftools para ler o arquivo e manipular o texto,
-#' identificando padr\u00f5es que auxiliam na extra\u00e7\u00e3o das informa\u00e7\u00f5es.
+#' identificando padrões que auxiliam na extração das informações.
 #'
 #' @return
 #' Retorna uma tibble com as seguintes colunas:
-#'   - Data de lan\u00e7amento  : Date
+#'   - Data de lançamento  : Date
 #'   - Data de movimento   : Date
 #'   - Documento           : Character
-#'   - Hist\u00f3rico           : Character
+#'   - Histórico           : Character
 #'   - Valor               : Numeric
 #'   - Saldo               : Numeric
 #'   - Conta_interno       : Character
 #'   - Conta               : Character
-#'   - Ag\u00eancia             : Character
+#'   - Agência             : Character
 #'   - Produto             : Character
 #'   - CNPJ                : Character
 #'   - Cliente             : Character
-#'   - Per\u00edodo_in\u00edcio      : Date
-#'   - Per\u00edodo_fim         : Date
+#'   - Período_início      : Date
+#'   - Período_fim         : Date
 #'   - Data_consulta       : POSIXct
 #'
 #' @examples
 #' \dontrun{
-#' # Exemplo 1: Uso b\u00e1sico
+#' # Exemplo 1: Uso básico
 #' extrato <- e_cef_extrato(
 #'   f_caminho.arquivo_c = "caminho/para/o/extrato.pdf"
 #' )
 #' print(extrato)
 #'
-#' # Exemplo 2: Integrando com outras fun\u00e7\u00f5es de tratamento de dados
+#' # Exemplo 2: Integrando com outras funções de tratamento de dados
 #' library(dplyr)
 #' extrato_filtrado <- e_cef_extrato("caminho/para/o/extrato.pdf") %>%
 #'   filter(Valor > 0)
@@ -49,7 +49,7 @@
 #' Consulte \code{\link{e_cef_extratos}}.
 #'
 #' @references
-#' Consulte \code{\link{pdf_text}} para extra\u00e7\u00e3o de texto de arquivos PDF.
+#' Consulte \code{\link{pdf_text}} para extração de texto de arquivos PDF.
 #'
 #' @export
 
@@ -147,23 +147,6 @@ e_cef_extrato <-
             !str_starts(.x, "\\d{2}/\\d{2}/\\d{4}\\,")
         ) %>%
         str_remove_all("\\°|\\º")
-      # metadados_t <-
-      #  tibble(
-      #    Agência = conta_c %>% str_sub(1, 4),
-      #    Cliente = cliente_c,
-      #    CNPJ = NA,
-      #    Conta   = conta_c %>% word(-1) %>% str_trim,
-      #    Data    = data.consulta_h,
-      #    Período_início =
-      #      periodo.consultado_c %>%
-      #      str_remove("-.*") %>%
-      #      as.Date(format = "%d/%m/%Y"),
-      #    Período_fim =
-      #      periodo.consultado_c %>%
-      #      str_remove(".*-") %>%
-      #      as.Date(format = "%d/%m/%Y"),
-      #    Produto = conta_c %>% str_sub(6, -1) %>% str_extract("\\s\\d{4}\\s")
-      #  )
       # Índices
       indice.comeco_i <- linhas_c %>%
         str_which("^\\d{2}") %>%
@@ -296,23 +279,6 @@ e_cef_extrato <-
         str_remove("\\s*Conta:.*") %>%
         str_remove(".*Produto:\\s*") %>%
         str_trim()
-      # metadados_t <-
-      #  tibble(
-      #    Agência = agencia_c,
-      #    Cliente = cliente_c,
-      #    CNPJ = cnpj_c,
-      #    Conta   = conta_c,
-      #    Data    = data.consulta_h,
-      #    Período_início =
-      #      periodo.consultado_c %>%
-      #      str_remove("-.*") %>%
-      #      as.Date(format = "%d/%m/%Y"),
-      #    Período_fim =
-      #      periodo.consultado_c %>%
-      #      str_remove(".*-") %>%
-      #      as.Date(format = "%d/%m/%Y"),
-      #    Produto = produto_c
-      #  )
       # Índices
       indice.comeco_i <- linhas_c %>% str_which("^Extrato") + 1
       indice.fim_i <- linhas_c %>%

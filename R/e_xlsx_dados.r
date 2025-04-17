@@ -12,7 +12,7 @@
 
 source(
   here::here(
-    "Controladoria - Documentos", "AmplaR", "R", "e_dados.R"
+    "R", "e_dados.R"
   )
 )
 

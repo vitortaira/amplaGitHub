@@ -2,13 +2,13 @@
 % Please edit documentation in R/e_cef_epr.R
 \name{e_cef_epr}
 \alias{e_cef_epr}
-\title{Extra\u00e7\u00e3o dos dados do PDF de um relat\u00f3rio EPR da CEF}
+\title{Extração dos dados do PDF de um relatório EPR da CEF}
 \usage{
 e_cef_epr(f_caminho.epr_c)
 }
 \arguments{
 \item{f_caminho.epr_c}{Caminho completo para o arquivo PDF contendo o
-relat\u00f3rio EPR da CEF.}
+relatório EPR da CEF.}
 }
 \value{
 Retorna uma tibble com as seguintes colunas:
@@ -30,27 +30,26 @@ Retorna uma tibble com as seguintes colunas:
 }
 }
 \description{
-Extrai e organiza dados de um relat\u00f3rio EPR da CEF em PDF.
+Extrai e organiza dados de um relatório EPR da CEF em PDF.
 }
 \details{
 Utiliza o pacote pdftools para ler o arquivo e manipular o texto,
-identificando padr\u00f5es que auxiliam na extra\u00e7\u00e3o das informa\u00e7\u00f5es.
+identificando padrões que auxiliam na extração das informações.
 }
 \examples{
 \dontrun{
-# Exemplo 1: Uso b\u00e1sico
+# Exemplo 1: Uso básico
 epr <- e_cef_epr(f_caminho.epr_c = "caminho/para/o/relatorio_epr.pdf")
 print(epr)
 
-# Exemplo 2: Integrando com outras fun\u00e7\u00f5es de tratamento de dados
-epr_filtrado <- e_cef_epr("caminho/para/o/relatorio_epr.pdf") \%>\%
+# Exemplo 2: Integrando com outras funções de tratamento de dados
+epr_filtrado <- e_cef_epr("caminho/para/o/relatorio_epr.pdf") %>%
   filter(`VR RETIDO` > 1000)
 summary(epr_filtrado)
 }
-
 }
 \references{
-Consulte \code{\link{pdf_text}} para extra\u00e7\u00e3o de texto de arquivos PDF.
+Consulte \code{\link{pdf_text}} para extração de texto de arquivos PDF.
 }
 \seealso{
 Consulte \code{\link{e_cef_eprs}}.

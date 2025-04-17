@@ -175,7 +175,7 @@ e_cef_inad <-
 
 # caminho_arquivo_inadimplentes.c <-
 #  here::here(
-#    "Controladoria - Documentos", "AmplaR", "dados", "cef",
+#    "dados", "cef",
 #    "inadimplentes", "prudência.xlsx"
 #  )
 # prudencia_t=e_cef_inad(caminho_arquivo_inadimplentes.c)

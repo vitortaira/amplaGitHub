@@ -2,7 +2,7 @@
 % Please edit documentation in R/e_cef_extrato.R
 \name{e_cef_extrato}
 \alias{e_cef_extrato}
-\title{Extra\u00e7\u00e3o dos dados do PDF de um extrato da CEF}
+\title{Extração dos dados do PDF de um extrato da CEF}
 \usage{
 e_cef_extrato(f_caminho.arquivo_c)
 }
@@ -13,48 +13,48 @@ extrato da CEF.}
 \value{
 Retorna uma tibble com as seguintes colunas:
 \itemize{
-\item Data de lan\u00e7amento  : Date
+\item Data de lançamento  : Date
 \item Data de movimento   : Date
 \item Documento           : Character
-\item Hist\u00f3rico           : Character
+\item Histórico           : Character
 \item Valor               : Numeric
 \item Saldo               : Numeric
 \item Conta_interno       : Character
 \item Conta               : Character
-\item Ag\u00eancia             : Character
+\item Agência             : Character
 \item Produto             : Character
 \item CNPJ                : Character
 \item Cliente             : Character
-\item Per\u00edodo_in\u00edcio      : Date
-\item Per\u00edodo_fim         : Date
+\item Período_início      : Date
+\item Período_fim         : Date
 \item Data_consulta       : POSIXct
 }
 }
 \description{
-Extrai e organiza dados de um extrato banc\u00e1rio da CEF em PDF.
+Extrai e organiza dados de um extrato bancário da CEF em PDF.
 }
 \details{
 Utiliza o pacote pdftools para ler o arquivo e manipular o texto,
-identificando padr\u00f5es que auxiliam na extra\u00e7\u00e3o das informa\u00e7\u00f5es.
+identificando padrões que auxiliam na extração das informações.
 }
 \examples{
 \dontrun{
-# Exemplo 1: Uso b\u00e1sico
+# Exemplo 1: Uso básico
 extrato <- e_cef_extrato(
   f_caminho.arquivo_c = "caminho/para/o/extrato.pdf"
 )
 print(extrato)
 
-# Exemplo 2: Integrando com outras fun\u00e7\u00f5es de tratamento de dados
+# Exemplo 2: Integrando com outras funções de tratamento de dados
 library(dplyr)
-extrato_filtrado <- e_cef_extrato("caminho/para/o/extrato.pdf") \%>\%
+extrato_filtrado <- e_cef_extrato("caminho/para/o/extrato.pdf") %>%
   filter(Valor > 0)
 summary(extrato_filtrado)
 }
 
 }
 \references{
-Consulte \code{\link{pdf_text}} para extra\u00e7\u00e3o de texto de arquivos PDF.
+Consulte \code{\link{pdf_text}} para extração de texto de arquivos PDF.
 }
 \seealso{
 Consulte \code{\link{e_cef_extratos}}.

@@ -17,7 +17,7 @@
 
 source(
   here::here(
-    "Controladoria - Documentos", "AmplaR", "R", "e_cef_ecn.R"
+    "R", "e_cef_ecn.R"
   )
 )
 
