@@ -11,7 +11,7 @@
 # sheet_name: Nome da aba a ser lida.
 
 source(
-  here(
+  here::here(
     "Controladoria - Documentos", "AmplaR", "R", "e_dados.R"
   )
 )
@@ -20,7 +20,7 @@ library(openxlsx)
 
 xlsx_dados <-
   function(f_caminho.pasta.dados_c =
-             here(
+             here::here(
                "Relatórios - Documentos", "Dados", "Dados originais"
              )) {
     # Valida existência dos pacotes necessários
@@ -85,7 +85,7 @@ xlsx_dados <-
     )
     nome.xlsx_c <-
       str_c(
-        here("Relatórios - Documentos", "Dados", "Dados originais"),
+        here::here("Relatórios - Documentos", "Dados", "Dados originais"),
         "/Dados_",
         format(Sys.time(), format = "%Y_%m_%d-%H_%M_%S"),
         ".xlsx"

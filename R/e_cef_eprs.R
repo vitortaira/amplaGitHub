@@ -24,7 +24,7 @@ library(pdftools) # Funções para extração de dados em PDF
 # Define a função
 e_cef_eprs <-
   function(f_caminho.pasta.ciweb_c =
-             here("Relatórios - Documentos", "Relatorios - CIWEB")) {
+             here::here("Relatórios - Documentos", "Relatorios - CIWEB")) {
     # Consolida os dados dos relatórios EPR da CEF na pasta "Relatorios - CIWEB"
     caminhos.cef.epr_c <-
       list.files(
@@ -49,11 +49,11 @@ e_cef_eprs <-
 # Teste -------------------------------------------------------------------
 
 # f_caminho.pasta.ciweb_c <-
-#  here("..", "..", "Relatórios - Documentos", "Relatorios - CIWEB",
+#  here::here("..", "..", "Relatórios - Documentos", "Relatorios - CIWEB",
 #    "1. UP Vila Sonia", "11.03.25", "EPR",
 #    "20250311_123902_696_PP_177770014920_CONTRATOS_EMPREEND.pdf"
 #  )
-#  here("..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
+#  here::here("..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
 #    "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
 #  )
 # eprs_t <- e_cef_eprs()

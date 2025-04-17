@@ -27,26 +27,26 @@ library(styler) # Funções para formatar códigos, e.g. style_file()
 library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2
 
 extrair_dados_pasta_informakon <-
-  function(caminho_pasta_informakon.c = here("dados", "informakon")) {
+  function(caminho_pasta_informakon.c = here::here("dados", "informakon")) {
     ###############################################################################
     extrair_caminhos_relatorio_informakon <-
-      function(caminho_pasta_informakon.c = here("dados", "informakon")) {
+      function(caminho_pasta_informakon.c = here::here("dados", "informakon")) {
         if (!dir.exists(caminho_pasta_informakon.c)) {
           stop("A pasta 'informakon' não foi encontrada.")
         }
         # Despesas
         caminhos.arquivos.despesas_vc <-
           setdiff(
-            list.files(here("dados", "informakon"), full.names = T)[
-              list.files(here("dados", "informakon"), full.names = T) %>%
+            list.files(here::here("dados", "informakon"), full.names = T)[
+              list.files(here::here("dados", "informakon"), full.names = T) %>%
                 basename() %>%
                 str_which("^despesas")
             ],
             c(
-              list.files(here("dados", "informakon"),
+              list.files(here::here("dados", "informakon"),
                 full.names = T
               )[str_which(
-                list.files(here("dados", "informakon")),
+                list.files(here::here("dados", "informakon")),
                 "^Informakon.*"
               )]
             )
@@ -65,17 +65,17 @@ extrair_dados_pasta_informakon <-
         # Receitas
         caminhos.arquivos.receitas_vc <-
           setdiff(
-            list.files(here("dados", "informakon"), full.names = T)[
-              list.files(here("dados", "informakon"), full.names = T) %>%
+            list.files(here::here("dados", "informakon"), full.names = T)[
+              list.files(here::here("dados", "informakon"), full.names = T) %>%
                 basename() %>%
                 str_which("^receitas")
             ],
             c(
               list.files(
-                here("dados", "informakon"),
+                here::here("dados", "informakon"),
                 full.names = T
               )[str_which(
-                list.files(here("dados", "informakon")),
+                list.files(here::here("dados", "informakon")),
                 "^Informakon.*"
               )]
             )
@@ -516,7 +516,7 @@ extrair_dados_pasta_informakon <-
 # Teste -------------------------------------------------------------------
 
 # caminho_arquivo_informakon.c <-
-#  here("informakon", "receitas_informakon_20180101_20250131.xlsx")
+#  here::here("informakon", "receitas_informakon_20180101_20250131.xlsx")
 # dados.pasta.informakon_l <- extrair_dados_pasta_informakon()
 # str(extrair_dados_pasta_informakon())
 # View(extrair_dados_pasta_informakon()$Despesas)

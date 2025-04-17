@@ -174,7 +174,7 @@ e_cef_inad <-
 # Teste -------------------------------------------------------------------
 
 # caminho_arquivo_inadimplentes.c <-
-#  here(
+#  here::here(
 #    "Controladoria - Documentos", "AmplaR", "dados", "cef",
 #    "inadimplentes", "prudência.xlsx"
 #  )

@@ -211,7 +211,7 @@ e_cef_inad <-
 # Teste -------------------------------------------------------------------
 
 # caminho_arquivo_inadimplentes.c <-
-#  here("dados", "cef", "inadimplentes", "pompeia.xlsx")
+#  here::here("dados", "cef", "inadimplentes", "pompeia.xlsx")
 # str(e_cef_inad(caminho_arquivo_inadimplentes.c))
 # View(e_cef_inad(caminho_arquivo_inadimplentes.c)$Parcelas)
 # View(e_cef_inad(caminho_arquivo_inadimplentes.c)$Consolidado)

@@ -10,7 +10,7 @@
 # extrair_caminhos_relatorio_ciweb(
 #   caminho_pasta_ciweb.c =
 #     paste0(
-#       "here() %>% dirname %>% dirname,
+#       "here::here() %>% dirname %>% dirname,
 #       "/Relatórios - Documentos/Relatorios - CIWEB",
 #   quais.c = "Todos"
 # )
@@ -36,7 +36,7 @@ extrair_caminhos_relatorio_ciweb <-
   ## Salvando o caminho para a pasta "Relatorios - CIWEB"
   function(caminho_pasta_ciweb.c =
              paste0(
-               here(),
+               here::here(),
                "/Relatórios - Documentos/Relatorios - CIWEB"
              ),
            quais.c = "Todos") {

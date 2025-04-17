@@ -382,10 +382,10 @@ e_cef_extrato <-
 # Teste -------------------------------------------------------------------
 
 # f_caminho.arquivo_c <- caminhos.extratos.cef_c[1]
-#  here("Relatórios - Documentos", "Relatorios - Extratos",
+#  here::here("Relatórios - Documentos", "Relatorios - Extratos",
 #    "Estação", "Fevereiro 2025", "CAIXA -  2419 - FEVEREIRO.pdf"
 #  )
-#  here("..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
+#  here::here("..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
 #    "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
 #  )
 # extrato <- e_cef_extrato(f_caminho.arquivo_c)

@@ -21,13 +21,13 @@
 # f_caminho.pasta.ciweb_c: Caminho da pasta "Relatorios - CIWEB"
 
 # source(
-#  here(
+#  here::here(
 #    "Controladoria - Documentos", "AmplaR", "R",
 #    "extrair_dados_pasta_inadimplentes.R"
 #  )
 # )
 source(
-  here(
+  here::here(
     "Controladoria - Documentos", "AmplaR", "R", "e_cef_inads.R"
   )
 )
@@ -48,7 +48,7 @@ library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplo
 # Lendo o arquivo CSV com codificação UTF-8
 relacao.contratos.estacao_t <-
   read_delim(
-    here(
+    here::here(
       "Controladoria - Documentos", "AmplaR", "dados", "cef", "inadimplentes", "formatados", "Relacao de contratos - Estacao.csv"
     ),
     locale = locale(encoding = "UTF-8"),
@@ -71,7 +71,7 @@ relacao.contratos.estacao_t <-
 
 relacao.contratos.sonia1_t <-
   read_excel(
-    here(
+    here::here(
       "Controladoria - Documentos", "AmplaR", "dados",
       "cef", "inadimplentes", "formatados", "Relacao de contratos - Sonia1.xlsx"
     ),
@@ -95,7 +95,7 @@ relacao.contratos.sonia1_t <-
 
 relacao.contratos.prudencia_t <-
   read_excel(
-    here(
+    here::here(
       "Controladoria - Documentos", "AmplaR", "dados",
       "cef", "inadimplentes", "formatados",
       "Relacao de contratos - Prudencia.xlsx"
@@ -141,7 +141,7 @@ rm(
 
 cruzar_inadimplentes_repasses <-
   function(f_caminho.pasta.inadimplentes_c =
-             here("Controladoria - Documentos", "AmplaR", "dados", "cef", "inadimplentes")) {
+             here::here("Controladoria - Documentos", "AmplaR", "dados", "cef", "inadimplentes")) {
     # Consolida os dados dos inadimplentes da pasta "inadimplentes"
     inadimplentes_t <-
       extrair_dados_pasta_inadimplentes(xlsx = FALSE) %>%
@@ -227,8 +227,8 @@ cruzar_inadimplentes_repasses <-
       )
     #  # Criando uma cópia de "Template.xlsx"
     #  file.copy(
-    #    here("dados", "cef", "inadimplentes", "formatados", "Template.xlsx"),
-    #    #here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c),
+    #    here::here("dados", "cef", "inadimplentes", "formatados", "Template.xlsx"),
+    #    #here::here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c),
     #    paste0("C:/Users/Ampla/Documents/", nome.xlsx_c),
     #    overwrite = T
     #  )
@@ -674,7 +674,7 @@ cruzar_inadimplentes_repasses <-
     saveWorkbook(
       xlsx,
       paste0(
-        here(
+        here::here(
           "..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
           "Extratos conciliados"
         ),
@@ -708,7 +708,7 @@ cruzar_inadimplentes_repasses <-
     #  # Movendo a planilha da pasta local para o OneDrive
     #  file.rename(
     #    caminho.xlsx_c,
-    #    here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c)
+    #    here::here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c)
     #  )
     return(extratos.cruzados_t)
   }
@@ -717,12 +717,12 @@ cruzar_inadimplentes_repasses <-
 
 # cruzar_extrato_cmfcn()
 # f_caminho.arquivo.extrato_cef_c <-
-#   here(
+#   here::here(
 #     "..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
 #     "Estação", "Fevereiro 2025", "CAIXA -  2419 - FEVEREIRO.pdf"
 #   )
 # f_caminho.arquivo.extrato_cef_c <-
-#   here(
+#   here::here(
 #     "..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
 #     "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
 #   )

@@ -32,9 +32,9 @@ library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplo
 
 cruzar_extrato_cmfcn <-
   function(f_caminho.pasta.extratos_c =
-             here("Relatórios - Documentos", "Relatorios - Extratos"),
+             here::here("Relatórios - Documentos", "Relatorios - Extratos"),
            f_caminho.pasta.ciweb_c =
-             here("Relatórios - Documentos", "Relatorios - CIWEB")) {
+             here::here("Relatórios - Documentos", "Relatorios - CIWEB")) {
     # Consolida os dados dos extratos da CEF na pasta "Relatorios - Extratos"
     caminhos.extratos.cef_c <-
       list.files(
@@ -100,8 +100,8 @@ cruzar_extrato_cmfcn <-
       )
     #  # Criando uma cópia de "Template.xlsx"
     #  file.copy(
-    #    here("dados", "cef", "inadimplentes", "formatados", "Template.xlsx"),
-    #    #here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c),
+    #    here::here("dados", "cef", "inadimplentes", "formatados", "Template.xlsx"),
+    #    #here::here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c),
     #    paste0("C:/Users/Ampla/Documents/", nome.xlsx_c),
     #    overwrite = T
     #  )
@@ -547,7 +547,7 @@ cruzar_extrato_cmfcn <-
     saveWorkbook(
       xlsx,
       paste0(
-        here(
+        here::here(
           "Relatórios - Documentos", "Relatorios - Extratos",
           "Extratos conciliados"
         ),
@@ -581,7 +581,7 @@ cruzar_extrato_cmfcn <-
     #  # Movendo a planilha da pasta local para o OneDrive
     #  file.rename(
     #    caminho.xlsx_c,
-    #    here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c)
+    #    here::here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c)
     #  )
     return(extratos.cruzados_t)
   }
@@ -590,12 +590,12 @@ cruzar_extrato_cmfcn <-
 
 # cruzar_extrato_cmfcn()
 # f_caminho.arquivo.extrato_cef_c <-
-#   here(
+#   here::here(
 #     "..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
 #     "Estação", "Fevereiro 2025", "CAIXA -  2419 - FEVEREIRO.pdf"
 #   )
 # f_caminho.arquivo.extrato_cef_c <-
-#   here(
+#   here::here(
 #     "..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
 #     "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
 #   )

@@ -28,26 +28,26 @@ library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplo
 
 e_ik <-
   function(f_caminho.pasta.ik_c =
-             here("Controladoria - Documentos", "AmplaR", "dados", "informakon"),
+             here::here("Controladoria - Documentos", "AmplaR", "dados", "informakon"),
            xlsx = FALSE) {
     extrair_caminhos_relatorio_informakon <-
-      function(f_caminho.pasta.ik_c = here("Controladoria - Documentos", "AmplaR", "dados", "informakon")) {
+      function(f_caminho.pasta.ik_c = here::here("Controladoria - Documentos", "AmplaR", "dados", "informakon")) {
         if (!dir.exists(f_caminho.pasta.ik_c)) {
           stop("A pasta 'informakon' não foi encontrada.")
         }
         # Despesas
         caminhos.arquivos.despesas_vc <-
           setdiff(
-            list.files(here("Controladoria - Documentos", "AmplaR", "dados", "informakon"), full.names = T)[
-              list.files(here("Controladoria - Documentos", "AmplaR", "dados", "informakon"), full.names = T) %>%
+            list.files(here::here("Controladoria - Documentos", "AmplaR", "dados", "informakon"), full.names = T)[
+              list.files(here::here("Controladoria - Documentos", "AmplaR", "dados", "informakon"), full.names = T) %>%
                 basename() %>%
                 str_which("^despesas")
             ],
             c(
-              list.files(here("Controladoria - Documentos", "AmplaR", "dados", "informakon"),
+              list.files(here::here("Controladoria - Documentos", "AmplaR", "dados", "informakon"),
                 full.names = T
               )[str_which(
-                list.files(here("Controladoria - Documentos", "AmplaR", "dados", "informakon")),
+                list.files(here::here("Controladoria - Documentos", "AmplaR", "dados", "informakon")),
                 "^Informakon.*"
               )]
             )
@@ -66,17 +66,17 @@ e_ik <-
         # Receitas
         caminhos.arquivos.receitas_vc <-
           setdiff(
-            list.files(here("Controladoria - Documentos", "AmplaR", "dados", "informakon"), full.names = T)[
-              list.files(here("Controladoria - Documentos", "AmplaR", "dados", "informakon"), full.names = T) %>%
+            list.files(here::here("Controladoria - Documentos", "AmplaR", "dados", "informakon"), full.names = T)[
+              list.files(here::here("Controladoria - Documentos", "AmplaR", "dados", "informakon"), full.names = T) %>%
                 basename() %>%
                 str_which("^receitas")
             ],
             c(
               list.files(
-                here("Controladoria - Documentos", "AmplaR", "dados", "informakon"),
+                here::here("Controladoria - Documentos", "AmplaR", "dados", "informakon"),
                 full.names = T
               )[str_which(
-                list.files(here("Controladoria - Documentos", "AmplaR", "dados", "informakon")),
+                list.files(here::here("Controladoria - Documentos", "AmplaR", "dados", "informakon")),
                 "^Informakon.*"
               )]
             )
@@ -230,7 +230,7 @@ e_ik <-
 # Teste -------------------------------------------------------------------
 
 # caminho_arquivo_informakon.c <-
-#  here("informakon", "receitas_informakon_20180101_20250131.xlsx")
+#  here::here("informakon", "receitas_informakon_20180101_20250131.xlsx")
 # dados.ik_l <- e_ik()
 # str(e_ik())
 # View(e_ik()$Despesas)

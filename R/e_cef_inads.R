@@ -2,11 +2,11 @@ library(openxlsx) # Funções para preencher arquivos .xlsx
 library(readxl) # Importação de arquivos em Excel, e.g. read_excel()
 library(viridisLite) # Mapeamento de cores
 
-# source(here("Controladoria - Documentos", "AmplaR", "R", "e_cef_inad.R"))
-source(here("Controladoria - Documentos", "AmplaR", "R", "e_cef_inad.R"))
+# source(here::here("Controladoria - Documentos", "AmplaR", "R", "e_cef_inad.R"))
+source(here::here("Controladoria - Documentos", "AmplaR", "R", "e_cef_inad.R"))
 
 e_cef_inads <-
-  function(caminho_pasta_inadimplentes.c = here("Controladoria - Documentos", "AmplaR", "dados", "cef", "inadimplentes"),
+  function(caminho_pasta_inadimplentes.c = here::here("Controladoria - Documentos", "AmplaR", "dados", "cef", "inadimplentes"),
            xlsx = TRUE) {
     # Formatar todos os arquivos da pasta -------------------------------------
 
@@ -16,7 +16,7 @@ e_cef_inads <-
     # Arquivos a serem desconsiderados
     arquivos.caminhos.excluir_vc <-
       # Pasta "formatados"
-      here("Controladoria - Documentos", "AmplaR", "dados", "cef", "inadimplentes", "formatados")
+      here::here("Controladoria - Documentos", "AmplaR", "dados", "cef", "inadimplentes", "formatados")
     # Arquivos a serem analisados
     arquivos.caminhos.analisar_vc <-
       setdiff(arquivos.caminhos.todos_vc, arquivos.caminhos.excluir_vc)
@@ -53,8 +53,8 @@ e_cef_inads <-
         )
       # Criando uma cópia de "Template.xlsx"
       file.copy(
-        here("Controladoria - Documentos", "AmplaR", "dados", "cef", "inadimplentes", "formatados", "Template.xlsx"),
-        # here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c),
+        here::here("Controladoria - Documentos", "AmplaR", "dados", "cef", "inadimplentes", "formatados", "Template.xlsx"),
+        # here::here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c),
         paste0("C:/Users/Ampla/Documents/", nome.xlsx_c),
         overwrite = T
       )
@@ -62,7 +62,7 @@ e_cef_inads <-
       xlsx <-
         loadWorkbook(
           paste0("C:/Users/Ampla/Documents/", nome.xlsx_c)
-          # here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c)
+          # here::here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c)
         )
       deleteNamedRegion(xlsx, name = "parcelas")
       # Preenchendo os dados da aba "Parcelas"
@@ -225,7 +225,7 @@ e_cef_inads <-
       # Movendo a planilha da pasta local para o OneDrive
       file.rename(
         caminho.xlsx_c,
-        here("Controladoria - Documentos", "AmplaR", "dados", "cef", "inadimplentes", "formatados", nome.xlsx_c)
+        here::here("Controladoria - Documentos", "AmplaR", "dados", "cef", "inadimplentes", "formatados", nome.xlsx_c)
       )
     }
     return(dados.pasta_df)
@@ -235,6 +235,6 @@ e_cef_inads <-
 # Teste -------------------------------------------------------------------
 
 # caminho_arquivo_inadimplentes.c <-
-#  here("dados", "cef", "inadimplentes", "inads. pomp.xlsx")
+#  here::here("dados", "cef", "inadimplentes", "inads. pomp.xlsx")
 # str(extrair_dados_inadimplentes(caminho_arquivo_inadimplentes.c))
 # teste=e_cef_inads(xlsx=F)

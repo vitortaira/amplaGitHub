@@ -16,7 +16,7 @@
 # f_caminho.pasta.ciweb_c: String do caminho da pasta "Relatorios - CIWEB".
 
 source(
-  here(
+  here::here(
     "Controladoria - Documentos", "AmplaR", "R", "e_cef_ecn.R"
   )
 )
@@ -26,7 +26,7 @@ source(
 # Define a função
 e_cef_ecns <-
   function(f_caminho.pasta.ciweb_c =
-             here("Relatórios - Documentos", "Relatorios - CIWEB")) {
+             here::here("Relatórios - Documentos", "Relatorios - CIWEB")) {
     # Consolida os dados dos relatórios ECN da CEF na pasta "Relatorios - CIWEB"
     caminhos.ecn_c <-
       list.files(f_caminho.pasta.ciweb_c, full.names = TRUE, recursive = T) %>%
@@ -60,11 +60,11 @@ e_cef_ecns <-
 # Teste -------------------------------------------------------------------
 
 # f_caminho.pasta.ciweb_c <-
-#  here("..", "..", "Relatórios - Documentos", "Relatorios - CIWEB",
+#  here::here("..", "..", "Relatórios - Documentos", "Relatorios - CIWEB",
 #    "1. UP Vila Sonia", "11.03.25", "ECN",
 #    "20250311_123902_696_PP_177770014920_CONTRATOS_EMPREEND.pdf"
 #  )
-#  here("..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
+#  here::here("..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
 #    "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
 #  )
 # ecns_t <- e_cef_ecns()

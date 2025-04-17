@@ -171,7 +171,7 @@ extrair_dados_arquivo_cmfcn <-
 #  comeco.linhas_c %>% keep(~ str_detect(.x, "^\\d"))
 # sort(unique(diff(str_which(linhas.lancamentos_c, "^CONTRATO"))))
 # f_caminho.arquivo.cmfcn_c <-
-#  here("..", "..", "Relatórios - Documentos", "Relatorios - CIWEB",
+#  here::here("..", "..", "Relatórios - Documentos", "Relatorios - CIWEB",
 #    "1. UP Vila Sonia", "11.03.25",
 #    "CMF", "20250311_123855_693_PP_177770014920_MOV_FINANC_CN.pdf"
 #  )

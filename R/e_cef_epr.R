@@ -128,11 +128,11 @@ e_cef_epr <-
 # Teste -------------------------------------------------------------------
 
 # f_caminho.epr_c <-
-#  here("..", "..", "Relatórios - Documentos", "Relatorios - CIWEB",
+#  here::here("..", "..", "Relatórios - Documentos", "Relatorios - CIWEB",
 #    "1. UP Vila Sonia", "11.03.25", "EPR",
 #    "20250311_123902_696_PP_177770014920_CONTRATOS_EMPREEND.pdf"
 #  )
-#  here("..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
+#  here::here("..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
 #    "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
 #  )
 # extrato <- dados_epr(f_caminho.epr_c)

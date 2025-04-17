@@ -16,8 +16,6 @@
 
 # Pacotes -----------------------------------------------------------------
 
-library(pdftools) # Funções para extração de dados em PDF
-
 # Função ------------------------------------------------------------------
 
 # Define a função
@@ -209,7 +207,7 @@ e_cef_cmfcn <-
 #  comeco.linhas_c %>% keep(~ str_detect(.x, "^\\d"))
 # sort(unique(diff(str_which(linhas.lancamentos_c, "^CONTRATO"))))
 # f_caminho.arquivo.cmfcn_c <-
-#  here(
+#  here::here(
 #    "Relatórios - Documentos", "Relatorios - CIWEB", "2. UP Jardim Prudencia",
 #    "11.03.25", "CMF", "20250311_123907_698_PP_177770016646_MOV_FINANC_CN.pdf"
 #  )
