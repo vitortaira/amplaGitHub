@@ -10,7 +10,8 @@ e_cef_extratos(
 )
 }
 \arguments{
-\item{f_caminho.pasta.extratos_c}{Caminho completo para a pasta que contém os arquivos PDF dos extratos.}
+\item{f_caminho.pasta.extratos_c}{Caminho completo para a pasta que
+contém os arquivos PDF dos extratos.}
 }
 \value{
 Retorna um tibble com as seguintes colunas:
@@ -33,10 +34,15 @@ Retorna um tibble com as seguintes colunas:
 }
 }
 \description{
-Consolida e processa dados de múltiplos extratos em PDF da CEF, combinando-os em um único data frame.
+Consolida e processa dados de múltiplos extratos em PDF da CEF,
+combinando-os em um único data frame.
 }
 \details{
-A função percorre a pasta especificada buscando arquivos PDF que contenham os códigos 2429, 2419 ou 2245, ignorando aqueles que contenham a palavra "fundo". Para cada arquivo encontrado, chama a função \code{e_cef_extrato} para realizar a extração dos dados e, posteriormente, consolida os resultados em um único tibble.
+A função percorre a pasta especificada buscando arquivos PDF que
+contenham os códigos 2429, 2419 ou 2245, ignorando aqueles que contenham
+a palavra "fundo". Para cada arquivo encontrado, chama a função
+\code{e_cef_extrato} para realizar a extração dos dados e, posteriormente,
+consolida os resultados em um único tibble.
 }
 \examples{
 \dontrun{

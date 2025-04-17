@@ -43,10 +43,11 @@ epr <- e_cef_epr(f_caminho.epr_c = "caminho/para/o/relatorio_epr.pdf")
 print(epr)
 
 # Exemplo 2: Integrando com outras funções de tratamento de dados
-epr_filtrado <- e_cef_epr("caminho/para/o/relatorio_epr.pdf") %>%
+epr_filtrado <- e_cef_epr("caminho/para/o/relatorio_epr.pdf") \%>\%
   filter(`VR RETIDO` > 1000)
 summary(epr_filtrado)
 }
+
 }
 \references{
 Consulte \code{\link{pdf_text}} para extração de texto de arquivos PDF.

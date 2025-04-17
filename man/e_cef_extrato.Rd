@@ -47,7 +47,7 @@ print(extrato)
 
 # Exemplo 2: Integrando com outras funções de tratamento de dados
 library(dplyr)
-extrato_filtrado <- e_cef_extrato("caminho/para/o/extrato.pdf") %>%
+extrato_filtrado <- e_cef_extrato("caminho/para/o/extrato.pdf") \%>\%
   filter(Valor > 0)
 summary(extrato_filtrado)
 }
