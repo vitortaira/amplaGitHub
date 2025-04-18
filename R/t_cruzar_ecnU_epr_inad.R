@@ -34,12 +34,7 @@ source(
 
 # Pacotes -----------------------------------------------------------------
 
-library(here) # Facilita a identificação de caminhos
-library(magrittr) # Ferramentas sintáticas ao dplyr, e.g. %<>%
-library(readxl) # Funções para preencher arquivos .xlsx
-library(pdftools) # Funções para extração de dados em PDF
 library(readxl) # Funções para ler arquivos .xlsx
-library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2
 
 # Função ------------------------------------------------------------------
 
@@ -48,8 +43,10 @@ library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplo
 # Lendo o arquivo CSV com codificação UTF-8
 relacao.contratos.estacao_t <-
   read_delim(
-    here::here(
-      "dados", "cef", "inadimplentes", "formatados", "Relacao de contratos - Estacao.csv"
+    here(
+      dirname(dirname(here())), "Relatórios - Documentos",
+      "Relatorios - Cobrança", "Consolidados", "formatados",
+      "Relacao de contratos - Estacao.csv"
     ),
     locale = locale(encoding = "UTF-8"),
     delim = ";",
@@ -72,8 +69,8 @@ relacao.contratos.estacao_t <-
 relacao.contratos.sonia1_t <-
   read_excel(
     here::here(
-      "dados",
-      "cef", "inadimplentes", "formatados", "Relacao de contratos - Sonia1.xlsx"
+      dirname(dirname(here())), "Relatórios - Documentos",
+      "Relatorios - Cobrança", "Consolidados", "formatados", "Relacao de contratos - Sonia1.xlsx"
     ),
     sheet = 1,
     col_names = TRUE,
@@ -96,8 +93,8 @@ relacao.contratos.sonia1_t <-
 relacao.contratos.prudencia_t <-
   read_excel(
     here::here(
-      "dados",
-      "cef", "inadimplentes", "formatados",
+      dirname(dirname(here())), "Relatórios - Documentos",
+      "Relatorios - Cobrança", "Consolidados", "formatados",
       "Relacao de contratos - Prudencia.xlsx"
     ),
     sheet = 1,
@@ -144,7 +141,7 @@ cruzar_inadimplentes_repasses <-
              here::here("dados", "cef", "inadimplentes")) {
     # Consolida os dados dos inadimplentes da pasta "inadimplentes"
     inadimplentes_t <-
-      extrair_dados_pasta_inadimplentes(xlsx = FALSE) %>%
+      e_inads(xlsx = FALSE) %>%
       rename(Contrato_6 = "Contrato")
     # Cruza inadimplentes_t e relacao.contratos_t
     inadimplentes.repasses_t <-
@@ -185,10 +182,10 @@ cruzar_inadimplentes_repasses <-
     #      map_dfr(~ extrair_dados_arquivo_ecn(.)$Unidades) %>%
     #      mutate(Contrato_6 = str_sub(Contrato, -6, -1))
     ecns_t <-
-      dados_cef_ecn_pasta() %>%
+      e_cef_ecns() %>%
       mutate(CONTRATO_12 = Contrato %>% str_sub(1, -3))
     eprs_t <-
-      dados_cef_epr_pasta() %>%
+      e_cef_eprs() %>%
       rename(
         CONTRATO_12 = "CONTRATO",
         `Data de Assinatura` = "DT. ASSIN",
@@ -675,8 +672,8 @@ cruzar_inadimplentes_repasses <-
       xlsx,
       paste0(
         here::here(
-          "..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
-          "Extratos conciliados"
+          dirname(dirname(here())), "Relatórios - Documentos",
+          "Relatorios - Extratos", "Extratos conciliados"
         ),
         "/",
         nome.xlsx_c

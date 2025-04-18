@@ -16,12 +16,11 @@
 
 # Pacotes -----------------------------------------------------------------
 
-library(magrittr) # Ferramentas sintáticas ao dplyr, e.g. %<>%
+library(magrittr) # Ferramentas sintáticas ao dplyr
 library(openxlsx) # Funções para preencher arquivos .xlsx
-library(pdftools) # Funções para extração de dados em PDF
-library(readxl) # Funções para a importação de arquivos em Excel, e.g. read_excel()
-library(styler) # Funções para formatar códigos, e.g. style_file()
-library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2
+library(readxl) # Funções para ler arquivos em Excel
+library(styler) # Funções para formatar códigos
+library(tidyverse) # Pacotes úteis para a análise de dados
 
 # Criando função para extrair os dados dos arquivos ECN em PDF
 extrair_dados_arquivo_ecn <-
