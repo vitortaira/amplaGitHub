@@ -1,8 +1,3 @@
-source(here::here("R", "e_cef_cmfcns.R"))
-source(here::here("R", "e_cef_ecns.R"))
-source(here::here("R", "e_cef_eprs.R"))
-source(here::here("R", "e_cef_extratos.R"))
-
 e_cef <-
   function() {
     dados.cef_l <-
