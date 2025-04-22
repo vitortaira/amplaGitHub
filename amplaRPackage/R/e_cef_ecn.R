@@ -22,6 +22,13 @@
 #' print(resultado)
 #' }
 #'
+#' @importFrom pdftools pdf_text
+#' @importFrom stringr strsplit str_remove_all str_replace str_replace_all
+#' @importFrom stringr str_detect str_which str_starts
+#' @importFrom purrr keep nth
+#' @importFrom tidyr separate_wider_delim
+#' @importFrom dplyr mutate select
+#'
 #' @export
 
 # Criando função para extrair os dados dos arquivos ECN em PDF
