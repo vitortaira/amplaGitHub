@@ -22,12 +22,12 @@
 #' print(resultado)
 #' }
 #'
+#' @importFrom dplyr mutate nth select
 #' @importFrom pdftools pdf_text
-#' @importFrom stringr strsplit str_remove_all str_replace str_replace_all
+#' @importFrom purrr keep
+#' @importFrom stringr str_split str_remove_all str_replace str_replace_all
 #' @importFrom stringr str_detect str_which str_starts
-#' @importFrom purrr keep nth
 #' @importFrom tidyr separate_wider_delim
-#' @importFrom dplyr mutate select
 #'
 #' @export
 
@@ -40,7 +40,7 @@ e_cef_ecn <-
     paginas_l <-
       pdf_text(f_caminho.arquivo_c) %>%
       ### Separando o texto por linhas
-      strsplit("\n")
+      str_split("\n")
     ### Limpando o conteúdo das páginas
     for (i in seq_along(paginas_l)) {
       paginas_l[[i]] <-
