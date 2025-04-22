@@ -133,8 +133,13 @@ e_cef_dcd_resumo <-
     # Segunda coluna
     `EMPREENDIMENTO` <- linhas.resumo_c %>%
       keep(~ str_starts(.x, "(?i)numero do contrato")) %>%
-      str_remove("(?i)numero do contrato\\s?")
-    # `CODIGO DO PEDIDO` <- linhas.resumo_c %>%
+      str_remove("(?i)numero do contrato\\s?") %>%
+      str_remove(".*\\d{12}\\s?") %>%
+      str_remove("(?i)\\s?origem\\s?de\\s?recurso.*")
+    `CODIGO DO PEDIDO` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)numero do pedido")) %>%
+      str_remove("(?i).*codigo do pedido\\s?") %>%
+      str_remove("(?i)\\s?linha\\s?de\\s?financiamento\\s?.*")
     # `SITUACAO DO PEDIDO`() <- linhas.resumo_c %>%
     # `DATA TERMINO SUSPENSIVA`() <- linhas.resumo_c %>%
     # `DT INICIO ROTINA ATRASO OBRA`() <- linhas.resumo_c %>%
@@ -158,7 +163,7 @@ e_cef_dcd_resumo <-
     # `PERC ANTEC (PJ)`() <- linhas.resumo_c %>%
     # Terceira coluna
     # Consolidando todas as variéveis em uma tabela
-    dados.cef.dcd.resumo_t <-
+    dados.cef.dcd.resumo_t() <-
       tibble(
         # Primeira coluna
         `NUMERO DO CONTRATO` = "NUMERO DO CONTRATO",
@@ -190,13 +195,16 @@ e_cef_dcd_resumo <-
   }
 
 # Teste -------------------------------------------------------------------
-#
+f_caminho.arquivo_c <- "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - CIWEB/1. UP Vila Sonia/04.04/DCD/20250404_082919_722_PP_177770014920_DEMONST_CRONOGRAMA.pdf"
 # caminhos.dcds_c <-
-#  list.files(
-#    file.path(dirname(dirname(here())), "Relatórios - Documentos", "Relatorios - CIWEB"),
-#    full.names = TRUE, recursive = TRUE
-#  ) %>%
-#  keep(~ str_detect(.x, "_DEMONST_CRONOGRAMA.pdf"))
+#   list.files(
+#     file.path(
+#       dirname(dirname(here())),
+#       "Relatórios - Documentos", "Relatorios - CIWEB"
+#     ),
+#     full.names = TRUE, recursive = TRUE
+#   ) %>%
+#   keep(~ str_detect(.x, "_DEMONST_CRONOGRAMA.pdf"))
 # f_caminho.arquivo_c <- caminhos.dcds_c[1]
 # here::here(
 #  "Relatórios - Documentos", "Relatorios - Extratos",
@@ -206,7 +214,7 @@ e_cef_dcd_resumo <-
 ##    "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
 ##  )
 ## extrato <- dados_cef_extrato(f_caminho.arquivo.extrato_cef_c)
-## shell.exec(f_caminho.arquivo.extrato_cef_c)
+## shell.exec(f_caminho.arquivo_c)
 # list.files(
 #  normalizePath(file.path(dirname(dirname(here())), "Relatórios - Documentos", "Relatorios - CIWEB")),
 #  full.names = TRUE, recursive = TRUE

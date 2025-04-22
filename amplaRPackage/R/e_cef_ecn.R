@@ -1,33 +1,37 @@
-# Descrição ---------------------------------------------------------------
-
-### RESUMO ###
-
-# e_cef_ecn() extrai os dados de um arquivo ECN.
-
-### UTILIZAÇÃO ###
-
-# e_cef_ecn(
-#   caminho.ecn_c
-# )
-
-### ARGUMENTOS ###
-
-# caminho.ecn_c: String do caminho do arquivo ECN.
-
-# Pacotes -----------------------------------------------------------------
-
-library(openxlsx) # Funções para preencher arquivos .xlsx
-library(pdftools) # Funções para extração de dados em PDF
-library(readxl) # Funções para a importação de arquivos em Excel
+#' @title Extração dos dados de um arquivo ECN
+#'
+#' @description
+#' A função **e_cef_ecn** extrai e organiza dados dos arquivos ECN em PDF,
+#' consolidando informações sobre empreendimentos, empréstimos, dados
+#' consolidados e unidades.
+#'
+#' @param f_caminho.arquivo_c Caminho para o arquivo PDF do ECN.
+#' @param xlsx Lógico. Se `TRUE`, salva o resultado em um arquivo .xlsx.
+#'
+#' @details
+#' A função lê o arquivo PDF, modela as informações e retorna uma lista
+#' com dados de Empreendimento, Empréstimo, Consolidados e Unidades, baseada
+#' no layout do extrato da CEF.
+#'
+#' @return Uma lista contendo tibbles de dados segmentados em diversos tópicos.
+#'
+#' @examples
+#' \dontrun{
+#' f_caminho.arquivo_c <- "meu_arquivo_ecn.pdf"
+#' resultado <- e_cef_ecn(f_caminho.arquivo_c, xlsx = TRUE)
+#' print(resultado)
+#' }
+#'
+#' @export
 
 # Criando função para extrair os dados dos arquivos ECN em PDF
 e_cef_ecn <-
-  function(caminho.ecn_c, xlsx = FALSE) {
+  function(f_caminho.arquivo_c, xlsx = FALSE) {
     # paginas_l e linhas_vc -------------------------------------------------
 
     ## Extraindo PDF para uma lista contendo suas páginas
     paginas_l <-
-      pdf_text(caminho.ecn_c) %>%
+      pdf_text(f_caminho.arquivo_c) %>%
       ### Separando o texto por linhas
       strsplit("\n")
     ### Limpando o conteúdo das páginas
@@ -138,7 +142,7 @@ e_cef_ecn <-
       mutate(
         Empreendimento = empreendimento_c,
         `Data de consulta` = data_consulta_p,
-        Arquivo = caminho.ecn_c
+        Arquivo = f_caminho.arquivo_c
       ) %>%
       select(Empreendimento, everything(), `Data de consulta`, Arquivo) %>%
       mutate(
@@ -198,7 +202,7 @@ e_cef_ecn <-
         `Tipo de financiamento` = as.character(financiamento.tipo_c),
         Empreendimento = empreendimento_c,
         `Data de consulta` = data_consulta_p,
-        Arquivo = caminho.ecn_c
+        Arquivo = f_caminho.arquivo_c
       ) %>%
       select(
         Empreendimento,
@@ -211,23 +215,25 @@ e_cef_ecn <-
 
     ## Tabela com dados consolidados
     ### Identificando as primeiras linhas das partes da tabela de dados consolidados
-    indice.consolidado.comeco_vn <- str_which(
-      linhas_vc,
-      "INFORMAÇÕES CONSOLIDADAS"
-    ) + 2
-    ### Identificando as últimas linhas das partes da tabela de dados consolidados
-    indice.consolidado.fim_vn <- c()
-    for (i in 1:length(indice.consolidado.comeco_vn)) {
-      indice.consolidado.fim_vn[i] <-
-        cumsum(sapply(paginas_l, length))[encontrar_pagina(indice.consolidado.comeco_vn[i])]
-    }
-    indice.consolidado_vn <- list()
-    for (i in 1:length(indice.consolidado.comeco_vn)) {
-      indice.consolidado_vn[[i]] <-
-        indice.consolidado.comeco_vn[i]:indice.consolidado.fim_vn[i]
-    }
-    indice.consolidado_vn <-
-      unlist(indice.consolidado_vn)[-length(unlist(indice.consolidado_vn))]
+    # Identificar índices de início das seções "INFORMAÇÕES CONSOLIDADAS" (pular duas linhas de cabeçalho)
+    indice.consolidado.comeco_vn <- str_which(linhas_vc, "INFORMAÇÕES CONSOLIDADAS") + 2
+
+    # Calcular a soma cumulativa das contagens de linhas para cada página
+    paginas_cum <- cumsum(sapply(paginas_l, length))
+
+    # Determinar o índice final para cada seção consolidada utilizando as informações da página
+    indice.consolidado.fim_vn <- sapply(indice.consolidado.comeco_vn, function(indice_inicio) {
+      pagina_atual <- encontrar_pagina(indice_inicio)
+      paginas_cum[pagina_atual]
+    })
+
+    # Para cada seção, criar uma sequência do índice inicial até o índice final correspondente
+    lista_indices_consolidado <- mapply(function(inicio, fim) {
+      seq(inicio, fim)
+    }, inicio = indice.consolidado.comeco_vn, fim = indice.consolidado.fim_vn, SIMPLIFY = FALSE)
+
+    # Combinar todos os índices; remover o último elemento caso seja uma linha de separação indesejada
+    indice.consolidado_vn <- unlist(lista_indices_consolidado)[-length(unlist(lista_indices_consolidado))]
     ### Criando a tabela que será preenchida com os dados consolidados
     consolidado_df <-
       ### Criando tabela a partir do texto
@@ -263,7 +269,7 @@ e_cef_ecn <-
           as.numeric(),
         Empreendimento = empreendimento_c,
         `Data de consulta` = data_consulta_p,
-        Arquivo = caminho.ecn_c
+        Arquivo = f_caminho.arquivo_c
       ) %>%
       select(
         Empreendimento,
@@ -363,7 +369,7 @@ e_cef_ecn <-
           as.numeric(),
         Empreendimento = empreendimento_c,
         `Data de consulta` = data_consulta_p,
-        Arquivo = caminho.ecn_c
+        Arquivo = f_caminho.arquivo_c
       ) %>%
       select(
         Empreendimento,
@@ -558,7 +564,7 @@ e_cef_ecn <-
     #      ### Nomeando o arquivo
     #      nome.arquivo <-
     #        paste0(
-    #          dirname(caminho.ecn_c),
+    #          dirname(f_caminho.arquivo_c),
     #          "/",
     #          empreendimento_c,
     #          " ECN ",
@@ -572,7 +578,7 @@ e_cef_ecn <-
     if (is.null(dados.arquivo.ecn_l)) {
       stop(paste0(
         "Erro ao tentar extrair dados de ",
-        caminho.ecn_c
+        f_caminho.arquivo_c
       ))
     }
     ### Definindo a lista como o retorno da função e_cef_ecn()
@@ -581,10 +587,11 @@ e_cef_ecn <-
 
 # Teste -------------------------------------------------------------------
 
-# caminho.ecn_c <- caminhos.ecn_c[14]
+# f_caminho.arquivo_c <- "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - CIWEB/1. UP Vila Sonia/04.04/ECN/20250404_082839_000_PP_177770014920_RELATORIO_EMPREENDIMENTO_CONSTRUCAO.PDF"
+# f_caminho.arquivo_c <- caminhos.ecn_c[14]
 #  paste0(
 #    "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/",
 #    "Relatorios - CIWEB/3. UP Estação Vila Sonia/02.01.25/ECN/",
 #    "20250102_121821_000_PP_177770020232_RELATORIO_EMPREENDIMENTO_CONSTRUCAO.PDF"
 #  )
-# str(e_cef_ecn(caminho.ecn_c))
+# str(e_cef_ecn(f_caminho.arquivo_c))
