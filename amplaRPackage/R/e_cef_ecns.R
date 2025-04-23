@@ -37,7 +37,7 @@
 #' @export
 
 e_cef_ecns <-
-  function(f_caminho.pasta.ciweb_c) {
+  function(f_caminho.pasta.ciweb_c = c_caminhos_pastas("ciweb")) {
     # Consolida os dados dos relatórios ECN da CEF na pasta "Relatorios - CIWEB"
     caminhos.ecn_c <-
       dir_ls(f_caminho.pasta.ciweb_c, recurse = TRUE) %>%

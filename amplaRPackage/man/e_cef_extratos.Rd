@@ -4,7 +4,7 @@
 \alias{e_cef_extratos}
 \title{Consolidação dos dados dos extratos da CEF}
 \usage{
-e_cef_extratos(f_caminho.pasta.extratos_c)
+e_cef_extratos(f_caminho.pasta.extratos_c = c_caminhos_pastas("extratos"))
 }
 \arguments{
 \item{f_caminho.pasta.extratos_c}{Caminho completo para a pasta que

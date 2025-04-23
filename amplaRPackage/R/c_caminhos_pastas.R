@@ -1,0 +1,37 @@
+#' @title Obter Caminho do Projeto por Alias
+#'
+#' @description
+#' Retorna o caminho completo para uma pasta com base no alias fornecido.
+#'
+#' @param alias Um dos aliases predefinidos: "github", "rpackage", "ciweb",
+#'   "cobranca", "extratos", "informakon".
+#'
+#' @return
+#' Uma string com o caminho completo correspondente ao alias fornecido.
+#'
+#' @examples
+#' \dontrun{
+#' c_caminhos_pastas("github")
+#' c_caminhos_pastas("ciweb")
+#' }
+#'
+#' @importFrom stringi stri_c
+#'
+#' @export
+c_caminhos_pastas <- function(alias) {
+  caminhos_c <- list(
+    github = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub",
+    rpackage = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaRPackage",
+    ciweb = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - CIWEB",
+    cobranca = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - Cobrança",
+    extratos = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - Extratos",
+    informakon = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Financeiro - Documentos/Informakon"
+  )
+
+  if (!alias %in% names(caminhos_c)) {
+    stop("Alias inválido. Escolha um dos seguintes: ", paste(names(caminhos_c), collapse = ", "))
+  }
+
+  # Force UTF-8 encoding for the returned value
+  return(enc2utf8(caminhos_c[[alias]]))
+}

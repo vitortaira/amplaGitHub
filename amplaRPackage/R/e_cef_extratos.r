@@ -45,13 +45,10 @@
 #' @export
 
 e_cef_extratos <-
-  function(f_caminho.pasta.extratos_c) {
+  function(f_caminho.pasta.extratos_c = c_caminhos_pastas("extratos")) {
     # Consolida os dados dos extratos da CEF na pasta "Relatorios - Extratos"
     caminhos.extratos.cef_c <-
-      list.files(
-        f_caminho.pasta.extratos_c,
-        full.names = TRUE, recursive = T
-      ) %>%
+      dir_ls(f_caminho.pasta.extratos_c, recurse = TRUE, type = "file") %>%
       keep(
         ~ str_ends(.x, ".pdf") &
           str_detect(.x, "2429|2419|2245") &
