@@ -1,46 +1,47 @@
-# Descrição ---------------------------------------------------------------
-
-### RESUMO ###
-
-# cruzar_extrato_cmfcn():
-# (1) Consolida os dados dos extratos da CEF na pasta "Relatorios - Extratos"
-# (2) Consolida os dados dos relatórios CMF_CN na pasta "Relatorios - CIWEB"
-# (3) Cruza esses dados consolidados
-# (4) Gera um xlsx com os dados cruzados na pasta "Extratos conciliados"
-
-### UTILIZAÇÃO ###
-
-# cruzar_extrato_cmfcn(
-#   f_caminho.pasta.extratos_c,
-#   f_caminho.pasta.ciweb_c
-# )
-
-### ARGUMENTOS ###
-
-# f_caminho.pasta.extratos_c: Caminho da pasta "Relatorios - Extratos"
-# f_caminho.pasta.ciweb_c: Caminho da pasta "Relatorios - CIWEB"
-
-# Pacotes -----------------------------------------------------------------
-
-library(here)
-library(magrittr) # Ferramentas sintáticas ao dplyr, e.g. %<>%
-library(openxlsx) # Funções para preencher arquivos .xlsx
-library(pdftools) # Funções para extração de dados em PDF
-library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2
-
-# Função ------------------------------------------------------------------
+#' @title Cruzamento de dados dos extratos da CEF e relatórios CMF_CN
+#'
+#' @description
+#' A função **cruzar_extrato_cmfcn** realiza o cruzamento dos dados dos
+#' extratos da CEF e dos relatórios CMF_CN, gerando um arquivo consolidado
+#' em formato `.xlsx`.
+#'
+#' @param f_caminho.pasta.extratos_c Caminho para a pasta "Relatorios - Extratos".
+#' @param f_caminho.pasta.ciweb_c Caminho para a pasta "Relatorios - CIWEB".
+#'
+#' @details
+#' A função executa as seguintes etapas:
+#' 1. Consolida os dados dos extratos da CEF na pasta "Relatorios - Extratos".
+#' 2. Consolida os dados dos relatórios CMF_CN na pasta "Relatorios - CIWEB".
+#' 3. Cruza os dados consolidados com base em campos comuns.
+#' 4. Gera um arquivo `.xlsx` com os dados cruzados na pasta "Extratos conciliados".
+#'
+#' @return
+#' Retorna um tibble com os dados cruzados dos extratos da CEF e relatórios CMF_CN.
+#'
+#' @examples
+#' \dontrun{
+#' f_caminho.pasta.extratos_c <- "caminho/para/a/pasta/Relatorios - Extratos"
+#' f_caminho.pasta.ciweb_c <- "caminho/para/a/pasta/Relatorios - CIWEB"
+#' resultado <- cruzar_extrato_cmfcn(f_caminho.pasta.extratos_c, f_caminho.pasta.ciweb_c)
+#' print(resultado)
+#' }
+#'
+#' @importFrom fs dir_ls
+#' @importFrom here here
+#' @importFrom magrittr %>%
+#' @importFrom openxlsx createWorkbook addWorksheet writeData addStyle
+#' @importFrom openxlsx setColWidths addFilter freezePane saveWorkbook
+#' @importFrom pdftools pdf_text
+#' @importFrom dplyr mutate rename bind_rows inner_join
+#' @importFrom stringr str_detect str_ends str_pad str_sub
+#'
+#' @export
 
 cruzar_extrato_cmfcn <-
-  function(f_caminho.pasta.extratos_c =
-             here::here("Relatórios - Documentos", "Relatorios - Extratos"),
-           f_caminho.pasta.ciweb_c =
-             file.path(dirname(dirname(here())), "Relatórios - Documentos", "Relatorios - CIWEB")) {
+  function(f_caminho.pasta.extratos_c, f_caminho.pasta.ciweb_c) {
     # Consolida os dados dos extratos da CEF na pasta "Relatorios - Extratos"
     caminhos.extratos.cef_c <-
-      list.files(
-        f_caminho.pasta.extratos_c,
-        full.names = TRUE, recursive = T
-      ) %>%
+      dir_ls(f_caminho.pasta.extratos_c, recurse = TRUE, type = "file") %>%
       keep(
         ~ str_ends(.x, ".pdf") &
           str_detect(.x, "2429|2419|2245") &
@@ -60,10 +61,7 @@ cruzar_extrato_cmfcn <-
       )
     # Consolida os dados dos relatórios CMF_CN na pasta "Relatorios - CIWEB"
     caminhos.cmfcns_c <-
-      list.files(
-        f_caminho.pasta.ciweb_c,
-        full.names = TRUE, recursive = T
-      ) %>%
+      dir_ls(f_caminho.pasta.ciweb_c, recurse = TRUE, type = "file") %>%
       keep(~ str_detect(.x, "MOV_FINANC_CN.pdf"))
     cmfcns_l <- list()
     cmfcns_t <- data.frame()

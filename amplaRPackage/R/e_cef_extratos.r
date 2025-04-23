@@ -45,8 +45,7 @@
 #' @export
 
 e_cef_extratos <-
-  function(f_caminho.pasta.extratos_c =
-             here::here("Relatórios - Documentos", "Relatorios - Extratos")) {
+  function(f_caminho.pasta.extratos_c) {
     # Consolida os dados dos extratos da CEF na pasta "Relatorios - Extratos"
     caminhos.extratos.cef_c <-
       list.files(

@@ -16,9 +16,11 @@ Imports:
   dplyr,
   fs,
   here,
+  magrittr,
   openxlsx,
   pdftools,
   purrr,
   readxl,
   stringr,
+  tibble,
   tidyr

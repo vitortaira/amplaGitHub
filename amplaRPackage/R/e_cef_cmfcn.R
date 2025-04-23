@@ -1,24 +1,36 @@
-# Descrição ---------------------------------------------------------------
+#' @title Extração dos dados de um arquivo CMF_CN
+#'
+#' @description
+#' A função **e_cef_cmfcn** extrai e organiza os dados de um arquivo CMF_CN
+#' em PDF, consolidando informações sobre lançamentos financeiros.
+#'
+#' @param f_caminho.arquivo.cmfcn_c Caminho para o arquivo PDF do CMF_CN.
+#'
+#' @details
+#' A função lê o arquivo PDF, processa as informações e retorna um tibble
+#' contendo os dados organizados, como contratos, datas, valores e situações.
+#'
+#' @return
+#' Retorna um tibble com os dados extraídos do arquivo CMF_CN.
+#'
+#' @examples
+#' \dontrun{
+#' f_caminho.arquivo.cmfcn_c <- "caminho/para/arquivo/MOV_FINANC_CN.pdf"
+#' resultado <- e_cef_cmfcn(f_caminho.arquivo.cmfcn_c)
+#' print(resultado)
+#' }
+#'
+#' @importFrom pdftools pdf_text
+#' @importFrom stringr str_split str_squish str_remove str_detect str_starts
+#' @importFrom stringr str_extract str_trim str_replace str_remove_all
+#' @importFrom stringr str_count str_sub word
+#' @importFrom purrr map discard keep
+#' @importFrom dplyr mutate filter select group_by summarise pull rename
+#' @importFrom tidyr separate pivot_longer extract
+#' @importFrom tibble as_tibble_col tibble
+#'
+#' @export
 
-### RESUMO ###
-
-# e_cef_cmfcn() extrai os dados de um arquivo CMF_CN.
-
-### UTILIZAÇÃO ###
-
-# e_cef_cmfcn(
-#   f_f_caminho.arquivo.cmfcn_c
-# )
-
-### ARGUMENTOS ###
-
-# f_caminho.arquivo.cmfcn_c: String do caminho do arquivo CMF_CN.
-
-# Pacotes -----------------------------------------------------------------
-
-# Função ------------------------------------------------------------------
-
-# Define a função
 e_cef_cmfcn <-
   function(f_caminho.arquivo.cmfcn_c) {
     # paginas_l e linhas_c ----------------------------------------------------
