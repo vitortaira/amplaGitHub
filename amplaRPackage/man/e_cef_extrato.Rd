@@ -39,13 +39,11 @@ identificando padroes que auxiliam na extracao das informacoes.
 }
 \examples{
 \dontrun{
-# Exemplo 1: Uso basico
 extrato <- e_cef_extrato(
   f_caminho.arquivo_c = "caminho/para/o/extrato.pdf"
 )
 print(extrato)
 
-# Exemplo 2: Integrando com outras funcoes de tratamento de dados
 library(dplyr)
 extrato_filtrado <- e_cef_extrato("caminho/para/o/extrato.pdf") \%>\%
   filter(Valor > 0)
