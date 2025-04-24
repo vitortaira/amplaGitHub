@@ -37,61 +37,81 @@
 #'
 #' @export
 
-cruzar_extrato_cmfcn <-
+t_cruzar_extcef_cmfcn <-
   function(f_caminho.pasta.extratos_c, f_caminho.pasta.ciweb_c) {
     # Consolida os dados dos extratos da CEF na pasta "Relatorios - Extratos"
-    caminhos.extratos.cef_c <-
-      dir_ls(f_caminho.pasta.extratos_c, recurse = TRUE, type = "file") %>%
-      keep(
-        ~ str_ends(.x, ".pdf") &
-          str_detect(.x, "2429|2419|2245") &
-          !str_detect(.x, "(?i)fundo")
-      )
-    extratos_l <- list()
-    extratos_t <- data.frame()
-    for (i_caminho.extrato.cef_c in caminhos.extratos.cef_c) {
-      extratos_l[[i_caminho.extrato.cef_c]] <-
-        e_cef_extrato(i_caminho.extrato.cef_c)
-      extratos_t <-
-        bind_rows(extratos_t, extratos_l[[i_caminho.extrato.cef_c]])
-    }
-    extratos_t %<>%
-      mutate(
-        Contrato_6 = Documento %>% str_pad(width = 6, side = "left", pad = "0")
-      )
+    extratos_t <- e_cef_extratos()
     # Consolida os dados dos relatórios CMF_CN na pasta "Relatorios - CIWEB"
-    caminhos.cmfcns_c <-
-      dir_ls(f_caminho.pasta.ciweb_c, recurse = TRUE, type = "file") %>%
-      keep(~ str_detect(.x, "MOV_FINANC_CN.pdf"))
-    cmfcns_l <- list()
-    cmfcns_t <- data.frame()
-    for (
-      i_caminho.cmfcn_c in caminhos.cmfcns_c
-    ) {
-      cmfcns_l[[i_caminho.cmfcn_c]] <-
-        e_cef_cmfcn(i_caminho.cmfcn_c)
-      cmfcns_t <-
-        bind_rows(cmfcns_t, cmfcns_l[[i_caminho.cmfcn_c]])
-    }
-    cmfcns_t %<>%
-      mutate(Contrato_6 = CONTRATO %>% str_sub(-6, -1)) %>%
-      rename(
-        `Data de movimento` = "DT. REMES.",
-        Valor = VALOR
-      )
+    cmfcns_t <- e_cef_cmfcns()
+    # Cruza os dados consolidados
     extratos.cruzados_t <-
       inner_join(
         extratos_t,
         cmfcns_t,
         by = c("Data de movimento", "Contrato_6", "Valor")
+      ) %>%
+      select(
+        # Interseção
+        Contrato_6, `Data de movimento`, Valor,
+        # Extratos
+        "Data de lan\u00e7amento", Documento, "Hist\u00f3rico", Saldo,
+        Conta_interno, Conta, "Ag\u00eancia",
+        Produto, CNPJ, Cliente, "Per\u00edodo_in\u00edcio", "Per\u00edodo_fim",
+        `Data_consulta`,
+        # CMF_CNs
+        CONTRATO, `DT. LANCTO`, `LANCAMENTOS`, NP, `CONTA SIDEC/NSGD`,
+        SITUACAO, `MOT.`
+      ) %>%
+      mutate(
+        id_extcef = paste0(
+          # Interseção
+          Contrato_6, `Data de movimento`, Valor,
+          # Extratos
+          "Data de lan\u00e7amento", Documento, "Hist\u00f3rico", Saldo
+        ),
+        id_cmfcn = paste0(
+          # Interseção
+          Contrato_6, `Data de movimento`, Valor,
+          # CMF_CNs
+          `CONTRATO`, `DT. LANCTO`, `LANCAMENTOS`, NP, `CONTA SIDEC/NSGD`,
+          SITUACAO, `MOT.`
+        )
       )
+    # Colunas que identificam linhas cruzadas em extratos_t e cmfcns_t
+    extratos_t %<>% mutate(
+      cruzada = if_else(
+        paste0(
+          # Interseção
+          Contrato_6, `Data de movimento`, Valor,
+          # Extratos
+          "Data de lan\u00e7amento", Documento, "Hist\u00f3rico", Saldo
+        ) %in% extratos.cruzados_t$id_extcef,
+        "sim",
+        "não"
+      )
+    )
+    cmfcns_t %<>% mutate(
+      cruzada = if_else(
+        paste0(
+          # Interseção
+          Contrato_6, `Data de movimento`, Valor,
+          # CMF_CNs
+          `CONTRATO`, `DT. LANCTO`, `LANCAMENTOS`, NP, `CONTA SIDEC/NSGD`,
+          SITUACAO, `MOT.`
+        ) %in% extratos.cruzados_t$id_cmfcn,
+        "sim",
+        "não"
+      )
+    )
+    extratos.cruzados_t %<>% select(-id_extcef, -id_cmfcn)
+
     # Salvando num xlsx -------------------------------------------------------
 
     # Definindo o nome do arquivo dinamicamente
     nome.xlsx_c <-
       paste0(
-        "Extratos cruzados ",
-        format(Sys.time(), "%Y_%m_%d %H_%M_%S"),
+        "extratos_cruzados-",
+        format(Sys.time(), "%Y_%m_%d_%H_%M_%S"),
         ".xlsx"
       )
     #  # Criando uma cópia de "Template.xlsx"
@@ -213,8 +233,8 @@ cruzar_extrato_cmfcn <-
         which(
           colnames(extratos.cruzados_t) %in%
             c(
-              "Data de lançamento", "Data de movimento", "Período_início",
-              "Período_fim", "DT. LANCTO"
+              "Data de lan\u00e7amento", "Data de movimento", "Periodoin\u00edcio",
+              "Periodoin\u00edciofim", "DT. LANCTO"
             )
         ),
       gridExpand = T
@@ -335,7 +355,7 @@ cruzar_extrato_cmfcn <-
     setColWidths(
       xlsx,
       sheet = "Extratos",
-      cols = which(colnames(extratos_t) == "Histórico"),
+      cols = which(colnames(extratos_t) == "Hist\u00f3rico"),
       widths = 25
     )
     setColWidths(
@@ -364,8 +384,8 @@ cruzar_extrato_cmfcn <-
         which(
           colnames(extratos_t) %in%
             c(
-              "Data de lançamento", "Data de movimento", "Período_início",
-              "Período_fim"
+              "Data de lan\u00e7amento", "Data de movimento", "Periodoin\u00edcio",
+              "Periodoin\u00edciofim"
             )
         ),
       gridExpand = TRUE
@@ -543,14 +563,11 @@ cruzar_extrato_cmfcn <-
     saveWorkbook(
       xlsx,
       paste0(
-        here::here(
-          "Relatórios - Documentos", "Relatorios - Extratos",
-          "Extratos conciliados"
-        ),
-        "/",
+        c_caminhos_pastas("extratos"),
+        "/Extratos cruzados/",
         nome.xlsx_c
       ),
-      overwrite = T
+      overwrite = TRUE
     )
     #  # Caminho da planilha na pasta local
     #  caminho.xlsx_c <-
