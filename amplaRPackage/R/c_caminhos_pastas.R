@@ -20,43 +20,16 @@
 #' @export
 c_caminhos_pastas <- function(alias) {
   caminhos_c <- list(
-    github = stri_c(
-      "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/",
-      "Controladoria - Documentos/",
-      "amplaGitHub"
-    ),
-    rpackage = stri_c(
-      "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/",
-      "Controladoria - Documentos/amplaGitHub/",
-      "amplaRPackage"
-    ),
-    ciweb = stri_c(
-      "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/",
-      "Relatórios - Documentos/",
-      "Relatorios - CIWEB"
-    ),
-    cobranca = stri_c(
-      "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/",
-      "Relatórios - Documentos/",
-      "Relatorios - Cobrança"
-    ),
-    extratos = stri_c(
-      "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/",
-      "Relatórios - Documentos/",
-      "Relatorios - Extratos"
-    ),
-    informakon = stri_c(
-      "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/",
-      "Financeiro - Documentos/",
-      "Informakon"
-    )
+    github = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub",
+    rpackage = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaRPackage",
+    ciweb = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - CIWEB",
+    cobranca = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - Cobrança",
+    extratos = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - Extratos",
+    informakon = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Financeiro - Documentos/Informakon"
   )
 
   if (!alias %in% names(caminhos_c)) {
-    stop(
-      "Alias inválido. Escolha um dos seguintes: ",
-      paste(names(caminhos_c), collapse = ", ")
-    )
+    stop("Alias inválido. Escolha um dos seguintes: ", paste(names(caminhos_c), collapse = ", "))
   }
 
   # Force UTF-8 encoding for the returned value
