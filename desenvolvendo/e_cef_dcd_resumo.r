@@ -14,13 +14,6 @@
 
 # f_caminho.arquivo_c: String do caminho de um relatório DCD da CEF em PDF.
 
-# Pacotes -----------------------------------------------------------------
-
-library(pdftools) # Funções para extração de dados em PDF
-
-# Função ------------------------------------------------------------------
-
-# Define a função
 e_cef_dcd_resumo <-
   function(f_caminho.arquivo_c) {
     # Define paginas_l
@@ -33,137 +26,265 @@ e_cef_dcd_resumo <-
       )
     linhas_c <- unlist(paginas_l, use.names = FALSE)
     indice.fim_i <- linhas_c %>%
-      str_which("(?i)^base de calculo para geracao do cronograma") %>%
+      str_which("(?i)^base\\s?de\\s?calculo\\s?para\\s?geracao\\s?do\\s?cronograma") %>%
       nth(1) - 1
     linhas.resumo_c <-
       linhas_c[1:indice.fim_i]
     # Primeira coluna
     `NUMERO DO CONTRATO` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)numero do contrato")) %>%
-      str_remove("(?i)numero do contrato\\s?") %>%
+      keep(~ str_starts(.x, "(?i)numero\\s?do\\s?contrato")) %>%
+      str_remove("(?i)numero\\s?do\\s?contrato\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `NUMERO DO PEDIDO` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)numero do pedido")) %>%
-      str_remove("(?i)numero do pedido\\s?") %>%
+      keep(~ str_starts(.x, "(?i)numero\\s?do\\s?pedido")) %>%
+      str_remove("(?i)numero\\s?do\\s?pedido\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `NUMERO DO EMPREENDIMENTO` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)numero do empreendimento")) %>%
-      str_remove("(?i)numero do empreendimento\\s?") %>%
+      keep(~ str_starts(.x, "(?i)numero\\s?do\\s?empreendimento")) %>%
+      str_remove("(?i)numero\\s?do\\s?empreendimento\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `QUANTIDADE DE PARCELAS` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)quantidade de parcelas")) %>%
-      str_remove("(?i)quantidade de parcelas\\s?") %>%
+      keep(~ str_starts(.x, "(?i)quantidade\\s?de\\s?parcelas")) %>%
+      str_remove("(?i)quantidade\\s?de\\s?parcelas\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `NUMERO DO APF` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)numero do apf")) %>%
-      str_remove("(?i)numero do apf\\s?") %>%
+      keep(~ str_starts(.x, "(?i)numero\\s?do\\s?apf")) %>%
+      str_remove("(?i)numero\\s?do\\s?apf\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `CODIGO SEGURADORA SGC` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)codigo seguradora sgc")) %>%
-      str_remove("(?i)codigo seguradora sgc\\s?") %>%
+      keep(~ str_starts(.x, "(?i)codigo\\s?seguradora\\s?sgc")) %>%
+      str_remove("(?i)codigo\\s?seguradora\\s?sgc\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `CODIGO SEGURADORA SRE` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)codigo seguradora sre")) %>%
-      str_remove("(?i)codigo seguradora sre\\s?") %>%
+      keep(~ str_starts(.x, "(?i)codigo\\s?seguradora\\s?sre")) %>%
+      str_remove("(?i)codigo\\s?seguradora\\s?sre\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `CODIGO SEGURADORA SGP` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)codigo seguradora sgp")) %>%
-      str_remove("(?i)codigo seguradora sgp\\s?") %>%
+      keep(~ str_starts(.x, "(?i)codigo\\s?seguradora\\s?sgp")) %>%
+      str_remove("(?i)codigo\\s?seguradora\\s?sgp\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `CODIGO SEGURADORA SGT` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)codigo seguradora sgt")) %>%
-      str_remove("(?i)codigo seguradora sgt\\s?") %>%
+      keep(~ str_starts(.x, "(?i)codigo\\s?seguradora\\s?sgt")) %>%
+      str_remove("(?i)codigo\\s?seguradora\\s?sgt\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `QUANTIDADE DE UNIDADES` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)quantidade de unidades")) %>%
-      str_remove("(?i)quantidade de unidades\\s?") %>%
+      keep(~ str_starts(.x, "(?i)quantidade\\s?de\\s?unidades")) %>%
+      str_remove("(?i)quantidade\\s?de\\s?unidades\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `VR CUSTO OBRA` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)vr custo obra")) %>%
-      str_remove("(?i)vr custo obra\\s?") %>%
+      keep(~ str_starts(.x, "(?i)vr\\s?custo\\s?obra")) %>%
+      str_remove("(?i)vr\\s?custo\\s?obra\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `ORCAMENTO COMPRA/VENDA` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)orcamento compra/venda")) %>%
-      str_remove("(?i)orcamento compra/venda\\s?") %>%
+      keep(~ str_starts(.x, "(?i)orcamento\\s?compra/venda")) %>%
+      str_remove("(?i)orcamento\\s?compra/venda\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `VR COMPRA/VENDA UNIDADE` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)vr compra/venda unidade")) %>%
-      str_remove("(?i)vr compra/venda unidade\\s?") %>%
+      keep(~ str_starts(.x, "(?i)vr\\s?compra/venda\\s?unidade")) %>%
+      str_remove("(?i)vr\\s?compra/venda\\s?unidade\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `VR COMPRA/VENDA TERRENO` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)vr compra/venda terreno")) %>%
-      str_remove("(?i)vr compra/venda terreno\\s?") %>%
+      keep(~ str_starts(.x, "(?i)vr\\s?compra/venda\\s?terreno")) %>%
+      str_remove("(?i)vr\\s?compra/venda\\s?terreno\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `SALDO MUTUARIO (PF)` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)saldo mutuario \\(pf\\)")) %>%
-      str_remove("(?i)saldo mutuario \\(pf\\)\\s?") %>%
+      keep(~ str_starts(.x, "(?i)saldo\\s?mutuario\\s?\\(pf\\)")) %>%
+      str_remove("(?i)saldo\\s?mutuario\\s?\\(pf\\)\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `SALDO APORTE CONSTRUTORA` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)saldo aporte construtora")) %>%
-      str_remove("(?i)saldo aporte construtora\\s?") %>%
+      keep(~ str_starts(.x, "(?i)saldo\\s?aporte\\s?construtora")) %>%
+      str_remove("(?i)saldo\\s?aporte\\s?construtora\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `SALDO MUTUARIO (PJ)` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)saldo mutuario \\(pj\\)")) %>%
-      str_remove("(?i)saldo mutuario \\(pj\\)\\s?") %>%
+      keep(~ str_starts(.x, "(?i)saldo\\s?mutuario\\s?\\(pj\\)")) %>%
+      str_remove("(?i)saldo\\s?mutuario\\s?\\(pj\\)\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `SALDO DEVEDOR (PJ)` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)saldo devedor \\(pj\\)")) %>%
-      str_remove("(?i)saldo devedor \\(pj\\)\\s?") %>%
+      keep(~ str_starts(.x, "(?i)saldo\\s?devedor\\s?\\(pj\\)")) %>%
+      str_remove("(?i)saldo\\s?devedor\\s?\\(pj\\)\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `SUBSIDIO RES. 460` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)subsidio res. 460")) %>%
-      str_remove("(?i)subsidio res. 460\\s?") %>%
+      keep(~ str_starts(.x, "(?i)subsidio\\s?res.\\s?460")) %>%
+      str_remove("(?i)subsidio\\s?res.\\s?460\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `TOTAL SUPLEMENTACAO (PJ)` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)total suplementacao \\(pj\\)")) %>%
-      str_remove("(?i)total suplementacao \\(pj\\)\\s?") %>%
+      keep(~ str_starts(.x, "(?i)total\\s?suplementacao\\s?\\(pj\\)")) %>%
+      str_remove("(?i)total\\s?suplementacao\\s?\\(pj\\)\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `MAXIMO LIB. GERAL (PJ)` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)maximo lib. geral \\(pj\\)")) %>%
-      str_remove("(?i)maximo lib. geral \\(pj\\)\\s?") %>%
+      keep(~ str_starts(.x, "(?i)maximo\\s?lib.\\s?geral\\s?\\(pj\\)")) %>%
+      str_remove("(?i)maximo\\s?lib.\\s?geral\\s?\\(pj\\)\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `MAXIMO LIB. ETAPA (PJ)` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)maximo lib. etapa \\(pj\\)")) %>%
-      str_remove("(?i)maximo lib. etapa \\(pj\\)\\s?") %>%
+      keep(~ str_starts(.x, "(?i)maximo\\s?lib.\\s?etapa\\s?\\(pj\\)")) %>%
+      str_remove("(?i)maximo\\s?lib.\\s?etapa\\s?\\(pj\\)\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     `RECOMPOSICAO ETAPA (PJ)` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)recomposicao etapa \\(pj\\)")) %>%
-      str_remove("(?i)recomposicao etapa \\(pj\\)\\s?") %>%
+      keep(~ str_starts(.x, "(?i)recomposicao\\s?etapa\\s?\\(pj\\)")) %>%
+      str_remove("(?i)recomposicao\\s?etapa\\s?\\(pj\\)\\s?") %>%
       str_remove("\\s?[A-Za-z].*$")
     # Segunda coluna
     `EMPREENDIMENTO` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)numero do contrato")) %>%
-      str_remove("(?i)numero do contrato\\s?") %>%
+      keep(~ str_starts(.x, "(?i)numero\\s?do\\s?contrato")) %>%
+      str_remove("(?i)numero\\s?do\\s?contrato\\s?") %>%
       str_remove(".*\\d{12}\\s?") %>%
       str_remove("(?i)\\s?origem\\s?de\\s?recurso.*")
     `CODIGO DO PEDIDO` <- linhas.resumo_c %>%
-      keep(~ str_starts(.x, "(?i)numero do pedido")) %>%
-      str_remove("(?i).*codigo do pedido\\s?") %>%
+      keep(~ str_starts(.x, "(?i)numero\\s?do\\s?pedido")) %>%
+      str_remove("(?i).*codigo\\s?do\\s?pedido\\s?") %>%
       str_remove("(?i)\\s?linha\\s?de\\s?financiamento\\s?.*")
-    # `SITUACAO DO PEDIDO`() <- linhas.resumo_c %>%
-    # `DATA TERMINO SUSPENSIVA`() <- linhas.resumo_c %>%
-    # `DT INICIO ROTINA ATRASO OBRA`() <- linhas.resumo_c %>%
-    # `APOLICE SEGURO SGC`() <- linhas.resumo_c %>%
-    # `APOLICE SEGURO SRE`() <- linhas.resumo_c %>%
-    # `APOLICE SEGURO SGP`() <- linhas.resumo_c %>%
-    # `APOLICE SEGURO SGT`() <- linhas.resumo_c %>%
-    # `QUANTIDADE UNID FINANCIADAS`() <- linhas.resumo_c %>%
-    # `TOTAL DE FINANCIAMENTO`() <- linhas.resumo_c %>%
-    # `TOTAL DE FGTS`() <- linhas.resumo_c %>%
-    # `TOTAL R. PROPRIO MUTUARIO`() <- linhas.resumo_c %>%
-    # `PERC OBRA EXECUTADA`() <- linhas.resumo_c %>%
-    # `DATA DE ASSINATURA`() <- linhas.resumo_c %>%
-    # `DATA INICIO OBRA`() <- linhas.resumo_c %>%
-    # `DATA TERMINO OBRA ORIGINAL`() <- linhas.resumo_c %>%
-    # `DATA TERMINO OBRA ATUAL`() <- linhas.resumo_c %>%
-    # `SUBSIDIO CONVENIOS`() <- linhas.resumo_c %>%
-    # `REDUCAO MAX GERAL (PJ)`() <- linhas.resumo_c %>%
-    # `REDUCAO MAX ETAPA (PJ)`() <- linhas.resumo_c %>%
-    # `AMORT. RECOMP. ETAPA (PJ)`() <- linhas.resumo_c %>%
-    # `PERC ANTEC (PJ)`() <- linhas.resumo_c %>%
+    `SITUACAO DO PEDIDO` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)numero\\s?do\\s?empreendimento")) %>%
+      str_remove("(?i).*situacao\\s?do\\s?pedido\\s?") %>%
+      str_remove("(?i)\\s?tipo\\s?de\\s?financiamento\\s?.*")
+    `DATA TERMINO SUSPENSIVA` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)quantidade\\s?de\\s?parcelas")) %>%
+      str_remove("(?i).*data\\s?termino\\s?suspensiva\\s?") %>%
+      str_remove("(?i)\\s?regencia\\s?de\\s?critica\\s?.*")
+    `DT INICIO ROTINA ATRASO OBRA` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)numero\\s?do\\s?apf")) %>%
+      str_remove("(?i).*dt\\s?inicio\\s?rotina\\s?atraso\\s?obra\\s?") %>%
+      str_remove("(?i)\\s?prazo\\s?de\\s?obra\\s?atual\\s?.*")
+    `APOLICE SEGURO SGC` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)codigo\\s?seguradora\\s?sgc")) %>%
+      str_remove("(?i).*apolice\\s?seguro\\s?sgc\\s?") %>%
+      str_remove("(?i)\\s?prazo\\s?de\\s?obra\\s?original\\s?.*")
+    `APOLICE SEGURO SRE` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)codigo\\s?seguradora\\s?sre")) %>%
+      str_remove("(?i).*apolice\\s?seguro\\s?sre\\s?") %>%
+      str_remove("(?i)\\s?percentual\\s?minimo\\s?de\\s?obra\\s?.*")
+    `APOLICE SEGURO SGP` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)codigo\\s?seguradora\\s?sgp")) %>%
+      str_remove("(?i).*apolice\\s?seguro\\s?sgp\\s?") %>%
+      str_remove("(?i)\\s?adiantamento/defasagem\\s?obra\\s?.*")
+    `APOLICE SEGURO SGT` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)codigo\\s?seguradora\\s?sgt")) %>%
+      str_remove("(?i).*apolice\\s?seguro\\s?sgt\\s?") %>%
+      str_remove("(?i)\\s?tipo\\s?rotina\\s?.*")
+    `QUANTIDADE UNID FINANCIADAS` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)quantidade\\s?de\\s?unidades")) %>%
+      str_remove("(?i).*quantidade\\s?unid\\s?financiadas\\s?") %>%
+      str_remove("(?i)\\s?quantidade\\s?unid\\s?comercializadas\\s?.*")
+    `TOTAL DE FINANCIAMENTO` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)vr\\s?custo\\s?obra")) %>%
+      str_remove("(?i).*total de financiamento\\s?") %>%
+      str_remove("(?i)\\s?desp leg terr financ\\s?.*")
+    `TOTAL DE FGTS` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)orcamento compra/venda")) %>%
+      str_remove("(?i).*total de fgts\\s?") %>%
+      str_remove("(?i)\\s?desp leg terr fgts\\s?.*")
+    `TOTAL R. PROPRIO MUTUARIO` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)vr compra/venda unidade")) %>%
+      str_remove("(?i).*total r proprio mutuario\\s?") %>%
+      str_remove("(?i)\\s?desp leg terr r\\. proprio\\s?.*")
+    `PERC OBRA EXECUTADA` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)vr compra/venda terreno")) %>%
+      str_remove("(?i).*perc obra executada\\s?") %>%
+      str_remove("(?i)\\s?vr financ outro agente\\s?.*")
+    `DATA DE ASSINATURA` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)saldo mutuario \\(pf\\)")) %>%
+      str_remove("(?i).*data de assinatura\\s?") %>%
+      str_remove("(?i)\\s?vr terr outro agente\\s?.*")
+    `DATA INICIO OBRA` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)saldo aporte construtora")) %>%
+      str_remove("(?i).*data inicio obra\\s?") %>%
+      str_remove("(?i)\\s?vr aporte construtora\\s?.*")
+    `DATA TERMINO OBRA ORIGINAL` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)saldo mutuario \\(pj\\)")) %>%
+      str_remove("(?i).*data termino obra original\\s?") %>%
+      str_remove("(?i)\\s?vr financiamento \\(pj\\)\\s?.*")
+    `DATA TERMINO OBRA ATUAL` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)saldo devedor \\(pj\\)")) %>%
+      str_remove("(?i).*data termino obra atual\\s?") %>%
+      str_remove("(?i)\\s?garantia termino obra\\s?.*")
+    `SUBSIDIO CONVENIOS` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)subsidio res. 460")) %>%
+      str_remove("(?i).*subsidio convenios\\s?") %>%
+      str_remove("(?i)\\s?custo do terreno\\s?.*")
+    `REDUCAO MAX GERAL (PJ)` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)maximo\\s?lib\\.\\s?geral\\s?\\(pj\\)")) %>%
+      str_remove("(?i).*reducao max geral\\s?\\(pj\\)\\s?") %>%
+      str_remove("(?i)\\s?vr min garantia hip\\s?\\(130\\%\\)\\s?.*")
+    `REDUCAO MAX ETAPA (PJ)` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)maximo\\s?lib\\.\\s?etapa\\s?\\(pj\\)")) %>%
+      str_remove("(?i).*reducao max etapa\\s?\\(pj\\)\\s?")
+    `AMORT. RECOMP. ETAPA (PJ)` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)recomposicao etapa \\(pj\\)")) %>%
+      str_remove("(?i).*amort\\.\\s?recomp\\. etapa\\s?\\(pj\\)\\s?") %>%
+      str_remove("(?i)\\s?recomp\\.?\\s?s.*")
+    `PERC ANTEC (PJ)` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)perc antec\\s?\\(pj\\)\\s?")) %>%
+      str_remove("(?i).*perc antec\\s?\\(pj\\)\\s?") %>%
+      str_remove("(?i)\\s?vr total antec \\(pj\\)\\s?.*")
     # Terceira coluna
-    # Consolidando todas as variéveis em uma tabela
-    dados.cef.dcd.resumo_t() <-
+    `ORIGEM DE RECURSO` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)numero do contrato")) %>%
+      str_remove("(?i).*origem de recurso\\s?")
+    `LINHA DE FINANCIAMENTO` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)numero do pedido")) %>%
+      str_remove("(?i).*linha de financiamento\\s?")
+    `TIPO DE FINANCIAMENTO` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)numero do empreendimento")) %>%
+      str_remove("(?i).*tipo de financiamento\\s?")
+    `REGENCIA DE CRITICA` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)quantidade de parcelas")) %>%
+      str_remove("(?i).*regencia de critica\\s?")
+    `PRAZO DE OBRA ATUAL` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)numero do apf")) %>%
+      str_remove("(?i).*prazo de obra atual\\s?")
+    `PRAZO DE OBRA ORIGINAL` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)codigo seguradora sgc")) %>%
+      str_remove("(?i).*prazo de obra original\\s?")
+    `PERCENTUAL MINIMO DE OBRA` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)codigo seguradora sre")) %>%
+      str_remove("(?i).*percentual minimo de obra\\s?")
+    `ADIANTAMENTO/DEFASAGEM OBRA` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)codigo seguradora sgp")) %>%
+      str_remove("(?i).*adiantamento/defasagem obra\\s?\\:\\s?")
+    `TIPO ROTINA` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)codigo seguradora sgt")) %>%
+      str_remove("(?i).*tipo rotina\\s?")
+    `QUANTIDADE UNID COMERCIALIZADAS` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)quantidade de unidades")) %>%
+      str_remove("(?i).*quantidade unid comercializadas\\s?")
+    `DESP LEG TERR FINANC` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)vr custo obra")) %>%
+      str_remove("(?i).*desp leg terr financ\\s?")
+    `DESP LEG TERR FGTS` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)orcamento compra/venda")) %>%
+      str_remove("(?i).*desp leg terr fgts\\s?")
+    `DESP LEG TERR R. PROPRIO` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)vr compra/venda unidade")) %>%
+      str_remove("(?i).*desp leg terr r\\.\\s?proprio\\s?")
+    `VR FINANC OUTRO AGENTE` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)vr compra/venda terreno")) %>%
+      str_remove("(?i).*vr financ outro agente\\s?")
+    `VR TERR OUTRO AGENTE` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)saldo mutuario \\(pf\\)")) %>%
+      str_remove("(?i).*vr terr outro agente\\s?")
+    `VR APORTE CONSTRUTORA` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)saldo aporte construtora")) %>%
+      str_remove("(?i).*vr aporte construtora\\s?")
+    `VR FINANCIAMENTO (PJ)` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)saldo mutuario \\(pj\\)")) %>%
+      str_remove("(?i).*vr financiamento \\(pj\\)\\s?")
+    `GARANTIA TERMINO OBRA` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)saldo devedor \\(pj\\)")) %>%
+      str_remove("(?i).*garantia termino obra\\s?")
+    `CUSTO DO TERRENO` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)subsidio res. 460")) %>%
+      str_remove("(?i).*custo do terreno\\s?")
+    `VR MIN GARANTIA HIP (130%)` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)maximo lib\\. geral \\(pj\\)")) %>%
+      str_remove("(?i).*vr min garantia hip\\s?\\(130%\\)\\s?")
+    `RECOMP. S/ REG ETAPA (PJ)` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)recomposicao\\s?etapa\\s?\\(pj\\)")) %>%
+      str_remove("(?i).*recomp\\.\\s?s/\\s?reg\\s?etapa\\s?\\(pj\\)\\s?")
+    `VR TOTAL ANTEC (PJ)` <- linhas.resumo_c %>%
+      keep(~ str_starts(.x, "(?i)perc antec \\(pj\\)")) %>%
+      str_remove("(?i).*vr total antec \\(pj\\)\\s?")
+    # Consolidando todas as variáveis em uma tabela
+    dados.cef.dcd.resumo_t <-
       tibble(
         # Primeira coluna
         `NUMERO DO CONTRATO` = "NUMERO DO CONTRATO",
@@ -188,8 +309,54 @@ e_cef_dcd_resumo <-
         `TOTAL SUPLEMENTACAO (PJ)` = "TOTAL SUPLEMENTACAO (PJ)",
         `MAXIMO LIB. GERAL (PJ)` = "MAXIMO LIB. GERAL (PJ)",
         `MAXIMO LIB. ETAPA (PJ)` = "MAXIMO LIB. ETAPA (PJ)",
-        `RECOMPOSICAO ETAPA (PJ)` = "RECOMPOSICAO ETAPA (PJ)"
+        `RECOMPOSICAO ETAPA (PJ)` = "RECOMPOSICAO ETAPA (PJ)",
         # Segunda coluna
+        `EMPREENDIMENTO` = "EMPREENDIMENTO",
+        `CODIGO DO PEDIDO` = "CODIGO DO PEDIDO",
+        `SITUACAO DO PEDIDO` = "SITUACAO DO PEDIDO",
+        `DATA TERMINO SUSPENSIVA` = "DATA TERMINO SUSPENSIVA",
+        `DT INICIO ROTINA ATRASO OBRA` = "DT INICIO ROTINA ATRASO OBRA",
+        `APOLICE SEGURO SGC` = "APOLICE SEGURO SGC",
+        `APOLICE SEGURO SRE` = "APOLICE SEGURO SRE",
+        `APOLICE SEGURO SGP` = "APOLICE SEGURO SGP",
+        `APOLICE SEGURO SGT` = "APOLICE SEGURO SGT",
+        `QUANTIDADE UNID FINANCIADAS` = "QUANTIDADE UNID FINANCIADAS",
+        `TOTAL DE FINANCIAMENTO` = "TOTAL DE FINANCIAMENTO",
+        `TOTAL DE FGTS` = "TOTAL DE FGTS",
+        `TOTAL R. PROPRIO MUTUARIO` = "TOTAL R. PROPRIO MUTUARIO",
+        `PERC OBRA EXECUTADA` = "PERC OBRA EXECUTADA",
+        `DATA DE ASSINATURA` = "DATA DE ASSINATURA",
+        `DATA INICIO OBRA` = "DATA INICIO OBRA",
+        `DATA TERMINO OBRA ORIGINAL` = "DATA TERMINO OBRA ORIGINAL",
+        `DATA TERMINO OBRA ATUAL` = "DATA TERMINO OBRA ATUAL",
+        `SUBSIDIO CONVENIOS` = "SUBSIDIO CONVENIOS",
+        `REDUCAO MAX GERAL (PJ)` = "REDUCAO MAX GERAL (PJ)",
+        `REDUCAO MAX ETAPA (PJ)` = "REDUCAO MAX ETAPA (PJ)",
+        `AMORT. RECOMP. ETAPA (PJ)` = "AMORT. RECOMP. ETAPA (PJ)",
+        `PERC ANTEC (PJ)` = "PERC ANTEC (PJ)",
+        # Terceira coluna
+        `ORIGEM DE RECURSO` = "ORIGEM DE RECURSO",
+        `LINHA DE FINANCIAMENTO` = "LINHA DE FINANCIAMENTO",
+        `TIPO DE FINANCIAMENTO` = "TIPO DE FINANCIAMENTO",
+        `REGENCIA DE CRITICA` = "REGENCIA DE CRITICA",
+        `PRAZO DE OBRA ATUAL` = "PRAZO DE OBRA ATUAL",
+        `PRAZO DE OBRA ORIGINAL` = "PRAZO DE OBRA ORIGINAL",
+        `PERCENTUAL MINIMO DE OBRA` = "PERCENTUAL MINIMO DE OBRA",
+        `ADIANTAMENTO/DEFASAGEM OBRA` = "ADIANTAMENTO/DEFASAGEM OBRA",
+        `TIPO ROTINA` = "TIPO ROTINA",
+        `QUANTIDADE UNID COMERCIALIZADAS` = "QUANTIDADE UNID COMERCIALIZADAS",
+        `DESP LEG TERR FINANC` = "DESP LEG TERR FINANC",
+        `DESP LEG TERR FGTS` = "DESP LEG TERR FGTS",
+        `DESP LEG TERR R. PROPRIO` = "DESP LEG TERR R. PROPRIO",
+        `VR FINANC OUTRO AGENTE` = "VR FINANC OUTRO AGENTE",
+        `VR TERR OUTRO AGENTE` = "VR TERR OUTRO AGENTE",
+        `VR APORTE CONSTRUTORA` = "VR APORTE CONSTRUTORA",
+        `VR FINANCIAMENTO (PJ)` = "VR FINANCIAMENTO (PJ)",
+        `GARANTIA TERMINO OBRA` = "GARANTIA TERMINO OBRA",
+        `CUSTO DO TERRENO` = "CUSTO DO TERRENO",
+        `VR MIN GARANTIA HIP (130%)` = "VR MIN GARANTIA HIP (130%)",
+        `RECOMP. S/ REG ETAPA (PJ)` = "RECOMP. S/ REG ETAPA (PJ)",
+        `VR TOTAL ANTEC (PJ)` = "VR TOTAL ANTEC (PJ)"
       )
     return(dados.cef.dcd.resumo_t)
   }
@@ -206,26 +373,4 @@ f_caminho.arquivo_c <- "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Do
 #   ) %>%
 #   keep(~ str_detect(.x, "_DEMONST_CRONOGRAMA.pdf"))
 # f_caminho.arquivo_c <- caminhos.dcds_c[1]
-# here::here(
-#  "Relatórios - Documentos", "Relatorios - Extratos",
-#  "Estação", "Fevereiro 2025", "CAIXA -  2419 - FEVEREIRO.pdf"
-# )
-##  here::here("..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
-##    "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
-##  )
-## extrato <- dados_cef_extrato(f_caminho.arquivo.extrato_cef_c)
 ## shell.exec(f_caminho.arquivo_c)
-# list.files(
-#  normalizePath(file.path(dirname(dirname(here())), "Relatórios - Documentos", "Relatorios - CIWEB")),
-#  full.names = TRUE, recursive = TRUE
-# )
-# list.files(
-#  "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - CIWEB",
-#  full.names = TRUE, recursive = TRUE
-# )
-# print(normalizePath(file.path(dirname(dirname(here())), "Relatórios - Documentos", "Relatorios - CIWEB")))
-# print(list.files(
-#  normalizePath(file.path(dirname(dirname(here())), "Relatórios - Documentos", "Relatorios - CIWEB")),
-#  full.names = TRUE, recursive = TRUE
-# ))
-#
