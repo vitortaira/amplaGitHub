@@ -4,10 +4,7 @@
 \alias{e_cef_eprs}
 \title{Extração e Consolidação de Relatórios EPR da CEF}
 \usage{
-e_cef_eprs(
-  f_caminho.pasta.ciweb_c = file.path(dirname(dirname(here())),
-    "Relatórios - Documentos", "Relatorios - CIWEB")
-)
+e_cef_eprs(f_caminho.pasta.ciweb_c = c_caminhos_pastas("ciweb"))
 }
 \arguments{
 \item{f_caminho.pasta.ciweb_c}{Caminho para a pasta "Relatorios - CIWEB".

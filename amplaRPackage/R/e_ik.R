@@ -1,50 +1,68 @@
-# Descrição ---------------------------------------------------------------
-
-### RESUMO ###
-
-# e_ik() extrai os dados dos arquivos na pasta
-# "Informakon", os preenche numa planilha xlsx, e os retorna numa lista.
-
-### UTILIZAÇÃO ###
-
-# e_ik(
-#   f_caminho.pasta.ik_c
-# )
-
-### ARGUMENTOS ###
-
-# f_caminho.pasta.ik_c: String do caminho da pasta "informakon".
-
-# Pacotes -----------------------------------------------------------------
-
-library(lubridate)
-library(openxlsx) # Funções para preencher arquivos .xlsx
-library(readxl) # Funções para a importação de arquivos em Excel, e.g. read_excel()
+#' @title Extração e Consolidação de Dados Informakon
+#'
+#' @description
+#' A função **e_ik()** extrai os dados dos arquivos na pasta "Informakon",
+#' preenche-os em uma planilha xlsx (opcional) e os retorna em uma lista.
+#'
+#' @param f_caminho.pasta.ik_c String do caminho da pasta "informakon".
+#'   Valor padrão: \code{c_caminhos_pastas("informakon")}.
+#' @param xlsx Logical. Se \code{TRUE}, cria um arquivo xlsx com os dados extraídos.
+#'   Valor padrão: \code{FALSE}.
+#'
+#' @details
+#' A extração é feita a partir de arquivos na pasta "informakon". Além disso, o
+#' usuário pode optar por criar uma planilha xlsx com os dados processados.
+#'
+#' @return
+#' Retorna uma lista contendo os dados extraídos (despesas, receitas, etc.) em
+#' diferentes elementos.
+#'
+#' @examples
+#' \dontrun{
+#' # Chamada com valor padrão
+#' dados_informakon <- e_ik()
+#'
+#' # Chamada customizada
+#' dados_informakon <- e_ik(
+#'   f_caminho.pasta.ik_c = "C:/caminho/personalizado/informakon",
+#'   xlsx = TRUE
+#' )
+#' }
+#'
+#' @seealso
+#' \code{\link{read_excel}}, \code{\link{floor_date}}
+#'
+#' @importFrom here here
+#' @importFrom readxl read_excel
+#' @importFrom dplyr mutate
+#' @importFrom stringr str_detect str_extract str_remove str_sub
+#' @importFrom lubridate floor_date
+#' @export
 
 e_ik <-
   function(f_caminho.pasta.ik_c =
-             here::here("dados", "informakon"),
+             c_caminhos_pastas("informakon"),
            xlsx = FALSE) {
     extrair_caminhos_relatorio_informakon <-
-      function(f_caminho.pasta.ik_c = here::here("dados", "informakon")) {
+      function() {
         if (!dir.exists(f_caminho.pasta.ik_c)) {
           stop("A pasta 'informakon' não foi encontrada.")
         }
         # Despesas
         caminhos.arquivos.despesas_vc <-
           setdiff(
-            list.files(here::here("dados", "informakon"), full.names = T)[
-              list.files(here::here("dados", "informakon"), full.names = T) %>%
+            dir_ls(c_caminhos_pastas("informakon"), recurse = TRUE, type = "file")[
+              dir_ls(c_caminhos_pastas("informakon"), recurse = TRUE, type = "file") %>%
                 basename() %>%
                 str_which("^despesas")
             ],
             c(
-              list.files(here::here("dados", "informakon"),
-                full.names = T
-              )[str_which(
-                list.files(here::here("dados", "informakon")),
-                "^Informakon.*"
-              )]
+              dir_ls(c_caminhos_pastas("informakon"), recurse = TRUE, type = "file")[
+                str_which(
+                  dir_ls(c_caminhos_pastas("informakon"), type = "file"),
+                  "^Informakon.*"
+                )
+              ]
             )
           )
         data.final.despesas_vd <- c()
@@ -61,19 +79,18 @@ e_ik <-
         # Receitas
         caminhos.arquivos.receitas_vc <-
           setdiff(
-            list.files(here::here("dados", "informakon"), full.names = T)[
-              list.files(here::here("dados", "informakon"), full.names = T) %>%
+            dir_ls(c_caminhos_pastas("informakon"), recurse = TRUE, type = "file")[
+              dir_ls(c_caminhos_pastas("informakon"), recurse = TRUE, type = "file") %>%
                 basename() %>%
                 str_which("^receitas")
             ],
             c(
-              list.files(
-                here::here("dados", "informakon"),
-                full.names = T
-              )[str_which(
-                list.files(here::here("dados", "informakon")),
-                "^Informakon.*"
-              )]
+              dir_ls(c_caminhos_pastas("informakon"), recurse = TRUE, type = "file")[
+                str_which(
+                  dir_ls(c_caminhos_pastas("informakon"), type = "file"),
+                  "^Informakon.*"
+                )
+              ]
             )
           )
         data.final.receitas_vd <- c()
@@ -112,10 +129,10 @@ e_ik <-
       unlist()
     ###############################################################################
     # caminhos.arquivos.informakon_vc <-
-    #  list.files(
+    #  dir_ls(
     #    f_caminho.pasta.ik_c,
-    #    full.names = T,
-    #    recursive = T
+    #    recurse = TRUE,
+    #    type = "file"
     #  )
     # caminhos.arquivos.informakon_vc <-
     #  caminhos.arquivos.informakon_vc[
@@ -198,7 +215,7 @@ e_ik <-
     #      dados.pasta.informakon_l[["Despesas"]] %>%
     #      group_by(`Centro de Negócio`, `Mês`) %>%
     #      summarise(
-    #        `Total Pago no `Mês`` = sum(`Total Pago`, na.rm = T),
+    #        `Total Pago no Mês` = sum(`Total Pago`, na.rm = T),
     #        .groups = "drop"
     #      ) %>%
     #      ungroup()

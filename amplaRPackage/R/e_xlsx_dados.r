@@ -10,19 +10,9 @@
 # file_path: Caminho para o arquivo Excel.
 # sheet_name: Nome da aba a ser lida.
 
-source(
-  here::here(
-    "R", "e_dados.R"
-  )
-)
-
-library(openxlsx)
-
-xlsx_dados <-
+e_xlsx_dados <-
   function(f_caminho.pasta.dados_c =
-             here::here(
-               "Relatórios - Documentos", "Dados", "Dados originais"
-             )) {
+             c_caminhos_pastas("dados")) {
     # Valida existência dos pacotes necessários
     if (!requireNamespace("openxlsx", quietly = TRUE)) {
       stop("O pacote 'openxlsx' é necessário, mas não está instalado. Por favor, instale-o primeiro.")
@@ -85,7 +75,7 @@ xlsx_dados <-
     )
     nome.xlsx_c <-
       str_c(
-        here::here("Relatórios - Documentos", "Dados", "Dados originais"),
+        c_caminhos_pastas("dados"),
         "/Dados_",
         format(Sys.time(), format = "%Y_%m_%d-%H_%M_%S"),
         ".xlsx"
