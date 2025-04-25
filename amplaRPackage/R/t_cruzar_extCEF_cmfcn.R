@@ -1,7 +1,7 @@
 #' @title Cruzamento de dados dos extratos da CEF e relatórios CMF_CN
 #'
 #' @description
-#' A função **cruzar_extrato_cmfcn** realiza o cruzamento dos dados dos
+#' A função **t_cruzar_extcef_cmfcn** realiza o cruzamento dos dados dos
 #' extratos da CEF e dos relatórios CMF_CN, gerando um arquivo consolidado
 #' em formato `.xlsx`.
 #'
@@ -22,7 +22,7 @@
 #' \dontrun{
 #' f_caminho.pasta.extratos_c <- "caminho/para/a/pasta/Relatorios - Extratos"
 #' f_caminho.pasta.ciweb_c <- "caminho/para/a/pasta/Relatorios - CIWEB"
-#' resultado <- cruzar_extrato_cmfcn(f_caminho.pasta.extratos_c, f_caminho.pasta.ciweb_c)
+#' resultado <- t_cruzar_extcef_cmfcn(f_caminho.pasta.extratos_c, f_caminho.pasta.ciweb_c)
 #' print(resultado)
 #' }
 #'
@@ -601,7 +601,7 @@ t_cruzar_extcef_cmfcn <-
 
 # Teste -------------------------------------------------------------------
 
-# cruzar_extrato_cmfcn()
+# t_cruzar_extcef_cmfcn()
 # f_caminho.arquivo.extrato_cef_c <-
 #   here::here(
 #     "..", "..", "Relatórios - Documentos", "Relatorios - Extratos",

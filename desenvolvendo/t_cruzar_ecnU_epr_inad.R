@@ -712,7 +712,7 @@ cruzar_inadimplentes_repasses <-
 
 # Teste -------------------------------------------------------------------
 
-# cruzar_extrato_cmfcn()
+# t_cruzar_extcef_cmfcn()
 # f_caminho.arquivo.extrato_cef_c <-
 #   here::here(
 #     "..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
