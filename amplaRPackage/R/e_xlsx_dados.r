@@ -36,21 +36,21 @@ e_xlsx_dados <-
         Aba =
           c(
             # Abas da CEF
-            c("cmfcn", "ecnC", "ecnE", "ecnPJ", "ecnU", "epr", "extCEF"),
+            c("cmfcn", "dcd", "ecnC", "ecnE", "ecnPJ", "ecnU", "epr", "extCEF"),
             # Abas do Informakon
             c("desp", "recPS")
           ),
         Fonte =
           c(
             # Abas da CEF
-            c(rep("cef", 7)),
+            c(rep("cef", 8)),
             # Abas do Informakon
             c(rep("ik", 2))
           ),
         Cor =
           c(
             # Abas da CEF
-            c(rep("darkblue", 7)),
+            c(rep("darkblue", 8)),
             # Abas do Informakon
             c(rep("darkgreen", 2))
           )
