@@ -1,10 +1,10 @@
-name: ampla_shiny
+name: amplashiny
 title:
 username: vitortaira
 account: vitortaira
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
-appId: 14079813
-bundleId: 9847591
-url: https://vitortaira.shinyapps.io/ampla_shiny/
+appId: 14636721
+bundleId: 10200145
+url: https://vitortaira.shinyapps.io/amplashiny/
 version: 1
