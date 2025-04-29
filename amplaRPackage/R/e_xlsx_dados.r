@@ -11,12 +11,7 @@
 # sheet_name: Nome da aba a ser lida.
 
 e_xlsx_dados <-
-  function(f_caminho.pasta.dados_c =
-             c_caminhos_pastas("dados")) {
-    # Valida existência dos pacotes necessários
-    if (!requireNamespace("openxlsx", quietly = TRUE)) {
-      stop("O pacote 'openxlsx' é necessário, mas não está instalado. Por favor, instale-o primeiro.")
-    }
+  function(f_caminho.pasta.dados_c = c_caminhos_pastas("dados")) {
     # Valida argumentos
     if (!dir.exists(f_caminho.pasta.dados_c)) {
       stop(

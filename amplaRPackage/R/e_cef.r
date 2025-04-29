@@ -25,7 +25,7 @@
 e_cef <- function() {
   dados.cef_l <- list(
     cmfcn  = e_cef_cmfcns(),
-    dcd    = e_cef_dcd_resumo(),
+    dcd    = e_cef_dcds_resumo(),
     ecnE   = e_cef_ecns()$Empreendimento,
     ecnPJ  = e_cef_ecns()$Emprestimo,
     ecnU   = e_cef_ecns()$Unidades,

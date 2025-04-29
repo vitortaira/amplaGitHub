@@ -172,6 +172,14 @@ e_ik <-
             Parcela = as.character(Parcela),
             `Total Pago` = as.numeric(`Total Pago`),
             `Valor Titulo` = as.numeric(`Valor Titulo`)
+          ) %>%
+          select(
+            `Data Doc Pagto`, `Mês`, `Data Liberação`, Credor, Empresa,
+            `Cod. Centro`, `Centro de Negócio`, `Agente Financeiro`, `N° Conta`,
+            `Nº Entrada`, Documento, Parcela, `Data Vencimento`,
+            `Data Vencimento Origem`, `Valor Titulo`, `Acréscimos`, Descontos,
+            Encargos, `Descontos Adiant.`, Multa, `Total Pago`, `a/c`,
+            `Observação`
           )
       }
 
@@ -190,6 +198,7 @@ e_ik <-
             Desconto = as.numeric(Desconto),
             Elemento = as.character(Elemento),
             Empreendimento = as.character(Empreendimento),
+            Empresa = Empreendimento %>% str_sub(1, 3),
             Encargos = as.numeric(Encargos),
             Esp = as.character(Esp),
             Juros = as.numeric(Juros),
@@ -204,6 +213,12 @@ e_ik <-
             Torre = as.character(Torre),
             Total = as.numeric(Total),
             Vencimento = as.Date(Vencimento)
+          ) %>%
+          select(
+            Empreendimento, Empresa, Cliente, Contrato, Torre, Apto, Esp,
+            Parcela, Elemento, Vencimento, `Data Pagto`, `Mês`, `R/F`, Agente,
+            Principal, Juros, Reajuste, Encargos, `Juros de Mora`, Multa,
+            Seguro, Desconto, `Cart.`, Total
           )
       }
     }

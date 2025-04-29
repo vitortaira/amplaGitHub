@@ -25,11 +25,25 @@
 #' @seealso
 #' \code{\link{e_cef}}, \code{\link{e_ik}}
 #'
+#' @importFrom stringi stri_trans_nfc
+#'
 #' @export
 e_dados <- function() {
+  normalize_names <- function(obj) {
+    # If the object has names, normalize them
+    if (!is.null(names(obj))) {
+      names(obj) <- stri_trans_nfc(enc2utf8(names(obj)))
+    }
+    # If it's a list (but not a data.frame), process each element recursively.
+    if (is.list(obj) && !is.data.frame(obj)) {
+      obj <- lapply(obj, normalize_names)
+    }
+    # For data.frames, only fix the names; leave content unchanged.
+    obj
+  }
   dados_l <- list(
     "cef" = e_cef(),
     "ik"  = e_ik()
   )
-  return(dados_l)
+  normalize_names(dados_l)
 }
