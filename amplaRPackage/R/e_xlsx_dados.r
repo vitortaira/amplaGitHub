@@ -88,13 +88,13 @@ e_xlsx_dados <- function(f_caminho.pasta.dados_c = c_caminhos_pastas("dados")) {
   )
   saveWorkbook(wb_x, nome.xlsx_c, overwrite = FALSE)
   # Removendo arquivos da pasta "dados" em amplaShiny
-  file_delete(dir_ls(path(here("amplaShiny", "dados")), recurse = TRUE))
+  file_delete(dir_ls(path(here("amplaShiny", "inst", "dados")), recurse = TRUE))
   # Salvando dados_l como RDS em amplaShiny
   saveRDS(
     dados_l,
     file = str_c(
       c_caminhos_pastas("shiny"),
-      "inst/dados/Dados_",
+      "/inst/dados/Dados_",
       format(Sys.time(), format = "%Y_%m_%d-%H_%M_%S"),
       ".rds"
     )

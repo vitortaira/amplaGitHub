@@ -5,7 +5,6 @@ library(plotly)
 library(readxl)
 library(shiny)
 library(tidyverse)
-i_am(here::here()) # Set the working directory to the project root
 
 # A simple user database (for demo only; use a secure approach in production)
 login_t <- data.frame(
@@ -15,9 +14,10 @@ login_t <- data.frame(
 )
 
 # Load latest data
+print(dir_ls(here("inst", "dados"), type = "file"))
 dados_l <-
   readRDS(
-    dir_ls(here("amplaShiny", "inst", "dados"),
+    dir_ls(here("inst", "dados"),
       type = "file"
     )
   )
@@ -131,16 +131,15 @@ server <- function(input, output, session) {
                   discard(~ .x %in% c("Data Doc Pagto", "Data Liberação", "Mês")),
                 selected = names(dados_l[["ik"]]$desp)[1]
               ),
-              plotlyOutput("stackedPlot", height = "600px"),
-              # h2("Receitas"),
-              # selectInput(
-              #  inputId = "variavel_receitas",
-              #  label = "Empilhar barras por:",
-              #  choices = names(dados_l[["ik"]]$desp) %>%
-              #    discard(~ .x %in% c("Data Doc Pagto", "Data Liberação", "Mês")),
-              #  selected = names(dados_l[["ik"]]$desp)[1]
-              # ),
-              # plotlyOutput("stackedPlot", height = "600px")
+              plotlyOutput("g_desp.traj", height = "600px"),
+              h2("Receitas"),
+              selectInput(
+                inputId = "variavel_receitas",
+                label = "Empilhar barras por:",
+                choices = names(dados_l[["ik"]]$desp),
+                selected = names(dados_l[["ik"]]$desp)[1]
+              ),
+              plotlyOutput("g_recPS.traj", height = "600px")
             )
           ),
           tabPanel(
@@ -165,7 +164,7 @@ server <- function(input, output, session) {
   })
 
   # --- Example stacked plot ---
-  output$stackedPlot <- renderPlotly({
+  output$g_desp.traj <- renderPlotly({
     req(input$variavel_despesas)
     df_summary <- dados_l[["ik"]]$desp %>%
       group_by(`Mês`, Var = .data[[input$variavel_despesas]]) %>%
@@ -179,6 +178,41 @@ server <- function(input, output, session) {
     ) %>%
       layout(
         title = "Trajetória das despesas",
+        barmode = "stack",
+        separators = ".,",
+        xaxis = list(
+          title      = "Data",
+          tickformat = "%b-%y",
+          tickangle  = 45
+        ),
+        yaxis = list(
+          title     = "Valor (em R$)",
+          autorange = TRUE
+        ),
+        legend = list(
+          orientation = "h",
+          x = 0.05, y = -0.15
+        ),
+        width = 1200,
+        height = 900,
+        autosize = FALSE
+      )
+  })
+
+  output$g_recPS.traj <- renderPlotly({
+    req(input$variavel_receitas)
+    df_summary_rec <- dados_l[["ik"]]$recPS %>%
+      group_by(`Mês`, Var = .data[[input$variavel_receitas]]) %>%
+      summarise(Total = sum(.data[["Total Recebido"]], na.rm = TRUE), .groups = "drop")
+    plot_ly(
+      data   = df_summary_rec,
+      x      = ~Mês,
+      y      = ~Total,
+      color  = ~Var,
+      type   = "bar"
+    ) %>%
+      layout(
+        title = "Trajetória das receitas",
         barmode = "stack",
         separators = ".,",
         xaxis = list(
