@@ -8,13 +8,12 @@ library(tidyverse)
 
 # A simple user database (for demo only; use a secure approach in production)
 login_t <- data.frame(
-  usuario = "usuario",
+  usuario = "ampler",
   senha = "251200",
   stringsAsFactors = FALSE
 )
 
 # Load latest data
-print(dir_ls(here("inst", "dados"), type = "file"))
 dados_l <-
   readRDS(
     dir_ls(here("inst", "dados"),
@@ -136,8 +135,8 @@ server <- function(input, output, session) {
               selectInput(
                 inputId = "variavel_receitas",
                 label = "Empilhar barras por:",
-                choices = names(dados_l[["ik"]]$desp),
-                selected = names(dados_l[["ik"]]$desp)[1]
+                choices = names(dados_l[["ik"]]$recPS),
+                selected = names(dados_l[["ik"]]$recPS)[1]
               ),
               plotlyOutput("g_recPS.traj", height = "600px")
             )
@@ -203,7 +202,7 @@ server <- function(input, output, session) {
     req(input$variavel_receitas)
     df_summary_rec <- dados_l[["ik"]]$recPS %>%
       group_by(`Mês`, Var = .data[[input$variavel_receitas]]) %>%
-      summarise(Total = sum(.data[["Total Recebido"]], na.rm = TRUE), .groups = "drop")
+      summarise(Total = sum(.data[["Total"]], na.rm = TRUE), .groups = "drop")
     plot_ly(
       data   = df_summary_rec,
       x      = ~Mês,
