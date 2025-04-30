@@ -1,8 +1,11 @@
 # app.R (or server.R + ui.R as you prefer)
+library(fs)
 library(here)
 library(plotly)
+library(readxl)
 library(shiny)
 library(tidyverse)
+i_am(here::here()) # Set the working directory to the project root
 
 # A simple user database (for demo only; use a secure approach in production)
 login_t <- data.frame(
@@ -11,9 +14,13 @@ login_t <- data.frame(
   stringsAsFactors = FALSE
 )
 
-# Load example data
-dados_despesas <-
-  read_csv(here("amplaShiny", "dados.pasta.informakon.despesas.csv"))
+# Load latest data
+dados_l <-
+  readRDS(
+    dir_ls(here("amplaShiny", "inst", "dados"),
+      type = "file"
+    )
+  )
 
 # --- UI ---
 ui <- fluidPage(
@@ -120,20 +127,20 @@ server <- function(input, output, session) {
               selectInput(
                 inputId = "variavel_despesas",
                 label = "Empilhar barras por:",
-                choices = names(dados.pasta.informakon.despesas) %>%
+                choices = names(dados_l[["ik"]]$desp) %>%
                   discard(~ .x %in% c("Data Doc Pagto", "Data Liberação", "Mês")),
-                selected = names(dados.pasta.informakon.despesas)[1]
+                selected = names(dados_l[["ik"]]$desp)[1]
               ),
               plotlyOutput("stackedPlot", height = "600px"),
-              h2("Receitas"),
-              selectInput(
-                inputId = "variavel_receitas",
-                label = "Empilhar barras por:",
-                choices = names(dados_despesas) %>%
-                  discard(~ .x %in% c("Data Doc Pagto", "Data Liberação", "Mês")),
-                selected = names(dados_despesas)[1]
-              ),
-              plotlyOutput("stackedPlot", height = "600px")
+              # h2("Receitas"),
+              # selectInput(
+              #  inputId = "variavel_receitas",
+              #  label = "Empilhar barras por:",
+              #  choices = names(dados_l[["ik"]]$desp) %>%
+              #    discard(~ .x %in% c("Data Doc Pagto", "Data Liberação", "Mês")),
+              #  selected = names(dados_l[["ik"]]$desp)[1]
+              # ),
+              # plotlyOutput("stackedPlot", height = "600px")
             )
           ),
           tabPanel(
@@ -160,7 +167,7 @@ server <- function(input, output, session) {
   # --- Example stacked plot ---
   output$stackedPlot <- renderPlotly({
     req(input$variavel_despesas)
-    df_summary <- dados_despesas %>%
+    df_summary <- dados_l[["ik"]]$desp %>%
       group_by(`Mês`, Var = .data[[input$variavel_despesas]]) %>%
       summarise(Total = sum(.data[["Total Pago"]], na.rm = TRUE), .groups = "drop")
     plot_ly(
