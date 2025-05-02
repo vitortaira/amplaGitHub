@@ -48,12 +48,18 @@ e_dados <- function() {
   normalize_names(dados_l)
   arquivos_c <- dados_l %>%
     flatten() %>%
-    map_dfr(~ dplyr::select(.x, Arquivo)) %>%
+    map_dfr(~ dplyr::select(
+      .x,
+      Arquivo, Arquivo_tipo_tabela, Arquivo_tipo, Arquivo_fonte
+    )) %>%
     distinct()
   info.arquivos_t <- file_info(arquivos_c$Arquivo)
   metadados_t <-
     tibble(
       Arquivo = info.arquivos_t$path,
+      Arquivo_tipo_tabela = arquivos_c$Arquivo_tipo_tabela,
+      Arquivo_tipo = arquivos_c$Arquivo_tipo,
+      Arquivo_fonte = arquivos_c$Arquivo_fonte,
       Nome = Arquivo %>% basename() %>% str_remove("\\..*$"),
       Pasta = Arquivo %>% dirname() %>% str_extract("[^/]+$"),
       Extensao = path_ext(Arquivo) %>% str_to_lower() %>% as.factor(),

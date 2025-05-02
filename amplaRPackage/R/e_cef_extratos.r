@@ -68,14 +68,16 @@ e_cef_extratos <-
       mutate(
         Contrato_6 =
           Documento %>% str_pad(width = 6, side = "left", pad = "0"),
+        Arquivo_tipo_tabela = "extcef",
         Arquivo_tipo = "extcef",
-        Arquivo_tipo_tabela = "extcef"
+        Arquivo_fonte = "cef"
       ) %>%
       as_tibble() %>%
       select(
         `Data de lançamento`, `Data de movimento`, Documento, `Histórico`,
         Valor, Saldo, Conta_interno, Conta, `Agência`, Produto, CNPJ, Cliente,
-        `Período_início`, `Período_fim`, `Data_consulta`, Contrato_6, Arquivo
+        `Período_início`, `Período_fim`, `Data_consulta`, Contrato_6, Arquivo,
+        Arquivo_tipo_tabela, Arquivo_tipo, Arquivo_fonte
       )
     return(extratos_t)
   }

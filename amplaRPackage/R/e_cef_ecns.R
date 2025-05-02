@@ -48,31 +48,35 @@ e_cef_ecns <-
       distinct() %>%
       mutate(
         Arquivo_tipo = "ecn",
-        Arquivo_tipo_tabela = "ecn_e"
+        Arquivo_tipo_tabela = "ecn_e",
+        Arquivo_fonte = "cef"
       )
     ecns.emprestimo_t <-
       caminhos.ecn_c %>%
       map_dfr(~ e_cef_ecn(.x)$Emprestimo) %>%
       distinct() %>%
       mutate(
+        Arquivo_tipo_tabela = "ecn_pj",
         Arquivo_tipo = "ecn",
-        Arquivo_tipo_tabela = "ecn_pj"
+        Arquivo_fonte = "cef",
       )
     ecns.consolidado_t <-
       caminhos.ecn_c %>%
       map_dfr(~ e_cef_ecn(.x)$Consolidado) %>%
       distinct() %>%
       mutate(
+        Arquivo_tipo_tabela = "ecn_c",
         Arquivo_tipo = "ecn",
-        Arquivo_tipo_tabela = "ecn_c"
+        Arquivo_fonte = "cef"
       )
     ecns.unidades_t <-
       caminhos.ecn_c %>%
       map_dfr(~ e_cef_ecn(.x)$Unidades) %>%
       distinct() %>%
       mutate(
+        Arquivo_tipo_tabela = "ecn_u",
         Arquivo_tipo = "ecn",
-        Arquivo_tipo_tabela = "ecn_u"
+        Arquivo_fonte = "cef"
       )
     ecns_l <-
       list(

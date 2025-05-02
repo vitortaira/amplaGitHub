@@ -34,8 +34,9 @@ e_cef_dcds_resumo <- function(
     caminhos.dcds_c %>%
     map_dfr(~ e_cef_dcd_resumo(.x)) %>%
     mutate(
+      Arquivo_tipo_tabela = "dcd",
       Arquivo_tipo = "dcd",
-      Arquivo_tipo_tabela = "dcd"
-    ) %>%
-    return(dcds.resumo_t)
+      Arquivo_fonte = "cef"
+    )
+  return(dcds.resumo_t)
 }
