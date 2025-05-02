@@ -44,18 +44,24 @@ e_xlsx_dados <- function(f_caminho.pasta.dados_c = c_caminhos_pastas("dados")) {
   # Define nomes e cores das abas
   wb.abas_l <- list(
     Aba = c(
+      # Metadados
+      "metadados",
       # Abas da CEF
       c("cmfcn", "dcd", "ecnC", "ecnE", "ecnPJ", "ecnU", "epr", "extCEF"),
       # Abas do Informakon
       c("desp", "recPS")
     ),
     Fonte = c(
+      # Metadados
+      "metadados",
       # Abas da CEF
       c(rep("cef", 8)),
       # Abas do Informakon
       c(rep("ik", 2))
     ),
     Cor = c(
+      # Metadados
+      "darkred",
       # Abas da CEF
       c(rep("darkblue", 8)),
       # Abas do Informakon

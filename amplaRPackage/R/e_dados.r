@@ -46,4 +46,23 @@ e_dados <- function() {
     "ik"  = e_ik()
   )
   normalize_names(dados_l)
+  arquivos_c <- dados_l %>%
+    flatten() %>%
+    map_dfr(~ dplyr::select(.x, Arquivo)) %>%
+    distinct()
+  info.arquivos_t <- file_info(arquivos_c$Arquivo)
+  metadados_t <-
+    tibble(
+      Caminho = info.arquivos_t$path,
+      Nome = Caminho %>% basename() %>% str_remove("\\..*$"),
+      Pasta = Caminho %>% dirname() %>% str_extract("[^/]+$"),
+      Extensao = path_ext(Caminho) %>% str_to_lower() %>% as.factor(),
+      Tamanho_bytes = as.numeric(info.arquivos_t$size),
+      Data_modificacao = info.arquivos_t$modification_time,
+      Data_mudanca = info.arquivos_t$change_time,
+      Data_acesso = info.arquivos_t$access_time,
+      Data_criacao = info.arquivos_t$birth_time
+    )
+  dados_l$metadados$metadados <- metadados_t
+  return(dados_l)
 }
