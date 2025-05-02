@@ -187,7 +187,7 @@ e_ik <-
       # Receitas ----------------------------------------------------------------
 
       if (caminho_arquivo_informakon.c %>% basename() %>% str_detect("^receitas")) {
-        dados.pasta.informakon_l[["recPS"]] <-
+        dados.pasta.informakon_l[["rec"]] <-
           read_excel(caminho_arquivo_informakon.c, skip = 3) %>%
           mutate(
             Agente = as.character(Agente),

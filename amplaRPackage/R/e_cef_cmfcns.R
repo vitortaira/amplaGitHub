@@ -60,7 +60,7 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = c_caminhos_pastas("ciweb")) {
     select(
       "CONTRATO", "DT. LANCTO", "Data de movimento", "LANCAMENTOS", "NP",
       "CONTA SIDEC/NSGD", "Valor", "SITUACAO", "MOT.", "Contrato_6", "Arquivo",
-      "Arquivo_tipo", "Arquivo_tabela"
+      "Arquivo_tipo", "Arquivo_tipo_tabela"
     )
   return(cmfcns_t)
 }

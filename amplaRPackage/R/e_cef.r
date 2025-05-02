@@ -24,14 +24,14 @@
 #' @export
 e_cef <- function() {
   dados.cef_l <- list(
-    cmfcn  = e_cef_cmfcns(),
-    dcd    = e_cef_dcds_resumo(),
-    ecnE   = e_cef_ecns()$Empreendimento,
-    ecnPJ  = e_cef_ecns()$Emprestimo,
-    ecnU   = e_cef_ecns()$Unidades,
-    ecnC   = e_cef_ecns()$Consolidado,
-    epr    = e_cef_eprs(),
-    extCEF = e_cef_extratos()
+    cmfcn = e_cef_cmfcns(),
+    dcd = e_cef_dcds_resumo(),
+    ecn_e = e_cef_ecns()$Empreendimento,
+    ecn_pj = e_cef_ecns()$Emprestimo,
+    ecn_u = e_cef_ecns()$Unidades,
+    ecn_c = e_cef_ecns()$Consolidado,
+    epr = e_cef_eprs(),
+    extcef = e_cef_extratos()
   )
   return(dados.cef_l)
 }

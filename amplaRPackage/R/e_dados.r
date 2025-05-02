@@ -53,10 +53,10 @@ e_dados <- function() {
   info.arquivos_t <- file_info(arquivos_c$Arquivo)
   metadados_t <-
     tibble(
-      Caminho = info.arquivos_t$path,
-      Nome = Caminho %>% basename() %>% str_remove("\\..*$"),
-      Pasta = Caminho %>% dirname() %>% str_extract("[^/]+$"),
-      Extensao = path_ext(Caminho) %>% str_to_lower() %>% as.factor(),
+      Arquivo = info.arquivos_t$path,
+      Nome = Arquivo %>% basename() %>% str_remove("\\..*$"),
+      Pasta = Arquivo %>% dirname() %>% str_extract("[^/]+$"),
+      Extensao = path_ext(Arquivo) %>% str_to_lower() %>% as.factor(),
       Tamanho_bytes = as.numeric(info.arquivos_t$size),
       Data_modificacao = info.arquivos_t$modification_time,
       Data_mudanca = info.arquivos_t$change_time,

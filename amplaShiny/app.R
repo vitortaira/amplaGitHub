@@ -135,10 +135,10 @@ server <- function(input, output, session) {
               selectInput(
                 inputId = "variavel_receitas",
                 label = "Empilhar barras por:",
-                choices = names(dados_l[["ik"]]$recPS),
-                selected = names(dados_l[["ik"]]$recPS)[1]
+                choices = names(dados_l[["ik"]]$rec),
+                selected = names(dados_l[["ik"]]$rec)[1]
               ),
-              plotlyOutput("g_recPS.traj", height = "600px")
+              plotlyOutput("g_rec.traj", height = "600px")
             )
           ),
           tabPanel(
@@ -198,9 +198,9 @@ server <- function(input, output, session) {
       )
   })
 
-  output$g_recPS.traj <- renderPlotly({
+  output$g_rec.traj <- renderPlotly({
     req(input$variavel_receitas)
-    df_summary_rec <- dados_l[["ik"]]$recPS %>%
+    df_summary_rec <- dados_l[["ik"]]$rec %>%
       group_by(`Mês`, Var = .data[[input$variavel_receitas]]) %>%
       summarise(Total = sum(.data[["Total"]], na.rm = TRUE), .groups = "drop")
     plot_ly(
