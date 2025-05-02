@@ -47,7 +47,11 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = c_caminhos_pastas("ciweb")) {
       bind_rows(cmfcns_t, cmfcns_l[[i_caminho.cmfcn_c]])
   }
   cmfcns_t %<>%
-    mutate(Contrato_6 = CONTRATO %>% str_sub(-6, -1)) %>%
+    mutate(
+      Contrato_6 = CONTRATO %>% str_sub(-6, -1),
+      Arquivo_tipo = "cmfcn",
+      Arquivo_tipo_tabela = "cmfcn"
+    ) %>%
     rename(
       `Data de movimento` = "DT. REMES.",
       Valor = VALOR
@@ -55,7 +59,8 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = c_caminhos_pastas("ciweb")) {
     as_tibble() %>%
     select(
       "CONTRATO", "DT. LANCTO", "Data de movimento", "LANCAMENTOS", "NP",
-      "CONTA SIDEC/NSGD", "Valor", "SITUACAO", "MOT.", "Contrato_6", "Arquivo"
+      "CONTA SIDEC/NSGD", "Valor", "SITUACAO", "MOT.", "Contrato_6", "Arquivo",
+      "Arquivo_tipo", "Arquivo_tabela"
     )
   return(cmfcns_t)
 }

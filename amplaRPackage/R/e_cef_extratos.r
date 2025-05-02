@@ -67,7 +67,9 @@ e_cef_extratos <-
     extratos_t %<>%
       mutate(
         Contrato_6 =
-          Documento %>% str_pad(width = 6, side = "left", pad = "0")
+          Documento %>% str_pad(width = 6, side = "left", pad = "0"),
+        Arquivo_tipo = "extcef",
+        Arquivo_tipo_tabela = "extcef"
       ) %>%
       as_tibble() %>%
       select(

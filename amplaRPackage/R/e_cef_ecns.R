@@ -45,19 +45,35 @@ e_cef_ecns <-
     ecns.empreendimento_t <-
       caminhos.ecn_c %>%
       map_dfr(~ e_cef_ecn(.x)$Empreendimento) %>%
-      distinct()
+      distinct() %>%
+      mutate(
+        Arquivo_tipo = "ecn",
+        Arquivo_tipo_tabela = "ecn_e"
+      )
     ecns.emprestimo_t <-
       caminhos.ecn_c %>%
       map_dfr(~ e_cef_ecn(.x)$Emprestimo) %>%
-      distinct()
+      distinct() %>%
+      mutate(
+        Arquivo_tipo = "ecn",
+        Arquivo_tipo_tabela = "ecn_pj"
+      )
     ecns.consolidado_t <-
       caminhos.ecn_c %>%
       map_dfr(~ e_cef_ecn(.x)$Consolidado) %>%
-      distinct()
+      distinct() %>%
+      mutate(
+        Arquivo_tipo = "ecn",
+        Arquivo_tipo_tabela = "ecn_c"
+      )
     ecns.unidades_t <-
       caminhos.ecn_c %>%
       map_dfr(~ e_cef_ecn(.x)$Unidades) %>%
-      distinct()
+      distinct() %>%
+      mutate(
+        Arquivo_tipo = "ecn",
+        Arquivo_tipo_tabela = "ecn_u"
+      )
     ecns_l <-
       list(
         Empreendimento = ecns.empreendimento_t,

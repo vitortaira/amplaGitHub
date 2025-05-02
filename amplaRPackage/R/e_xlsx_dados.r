@@ -47,9 +47,9 @@ e_xlsx_dados <- function(f_caminho.pasta.dados_c = c_caminhos_pastas("dados")) {
       # Metadados
       "metadados",
       # Abas da CEF
-      c("cmfcn", "dcd", "ecnC", "ecnE", "ecnPJ", "ecnU", "epr", "extCEF"),
+      c("cmfcn", "dcd", "ecn_c", "ecn_e", "ecn_pj", "ecn_u", "epr", "extcef"),
       # Abas do Informakon
-      c("desp", "recPS")
+      c("desp", "rec")
     ),
     Fonte = c(
       # Metadados
