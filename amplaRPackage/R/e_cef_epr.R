@@ -114,12 +114,13 @@ e_cef_epr <-
             Linhas %>% as.character() %>% str_count("\\S+") == 1,
             NA_character_,
             Linhas %>% as.character() %>% word(1)
-          )
+          ),
+        Arquivo = f_caminho.epr_c
       ) %>%
       select(
         CONTRATO, `NOME MUTUARIO`, UNO, ORR, TO, COD, `DT. ASSIN`,
         `TIPO UND`, `GAR. AUT`, `DT. INC. CTR`, `DT. INC. REG`, `VR RETIDO`,
-        `VR AMORTIZ`, AMO
+        `VR AMORTIZ`, AMO, Arquivo
       )
     return(epr_t)
   }

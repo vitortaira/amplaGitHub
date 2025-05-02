@@ -171,7 +171,8 @@ e_ik <-
             `Observação` = as.character(`Observação`),
             Parcela = as.character(Parcela),
             `Total Pago` = as.numeric(`Total Pago`),
-            `Valor Titulo` = as.numeric(`Valor Titulo`)
+            `Valor Titulo` = as.numeric(`Valor Titulo`),
+            Arquivo = caminho_arquivo_informakon.c
           ) %>%
           select(
             `Data Doc Pagto`, `Mês`, `Data Liberação`, Credor, Empresa,
@@ -179,7 +180,7 @@ e_ik <-
             `Nº Entrada`, Documento, Parcela, `Data Vencimento`,
             `Data Vencimento Origem`, `Valor Titulo`, `Acréscimos`, Descontos,
             Encargos, `Descontos Adiant.`, Multa, `Total Pago`, `a/c`,
-            `Observação`
+            `Observação`, Arquivo
           )
       }
 
@@ -212,13 +213,14 @@ e_ik <-
             Seguro = as.numeric(Seguro),
             Torre = as.character(Torre),
             Total = as.numeric(Total),
-            Vencimento = as.Date(Vencimento)
+            Vencimento = as.Date(Vencimento),
+            Arquivo = caminho_arquivo_informakon.c
           ) %>%
           select(
             Empreendimento, Empresa, Cliente, Contrato, Torre, Apto, Esp,
             Parcela, Elemento, Vencimento, `Data Pagto`, `Mês`, `R/F`, Agente,
             Principal, Juros, Reajuste, Encargos, `Juros de Mora`, Multa,
-            Seguro, Desconto, `Cart.`, Total
+            Seguro, Desconto, `Cart.`, Total, Arquivo
           )
       }
     }

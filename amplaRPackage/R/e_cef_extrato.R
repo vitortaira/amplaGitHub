@@ -188,12 +188,13 @@ e_cef_extrato <- function(f_caminho.arquivo_c) {
           as.Date(format = "%d/%m/%Y"),
         Data_consulta = data.consulta_h,
         Conta_interno = basename(f_caminho.arquivo_c) %>%
-          str_extract("\\d{4}")
+          str_extract("\\d{4}"),
+        Arquivo = f_caminho.arquivo_c
       ) %>%
       select(
         `Data Lanc.`, `Data Mov.`, `Nr. Doc`, `Histórico`, Valor, Saldo,
         Conta_interno, Conta, `Agência`, Produto, CNPJ, Cliente,
-        `Período_início`, `Período_fim`, Data_consulta
+        `Período_início`, `Período_fim`, Data_consulta, Arquivo
       ) %>%
       rename(
         `Data de lançamento` = `Data Lanc.`,
@@ -205,7 +206,7 @@ e_cef_extrato <- function(f_caminho.arquivo_c) {
   }
   if (
     any(str_detect(paginas_l[[1]], "(?i)ag[eê]ncia")) &
-    !any(str_detect(paginas_l[[1]], "(?i)extrato\\s?fundo\\s?de\\s?investimento"))
+      !any(str_detect(paginas_l[[1]], "(?i)extrato\\s?fundo\\s?de\\s?investimento"))
   ) {
     # Se o extrato da CEF for do tipo sem o título "Extrato por período"
     linhas_c <- unlist(paginas_l, use.names = FALSE) %>%
@@ -298,19 +299,19 @@ e_cef_extrato <- function(f_caminho.arquivo_c) {
           as.Date(format = "%d/%m/%Y"),
         Produto = produto_c,
         Conta_interno = basename(f_caminho.arquivo_c) %>%
-          str_extract("\\d{4}")
+          str_extract("\\d{4}"),
+        Arquivo = f_caminho.arquivo_c
       ) %>%
       select(
         `Data de lançamento`, `Data de movimento`, Documento, `Histórico`,
         `Valor(R$)`, `Saldo(R$)`,
         Conta_interno, Conta, `Agência`, Produto, CNPJ, Cliente,
-        `Período_início`, `Período_fim`, Data_consulta
+        `Período_início`, `Período_fim`, Data_consulta, Arquivo
       ) %>%
       rename(Saldo = `Saldo(R$)`, Valor = `Valor(R$)`)
 
     return(extrato_t)
-  }
-  else {
+  } else {
     message(str_c("O arquivo ", f_caminho.arquivo_c, " não foi extraído."))
   }
 }

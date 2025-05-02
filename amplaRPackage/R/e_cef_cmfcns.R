@@ -52,6 +52,10 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = c_caminhos_pastas("ciweb")) {
       `Data de movimento` = "DT. REMES.",
       Valor = VALOR
     ) %>%
-    as_tibble()
+    as_tibble() %>%
+    select(
+      "CONTRATO", "DT. LANCTO", "Data de movimento", "LANCAMENTOS", "NP",
+      "CONTA SIDEC/NSGD", "Valor", "SITUACAO", "MOT.", "Contrato_6", "Arquivo"
+    )
   return(cmfcns_t)
 }

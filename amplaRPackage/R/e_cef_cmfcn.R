@@ -120,59 +120,59 @@ e_cef_cmfcn <-
             Linhas
           ),
         NP = Linhas %>% str_sub(-2, -1) %>% as.integer(),
-        LANCAMENTOS = Linhas %>% str_sub(1, -3) %>% str_trim()
+        LANCAMENTOS = Linhas %>% str_sub(1, -3) %>% str_trim(),
+        Arquivo = f_caminho.arquivo.cmfcn_c
       ) %>%
       select(
         CONTRATO, `DT. LANCTO`, `DT. REMES.`, LANCAMENTOS, NP,
-        `CONTA SIDEC/NSGD`, VALOR, SITUACAO, `MOT.`
+        `CONTA SIDEC/NSGD`, VALOR, SITUACAO, `MOT.`, Arquivo
       )
     # TOTAL DT. REM
-    max.cols_i <-
-      max(str_count(linhas_c[str_which(linhas_c, "^TOTAL")], fixed(";"))) + 1
-    nomes.cols_c <- str_c("Col", seq_len(max.cols_i))
-
-    total.dt.rem_t <-
-      tibble(Linhas = linhas_c %>% head(str_which(linhas_c, "^TOTAIS")[1])) %>%
-      dplyr::filter(str_detect(Linhas, "^TOTAL")) %>%
-      separate(
-        col = Linhas,
-        into = nomes.cols_c,
-        sep = ";",
-        fill = "right"
-      ) %>%
-      mutate(
-        Col1 = Col1 %>% str_remove("^TOTAL DT.REM "),
-        `DT. REMES.` = Col1 %>% word() %>% as.Date(format = "%d/%m/%Y"),
-        Col1 = Col1 %>% str_remove(word(Col1)) %>% str_trim()
-      ) %>%
-      pivot_longer(
-        cols = starts_with("Col"),
-        names_to = "Var",
-        values_to = "Linhas"
-      ) %>%
-      extract(
-        col = Linhas,
-        into = c("Descricao", "Valor"),
-        regex = "^(.*?)(\\d{1,3}(?:\\.\\d{3})*,\\d{2})",
-        remove = FALSE
-      ) %>%
-      select(-Var) %>%
-      dplyr::filter(!is.na(Linhas)) %>%
-      mutate(
-        Linhas = Linhas %>% str_trim(),
-        VALOR =
-          Linhas %>%
-            word(-1) %>%
-            str_remove_all("\\.") %>%
-            str_replace("\\,", "\\.") %>%
-            as.numeric(),
-        DESCRICAO =
-          Linhas %>%
-            str_remove(str_c(word(., -1), "$")) %>%
-            str_trim() %>%
-            str_remove_all(" "),
-      ) %>%
-      select(-Linhas)
+    # max.cols_i <-
+    #  max(str_count(linhas_c[str_which(linhas_c, "^TOTAL")], fixed(";"))) + 1
+    # nomes.cols_c <- str_c("Col", seq_len(max.cols_i))
+    # total.dt.rem_t <-
+    #  tibble(Linhas = linhas_c %>% head(str_which(linhas_c, "^TOTAIS")[1])) %>%
+    #  dplyr::filter(str_detect(Linhas, "^TOTAL")) %>%
+    #  separate(
+    #    col = Linhas,
+    #    into = nomes.cols_c,
+    #    sep = ";",
+    #    fill = "right"
+    #  ) %>%
+    #  mutate(
+    #    Col1 = Col1 %>% str_remove("^TOTAL DT.REM "),
+    #    `DT. REMES.` = Col1 %>% word() %>% as.Date(format = "%d/%m/%Y"),
+    #    Col1 = Col1 %>% str_remove(word(Col1)) %>% str_trim()
+    #  ) %>%
+    #  pivot_longer(
+    #    cols = starts_with("Col"),
+    #    names_to = "Var",
+    #    values_to = "Linhas"
+    #  ) %>%
+    #  extract(
+    #    col = Linhas,
+    #    into = c("Descricao", "Valor"),
+    #    regex = "^(.*?)(\\d{1,3}(?:\\.\\d{3})*,\\d{2})",
+    #    remove = FALSE
+    #  ) %>%
+    #  select(-Var) %>%
+    #  dplyr::filter(!is.na(Linhas)) %>%
+    #  mutate(
+    #    Linhas = Linhas %>% str_trim(),
+    #    VALOR =
+    #      Linhas %>%
+    #        word(-1) %>%
+    #        str_remove_all("\\.") %>%
+    #        str_replace("\\,", "\\.") %>%
+    #        as.numeric(),
+    #    DESCRICAO =
+    #      Linhas %>%
+    #        str_remove(str_c(word(., -1), "$")) %>%
+    #        str_trim() %>%
+    #        str_remove_all(" "),
+    #  ) %>%
+    #  select(-Linhas)
     ###############################################################################
     #    teste.datas.lancamentos_t <-
     #      lancamentos_t %>%
@@ -205,7 +205,7 @@ e_cef_cmfcn <-
     #        #    FALSE
     #        #  )
     #      )
-    ###############################################################################
+    ############################################################################
     return(lancamentos_t)
   }
 

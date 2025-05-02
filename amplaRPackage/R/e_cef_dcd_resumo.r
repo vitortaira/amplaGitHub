@@ -422,7 +422,9 @@ e_cef_dcd_resumo <-
         `CUSTO DO TERRENO` = `CUSTO DO TERRENO`,
         `VR MIN GARANTIA HIP (130%)` = `VR MIN GARANTIA HIP (130%)`,
         `RECOMP. S/ REG ETAPA (PJ)` = `RECOMP. S/ REG ETAPA (PJ)`,
-        `VR TOTAL ANTEC (PJ)` = `VR TOTAL ANTEC (PJ)`
+        `VR TOTAL ANTEC (PJ)` = `VR TOTAL ANTEC (PJ)`,
+        # Metadados
+        Arquivo = f_caminho.arquivo_c
       )
     return(dados.cef.dcd.resumo_t)
   }
