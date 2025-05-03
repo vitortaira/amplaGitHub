@@ -1,7 +1,7 @@
-#### filepath: c:\Users\Ampla\AMPLA INCORPORADORA LTDA\Controladoria - Documentos\amplaGitHub\amplaRPackage\R\e_xlsx_dados.r
+#### filepath: c:\Users\Ampla\AMPLA INCORPORADORA LTDA\Controladoria - Documentos\amplaGitHub\amplaRPackage\R\a_dados_rds_xlsx.r
 #' Exporta os dados para um arquivo XLSX
 #'
-#' A função \code{e_xlsx_dados()} transforma os dados obtidos pela função
+#' A função \code{a_dados_rds_xlsx()} transforma os dados obtidos pela função
 #' \code{e_dados()} em um arquivo Excel (.xlsx). Cada aba do arquivo é criada
 #' dinamicamente com os dados de diferentes fontes e configurada com cores e
 #' nomes predefinidos.
@@ -23,11 +23,13 @@
 #'
 #' @examples
 #' \dontrun{
-#' e_xlsx_dados()
+#' a_dados_rds_xlsx()
 #' }
 #'
 #' @export
-e_xlsx_dados <- function(f_caminho.pasta.dados_c = c_caminhos_pastas("dados")) {
+a_dados_rds_xlsx <- function(
+    f_caminho.pasta.dados_c = c_caminhos_pastas("dados"),
+    f_dashboard = FALSE) {
   # Valida argumentos
   if (!dir.exists(f_caminho.pasta.dados_c)) {
     stop(
@@ -100,9 +102,11 @@ e_xlsx_dados <- function(f_caminho.pasta.dados_c = c_caminhos_pastas("dados")) {
     dados_l,
     file = str_c(
       c_caminhos_pastas("shiny"),
-      "/inst/dados/Dados_",
-      format(Sys.time(), format = "%Y_%m_%d-%H_%M_%S"),
-      ".rds"
+      "/inst/dados/",
+      str_replace(basename(nome.xlsx_c), "\\.xlsx$", ".rds")
     )
   )
+  if (f_dashboard) {
+    rsconnect::deployApp(c_caminhos_pastas("shiny"))
+  }
 }
