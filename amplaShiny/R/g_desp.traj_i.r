@@ -7,7 +7,7 @@ g_desp.traj_i <- function(id, choices) {
       inputId = ns("variavel"),
       label = "Empilhar barras por:",
       choices = choices,
-      selected = choices[1]
+      selected = "Empresa"
     ),
     radioButtons(
       inputId = ns("filtro_periodo"),

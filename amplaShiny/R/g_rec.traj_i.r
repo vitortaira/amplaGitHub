@@ -7,7 +7,7 @@ g_rec.traj_i <- function(id, choices) {
       inputId = ns("variavel"),
       label = "Empilhar barras por:",
       choices = choices,
-      selected = choices[1]
+      selected = "Empreendimento"
     ),
     radioButtons(
       inputId = ns("filtro_periodo"),

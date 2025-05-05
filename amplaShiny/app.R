@@ -1,35 +1,37 @@
-# app.R (or server.R + ui.R if you prefer)
-library(fs)
-library(here)
-library(lubridate)
-library(plotly)
-library(readxl)
-library(shiny)
-library(tidyverse)
+# app.R (ou server.R + ui.R, se preferir)
+# Carregando as bibliotecas necessárias
+library(fs) # Manipulação de arquivos e diretórios
+library(here) # Gerenciamento de caminhos relativos
+library(lubridate) # Manipulação de datas
+library(plotly) # Criação de gráficos interativos
+library(readxl) # Leitura de arquivos Excel
+library(shiny) # Aplicações web interativas
+library(tidyverse) # Conjunto de pacotes para manipulação de dados
 
+# Define o diretório de trabalho, se necessário (comentado)
 # setwd("C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaShiny")
 
-# Reference "amplaShiny" explicitly:
-source(here("R", "g_desp.traj_i.r")) # provides g_desp.traj_i
-source(here("R", "g_desp.traj_o.r")) # provides g_desp.traj_o
-source(here("R", "g_rec.traj_i.r")) # provides g_rec.traj_i
-source(here("R", "g_rec.traj_o.r")) # provides g_rec.traj_o
+# Carrega as funções específicas dos módulos (referenciando explicitamente a pasta "amplaShiny")
+source(here("R", "g_desp.traj_i.r")) # fornece a função g_desp.traj_i
+source(here("R", "g_desp.traj_o.r")) # fornece a função g_desp.traj_o
+source(here("R", "g_rec.traj_i.r")) # fornece a função g_rec.traj_i
+source(here("R", "g_rec.traj_o.r")) # fornece a função g_rec.traj_o
 
-# Demo user table.  In production use a real auth method.
+# Tabela de login para demonstração. Em produção, utilize um método de autenticação adequado.
 login_t <- data.frame(
   usuario = "ampler",
   senha = "251200",
   stringsAsFactors = FALSE
 )
 
-# Load data (make sure "dados_l[['ik']]$desp" and "$rec" exist!)
+# Carrega os dados. Certifique-se de que "dados_l[['ik']]$desp" e "$rec" existam!
 dados_l <- readRDS(
   dir_ls(here("inst", "dados"), type = "file")
 )
 
-# --- UI ---
+# --- Interface do Usuário (UI) ---
 ui <- fluidPage(
-  # JS to handle Enter-to-login and show/hide password
+  # Script JavaScript para tratar Enter no teclado e para alternar a visibilidade da senha
   tags$script(HTML("
     $(document).on('keypress', function(e) {
       if(e.which==13) { $('#loginBtn').click(); }
@@ -38,15 +40,16 @@ ui <- fluidPage(
       $('#passwd').attr('type', show? 'text':'password');
     });
   ")),
-  uiOutput("loginUI"),
-  uiOutput("mainAppUI")
+  uiOutput("loginUI"), # Área de login
+  uiOutput("mainAppUI") # Interface principal exibida após o login
 )
 
-# --- SERVER ---
+# --- Lógica do Servidor ---
 server <- function(input, output, session) {
+  # Variáveis reativas para armazenar o estado de autenticação
   credentials <- reactiveValues(logged_in = FALSE, login_failed = FALSE)
 
-  # Render the login UI if not logged in
+  # Renderiza a interface de login caso o usuário ainda não tenha feito login
   output$loginUI <- renderUI({
     if (!credentials$logged_in) {
       fluidPage(
@@ -63,7 +66,7 @@ server <- function(input, output, session) {
                 checkboxInput("showPassword", "Mostrar senha", value = FALSE)
               ),
               actionButton("loginBtn", "Entrar"),
-              uiOutput("loginHelp")
+              uiOutput("loginHelp") # Mensagem de erro caso o login falhe
             )
           )
         )
@@ -71,25 +74,25 @@ server <- function(input, output, session) {
     }
   })
 
-  # Toggle password visibility
+  # Observa a alteração do checkbox para mostrar/ocultar a senha
   observeEvent(input$showPassword, {
     session$sendCustomMessage("togglePassword", isTRUE(input$showPassword))
   })
 
-  # Check login
+  # Verifica as credenciais quando o botão de login é clicado
   observeEvent(input$loginBtn, {
     req(input$userName, input$passwd)
     valid <- login_t$usuario == input$userName & login_t$senha == input$passwd
     if (any(valid, na.rm = TRUE)) {
-      credentials$logged_in <- TRUE
+      credentials$logged_in <- TRUE # Login realizado com sucesso
       credentials$login_failed <- FALSE
       updateTabsetPanel(session, "pagePanels", selected = "Panorama")
     } else {
-      credentials$login_failed <- TRUE
+      credentials$login_failed <- TRUE # Login falhou
     }
   })
 
-  # Show error if login failed
+  # Renderiza a mensagem de erro de login, se necessário
   output$loginHelp <- renderUI({
     if (credentials$login_failed) {
       div(
@@ -99,43 +102,52 @@ server <- function(input, output, session) {
     }
   })
 
-  # Main UI if logged in
+  # Renderiza a interface principal da aplicação, após o sucesso do login
   output$mainAppUI <- renderUI({
     if (credentials$logged_in) {
       fluidPage(
+        # Cabeçalho com a imagem (logo) centralizada
         tags$div(
           style = "text-align: center;",
           tags$img(
-            src = "ampla_header.jpg", alt = "ampla_header",
-            width = "300px", height = "100px"
+            src = "ampla_header.jpg", alt = "Cabeçalho Ampla",
+            width = "450px", height = "150px"
           )
         ),
         br(),
+        # Aba principal contendo vários submenus
         tabsetPanel(
           id = "pagePanels",
           tabPanel("Panorama",
             value = "Panorama",
             fluidPage(
+              # Sub-abas dentro da aba "Panorama"
               tabsetPanel(
                 id = "panoramaSubTabs",
                 tabPanel("Financeiro",
                   value = "Financeiro",
                   fluidPage(
-                    # Shiny modules for Despesas (inputs + outputs)
-                    g_desp.traj_i("desp", names(dados_l[["ik"]]$desp)),
-                    # Shiny modules for Receitas (inputs + outputs)
+                    # Módulo para Despesas: inputs e outputs
+                    g_desp.traj_i(
+                      "desp",
+                      c(
+                        "Agente Financeiro", "Credor", "Centro de Negócio",
+                        "Empresa", "N° Conta", "Parcela"
+                      )
+                    ),
+                    # Módulo para Receitas: inputs e outputs
                     g_rec.traj_i("rec", names(dados_l[["ik"]]$rec))
                   )
                 ),
                 tabPanel("Comercial",
                   value = "Comercial",
                   h2("Comercial"),
-                  "Placeholder for commercial content..."
+                  "Conteúdo placeholder para a área comercial..."
                 ),
                 tabPanel("Obras",
                   value = "Obras",
                   h2("Obras"),
-                  "Placeholder for obras content..."
+                  "Conteúdo placeholder para a área de obras..."
                 )
               )
             )
@@ -144,6 +156,7 @@ server <- function(input, output, session) {
             value = "Dados",
             fluidPage(
               h2("Geral"),
+              # Link para a planilha com os dados mais recentes.
               tags$a(
                 href = paste0(
                   "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Dados/Originais/",
@@ -167,10 +180,12 @@ server <- function(input, output, session) {
     }
   })
 
-  # Invoke the server part of each module
-  # (Despesas)
+  # Chama a parte do servidor de cada módulo após a autenticação
+  # Módulo de Despesas
   g_desp.traj_o("desp", dados_l[["ik"]])
-  # (Receitas)
+  # Módulo de Receitas
   g_rec.traj_o("rec", dados_l[["ik"]])
 }
+
+# Inicializa a aplicação Shiny
 shinyApp(ui, server)

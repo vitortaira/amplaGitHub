@@ -26,10 +26,10 @@ g_desp.traj_o <- function(id, dados) {
         filter(.dt >= pr$start, .dt <= pr$end) %>%
         group_by(
           Mês = floor_date(.dt, "month"),
-          Var = .data[[input$variavel]]
+          Var = as.character(.data[[input$variavel]])
         ) %>%
         summarise(Total = sum(`Total Pago`, na.rm = TRUE), .groups = "drop") %>%
-        mutate(Var = fct_reorder(as.character(Var), Total, sum))
+        arrange(desc(Total))
 
       n <- length(unique(df$Var))
       pal8 <- RColorBrewer::brewer.pal(8, "Set2")

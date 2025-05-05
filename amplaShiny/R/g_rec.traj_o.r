@@ -29,7 +29,7 @@ g_rec.traj_o <- function(id, dados) {
           Var = .data[[input$variavel]]
         ) %>%
         summarise(Total = sum(Total, na.rm = TRUE), .groups = "drop") %>%
-        mutate(Var = fct_reorder(as.character(Var), Total, sum))
+        arrange(desc(Total))
 
       n <- length(unique(df$Var))
       pal8 <- RColorBrewer::brewer.pal(8, "Set2")
