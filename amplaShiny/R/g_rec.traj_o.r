@@ -1,26 +1,29 @@
-# Server for Receitas trajectory chart
-g_rec.traj_o <- function(id, dados) {
+# Server for Receitas trajectory chart (now uses external filtro_periodo and date inputs)
+
+g_rec.traj_o <- function(id, dados, filtro_periodo, data_inicial, data_final) {
   moduleServer(id, function(input, output, session) {
+    # Reactive expression for date range
     period <- reactive({
-      req(input$filtro_periodo)
+      req(filtro_periodo())
       today <- Sys.Date()
-      switch(input$filtro_periodo,
-        ano_corrente = list(start = floor_date(today, "year"), end = today),
-        ultimos_12 = list(start = today %m-% months(12), end = today),
-        desde_inicio = {
+      switch(filtro_periodo(),
+        "ano_corrente" = list(start = floor_date(today, "year"), end = today),
+        "ultimos_12" = list(start = today %m-% months(12), end = today),
+        "desde_inicio" = {
           dt <- as.Date(dados$rec$`Data Pagto`)
           list(start = min(dt, na.rm = TRUE), end = today)
         },
-        personalizado = {
-          req(input$data_inicial, input$data_final)
-          list(start = input$data_inicial, end = input$data_final)
+        "personalizado" = {
+          req(data_inicial(), data_final())
+          list(start = data_inicial(), end = data_final())
         }
       )
     })
 
     output$plot <- renderPlotly({
-      req(input$variavel)
+      req(input$variavel) # Keep the local 'variavel' input from g_rec.traj_i
       pr <- period()
+
       df <- dados$rec %>%
         mutate(.dt = as.Date(`Data Pagto`)) %>%
         filter(.dt >= pr$start, .dt <= pr$end) %>%
@@ -56,14 +59,15 @@ g_rec.traj_o <- function(id, dados) {
           barmode = "stack",
           autosize = TRUE,
           xaxis = list(
-            tickformat = "%b %Y",
-            type = "date",
-            dtick = "M1",
-            ticklabelmode = "period",
+            tickformat        = "%b %Y",
+            type              = "date",
+            dtick             = "M1",
+            ticklabelmode     = "period",
             ticklabeloverflow = "allow",
-            tickmode = "array", # Use specific tick positions
-            tickvals = ~Mês, # Set tick positions to match bar centers
-            rangeslider = list(visible = TRUE) # Optional: disable range slider
+            tickmode          = "array",
+            tickvals          = ~Mês,
+            # Make the range slider visible only if filtro_periodo() == 'desde_inicio'
+            rangeslider       = list(visible = (filtro_periodo() == "desde_inicio"))
           )
         ) %>%
         config(displayModeBar = FALSE)

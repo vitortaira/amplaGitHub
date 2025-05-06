@@ -148,6 +148,24 @@ server <- function(input, output, session) {
                 tabPanel("Financeiro",
                   value = "Financeiro",
                   fluidPage(
+                    # 1. Único filtro_período compartilhado para ambas as visualizações
+                    radioButtons(
+                      inputId = "filtro_periodo",
+                      label = "Filtrar período:",
+                      choices = c(
+                        "Ano corrente"     = "ano_corrente",
+                        "Últimos 12 meses" = "ultimos_12",
+                        "Desde o início"   = "desde_inicio",
+                        "Personalizado"    = "personalizado"
+                      ),
+                      selected = "ano_corrente",
+                      inline = TRUE
+                    ),
+                    conditionalPanel(
+                      condition = "input.filtro_periodo == 'personalizado'",
+                      dateInput("data_inicial", "Data inicial:"),
+                      dateInput("data_final", "Data final:")
+                    ),
                     # Módulo para Despesas: inputs e outputs
                     g_desp.traj_i(
                       "desp",
@@ -199,10 +217,9 @@ server <- function(input, output, session) {
   })
 
   # Chama a parte do servidor de cada módulo após a autenticação
-  # Módulo de Despesas
-  g_desp.traj_o("desp", dados_l[["ik"]])
-  # Módulo de Receitas
-  g_rec.traj_o("rec", dados_l[["ik"]])
+  # 2. Passe o mesmo filtro_periodo (e as datas se quiser tratar "personalizado") para ambas as visualizações
+  g_desp.traj_o("desp", dados_l[["ik"]], reactive(input$filtro_periodo), reactive(input$data_inicial), reactive(input$data_final))
+  g_rec.traj_o("rec", dados_l[["ik"]], reactive(input$filtro_periodo), reactive(input$data_inicial), reactive(input$data_final))
 
   # Handle clipboard operation for file path
   observeEvent(input$copyPath, {

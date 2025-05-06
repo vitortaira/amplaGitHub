@@ -1,26 +1,30 @@
-# Server for Despesas trajectory chart
-g_desp.traj_o <- function(id, dados) {
+# Server for Despesas trajectory chart (now uses external filtro_periodo and date inputs)
+
+g_desp.traj_o <- function(id, dados, filtro_periodo, data_inicial, data_final) {
   moduleServer(id, function(input, output, session) {
+    # Reactive expression for date range
     period <- reactive({
-      req(input$filtro_periodo)
+      req(filtro_periodo())
       today <- Sys.Date()
-      switch(input$filtro_periodo,
-        ano_corrente = list(start = floor_date(today, "year"), end = today),
-        ultimos_12 = list(start = today %m-% months(12), end = today),
-        desde_inicio = {
+      switch(filtro_periodo(),
+        "ano_corrente" = list(start = floor_date(today, "year"), end = today),
+        "ultimos_12" = list(start = today %m-% months(12), end = today),
+        "desde_inicio" = {
           dt <- as.Date(dados$desp$`Data Doc Pagto`)
           list(start = min(dt, na.rm = TRUE), end = today)
         },
-        personalizado = {
-          req(input$data_inicial, input$data_final)
-          list(start = input$data_inicial, end = input$data_final)
+        "personalizado" = {
+          req(data_inicial(), data_final())
+          list(start = data_inicial(), end = data_final())
         }
       )
     })
 
+    # Render the Plotly chart
     output$plot <- renderPlotly({
-      req(input$variavel)
+      req(input$variavel) # keep the local 'variavel' input from g_desp.traj_i
       pr <- period()
+
       df <- dados$desp %>%
         mutate(.dt = as.Date(`Data Doc Pagto`)) %>%
         filter(.dt >= pr$start, .dt <= pr$end) %>%
@@ -37,8 +41,7 @@ g_desp.traj_o <- function(id, dados) {
         arrange(desc(Total)) %>%
         pull(Var)
 
-      df <- df %>%
-        mutate(Var = factor(Var, levels = var_levels))
+      df <- df %>% mutate(Var = factor(Var, levels = var_levels))
 
       n <- length(unique(df$Var))
       pal8 <- RColorBrewer::brewer.pal(8, "Set2")
@@ -56,14 +59,14 @@ g_desp.traj_o <- function(id, dados) {
           barmode = "stack",
           autosize = TRUE,
           xaxis = list(
-            tickformat = "%b %Y", # Format: "Jan 2025"
+            tickformat = "%b %Y", # e.g. "Jan 2025"
             type = "date",
-            dtick = "M1", # Force monthly ticks
-            ticklabelmode = "period", # Show the period (month) instead of exact date,
+            dtick = "M1",
+            ticklabelmode = "period",
             ticklabeloverflow = "allow",
-            tickmode = "array", # Use specific tick positions
-            tickvals = ~Mês, # Set tick positions to match bar centers
-            rangeslider = list(visible = input$filtro_periodo == "desde_inicio") # Optional: disable range slider
+            tickmode = "array",
+            tickvals = ~Mês,
+            rangeslider = list(visible = (filtro_periodo() == "desde_inicio"))
           )
         ) %>%
         config(displayModeBar = FALSE)
