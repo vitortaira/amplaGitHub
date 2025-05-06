@@ -1,4 +1,4 @@
-#### filepath: c:\Users\Ampla\AMPLA INCORPORADORA LTDA\Controladoria - Documentos\amplaGitHub\amplaRPackage\R\a_dados_rds_xlsx.r
+#### filepath: c:\Users\Ampla\AMPLA INCORPORADORA LTDA\Controladoria - Documentos\amplaGitHub\amplaRPackage\R\a_dados_rds_xlsx.R
 #' Exporta os dados para um arquivo XLSX
 #'
 #' A função \code{a_dados_rds_xlsx()} transforma os dados obtidos pela função

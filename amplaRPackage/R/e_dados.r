@@ -1,4 +1,4 @@
-#### filepath: c:\Users\Ampla\AMPLA INCORPORADORA LTDA\Controladoria - Documentos\amplaGitHub\amplaRPackage\R\e_dados.r
+#### filepath: c:\Users\Ampla\AMPLA INCORPORADORA LTDA\Controladoria - Documentos\amplaGitHub\amplaRPackage\R\e_dados.R
 #' @title Consolidação de Dados: CEF e Informakon
 #'
 #' @description

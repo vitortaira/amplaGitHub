@@ -1,4 +1,4 @@
-#### filepath: c:\Users\Ampla\AMPLA INCORPORADORA LTDA\Controladoria - Documentos\amplaGitHub\amplaRPackage\R\e_cef.r
+#### filepath: c:\Users\Ampla\AMPLA INCORPORADORA LTDA\Controladoria - Documentos\amplaGitHub\amplaRPackage\R\e_cef.R
 #' @title Consolidação de Dados dos Relatórios CEF
 #'
 #' @description
