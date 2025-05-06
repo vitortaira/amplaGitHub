@@ -31,6 +31,10 @@ dados_l <- readRDS(
 
 # --- Interface do Usuário (UI) ---
 ui <- fluidPage(
+  # Add favicon in the head section
+  tags$head(
+    tags$link(rel = "icon", type = "image/jpeg", href = "ampla_icon.jpeg")
+  ),
   # Script JavaScript para tratar Enter no teclado e para alternar a visibilidade da senha
   tags$script(HTML("
     $(document).on('keypress', function(e) {
@@ -63,7 +67,14 @@ server <- function(input, output, session) {
   output$loginUI <- renderUI({
     if (!credentials$logged_in) {
       fluidPage(
-        titlePanel("Dashboard Ampla"),
+        # Add header image to login page
+        tags$div(
+          style = "text-align: center;",
+          tags$img(
+            src = "ampla_header.jpg", alt = "Cabeçalho Ampla",
+            width = "450px", height = "150px"
+          )
+        ),
         br(),
         fluidRow(
           column(

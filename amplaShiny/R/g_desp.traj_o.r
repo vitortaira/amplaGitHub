@@ -63,7 +63,7 @@ g_desp.traj_o <- function(id, dados) {
             ticklabeloverflow = "allow",
             tickmode = "array", # Use specific tick positions
             tickvals = ~Mês, # Set tick positions to match bar centers
-            rangeslider = list(visible = TRUE) # Optional: disable range slider
+            rangeslider = list(visible = input$filtro_periodo == "desde_inicio") # Optional: disable range slider
           )
         ) %>%
         config(displayModeBar = FALSE)
