@@ -40,6 +40,16 @@ ui <- fluidPage(
       $('#passwd').attr('type', show? 'text':'password');
     });
   ")),
+  # Add JavaScript to handle clipboard operation
+  tags$script(HTML("
+    Shiny.addCustomMessageHandler('copyToClipboard', function(message) {
+      navigator.clipboard.writeText(message).then(function() {
+        console.log('Path copied to clipboard');
+      }, function() {
+        console.error('Failed to copy path');
+      });
+    });
+  ")),
   uiOutput("loginUI"), # Área de login
   uiOutput("mainAppUI") # Interface principal exibida após o login
 )
@@ -156,11 +166,13 @@ server <- function(input, output, session) {
             value = "Dados",
             fluidPage(
               h2("Geral"),
-              # Botão para baixar a planilha com os dados mais recentes.
-              downloadButton(
-                outputId = "downloadData",
-                label = "Baixar planilha com os dados mais recentes"
-              )
+              # Add a button that copies the file path to clipboard
+              actionButton(
+                inputId = "copyPath",
+                label = "Copiar caminho do arquivo para área de transferência"
+              ),
+              # Add empty div to show confirmation message
+              textOutput("copyConfirmation")
             )
           ),
           tabPanel("Relatórios",
@@ -181,51 +193,26 @@ server <- function(input, output, session) {
   # Módulo de Receitas
   g_rec.traj_o("rec", dados_l[["ik"]])
 
-  # Download handler para o botão de download
-  output$downloadData <- downloadHandler(
-    filename = function() {
-      # Get the filename without extension
-      base_name <- str_remove(
-        path_file(
-          dir_ls(
-            here("inst", "dados"),
-            type = "file"
-          )
+  # Handle clipboard operation for file path
+  observeEvent(input$copyPath, {
+    file_path <- file.path(
+      "C:/Users/Ampla/AMPLA INCORPORADORA LTDA",
+      "Relatórios - Documentos",
+      "Dados",
+      "Originais",
+      paste0(
+        str_remove(
+          path_file(dir_ls(here("inst", "dados"), type = "file")[1]),
+          "\\..*$"
         ),
-        "\\..*$"
+        ".xlsx"
       )
-      paste0(base_name, ".xlsx")
-    },
-    content = function(file) {
-      # Find the excel file path
-      excel_path <- file.path(
-        "C:/Users/Ampla/AMPLA INCORPORADORA LTDA",
-        "Relatórios - Documentos",
-        "Dados",
-        "Originais",
-        paste0(
-          str_remove(
-            path_file(
-              dir_ls(
-                here("inst", "dados"),
-                type = "file"
-              )
-            ),
-            "\\..*$"
-          ),
-          ".xlsx"
-        )
-      )
+    )
 
-      # Only copy if it exists
-      if (file.exists(excel_path)) {
-        file.copy(excel_path, file)
-      } else {
-        # Create a simple Excel file if original doesn't exist
-        write.csv(data.frame(message = "Arquivo original não disponível"), file)
-      }
-    }
-  )
+    # Send to client for clipboard handling
+    session$sendCustomMessage("copyToClipboard", file_path)
+    output$copyConfirmation <- renderText("Caminho copiado para área de transferência!")
+  })
 }
 
 # Inicializa a aplicação Shiny
