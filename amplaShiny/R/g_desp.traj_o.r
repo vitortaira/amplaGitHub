@@ -59,7 +59,11 @@ g_desp.traj_o <- function(id, dados) {
             tickformat = "%b %Y", # Format: "Jan 2025"
             type = "date",
             dtick = "M1", # Force monthly ticks
-            ticklabelmode = "period" # Show the period (month) instead of exact date
+            ticklabelmode = "period", # Show the period (month) instead of exact date,
+            ticklabeloverflow = "allow",
+            tickmode = "array", # Use specific tick positions
+            tickvals = ~Mês, # Set tick positions to match bar centers
+            rangeslider = list(visible = TRUE) # Optional: disable range slider
           )
         ) %>%
         config(displayModeBar = FALSE)

@@ -60,7 +60,10 @@ g_rec.traj_o <- function(id, dados) {
             type = "date",
             dtick = "M1",
             ticklabelmode = "period",
-            ticklabeloverflow = "allow"
+            ticklabeloverflow = "allow",
+            tickmode = "array", # Use specific tick positions
+            tickvals = ~Mês, # Set tick positions to match bar centers
+            rangeslider = list(visible = TRUE) # Optional: disable range slider
           )
         ) %>%
         config(displayModeBar = FALSE)
