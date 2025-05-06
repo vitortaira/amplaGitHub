@@ -21,8 +21,7 @@ g_desp.traj_i <- function(id, choices) {
       selected = "ano_corrente"
     ),
     conditionalPanel(
-      condition = sprintf("input['%s-filtro_periodo'] == 'personalizado']", id),
-      ns = ns,
+      condition = sprintf("input['%s'] == 'personalizado'", ns("filtro_periodo")),
       dateInput(ns("data_inicial"), "Data inicial:"),
       dateInput(ns("data_final"), "Data final:")
     ),

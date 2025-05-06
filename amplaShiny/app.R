@@ -156,15 +156,10 @@ server <- function(input, output, session) {
             value = "Dados",
             fluidPage(
               h2("Geral"),
-              # Link para a planilha com os dados mais recentes.
-              tags$a(
-                href = paste0(
-                  "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Dados/Originais/",
-                  str_remove(path_file(dir_ls(here("inst", "dados"), type = "file")), "\\..*$"),
-                  ".xlsx"
-                ),
-                "Link para a planilha com os dados mais recentes",
-                target = "_blank"
+              # Botão para baixar a planilha com os dados mais recentes.
+              downloadButton(
+                outputId = "downloadData",
+                label = "Baixar planilha com os dados mais recentes"
               )
             )
           ),
@@ -185,6 +180,52 @@ server <- function(input, output, session) {
   g_desp.traj_o("desp", dados_l[["ik"]])
   # Módulo de Receitas
   g_rec.traj_o("rec", dados_l[["ik"]])
+
+  # Download handler para o botão de download
+  output$downloadData <- downloadHandler(
+    filename = function() {
+      # Get the filename without extension
+      base_name <- str_remove(
+        path_file(
+          dir_ls(
+            here("inst", "dados"),
+            type = "file"
+          )
+        ),
+        "\\..*$"
+      )
+      paste0(base_name, ".xlsx")
+    },
+    content = function(file) {
+      # Find the excel file path
+      excel_path <- file.path(
+        "C:/Users/Ampla/AMPLA INCORPORADORA LTDA",
+        "Relatórios - Documentos",
+        "Dados",
+        "Originais",
+        paste0(
+          str_remove(
+            path_file(
+              dir_ls(
+                here("inst", "dados"),
+                type = "file"
+              )
+            ),
+            "\\..*$"
+          ),
+          ".xlsx"
+        )
+      )
+
+      # Only copy if it exists
+      if (file.exists(excel_path)) {
+        file.copy(excel_path, file)
+      } else {
+        # Create a simple Excel file if original doesn't exist
+        write.csv(data.frame(message = "Arquivo original não disponível"), file)
+      }
+    }
+  )
 }
 
 # Inicializa a aplicação Shiny

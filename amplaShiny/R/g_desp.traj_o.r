@@ -28,8 +28,17 @@ g_desp.traj_o <- function(id, dados) {
           Mês = floor_date(.dt, "month"),
           Var = as.character(.data[[input$variavel]])
         ) %>%
-        summarise(Total = sum(`Total Pago`, na.rm = TRUE), .groups = "drop") %>%
-        arrange(desc(Total))
+        summarise(Total = sum(`Total Pago`, na.rm = TRUE), .groups = "drop")
+
+      # Compute global order of Var by total value (descending)
+      var_levels <- df %>%
+        group_by(Var) %>%
+        summarise(Total = sum(Total, na.rm = TRUE)) %>%
+        arrange(desc(Total)) %>%
+        pull(Var)
+
+      df <- df %>%
+        mutate(Var = factor(Var, levels = var_levels))
 
       n <- length(unique(df$Var))
       pal8 <- RColorBrewer::brewer.pal(8, "Set2")
@@ -40,10 +49,19 @@ g_desp.traj_o <- function(id, dados) {
         x      = ~Mês,
         y      = ~Total,
         color  = ~Var,
-        colors = pal, # <- supply your custom palette
+        colors = pal,
         type   = "bar"
       ) %>%
-        layout(barmode = "stack", autosize = TRUE) %>%
+        layout(
+          barmode = "stack",
+          autosize = TRUE,
+          xaxis = list(
+            tickformat = "%b %Y", # Format: "Jan 2025"
+            type = "date",
+            dtick = "M1", # Force monthly ticks
+            ticklabelmode = "period" # Show the period (month) instead of exact date
+          )
+        ) %>%
         config(displayModeBar = FALSE)
     })
   })

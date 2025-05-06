@@ -28,8 +28,17 @@ g_rec.traj_o <- function(id, dados) {
           Mês = floor_date(.dt, "month"),
           Var = .data[[input$variavel]]
         ) %>%
-        summarise(Total = sum(Total, na.rm = TRUE), .groups = "drop") %>%
-        arrange(desc(Total))
+        summarise(Total = sum(Total, na.rm = TRUE), .groups = "drop")
+
+      # Compute global order of Var by total value (descending)
+      var_levels <- df %>%
+        group_by(Var) %>%
+        summarise(Total = sum(Total, na.rm = TRUE)) %>%
+        arrange(desc(Total)) %>%
+        pull(Var)
+
+      df <- df %>%
+        mutate(Var = factor(Var, levels = var_levels))
 
       n <- length(unique(df$Var))
       pal8 <- RColorBrewer::brewer.pal(8, "Set2")
@@ -43,7 +52,17 @@ g_rec.traj_o <- function(id, dados) {
         colors = pal,
         type   = "bar"
       ) %>%
-        layout(barmode = "stack", autosize = TRUE) %>%
+        layout(
+          barmode = "stack",
+          autosize = TRUE,
+          xaxis = list(
+            tickformat = "%b %Y",
+            type = "date",
+            dtick = "M1",
+            ticklabelmode = "period",
+            ticklabeloverflow = "allow"
+          )
+        ) %>%
         config(displayModeBar = FALSE)
     })
   })
