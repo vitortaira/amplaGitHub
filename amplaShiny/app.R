@@ -12,11 +12,13 @@ library(tidyverse) # Conjunto de pacotes para manipulação de dados
 # setwd("C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Documents/amplaGitHub/amplaShiny")
 
 # Carrega os módulos e o script de filtro de período
-source(here("R", "filtro_periodo.r"))
-source(here("R", "g_desp.traj_i.r"))
-source(here("R", "g_desp.traj_o.r"))
-source(here("R", "g_rec.traj_i.r"))
-source(here("R", "g_rec.traj_o.r"))
+source(here("R", "filtro_periodo.R"))
+source(here("R", "g_desp.traj_i.R"))
+source(here("R", "g_desp.traj_o.R"))
+source(here("R", "g_rec.traj_i.R"))
+source(here("R", "g_rec.traj_o.R"))
+source(here("R", "g_metadados.hist_i.R"))
+source(here("R", "g_metadados.hist_o.R"))
 
 # Tabela de login para demonstração
 login_t <- data.frame(
@@ -165,12 +167,17 @@ server <- function(input, output, session) {
               )
             )
           ),
-          tabPanel("Dados",
+          tabPanel(
+            "Dados",
             value = "Dados",
             fluidPage(
               h2("Geral"),
               actionButton("copyPath", "Copiar caminho do arquivo para área de transferência"),
-              textOutput("copyConfirmation")
+              textOutput("copyConfirmation"),
+              hr(),
+              h3("Histórico de Metadados"),
+              # chamada à UI do seu módulo de histograma
+              g_metadados.hist_i("metaHist", choices = names(dados_l[["ik"]]$metadados))
             )
           ),
           tabPanel("Relatórios",
@@ -197,6 +204,15 @@ server <- function(input, output, session) {
   )
   g_rec.traj_o(
     "rec",
+    dados_l[["ik"]],
+    filtroVals$filtro_periodo,
+    filtroVals$data_inicial,
+    filtroVals$data_final
+  )
+
+  # módulo de saída do histograma de metadados
+  g_metadados.hist_o(
+    "metaHist",
     dados_l[["ik"]],
     filtroVals$filtro_periodo,
     filtroVals$data_inicial,
