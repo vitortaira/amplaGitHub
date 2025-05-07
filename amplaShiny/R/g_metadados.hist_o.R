@@ -4,18 +4,15 @@ library(rlang)
 
 g_metadados.hist_o <- function(id, dados, filtro_periodo, data_inicial, data_final) {
   moduleServer(id, function(input, output, session) {
-    # Define your plots here using the passed data
     output$plot <- renderPlotly({
-      # Use the function defined below to create the histogram
-      # Assuming dados$metadados exists in the passed data
+      req(input$variavel) # Ensure input$variavel is valid
       if (!is.null(dados$metadados)) {
         g_histo_metadados(
           data = dados$metadados,
-          var = input$variavel, # Get this from your UI inputs
+          var = input$variavel, # Pass the selected variable
           title = "Histogram of Metadata"
         )
       } else {
-        # Return empty plot with message if no data
         plot_ly() %>%
           add_annotations(
             text = "No metadata available",

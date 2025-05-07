@@ -34,6 +34,7 @@ dados_l <- readRDS(
 
 # --- Interface do Usuário (UI) ---
 ui <- fluidPage(
+  title = "Dashboard Ampla",
   tags$head(
     tags$link(rel = "icon", type = "image/jpeg", href = "ampla_icon.jpeg")
   ),
@@ -175,15 +176,18 @@ server <- function(input, output, session) {
               actionButton("copyPath", "Copiar caminho do arquivo para área de transferência"),
               textOutput("copyConfirmation"),
               hr(),
-              h3("Histórico de Metadados"),
               # chamada à UI do seu módulo de histograma
-              g_metadados.hist_i("metaHist", choices = names(dados_l[["ik"]]$metadados))
+              g_metadados.hist_i("metaHist", choices = names(dados_l[["metadados"]]$metadados)),
             )
           ),
           tabPanel("Relatórios",
             value = "Relatórios",
             fluidPage(
-              h2("Identificação de lançamentos dos extratos da CEF"),
+              h2("Conciliação de extratos bancários"),
+              "Links para as planilhas.",
+              h2("Demonstrativo de fluxo de caixa"),
+              "Links para as planilhas.",
+              h2("Orçado x Realizado"),
               "Links para as planilhas."
             )
           )
@@ -213,7 +217,7 @@ server <- function(input, output, session) {
   # módulo de saída do histograma de metadados
   g_metadados.hist_o(
     "metaHist",
-    dados_l[["ik"]],
+    dados_l[["metadados"]],
     filtroVals$filtro_periodo,
     filtroVals$data_inicial,
     filtroVals$data_final
