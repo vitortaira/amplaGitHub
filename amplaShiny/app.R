@@ -1,52 +1,61 @@
-# app.R (ou server.R + ui.R, se preferir)
-# Carregando as bibliotecas necessárias
-library(fs) # Manipulação de arquivos e diretórios
-library(here) # Gerenciamento de caminhos relativos
-library(lubridate) # Manipulação de datas
-library(plotly) # Criação de gráficos interativos
-library(readxl) # Leitura de arquivos Excel
-library(shiny) # Aplicações web interativas
-library(tidyverse) # Conjunto de pacotes para manipulação de dados
+# =============================================================================
+# DASHBOARD AMPLA - APLICAÇÃO SHINY
+# =============================================================================
+# Aplicação para visualização e análise de dados financeiros e comerciais
+# da Ampla Incorporadora
+# Autor: Equipe Ampla
+# Atualizado: 2023
 
-# Defina o diretório de trabalho, se necessário (comentado)
-# setwd("C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Documents/amplaGitHub/amplaShiny")
+# =============================================================================
+# BIBLIOTECAS
+# =============================================================================
+library(fs) # Para manipulação de arquivos e diretórios
+library(here) # Para gerenciamento de caminhos relativos ao projeto
+library(lubridate) # Para manipulação e formatação de datas
+library(plotly) # Para criação de gráficos interativos
+library(readxl) # Para leitura de arquivos Excel (.xlsx, .xls)
+library(shiny) # Framework para desenvolvimento de aplicações web interativas
+library(tidyverse) # Meta-pacote com dplyr, ggplot2, tidyr, etc. para análise de dados
 
-# Carrega os módulos e o script de filtro de período
-source(here("R", "filtro_periodo.R"))
-source(here("R", "g_desp.traj.R"))
-source(here("R", "g_rec.traj_i.R"))
-source(here("R", "g_rec.traj_o.R"))
-source(here("R", "g_metadados.hist_i.R"))
-source(here("R", "g_metadados.hist_o.R"))
+# =============================================================================
+# CARREGAMENTO DE MÓDULOS
+# =============================================================================
+# Carrega componentes modulares da aplicação
+source(here("R", "login.R")) # Sistema de autenticação
+source(here("R", "filtro_periodo.R")) # Filtros temporais para os dados
+source(here("R", "g_desp.traj.R")) # Visualização de trajetória de despesas
+source(here("R", "g_rec.traj.R")) # Visualização de trajetória de receitas
+source(here("R", "g_metadados.hist.R")) # Histograma de metadados
 
-# Tabela de login para demonstração
+# =============================================================================
+# DADOS DE AUTENTICAÇÃO
+# =============================================================================
+# Credenciais de acesso para demonstração (em produção, usar sistema seguro)
 login_t <- data.frame(
   usuario = "ampler",
   senha = "251200",
   stringsAsFactors = FALSE
 )
 
-# Carrega os dados
+# =============================================================================
+# CARREGAMENTO DOS DADOS
+# =============================================================================
+# Carrega todos os arquivos RDS do diretório de dados
 dados_l <- readRDS(
   dir_ls(here("inst", "dados"), type = "file")
 )
 
-# --- Interface do Usuário (UI) ---
+# =============================================================================
+# INTERFACE DO USUÁRIO (UI)
+# =============================================================================
 ui <- fluidPage(
   title = "Dashboard Ampla",
+  # Configura o ícone da aplicação na aba do navegador
   tags$head(
     tags$link(rel = "icon", type = "image/jpeg", href = "ampla_icon.jpeg")
   ),
 
-  # Script JavaScript para tratar Enter no teclado e para alternar a visibilidade da senha
-  tags$script(HTML("
-    $(document).on('keypress', function(e) {
-      if(e.which==13) { $('#loginBtn').click(); }
-    });
-    Shiny.addCustomMessageHandler('togglePassword', function(show){
-      $('#passwd').attr('type', show? 'text':'password');
-    });
-  ")),
+  # Script JavaScript para funcionalidade de copiar para área de transferência
   tags$script(HTML("
     Shiny.addCustomMessageHandler('copyToClipboard', function(message) {
       navigator.clipboard.writeText(message).then(function() {
@@ -56,74 +65,33 @@ ui <- fluidPage(
       });
     });
   ")),
-  uiOutput("loginUI"),
+
+  # Componente de login (renderizado antes do acesso ao dashboard)
+  login_ui("login"),
+
+  # Container para o conteúdo principal (renderizado após autenticação)
   uiOutput("mainAppUI")
 )
 
-# --- Lógica do Servidor ---
+# =============================================================================
+# LÓGICA DO SERVIDOR
+# =============================================================================
 server <- function(input, output, session) {
-  credentials <- reactiveValues(logged_in = FALSE, login_failed = FALSE)
+  # Inicializa o módulo de login e obtém o status de autenticação
+  credentials <- login_server("login", login_t)
 
-  # UI de login
-  output$loginUI <- renderUI({
-    if (!credentials$logged_in) {
-      fluidPage(
-        tags$div(
-          style = "text-align: center;",
-          tags$img(
-            src = "ampla_header.jpg", alt = "Cabeçalho Ampla",
-            width = "450px", height = "150px"
-          )
-        ),
-        br(),
-        fluidRow(
-          column(
-            width = 4, offset = 4,
-            wellPanel(
-              textInput("userName", "Usuário:", ""),
-              div(
-                style = "position: relative;",
-                passwordInput("passwd", "Senha:", ""),
-                checkboxInput("showPassword", "Mostrar senha", value = FALSE)
-              ),
-              actionButton("loginBtn", "Entrar"),
-              uiOutput("loginHelp")
-            )
-          )
-        )
-      )
-    }
-  })
-
-  observeEvent(input$showPassword, {
-    session$sendCustomMessage("togglePassword", isTRUE(input$showPassword))
-  })
-
-  observeEvent(input$loginBtn, {
-    req(input$userName, input$passwd)
-    valid <- login_t$usuario == input$userName & login_t$senha == input$passwd
-    if (any(valid, na.rm = TRUE)) {
-      credentials$logged_in <- TRUE
-      credentials$login_failed <- FALSE
+  # Redireciona para a aba "Panorama" após o login bem-sucedido
+  observeEvent(credentials$logged_in, {
+    if (credentials$logged_in) {
       updateTabsetPanel(session, "pagePanels", selected = "Panorama")
-    } else {
-      credentials$login_failed <- TRUE
     }
   })
 
-  output$loginHelp <- renderUI({
-    if (credentials$login_failed) {
-      div(
-        style = "color: red; margin-top: 10px;",
-        "O login falhou. Usuário e/ou senha incorretos."
-      )
-    }
-  })
-
-  # UI principal
+  # Renderiza a interface principal apenas após autenticação
   output$mainAppUI <- renderUI({
     if (credentials$logged_in) {
       fluidPage(
+        # Cabeçalho com logo da empresa
         tags$div(
           style = "text-align: center;",
           tags$img(
@@ -132,18 +100,25 @@ server <- function(input, output, session) {
           )
         ),
         br(),
+        # Painéis principais de navegação
         tabsetPanel(
           id = "pagePanels",
+
+          # =============================================================================
+          # PAINEL: PANORAMA
+          # =============================================================================
           tabPanel("Panorama",
             value = "Panorama",
             fluidPage(
               tabsetPanel(
                 id = "panoramaSubTabs",
+                # Subpainel: Financeiro - Exibe gráficos de despesas e receitas
                 tabPanel("Financeiro",
                   value = "Financeiro",
                   fluidPage(
-                    # Substitui o filtro_periodo local pelos módulos do filtro
+                    # Filtro temporal para os gráficos financeiros
                     filtro_periodo_module_ui("myFiltro"),
+                    # Gráfico de trajetória de despesas com opções de segmentação
                     g_desp.traj_ui(
                       "desp",
                       c(
@@ -151,9 +126,11 @@ server <- function(input, output, session) {
                         "Empresa", "N° Conta", "Parcela"
                       )
                     ),
-                    g_rec.traj_i("rec", names(dados_l[["ik"]]$rec))
+                    # Gráfico de trajetória de receitas com todas as dimensões disponíveis
+                    g_rec.traj_ui("rec", names(dados_l[["ik"]]$rec))
                   )
                 ),
+                # Subpaineis para futuras implementações
                 tabPanel("Comercial",
                   value = "Comercial",
                   h2("Comercial"),
@@ -167,18 +144,27 @@ server <- function(input, output, session) {
               )
             )
           ),
+
+          # =============================================================================
+          # PAINEL: DADOS
+          # =============================================================================
           tabPanel(
             "Dados",
             value = "Dados",
             fluidPage(
               h2("Geral"),
+              # Botão para copiar caminho do arquivo original para importação/validação
               actionButton("copyPath", "Copiar caminho do arquivo para área de transferência"),
               textOutput("copyConfirmation"),
               hr(),
-              # chamada à UI do seu módulo de histograma
+              # Visualização de histograma para análise de metadados
               g_metadados.hist_i("metaHist", choices = names(dados_l[["metadados"]]$metadados)),
             )
           ),
+
+          # =============================================================================
+          # PAINEL: RELATÓRIOS
+          # =============================================================================
           tabPanel("Relatórios",
             value = "Relatórios",
             fluidPage(
@@ -195,9 +181,14 @@ server <- function(input, output, session) {
     }
   })
 
-  # Chama a parte do servidor dos filtros e dos módulos
+  # =============================================================================
+  # INICIALIZAÇÃO DOS MÓDULOS
+  # =============================================================================
+
+  # Inicializa o módulo de filtro de período e obtém valores selecionados
   filtroVals <- filtro_periodo_module_server("myFiltro")
 
+  # Inicializa o módulo de visualização de despesas
   g_desp.traj_server(
     "desp",
     dados_l[["ik"]],
@@ -206,7 +197,8 @@ server <- function(input, output, session) {
     filtroVals$data_final
   )
 
-  g_rec.traj_o(
+  # Inicializa o módulo de visualização de receitas
+  g_rec.traj_server(
     "rec",
     dados_l[["ik"]],
     filtroVals$filtro_periodo,
@@ -214,7 +206,7 @@ server <- function(input, output, session) {
     filtroVals$data_final
   )
 
-  # módulo de saída do histograma de metadados
+  # Inicializa o módulo de histograma de metadados
   g_metadados.hist_o(
     "metaHist",
     dados_l[["metadados"]],
@@ -223,8 +215,11 @@ server <- function(input, output, session) {
     filtroVals$data_final
   )
 
-  # Clipboard operation
+  # =============================================================================
+  # FUNCIONALIDADE: COPIAR CAMINHO DO ARQUIVO
+  # =============================================================================
   observeEvent(input$copyPath, {
+    # Constrói o caminho para o arquivo original Excel
     file_path <- file.path(
       "C:/Users/Ampla/AMPLA INCORPORADORA LTDA",
       "Relatórios - Documentos",
@@ -239,10 +234,11 @@ server <- function(input, output, session) {
       )
     )
 
+    # Utiliza o handler JS personalizado para copiar o texto
     session$sendCustomMessage("copyToClipboard", file_path)
     output$copyConfirmation <- renderText("Caminho copiado para área de transferência!")
   })
 }
 
-# Inicializa a aplicação Shiny
+# Inicializa a aplicação Shiny com as configurações definidas
 shinyApp(ui, server)

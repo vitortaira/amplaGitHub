@@ -1,6 +1,21 @@
+# UI for Receitas trajectory chart
+g_rec.traj_ui <- function(id, choices) {
+  ns <- NS(id)
+  tagList(
+    h2("Receitas"),
+    selectInput(
+      inputId = ns("variavel"),
+      label = "Empilhar barras por:",
+      choices = choices,
+      selected = "Empreendimento"
+    ),
+    plotlyOutput(ns("plot"), height = "600px")
+  )
+}
+
 # Server for Receitas trajectory chart (now uses external filtro_periodo and date inputs)
 
-g_rec.traj_o <- function(id, dados, filtro_periodo, data_inicial, data_final) {
+g_rec.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_final) {
   moduleServer(id, function(input, output, session) {
     # Reactive expression for date range
     period <- reactive({
@@ -21,7 +36,7 @@ g_rec.traj_o <- function(id, dados, filtro_periodo, data_inicial, data_final) {
     })
 
     output$plot <- renderPlotly({
-      req(input$variavel) # Keep the local 'variavel' input from g_rec.traj_i
+      req(input$variavel) # Keep the local 'variavel' input from g_rec.traj_ui
       pr <- period()
 
       df <- dados$rec %>%
