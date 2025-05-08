@@ -7,11 +7,7 @@
 # (2) Sejam nomeados somente com um breve nome do empreendimento
 # (eg "sonia1", "pompeia", etc.)
 
-library(openxlsx) # Funções para preencher arquivos .xlsx
-library(readxl) # Importação de arquivos em Excel, e.g. read_excel()
-library(viridisLite) # Mapeamento de cores
-
-e_cef_inad <-
+e_ik_inad <-
   function(caminho_arquivo_inadimplentes.c) {
     # Extraindo o vetor de linhas
     linhas_vc <-
@@ -178,7 +174,7 @@ e_cef_inad <-
 #    "dados", "cef",
 #    "inadimplentes", "prudência.xlsx"
 #  )
-# prudencia_t=e_cef_inad(caminho_arquivo_inadimplentes.c)
-# str(e_cef_inad(caminho_arquivo_inadimplentes.c))
-# View(e_cef_inad(caminho_arquivo_inadimplentes.c)$Parcelas)
-# View(e_cef_inad(caminho_arquivo_inadimplentes.c)$Consolidado)
+# prudencia_t=e_ik_inad(caminho_arquivo_inadimplentes.c)
+# str(e_ik_inad(caminho_arquivo_inadimplentes.c))
+# View(e_ik_inad(caminho_arquivo_inadimplentes.c)$Parcelas)
+# View(e_ik_inad(caminho_arquivo_inadimplentes.c)$Consolidado)

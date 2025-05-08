@@ -30,7 +30,7 @@ extrair_dados_pasta_inadimplentes <-
     dados.pasta_df <- c()
     for (caminho_arquivo.c in caminhos.arquivos_vc) {
       dados.pasta_l[[basename(caminho_arquivo.c)]] <-
-        e_cef_inad(caminho_arquivo.c)
+        e_ik_inad(caminho_arquivo.c)
       print(paste(caminho_arquivo.c, "extraído com sucesso."))
       dados.pasta_df <-
         rbind(dados.pasta_df, dados.pasta_l[[basename(caminho_arquivo.c)]][["Parcelas"]])

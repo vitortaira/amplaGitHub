@@ -15,7 +15,7 @@ library(readxl) # Importação de arquivos em Excel, e.g. read_excel()
 library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2
 library(viridisLite) # Mapeamento de cores
 
-e_cef_inad <-
+e_ik_inad <-
   function(caminho_arquivo_inadimplentes.c) {
     linhas_vc <-
       read_excel(caminho_arquivo_inadimplentes.c, col_names = F) %>%
@@ -212,6 +212,6 @@ e_cef_inad <-
 
 # caminho_arquivo_inadimplentes.c <-
 #  here::here("dados", "cef", "inadimplentes", "pompeia.xlsx")
-# str(e_cef_inad(caminho_arquivo_inadimplentes.c))
-# View(e_cef_inad(caminho_arquivo_inadimplentes.c)$Parcelas)
-# View(e_cef_inad(caminho_arquivo_inadimplentes.c)$Consolidado)
+# str(e_ik_inad(caminho_arquivo_inadimplentes.c))
+# View(e_ik_inad(caminho_arquivo_inadimplentes.c)$Parcelas)
+# View(e_ik_inad(caminho_arquivo_inadimplentes.c)$Consolidado)
