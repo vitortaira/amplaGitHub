@@ -13,8 +13,7 @@ library(tidyverse) # Conjunto de pacotes para manipulação de dados
 
 # Carrega os módulos e o script de filtro de período
 source(here("R", "filtro_periodo.R"))
-source(here("R", "g_desp.traj_i.R"))
-source(here("R", "g_desp.traj_o.R"))
+source(here("R", "g_desp.traj.R"))
 source(here("R", "g_rec.traj_i.R"))
 source(here("R", "g_rec.traj_o.R"))
 source(here("R", "g_metadados.hist_i.R"))
@@ -145,7 +144,7 @@ server <- function(input, output, session) {
                   fluidPage(
                     # Substitui o filtro_periodo local pelos módulos do filtro
                     filtro_periodo_module_ui("myFiltro"),
-                    g_desp.traj_i(
+                    g_desp.traj_ui(
                       "desp",
                       c(
                         "Agente Financeiro", "Credor", "Centro de Negócio",
@@ -199,13 +198,14 @@ server <- function(input, output, session) {
   # Chama a parte do servidor dos filtros e dos módulos
   filtroVals <- filtro_periodo_module_server("myFiltro")
 
-  g_desp.traj_o(
+  g_desp.traj_server(
     "desp",
     dados_l[["ik"]],
     filtroVals$filtro_periodo,
     filtroVals$data_inicial,
     filtroVals$data_final
   )
+
   g_rec.traj_o(
     "rec",
     dados_l[["ik"]],
