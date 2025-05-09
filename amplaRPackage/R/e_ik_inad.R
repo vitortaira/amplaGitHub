@@ -24,6 +24,11 @@ e_ik_inad <-
       str_trim() %>%
       unname()
     # Fora da tabela
+    empreendimento_c <-
+      linhas_vc %>%
+      keep(~ str_starts(.x, "(?i)empreendimento\\:\\s?")) %>%
+      str_remove("^.*\\:\\s?") %>%
+      str_sub(1, 3)
     indice.data.impressao_vn <-
       linhas_vc %>%
       str_which("Impresso em:")
@@ -153,8 +158,7 @@ e_ik_inad <-
         `Data da consulta` =
           as.POSIXct(data.impressao_p, format = "%Y-%m-%d %H:%M:%S"),
         Atraso = as.integer(Atraso),
-        Empreendimento = basename(caminho_arquivo_inadimplentes.c) %>%
-          str_remove(".xlsx"),
+        Empreendimento = empreendimento_c,
         Contrato = as.character(parcelas.contratos_vc),
         Unidade = as.character(parcelas.unidades_vc),
         Telefone = as.character(parcelas.telefones_vc)

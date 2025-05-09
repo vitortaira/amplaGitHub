@@ -1,12 +1,12 @@
 e_ik_inads <-
-  function(caminho_pasta_inadimplentes.c = c_caminhos_pastas("cobranca"),
+  function(caminho.pasta.cobranca_c = c_caminhos_pastas("cobranca"),
            xlsx = FALSE) {
     # Formatar todos os arquivos da pasta -------------------------------------
 
     # Todos os arquivos na pasta "inadimplentes"
     caminhos.inads_c <-
-      dir_ls(caminho_pasta_inadimplentes.c, recurse = TRUE, type = "file") %>%
-      keep(~ str_detect(.x, "(?i)Inadimplencia-.*\\.xlsx"))
+      dir_ls(caminho.pasta.cobranca_c, recurse = TRUE, type = "file") %>%
+      keep(~ str_detect(.x, "(?i)inadimpl.ncia-.*\\.xlsx"))
     # Extrair todos os dados dos arquivos relevantes da pasta "inadimplentes"
     dados.pasta_df <-
       caminhos.inads_c %>%
@@ -26,7 +26,7 @@ e_ik_inads <-
           dados.pasta_df
         }
       ) %>%
-      bind_rows(.)
+      bind_rows()
 
     # Salvando num xlsx -------------------------------------------------------
 

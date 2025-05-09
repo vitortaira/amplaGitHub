@@ -26,163 +26,27 @@
 #    "extrair_dados_pasta_inadimplentes.R"
 #  )
 # )
-source(
-  here::here(
-    "R", "e_ik_inads.R"
-  )
-)
-
-# Pacotes -----------------------------------------------------------------
-
-library(readxl) # Funções para ler arquivos .xlsx
-
-# Função ------------------------------------------------------------------
-
-# Relação de contratos internos x CEF
-
-# Lendo o arquivo CSV com codificação UTF-8
-relacao.contratos.estacao_t <-
-  read_delim(
-    here(
-      dirname(dirname(here())), "Relatórios - Documentos",
-      "Relatorios - Cobrança", "Consolidados", "formatados",
-      "Relacao de contratos - Estacao.csv"
-    ),
-    locale = locale(encoding = "UTF-8"),
-    delim = ";",
-    escape_double = FALSE,
-    trim_ws = TRUE,
-    show_col_types = FALSE
-  ) %>%
-  rename(
-    Contrato_Ampla = "Nº Contrato",
-    Contrato_CEF = "Nº Contrato Financiamento"
-  ) %>%
-  filter(str_detect(Contrato_Ampla, "\\d{4}-\\d{1}")) %>%
-  mutate(
-    Repassado =
-      if_else(Contrato_CEF %>% is.na(), "Não repassado", "Repassado"),
-    Empreendimento = "Estação"
-  ) %>%
-  select(Empreendimento, Repassado, Contrato_Ampla, Contrato_CEF)
-
-relacao.contratos.sonia1_t <-
-  read_excel(
-    here::here(
-      dirname(dirname(here())), "Relatórios - Documentos",
-      "Relatorios - Cobrança", "Consolidados", "formatados", "Relacao de contratos - Sonia1.xlsx"
-    ),
-    sheet = 1,
-    col_names = TRUE,
-    col_types = NULL,
-    na = c("", "NA"),
-    skip = 0
-  ) %>%
-  rename(
-    Contrato_Ampla = "Nº Contrato",
-    Contrato_CEF = "Nº Contrato Financiamento"
-  ) %>%
-  filter(str_detect(Contrato_Ampla, "\\d{4}-\\d{1}")) %>%
-  mutate(
-    Repassado =
-      if_else(Contrato_CEF %>% is.na(), "Não repassado", "Repassado"),
-    Empreendimento = "Sônia 1"
-  ) %>%
-  select(Empreendimento, Repassado, Contrato_Ampla, Contrato_CEF)
-
-relacao.contratos.prudencia_t <-
-  read_excel(
-    here::here(
-      dirname(dirname(here())), "Relatórios - Documentos",
-      "Relatorios - Cobrança", "Consolidados", "formatados",
-      "Relacao de contratos - Prudencia.xlsx"
-    ),
-    sheet = 1,
-    col_names = TRUE,
-    col_types = NULL,
-    na = c("", "NA"),
-    skip = 0
-  ) %>%
-  rename(
-    Contrato_Ampla = "Nº Contrato",
-    Contrato_CEF = "Nº Contrato Financiamento"
-  ) %>%
-  filter(str_detect(Contrato_Ampla, "\\d{4}-\\d{1}")) %>%
-  mutate(
-    Repassado =
-      if_else(Contrato_CEF %>% is.na(), "Não repassado", "Repassado"),
-    Empreendimento = "Prudência"
-  ) %>%
-  select(Empreendimento, Repassado, Contrato_Ampla, Contrato_CEF)
-
-relacao.contratos_t <-
-  bind_rows(
-    relacao.contratos.estacao_t,
-    relacao.contratos.sonia1_t,
-    relacao.contratos.prudencia_t
-  ) %>%
-  mutate(
-    Empreendimento = case_when(
-      Empreendimento == "Estação" ~ "estação",
-      Empreendimento == "Sônia 1" ~ "sônia1",
-      Empreendimento == "Prudência" ~ "prudência",
-      TRUE ~ NA_character_
-    )
-  ) %>%
-  rename(Contrato_6 = "Contrato_Ampla")
-
-rm(
-  "relacao.contratos.estacao_t", "relacao.contratos.sonia1_t",
-  "relacao.contratos.prudencia_t"
-)
 
 cruzar_inadimplentes_repasses <-
-  function(f_caminho.pasta.inadimplentes_c =
-             here::here("dados", "cef", "inadimplentes")) {
+  function() {
     # Consolida os dados dos inadimplentes da pasta "inadimplentes"
-    inadimplentes_t <-
-      e_inads(xlsx = FALSE) %>%
-      rename(Contrato_6 = "Contrato")
-    # Cruza inadimplentes_t e relacao.contratos_t
+    inads_t <-
+      e_ik_inads(xlsx = FALSE) %>%
+      rename(Contrato_Ampla = "Contrato")
+    contrs_t <- e_ik_contrs()
+    # Cruza inads_t e contrs_t
     inadimplentes.repasses_t <-
-      inadimplentes_t %>%
+      inads_t %>%
       left_join(
-        relacao.contratos_t,
-        by = c("Contrato_6", "Empreendimento")
+        contrs_t,
+        by = c("Contrato_Ampla", "Empreendimento")
       ) %>%
       mutate(
         Repassado = if_else(Repassado == "Repassado", "Sim", "Não")
       ) %>%
       distinct()
-    # select(-Contrato_CEF) %>%
-    # arrange(Empreendimento, Repassado, Contrato_6)
-    #    # Consolida os dados dos relatórios ECN da pasta "Relatorios - CIWEB"
-    #    pastas.empreendimentos_c <-
-    #      list.dirs(f_caminho.pasta.ciweb_c, recursive = FALSE) %>%
-    #      keep(
-    #        ~ list.dirs(.x, recursive = FALSE, full.names = FALSE) %>%
-    #          str_detect("^\\d{2}\\.\\d{2}\\.\\d{2}$") %>%
-    #          any
-    #      )
-    #    caminhos.ecns.recentes_c <-
-    #      pastas.empreendimentos_c %>%
-    #      set_names(basename(.)) %>%
-    #      map(~ {
-    #        caminhos.ecns_c <-
-    #          list.files(.x, recursive = TRUE, full.names = TRUE) %>%
-    #          keep(~ str_detect(.x, "EMPREENDIMENTO_CONSTRUCAO"))
-    #        if (caminhos.ecns_c %>% length == 0) {return(NA_character_)}
-    #          nth(
-    #            caminhos.ecns_c,
-    #            which.max(pluck(file.info(caminhos.ecns_c), "mtime"))
-    #          )
-    #      })
-    #    ecns.unidades_t <-
-    #      caminhos.ecns.recentes_c %>%
-    #      map_dfr(~ extrair_dados_arquivo_ecn(.)$Unidades) %>%
-    #      mutate(Contrato_6 = str_sub(Contrato, -6, -1))
     ecns_t <-
-      e_cef_ecns() %>%
+      e_cef_ecns()$Unidades %>%
       mutate(CONTRATO_12 = Contrato %>% str_sub(1, -3))
     eprs_t <-
       e_cef_eprs() %>%
@@ -201,7 +65,7 @@ cruzar_inadimplentes_repasses <-
       rename(Cliente = "NOME MUTUARIO")
     inadimplentes.ecn.epr_t <-
       stringdist_inner_join(
-        inadimplentes_t,
+        inads_t,
         ecn.epr_t,
         by = "Cliente",
         method = "jw",
