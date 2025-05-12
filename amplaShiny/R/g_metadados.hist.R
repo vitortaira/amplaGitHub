@@ -6,7 +6,7 @@ g_metadados.hist_i <- function(id, choices) {
       inputId = ns("variavel"),
       label = "Empilhar barras por:",
       choices = choices,
-      selected = choices[1]
+      selected = "Arquivo_tipo"
     ),
     plotlyOutput(ns("plot"), height = "600px")
   )

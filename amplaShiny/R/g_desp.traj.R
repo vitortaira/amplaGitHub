@@ -23,7 +23,7 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
       req(filtro_periodo())
       today <- Sys.Date()
       switch(filtro_periodo(),
-        "ano_corrente" = list(start = lubridate::floor_date(today, "year"), end = today),
+        "ano_corrente" = list(start = floor_date(today, "year"), end = today),
         "ultimos_12" = list(start = today %m-% months(12), end = today),
         "desde_inicio" = {
           dt <- as.Date(dados$desp$`Data Doc Pagto`)
@@ -34,6 +34,32 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
           list(start = data_inicial(), end = data_final())
         }
       )
+    })
+
+    # Create dynamic chart title
+    chart_title <- reactive({
+      req(input$variavel, filtro_periodo())
+
+      # Get variable name for display
+      var_name <- input$variavel
+
+      # Format title based on selected period
+      period_text <- switch(filtro_periodo(),
+        "ano_corrente" = "no Ano Corrente",
+        "ultimos_12" = "nos Últimos 12 Meses",
+        "desde_inicio" = "desde o Início",
+        "personalizado" = {
+          req(data_inicial(), data_final())
+          sprintf(
+            "de %s até %s",
+            format(data_inicial(), "%d/%m/%Y"),
+            format(data_final(), "%d/%m/%Y")
+          )
+        }
+      )
+
+      # Construct full title
+      sprintf("Despesas por %s %s", var_name, period_text)
     })
 
     # Render stacked bar chart with dynamic grouping and color palette
@@ -72,6 +98,10 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
         type   = "bar"
       ) %>%
         layout(
+          title = list(
+            text = chart_title(),
+            font = list(size = 16)
+          ),
           barmode = "stack",
           autosize = TRUE,
           xaxis = list(

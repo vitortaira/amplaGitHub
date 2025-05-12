@@ -15,7 +15,7 @@ library(lubridate) # Para manipulação e formatação de datas
 library(plotly) # Para criação de gráficos interativos
 library(readxl) # Para leitura de arquivos Excel (.xlsx, .xls)
 library(shiny) # Framework para desenvolvimento de aplicações web interativas
-library(tidyverse) # Meta-pacote com dplyr, ggplot2, tidyr, etc. para análise de dados
+library(tidyverse) # Meta-pacote com dplyr, ggplot2, tidyr, etc
 
 # =============================================================================
 # CARREGAMENTO DE MÓDULOS
@@ -104,9 +104,9 @@ server <- function(input, output, session) {
         tabsetPanel(
           id = "pagePanels",
 
-          # =============================================================================
+          # ===================================================================
           # PAINEL: PANORAMA
-          # =============================================================================
+          # ===================================================================
           tabPanel("Panorama",
             value = "Panorama",
             fluidPage(
@@ -127,7 +127,14 @@ server <- function(input, output, session) {
                       )
                     ),
                     # Gráfico de trajetória de receitas com todas as dimensões disponíveis
-                    g_rec.traj_ui("rec", names(dados_l[["ik"]]$rec))
+                    g_rec.traj_ui(
+                      "rec",
+                      c(
+                        "Agente", "Cart.", "Cliente", "Elemento",
+                        "Empreendimento", "Empresa", "Esp", "Parcela", "R/F",
+                        "Torre"
+                      )
+                    )
                   )
                 ),
                 # Subpaineis para futuras implementações
@@ -145,26 +152,34 @@ server <- function(input, output, session) {
             )
           ),
 
-          # =============================================================================
+          # ===================================================================
           # PAINEL: DADOS
-          # =============================================================================
+          # ===================================================================
           tabPanel(
             "Dados",
             value = "Dados",
             fluidPage(
               h2("Geral"),
               # Botão para copiar caminho do arquivo original para importação/validação
-              actionButton("copyPath", "Copiar caminho do arquivo para área de transferência"),
+              actionButton(
+                "copyPath",
+                "Copiar caminho do arquivo para área de transferência"
+              ),
               textOutput("copyConfirmation"),
               hr(),
               # Visualização de histograma para análise de metadados
-              g_metadados.hist_i("metaHist", choices = names(dados_l[["metadados"]]$metadados)),
+              g_metadados.hist_i(
+                "metaHist",
+                choices = setdiff(
+                  names(dados_l[["metadados"]]$metadados), "Arquivo"
+                )
+              ),
             )
           ),
 
-          # =============================================================================
+          # ===================================================================
           # PAINEL: RELATÓRIOS
-          # =============================================================================
+          # ===================================================================
           tabPanel("Relatórios",
             value = "Relatórios",
             fluidPage(
@@ -181,9 +196,9 @@ server <- function(input, output, session) {
     }
   })
 
-  # =============================================================================
+  # ===========================================================================
   # INICIALIZAÇÃO DOS MÓDULOS
-  # =============================================================================
+  # ===========================================================================
 
   # Inicializa o módulo de filtro de período e obtém valores selecionados
   filtroVals <- filtro_periodo_module_server("myFiltro")
@@ -221,9 +236,9 @@ server <- function(input, output, session) {
     }
   )
 
-  # =============================================================================
+  # ===========================================================================
   # FUNCIONALIDADE: COPIAR CAMINHO DO ARQUIVO
-  # =============================================================================
+  # ===========================================================================
   observeEvent(input$copyPath, {
     # Constrói o caminho para o arquivo original Excel
     file_path <- file.path(

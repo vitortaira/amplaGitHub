@@ -35,6 +35,32 @@ g_rec.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fina
       )
     })
 
+    # Create dynamic chart title
+    chart_title <- reactive({
+      req(input$variavel, filtro_periodo())
+
+      # Get variable name for display
+      var_name <- input$variavel
+
+      # Format title based on selected period
+      period_text <- switch(filtro_periodo(),
+        "ano_corrente" = "no Ano Corrente",
+        "ultimos_12" = "nos Últimos 12 Meses",
+        "desde_inicio" = "desde o Início",
+        "personalizado" = {
+          req(data_inicial(), data_final())
+          sprintf(
+            "de %s até %s",
+            format(data_inicial(), "%d/%m/%Y"),
+            format(data_final(), "%d/%m/%Y")
+          )
+        }
+      )
+
+      # Construct full title
+      sprintf("Receitas por %s %s", var_name, period_text)
+    })
+
     output$plot <- renderPlotly({
       req(input$variavel) # Keep the local 'variavel' input from g_rec.traj_ui
       pr <- period()
@@ -71,6 +97,10 @@ g_rec.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fina
         type   = "bar"
       ) %>%
         layout(
+          title = list(
+            text = chart_title(),
+            font = list(size = 16)
+          ),
           barmode = "stack",
           autosize = TRUE,
           xaxis = list(
@@ -80,8 +110,7 @@ g_rec.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fina
             ticklabelmode     = "period",
             ticklabeloverflow = "allow",
             tickmode          = "array",
-            tickvals          = ~Mês,
-            # Make the range slider visible only if filtro_periodo() == 'desde_inicio'
+            tickvals          = unique(df$Mês),
             rangeslider       = list(visible = (filtro_periodo() == "desde_inicio"))
           )
         ) %>%
