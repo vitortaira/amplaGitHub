@@ -46,7 +46,7 @@ e_cef_eprs <-
       eprs_t <-
         bind_rows(eprs_t, eprs_l[[i_caminho.cef.epr_c]])
     }
-    eprs_t %<>% distinct() %>%
+    eprs_t %<>% distinct(across(-Arquivo), .keep_all = TRUE) %>%
       as_tibble() %>%
       mutate(
         Arquivo_tipo_tabela = "epr",

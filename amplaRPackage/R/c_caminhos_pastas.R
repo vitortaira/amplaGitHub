@@ -28,7 +28,9 @@ c_caminhos_pastas <- function(alias) {
     informakon = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Financeiro - Documentos/Informakon",
     rpackage = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaRPackage",
     shiny = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaShiny",
-    shinydata = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaShiny/dados"
+    shinydata = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaShiny/dados",
+    temp = "C:/Users/Ampla/OneDrive - AMPLA INCORPORADORA LTDA/Documentos/temp",
+    templates = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/templates"
   )
 
   if (!alias %in% names(caminhos_c)) {
