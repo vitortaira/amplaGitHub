@@ -18,6 +18,8 @@ g_desp.traj_ui <- function(id, choices) {
 # Server module for Despesas trajectory chart
 g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_final) {
   moduleServer(id, function(input, output, session) {
+    ns <- session$ns
+
     # Compute date range based on selected period
     period <- reactive({
       req(filtro_periodo())
@@ -39,11 +41,7 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
     # Create dynamic chart title
     chart_title <- reactive({
       req(input$variavel, filtro_periodo())
-
-      # Get variable name for display
       var_name <- input$variavel
-
-      # Format title based on selected period
       period_text <- switch(filtro_periodo(),
         "ano_corrente" = "no Ano Corrente",
         "ultimos_12" = "nos Últimos 12 Meses",
@@ -57,65 +55,143 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
           )
         }
       )
-
-      # Construct full title
       sprintf("Despesas por %s %s", var_name, period_text)
+    })
+
+    # Reactive data preparation
+    df_data <- reactive({
+      pr <- period()
+      dados$desp %>%
+        mutate(.dt = as.Date(`Data Doc Pagto`)) %>%
+        filter(.dt >= pr$start, .dt <= pr$end) %>%
+        group_by(
+          Mês = floor_date(.dt, "month"),
+          Var = as.character(.data[[input$variavel]])
+        ) %>%
+        summarise(Total = sum(`Total Pago`, na.rm = TRUE), .groups = "drop")
+    })
+
+    # Calculate monthly totals separately
+    monthly_totals <- reactive({
+      df_data() %>%
+        group_by(Mês) %>%
+        summarise(MonthTotal = sum(Total, na.rm = TRUE), .groups = "drop")
+    })
+
+    # Prepare final dataframe with percentages
+    df_final <- reactive({
+      df_data() %>%
+        left_join(monthly_totals(), by = "Mês") %>%
+        mutate(
+          MonthTotal = as.numeric(MonthTotal),
+          Percentage = as.numeric((Total / MonthTotal) * 100)
+        )
     })
 
     # Render stacked bar chart with dynamic grouping and color palette
     output$plot <- renderPlotly({
-      req(input$variavel)
-      pr <- period()
+      # Ensure we have data before proceeding
+      df <- df_final()
+      req(df, nrow(df) > 0)
 
-      df <- dados$desp %>%
-        mutate(.dt = as.Date(`Data Doc Pagto`)) %>%
-        filter(.dt >= pr$start, .dt <= pr$end) %>%
-        group_by(
-          Mês = lubridate::floor_date(.dt, "month"),
-          Var = as.character(.data[[input$variavel]])
-        ) %>%
-        summarise(Total = sum(`Total Pago`, na.rm = TRUE), .groups = "drop")
-
-      # Order factor levels by total descending for consistent coloring
+      # Calculate variable levels for consistent ordering and coloring
       var_levels <- df %>%
         group_by(Var) %>%
-        summarise(Total = sum(Total, na.rm = TRUE), .groups = "drop") %>%
+        summarise(Total = sum(Total), .groups = "drop") %>%
         arrange(desc(Total)) %>%
         pull(Var)
 
+      # Convert Var to ordered factor
       df <- df %>% mutate(Var = factor(Var, levels = var_levels))
 
-      n <- length(unique(df$Var))
+      # Color palette
+      n <- length(var_levels)
       pal8 <- RColorBrewer::brewer.pal(8, "Set2")
-      pal <- if (n <= 8) pal8[1:n] else grDevices::colorRampPalette(pal8)(n)
+      pal <- if (n <= 8) pal8[1:n] else colorRampPalette(pal8)(n)
 
-      plot_ly(
-        data   = df,
-        x      = ~Mês,
-        y      = ~Total,
-        color  = ~Var,
-        colors = pal,
-        type   = "bar"
-      ) %>%
+      # Build the stacked bar chart
+      p <- plot_ly(source = "despPlot")
+      for (i in seq_along(var_levels)) {
+        lvl <- var_levels[i]
+        sub_df <- dplyr::filter(df, Var == lvl)
+        if (nrow(sub_df) > 0) {
+          p <- p %>%
+            add_trace(
+              data = sub_df,
+              x = ~Mês,
+              y = ~Total,
+              name = lvl,
+              type = "bar",
+              marker = list(color = pal[i]),
+              key = lvl, # This key attaches the variable name to the trace.
+              customdata = cbind(sub_df$MonthTotal, sub_df$Percentage),
+              hovertemplate = paste0(
+                "<b>", lvl, "</b><br>",
+                "Valor: R$ %{y:,.2f}<br>",
+                "Total do mês: R$ %{customdata[0]:,.2f}<br>",
+                "Percentual: %{customdata[1]:.1f}%<br>",
+                "<extra></extra>"
+              )
+            )
+        }
+      }
+      p <- p %>%
         layout(
-          title = list(
-            text = chart_title(),
-            font = list(size = 16)
-          ),
+          title = list(text = chart_title(), font = list(size = 16)),
           barmode = "stack",
-          autosize = TRUE,
           xaxis = list(
             tickformat = "%b %Y",
             type = "date",
-            dtick = "M1",
-            ticklabelmode = "period",
-            ticklabeloverflow = "allow",
-            tickmode = "array",
             tickvals = unique(df$Mês),
             rangeslider = list(visible = (filtro_periodo() == "desde_inicio"))
-          )
+          ),
+          autosize = TRUE
         ) %>%
+        event_register("plotly_click") %>% # Register the click event here
         config(displayModeBar = FALSE)
+      return(p)
+    })
+
+    # Observer for click events
+    observeEvent(event_data("plotly_click", source = "despPlot"), {
+      click_data <- event_data("plotly_click", source = "despPlot")
+      if (!is.null(click_data)) {
+        clicked_month <- as.POSIXct(click_data$x, origin = "1970-01-01")
+        # Use the key set in each trace:
+        clicked_var <- click_data$key
+
+        # Filter the underlying dataset based on the clicked month and variable.
+        detail_data <- dados$desp %>%
+          mutate(.dt = as.Date(`Data Doc Pagto`)) %>%
+          filter(
+            lubridate::floor_date(.dt, "month") ==
+              lubridate::floor_date(clicked_month, "month"),
+            as.character(.data[[input$variavel]]) == clicked_var
+          )
+
+        # If no rows match, show a message instead of crashing
+        if (nrow(detail_data) == 0) {
+          showModal(modalDialog(
+            title = "No details found",
+            "No matching data for the selected segment.",
+            easyClose = TRUE
+          ))
+        } else {
+          detail_data <- detail_data %>% select(-.dt)
+          showModal(modalDialog(
+            title = paste("Detalhes:", clicked_var, "-", format(clicked_month, "%b %Y")),
+            DT::dataTableOutput(ns("detail_table")),
+            size = "l",
+            easyClose = TRUE
+          ))
+          output$detail_table <- DT::renderDataTable({
+            DT::datatable(detail_data, options = list(
+              pageLength = 10,
+              scrollX = TRUE
+            ))
+          })
+        }
+      }
     })
   })
 }
