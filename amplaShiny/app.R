@@ -210,9 +210,15 @@ server <- function(input, output, session) {
   g_metadados.hist_o(
     "metaHist",
     dados_l[["metadados"]],
-    filtroVals$filtro_periodo,
-    filtroVals$data_inicial,
-    filtroVals$data_final
+    function() {
+      filtroVals$filtro_periodo()
+    }, # Wrap in function to ensure proper reactive handling
+    function() {
+      filtroVals$data_inicial()
+    },
+    function() {
+      filtroVals$data_final()
+    }
   )
 
   # =============================================================================
