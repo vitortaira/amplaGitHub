@@ -83,8 +83,8 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
       df_data() %>%
         left_join(monthly_totals(), by = "Mês") %>%
         mutate(
-          MonthTotal = as.numeric(MonthTotal),
-          Percentage = as.numeric((Total / MonthTotal) * 100)
+          MonthTotal = ifelse(MonthTotal == 0, NA, as.numeric(MonthTotal)),
+          Percentage = (Total / MonthTotal) * 100
         )
     })
 
@@ -114,7 +114,14 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
       for (i in seq_along(var_levels)) {
         lvl <- var_levels[i]
         sub_df <- dplyr::filter(df, Var == lvl)
+
+        print(sub_df)
+
         if (nrow(sub_df) > 0) {
+          # Ensure data is numeric
+          sub_df$MonthTotal <- as.numeric(sub_df$MonthTotal)
+          sub_df$Percentage <- as.numeric(sub_df$Percentage)
+
           p <- p %>%
             add_trace(
               data = sub_df,
@@ -123,8 +130,9 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
               name = lvl,
               type = "bar",
               marker = list(color = pal[i]),
-              key = lvl, # This key attaches the variable name to the trace.
-              customdata = cbind(sub_df$MonthTotal, sub_df$Percentage),
+              key = lvl,
+              # Use array syntax for customdata
+              customdata = as.matrix(sub_df[, c("MonthTotal", "Percentage")]),
               hovertemplate = paste0(
                 "<b>", lvl, "</b><br>",
                 "Valor: R$ %{y:,.2f}<br>",

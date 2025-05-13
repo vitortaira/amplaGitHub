@@ -6,6 +6,8 @@
 # Autor: Equipe Ampla
 # Atualizado: 2023
 
+Sys.setlocale("LC_TIME", "pt_BR.UTF-8")
+
 # =============================================================================
 # BIBLIOTECAS
 # =============================================================================
@@ -44,6 +46,13 @@ login_t <- data.frame(
 dados_l <- readRDS(
   dir_ls(here("inst", "dados"), type = "file")
 )
+
+dados_l[["metadados"]]$data_geracao <-
+  dir_ls(here("inst", "dados"), type = "file") %>%
+  path_file() %>%
+  str_remove("\\..*$") %>%
+  str_remove("Dados_") %>%
+  as_datetime(format = "%Y_%m_%d-%H_%M_%S")
 
 # =============================================================================
 # INTERFACE DO USUÁRIO (UI)
@@ -141,12 +150,27 @@ server <- function(input, output, session) {
                 tabPanel("Comercial",
                   value = "Comercial",
                   h2("Comercial"),
-                  "Conteúdo placeholder para a área comercial..."
+                  tags$div(
+                    h3("Gráficos"),
+                    tags$ul(
+                      tags$li("Vendas por empreendimento"),
+                      tags$li("Desempenho de corretores"),
+                      tags$li("Funil de vendas e conversões"),
+                      tags$li("Projeção de receitas comerciais")
+                    )
+                  )
                 ),
                 tabPanel("Obras",
                   value = "Obras",
                   h2("Obras"),
-                  "Conteúdo placeholder para a área de obras..."
+                  tags$div(
+                    h3("Gráficos"),
+                    tags$ul(
+                      tags$li("Status atual dos projetos em andamento"),
+                      tags$li("Cronograma de execução das obras"),
+                      tags$li("Relatórios de progresso por empreendimento"),
+                    )
+                  )
                 )
               )
             )
@@ -159,21 +183,51 @@ server <- function(input, output, session) {
             "Dados",
             value = "Dados",
             fluidPage(
-              h2("Geral"),
-              # Botão para copiar caminho do arquivo original para importação/validação
-              actionButton(
-                "copyPath",
-                "Copiar caminho do arquivo para área de transferência"
-              ),
-              textOutput("copyConfirmation"),
-              hr(),
-              # Visualização de histograma para análise de metadados
-              g_metadados.hist_i(
-                "metaHist",
-                choices = setdiff(
-                  names(dados_l[["metadados"]]$metadados), "Arquivo"
+              tabsetPanel(
+                id = "dadosSubtabs",
+                tabPanel(
+                  "Buscar",
+                  value = "Buscar",
+                  fluidPage(
+                    h2("Buscar"),
+                    "Conteúdo placeholder para a área de busca..."
+                  )
+                ),
+                tabPanel(
+                  "Mapa",
+                  value = "Mapa",
+                  fluidPage(
+                    h2("Buscar"),
+                    "Conteúdo placeholder para a área do mapa..."
+                  )
+                ),
+                tabPanel(
+                  "Metadados",
+                  value = "Metadados",
+                  fluidPage(
+                    h2("Geral"),
+                    tags$strong("Data de geração dos dados:"), " ", dados_l[["metadados"]]$data_geracao,
+                    br(),
+                    # Botão para copiar caminho do arquivo original para importação/validação
+                    actionButton(
+                      "copyPath",
+                      "Copiar caminho do arquivo para área de transferência"
+                    ),
+                    textOutput("copyConfirmation"),
+                    hr(),
+                    h2("Arquivos"),
+                    h3("Gráficos"),
+                    # Visualização de histograma para análise de metadados
+                    g_metadados.hist_i(
+                      "metaHist",
+                      choices = setdiff(
+                        names(dados_l[["metadados"]]$metadados), "Arquivo"
+                      )
+                    ),
+                    h3("Tabela")
+                  )
                 )
-              ),
+              )
             )
           ),
 
