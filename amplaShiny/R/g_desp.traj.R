@@ -17,6 +17,8 @@ g_desp.traj_ui <- function(id, choices) {
 
 # Server module for Despesas trajectory chart
 g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_final) {
+  Sys.setlocale("LC_TIME", "Portuguese_Brazil.1252") # for Windows deployment
+
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -131,13 +133,18 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
               type = "bar",
               marker = list(color = pal[i]),
               key = lvl,
-              # Use array syntax for customdata
-              customdata = as.matrix(sub_df[, c("MonthTotal", "Percentage")]),
+              # Use named fields in customdata instead of array
+              customdata = lapply(1:nrow(sub_df), function(i) {
+                list(
+                  monthTotal = sub_df$MonthTotal[i],
+                  percentage = sub_df$Percentage[i]
+                )
+              }),
               hovertemplate = paste0(
-                "<b>", lvl, "</b><br>",
+                "<b>%{fullData.name}</b><br>",
                 "Valor: R$ %{y:,.2f}<br>",
-                "Total do mês: R$ %{customdata[0]:,.2f}<br>",
-                "Percentual: %{customdata[1]:.1f}%<br>",
+                "Total do mês: R$ %{customdata.monthTotal:,.2f}<br>",
+                "Percentual: %{customdata.percentage:.1f}%<br>",
                 "<extra></extra>"
               )
             )
@@ -193,10 +200,15 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
             easyClose = TRUE
           ))
           output$detail_table <- DT::renderDataTable({
-            DT::datatable(detail_data, options = list(
-              pageLength = 10,
-              scrollX = TRUE
-            ))
+            DT::datatable(detail_data, 
+              options = list(
+                pageLength = 10,
+                scrollX = TRUE,
+                language = list(
+                  url = "//cdn.datatables.net/plug-ins/1.10.25/i18n/Portuguese-Brasil.json"
+                )
+              )
+            )
           })
         }
       }
