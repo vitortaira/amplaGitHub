@@ -200,7 +200,7 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
             easyClose = TRUE
           ))
           output$detail_table <- DT::renderDataTable({
-            DT::datatable(detail_data, 
+            DT::datatable(detail_data,
               options = list(
                 pageLength = 10,
                 scrollX = TRUE,
