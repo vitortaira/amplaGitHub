@@ -17,8 +17,6 @@ g_desp.traj_ui <- function(id, choices) {
 
 # Server module for Despesas trajectory chart
 g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_final) {
-  Sys.setlocale("LC_TIME", "Portuguese_Brazil.1252") # for Windows deployment
-
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 

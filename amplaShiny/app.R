@@ -9,6 +9,7 @@
 # =============================================================================
 # BIBLIOTECAS
 # =============================================================================
+library(DT)
 library(fs) # Para manipulação de arquivos e diretórios
 library(here) # Para gerenciamento de caminhos relativos ao projeto
 library(lubridate) # Para manipulação e formatação de datas
@@ -142,15 +143,17 @@ server <- function(input, output, session) {
                   value = "Buscar",
                   fluidPage(
                     h2("Buscar"),
-                    "Conteúdo placeholder para a área de busca..."
+                    tags$ul(
+                      tags$li("Ve"),
+                    )
                   )
                 ),
                 tabPanel(
-                  "Mapa",
-                  value = "Mapa",
+                  "Mapas",
+                  value = "Mapas",
                   fluidPage(
-                    h2("Buscar"),
-                    "Conteúdo placeholder para a área do mapa..."
+                    h2("Mapas"),
+                    "Placeholder para a área dos mapas..."
                   )
                 ),
                 tabPanel(
@@ -187,12 +190,18 @@ server <- function(input, output, session) {
                             pageLength = 10,
                             autoWidth = TRUE,
                             scrollX = TRUE,
-                            searchHighlight = TRUE
+                            searchHighlight = TRUE,
+                            language = list(
+                              url = "//cdn.datatables.net/plug-ins/1.10.25/i18n/Portuguese-Brasil.json",
+                              searchPanes = list(
+                                collapse = "Filtros",
+                                title = "Filtros"
+                              )
+                            )
                           ),
                           filter = "top",
                           class = "cell-border stripe",
-                          rownames = FALSE,
-                          caption = "Tabela de metadados dos arquivos"
+                          rownames = FALSE
                         ) %>%
                           DT::formatStyle(
                             columns = colnames(dados_l[["metadados"]]$metadados),
