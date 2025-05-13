@@ -29,10 +29,11 @@ e_ik_contr <-
         `Alterado por` = as.factor(`Alterado por`),
         `Usuário Autorização` = as.factor(`Usuário Autorização`),
         Repassado = if_else(
-          is.na(Contrato_CEF), "Não repassado", "Repassado"
+          is.na(Contrato_CEF), "Não repassado", "Repassado",
         ) %>%
           as.factor(),
-        Empreendimento = as.factor(empreendimento_c)
+        Empreendimento = as.factor(empreendimento_c),
+        Arquivo = caminho.contr_c
       ) %>%
       select(
         Empreendimento, Contrato_Ampla, Contrato_CEF, Repassado,

@@ -161,12 +161,14 @@ e_ik_inad <-
         Empreendimento = empreendimento_c,
         Contrato = as.character(parcelas.contratos_vc),
         Unidade = as.character(parcelas.unidades_vc),
-        Telefone = as.character(parcelas.telefones_vc)
+        Telefone = as.character(parcelas.telefones_vc),
+        Arquivo = caminho_arquivo_inadimplentes.c
       ) %>%
       select(
         Empreendimento, Contrato, Unidade, Cliente, Telefone, Esp, Parcela,
         `Quantidade de parcelas`, Ele, Vencto, Atraso, `R/F`, Principal, Juros,
-        Encargos, `Juros de Mora`, Multa, Seguro, Total, `Data da consulta`
+        Encargos, `Juros de Mora`, Multa, Seguro, Total, `Data da consulta`,
+        Arquivo
       )
     return("Parcelas" = parcelas_df)
   }

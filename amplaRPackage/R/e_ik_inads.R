@@ -26,7 +26,12 @@ e_ik_inads <-
           dados.pasta_df
         }
       ) %>%
-      bind_rows()
+      bind_rows() %>%
+      mutate(
+        Arquivo_tipo_tabela = "inad",
+        Arquivo_tipo = "inad",
+        Arquivo_fonte = "ik"
+      )
 
     # Salvando num xlsx -------------------------------------------------------
 

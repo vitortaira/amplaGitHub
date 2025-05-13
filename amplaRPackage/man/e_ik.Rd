@@ -2,42 +2,27 @@
 % Please edit documentation in R/e_ik.R
 \name{e_ik}
 \alias{e_ik}
-\title{Extração e Consolidação de Dados Informakon}
+\title{Consolidação de Dados dos Relatórios Informakon}
 \usage{
-e_ik(f_caminho.pasta.ik_c = c_caminhos_pastas("informakon"), xlsx = FALSE)
-}
-\arguments{
-\item{f_caminho.pasta.ik_c}{String do caminho da pasta "informakon".
-Valor padrão: \code{c_caminhos_pastas("informakon")}.}
-
-\item{xlsx}{Logical. Se \code{TRUE}, cria um arquivo xlsx com os dados extraídos.
-Valor padrão: \code{FALSE}.}
+e_ik()
 }
 \value{
-Retorna uma lista contendo os dados extraídos (despesas, receitas, etc.) em
-diferentes elementos.
+Retorna uma lista contendo todos os dados extraídos das várias fontes:
+Despesas e Receitas.
 }
 \description{
-A função \strong{e_ik()} extrai os dados dos arquivos na pasta "Informakon",
-preenche-os em uma planilha xlsx (opcional) e os retorna em uma lista.
+A função \strong{e_ik()} consolida e retorna dados de diversos relatórios
+(Despesas e Receitas) da Informakon em um só objeto (lista).
 }
 \details{
-A extração é feita a partir de arquivos na pasta "informakon". Além disso, o
-usuário pode optar por criar uma planilha xlsx com os dados processados.
+Internamente chama as funções \code{e_ik_desp()} e \code{e_ik_rec()} e
+reúne tudo em um único objeto.
 }
 \examples{
 \dontrun{
-# Chamada com valor padrão
-dados_informakon <- e_ik()
-
-# Chamada customizada
-dados_informakon <- e_ik(
-  f_caminho.pasta.ik_c = "C:/caminho/personalizado/informakon",
-  xlsx = TRUE
-)
+# Utilizando as configurações padrão
+lista_ik <- e_ik()
+str(lista_ik)
 }
 
-}
-\seealso{
-\code{\link{read_excel}}, \code{\link{floor_date}}
 }
