@@ -117,8 +117,6 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
         lvl <- var_levels[i]
         sub_df <- dplyr::filter(df, Var == lvl)
 
-        print(sub_df)
-
         if (nrow(sub_df) > 0) {
           # Ensure data is numeric
           sub_df$MonthTotal <- as.numeric(sub_df$MonthTotal)

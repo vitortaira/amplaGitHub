@@ -6,8 +6,6 @@
 # Autor: Equipe Ampla
 # Atualizado: 2023
 
-Sys.setlocale("LC_TIME", "pt_BR.UTF-8")
-
 # =============================================================================
 # BIBLIOTECAS
 # =============================================================================
@@ -96,6 +94,22 @@ server <- function(input, output, session) {
     }
   })
 
+  # Set "Buscar" as default subtab when clicking on "Dados"
+  observeEvent(input$pagePanels, {
+    if (input$pagePanels == "Dados") {
+      updateTabsetPanel(session, "dadosSubtabs", selected = "Buscar")
+    }
+  })
+
+  # Set default subtabs when clicking on main tabs
+  observeEvent(input$pagePanels, {
+    if (input$pagePanels == "Panorama") {
+      updateTabsetPanel(session, "panoramaSubTabs", selected = "Financeiro")
+    } else if (input$pagePanels == "Dados") {
+      updateTabsetPanel(session, "dadosSubtabs", selected = "Buscar")
+    }
+  })
+
   # Renderiza a interface principal apenas após autenticação
   output$mainAppUI <- renderUI({
     if (credentials$logged_in) {
@@ -113,68 +127,6 @@ server <- function(input, output, session) {
         tabsetPanel(
           id = "pagePanels",
 
-          # ===================================================================
-          # PAINEL: PANORAMA
-          # ===================================================================
-          tabPanel("Panorama",
-            value = "Panorama",
-            fluidPage(
-              tabsetPanel(
-                id = "panoramaSubTabs",
-                # Subpainel: Financeiro - Exibe gráficos de despesas e receitas
-                tabPanel("Financeiro",
-                  value = "Financeiro",
-                  fluidPage(
-                    # Filtro temporal para os gráficos financeiros
-                    filtro_periodo_module_ui("myFiltro"),
-                    # Gráfico de trajetória de despesas com opções de segmentação
-                    g_desp.traj_ui(
-                      "desp",
-                      c(
-                        "Agente Financeiro", "Credor", "Centro de Negócio",
-                        "Empresa", "N° Conta", "Parcela"
-                      )
-                    ),
-                    # Gráfico de trajetória de receitas com todas as dimensões disponíveis
-                    g_rec.traj_ui(
-                      "rec",
-                      c(
-                        "Agente", "Cart.", "Cliente", "Elemento",
-                        "Empreendimento", "Empresa", "Esp", "Parcela", "R/F",
-                        "Torre"
-                      )
-                    )
-                  )
-                ),
-                # Subpaineis para futuras implementações
-                tabPanel("Comercial",
-                  value = "Comercial",
-                  h2("Comercial"),
-                  tags$div(
-                    h3("Gráficos"),
-                    tags$ul(
-                      tags$li("Vendas por empreendimento"),
-                      tags$li("Desempenho de corretores"),
-                      tags$li("Funil de vendas e conversões"),
-                      tags$li("Projeção de receitas comerciais")
-                    )
-                  )
-                ),
-                tabPanel("Obras",
-                  value = "Obras",
-                  h2("Obras"),
-                  tags$div(
-                    h3("Gráficos"),
-                    tags$ul(
-                      tags$li("Status atual dos projetos em andamento"),
-                      tags$li("Cronograma de execução das obras"),
-                      tags$li("Relatórios de progresso por empreendimento"),
-                    )
-                  )
-                )
-              )
-            )
-          ),
 
           # ===================================================================
           # PAINEL: DADOS
@@ -224,7 +176,93 @@ server <- function(input, output, session) {
                         names(dados_l[["metadados"]]$metadados), "Arquivo"
                       )
                     ),
-                    h3("Tabela")
+                    h3("Tabela"),
+                    # Exibir metadados em uma tabela interativa
+                    fluidRow(
+                      column(
+                        12,
+                        DT::datatable(
+                          dados_l[["metadados"]]$metadados,
+                          options = list(
+                            pageLength = 10,
+                            autoWidth = TRUE,
+                            scrollX = TRUE,
+                            searchHighlight = TRUE
+                          ),
+                          filter = "top",
+                          class = "cell-border stripe",
+                          rownames = FALSE,
+                          caption = "Tabela de metadados dos arquivos"
+                        ) %>%
+                          DT::formatStyle(
+                            columns = colnames(dados_l[["metadados"]]$metadados),
+                            backgroundColor = "rgba(240, 240, 240, 0.5)",
+                            color = "black"
+                          )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          ),
+
+          # ===================================================================
+          # PAINEL: PANORAMA
+          # ===================================================================
+          tabPanel("Panorama",
+            value = "Panorama",
+            fluidPage(
+              tabsetPanel(
+                id = "panoramaSubTabs",
+                tabPanel("Comercial",
+                  value = "Comercial",
+                  h2("Comercial"),
+                  tags$div(
+                    h3("Gráficos"),
+                    tags$ul(
+                      tags$li("Vendas por empreendimento"),
+                      tags$li("Desempenho de corretores"),
+                      tags$li("Funil de vendas e conversões"),
+                      tags$li("Projeção de receitas comerciais")
+                    )
+                  )
+                ),
+                # Subpainel: Financeiro - Exibe gráficos de despesas e receitas
+                tabPanel("Financeiro",
+                  value = "Financeiro",
+                  fluidPage(
+                    # Filtro temporal para os gráficos financeiros
+                    filtro_periodo_module_ui("myFiltro"),
+                    # Gráfico de trajetória de despesas com opções de segmentação
+                    g_desp.traj_ui(
+                      "desp",
+                      c(
+                        "Agente Financeiro", "Credor", "Centro de Negócio",
+                        "Empresa", "N° Conta", "Parcela"
+                      )
+                    ),
+                    # Gráfico de trajetória de receitas com todas as dimensões disponíveis
+                    g_rec.traj_ui(
+                      "rec",
+                      c(
+                        "Agente", "Cart.", "Cliente", "Elemento",
+                        "Empreendimento", "Empresa", "Esp", "Parcela", "R/F",
+                        "Torre"
+                      )
+                    )
+                  )
+                ),
+                tabPanel("Obras",
+                  value = "Obras",
+                  h2("Obras"),
+                  tags$div(
+                    h3("Gráficos"),
+                    tags$ul(
+                      tags$li("Status atual dos projetos em andamento"),
+                      tags$li("Cronograma de execução das obras"),
+                      tags$li("Relatórios de progresso por empreendimento"),
+                    )
                   )
                 )
               )
