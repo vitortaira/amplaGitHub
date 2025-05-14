@@ -70,5 +70,8 @@ e_dados <- function() {
       Data_criacao = info.arquivos_t$birth_time
     )
   dados_l$metadados$metadados <- metadados_t
+  dados_l$metadados$gnw_nodes <- m_nodes()$nodes
+  dados_l$metadados$gnw_nodes_legends <- m_nodes()$nodes.legends
+  dados_l$metadados$gnw_edges <- m_edges()
   return(dados_l)
 }

@@ -12,11 +12,13 @@
 library(DT)
 library(fs) # Para manipulação de arquivos e diretórios
 library(here) # Para gerenciamento de caminhos relativos ao projeto
+library(htmlwidgets) # Para exportação de gráficos interativos
 library(lubridate) # Para manipulação e formatação de datas
 library(plotly) # Para criação de gráficos interativos
 library(readxl) # Para leitura de arquivos Excel (.xlsx, .xls)
 library(shiny) # Framework para desenvolvimento de aplicações web interativas
 library(tidyverse) # Meta-pacote com dplyr, ggplot2, tidyr, etc
+library(visNetwork) # Para visualização de redes e grafos
 
 # =============================================================================
 # CARREGAMENTO DE MÓDULOS
@@ -25,6 +27,7 @@ library(tidyverse) # Meta-pacote com dplyr, ggplot2, tidyr, etc
 source(here("R", "login.R")) # Sistema de autenticação
 source(here("R", "filtro_periodo.R")) # Filtros temporais para os dados
 source(here("R", "g_desp.traj.R")) # Visualização de trajetória de despesas
+source(here("R", "g_gnw.R")) # Rede de grafos
 source(here("R", "g_rec.traj.R")) # Visualização de trajetória de receitas
 source(here("R", "g_metadados.hist.R")) # Histograma de metadados
 
@@ -153,7 +156,7 @@ server <- function(input, output, session) {
                   value = "Mapas",
                   fluidPage(
                     h2("Mapas"),
-                    "Placeholder para a área dos mapas..."
+                    g_gnw_ui("gnw")
                   )
                 ),
                 tabPanel(
@@ -336,6 +339,9 @@ server <- function(input, output, session) {
       filtroVals$data_final()
     }
   )
+
+  # GNW module (no time filter)
+  g_gnw_server("gnw", dados_l[["metadados"]])
 
   # ===========================================================================
   # FUNCIONALIDADE: COPIAR CAMINHO DO ARQUIVO
