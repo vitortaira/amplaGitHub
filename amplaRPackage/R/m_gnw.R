@@ -21,9 +21,9 @@ m_gnw <- function() {
   # Get nodes and edges if not available in environment
   if (!exists("nodes_df") || !exists("edges_df") || !exists("nodes.legends_df")) {
     nodes_data <- m_nodes()
-    nodes_df <- nodes_data$nodes_df
-    nodes.legends_df <- nodes_data$nodes.legends_df
-    edges_df <- m_edges()$edges_df
+    nodes_df <- nodes_data$nodes
+    nodes.legends_df <- nodes_data$nodes.legends
+    edges_df <- m_edges()
   }
 
   # Renderização do grafo com visNetwork
@@ -87,7 +87,7 @@ m_gnw <- function() {
       function(el, x) {
         setTimeout(function() {
           var graphArea = el.querySelector('div[id^=\"graphhtmlwidget-\"]');
-          if (graphArea) {c
+          if (graphArea) {
             graphArea.style.backgroundColor = 'lightgray';
           }
         }, 500);

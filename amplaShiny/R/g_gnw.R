@@ -17,25 +17,12 @@ g_gnw_server <- function(id, dados) {
       # Check the proper path
       req(dados$gnw_nodes, dados$gnw_edges)
 
-      # Use the correct path for legends
-      legend_nodes <- if (!is.null(dados$gnw_nodes_legends)) {
-        dados$gnw_nodes_legends
-      } else {
-        # Default legend
-        data.frame(
-          label = c("Arquivos", "Origens", "Base de dados", "Relatórios", "Decisões"),
-          color = c("yellow", "orange", "red", "blue", "purple"),
-          shape = "box"
-        )
-      }
-
       # Use correct data paths
       visNetwork(
         dados$gnw_nodes,
         dados$gnw_edges,
         width = "100%",
         height = "500px",
-        main = "Fluxo dos dados",
         footer = "Da informação à decisão."
       ) %>%
         visNodes(
@@ -43,7 +30,11 @@ g_gnw_server <- function(id, dados) {
           widthConstraint = list(maximum = 250),
           font = list(multi = TRUE)
         ) %>%
-        visEdges(arrows = "to", width = 5) %>%
+        visEdges(
+          arrows = "to",
+          width = 5,
+          color = list(color = dados$gnw_edges$color)
+        ) %>%
         visHierarchicalLayout(
           enabled = TRUE,
           direction = "LR",
@@ -74,7 +65,7 @@ g_gnw_server <- function(id, dados) {
           position  = "left",
           main      = "Legendas:",
           useGroups = FALSE,
-          addNodes  = legend_nodes, # Use the legend_nodes variable
+          addNodes  = dados$gnw_nodes_legends,
           zoom      = FALSE
         ) %>%
         htmlwidgets::onRender("
