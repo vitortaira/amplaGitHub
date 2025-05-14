@@ -51,7 +51,7 @@ a_dados_rds_xlsx <- function(
       # Abas da CEF
       c("cmfcn", "dcd", "ecn_c", "ecn_e", "ecn_pj", "ecn_u", "epr", "extcef"),
       # Abas do Informakon
-      c("desp", "rec")
+      c("contr", "desp", "inad", "rec")
     ),
     Fonte = c(
       # Metadados
@@ -59,7 +59,7 @@ a_dados_rds_xlsx <- function(
       # Abas da CEF
       c(rep("cef", 8)),
       # Abas do Informakon
-      c(rep("ik", 2))
+      c(rep("ik", 4))
     ),
     Cor = c(
       # Metadados
@@ -67,7 +67,7 @@ a_dados_rds_xlsx <- function(
       # Abas da CEF
       c(rep("darkblue", 8)),
       # Abas do Informakon
-      c(rep("darkgreen", 2))
+      c(rep("darkgreen", 4))
     )
   )
   # Adicionando e populando abas dinamicamente
