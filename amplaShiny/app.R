@@ -147,7 +147,7 @@ server <- function(input, output, session) {
                   fluidPage(
                     h2("Buscar"),
                     tags$ul(
-                      tags$li("Ve"),
+                      tags$li("Placeholder para mecanismo de busca..."),
                     )
                   )
                 ),

@@ -14,14 +14,14 @@ g_gnw_ui <- function(id) {
 g_gnw_server <- function(id, dados) {
   moduleServer(id, function(input, output, session) {
     output$gnw_network <- renderVisNetwork({
-      # Simplified validation - check just the core data
+      # Check the proper path
       req(dados$gnw_nodes, dados$gnw_edges)
 
-      # For the legend nodes, create them on the fly if they don't exist
+      # Use the correct path for legends
       legend_nodes <- if (!is.null(dados$gnw_nodes_legends)) {
         dados$gnw_nodes_legends
       } else {
-        # Create default legend
+        # Default legend
         data.frame(
           label = c("Arquivos", "Origens", "Base de dados", "Relatórios", "Decisões"),
           color = c("yellow", "orange", "red", "blue", "purple"),
@@ -29,7 +29,7 @@ g_gnw_server <- function(id, dados) {
         )
       }
 
-      # Create visNetwork with the data passed in
+      # Use correct data paths
       visNetwork(
         dados$gnw_nodes,
         dados$gnw_edges,
@@ -67,7 +67,7 @@ g_gnw_server <- function(id, dados) {
         ) %>%
         visOptions(
           highlightNearest = list(enabled = TRUE, algorithm = "hierarchical"),
-          nodesIdSelection = TRUE
+          nodesIdSelection = FALSE
         ) %>%
         visInteraction(navigationButtons = TRUE) %>%
         visLegend(

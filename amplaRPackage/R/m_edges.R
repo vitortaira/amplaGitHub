@@ -45,9 +45,4 @@ m_edges <- function() {
       label = "",
       title = ""
     )
-
-  # Return the edges dataframe
-  list(
-    edges_df = edges_df
-  )
 }
