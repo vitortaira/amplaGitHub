@@ -32,8 +32,7 @@ g_gnw_server <- function(id, dados) {
         ) %>%
         visEdges(
           arrows = "to",
-          width = 5,
-          color = list(color = dados$gnw_edges$color)
+          width = 5
         ) %>%
         visHierarchicalLayout(
           enabled = TRUE,

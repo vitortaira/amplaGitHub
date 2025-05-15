@@ -13,17 +13,32 @@
 #' @importFrom magrittr %>%
 #' @export
 m_nodes <- function() {
-  # Arquivos
-  labels.arquivos_vc <- c(
-    # Informakon
-    "Despesas", "Receitas",
-    # CEF
-    "ECN", "FRE"
-  )
-
   # Origens
   labels.origens_vc <- c(
-    "Informakon", "Caixa Econômica Federal"
+    "ANAPRO", "Caixa Econômica Federal", "Informakon", "Itaú"
+  )
+  # Arquivos
+  labels.arquivos_vc <- c(
+    # ANAPRO
+    "Comercial",
+    # CEF
+    "ECN", "FRE",
+    # Informakon
+    "Contratos", "Despesas", "Inadimplentes", "Receitas",
+    # Itaú
+    "Extratos"
+  )
+
+  # Tabelas
+  labels.tabelas_c <- c(
+    # ANAPRO
+    "Comercial",
+    # CEF
+    "ECN_C", "ECN_I", "ECN_PJ", "ECN_U", "FRE",
+    # Informakon
+    "Contratos", "Despesas", "Inadimplentes", "Receitas",
+    # Itaú
+    "Extratos"
   )
 
   # Base de dados
@@ -42,21 +57,40 @@ m_nodes <- function() {
 
   # Nodes
   labels.nodes_vc <- c(
-    labels.arquivos_vc,
     labels.origens_vc,
+    labels.arquivos_vc,
+    labels.tabelas_c,
     label.dados_c,
     labels.relatorios_vc,
     labels.decisoes_vc
   )
 
-  # Arquivos
-  ids.arquivos_vc <- c(
-    "desp", "rec", "ecn", "fre"
-  )
-
   # Origens
   ids.origens_vc <- c(
-    "informakon", "cef"
+    "ana", "cef", "ifk", "ita"
+  )
+  # Arquivos
+  ids.arquivos_vc <- c(
+    # ANAPRO
+    "com",
+    # CEF
+    "ecn", "fre",
+    # Informakon
+    "cntr", "desp", "inad", "rec",
+    # Itaú
+    "extcef"
+  )
+
+  # Tabelas
+  ids.tabelas_c <- c(
+    # ANAPRO
+    "com_t",
+    # CEF
+    "ecn_c", "ecn_i", "ecn_pj", "ecn_u", "fre_t",
+    # Informakon
+    "cntr_t", "desp_t", "inad_t", "rec_t",
+    # Itaú
+    "extita_t"
   )
 
   # Base de dados
@@ -73,8 +107,9 @@ m_nodes <- function() {
   )
 
   ids.nodes_vc <- c(
-    ids.arquivos_vc,
     ids.origens_vc,
+    ids.arquivos_vc,
+    ids.tabelas_c,
     id.dados_c,
     ids.relatorios_vc,
     ids.decisoes_vc
@@ -85,15 +120,17 @@ m_nodes <- function() {
     id = ids.nodes_vc,
     label = labels.nodes_vc,
     group = c(
-      rep("arquivo", length(ids.arquivos_vc)),
       rep("origem", length(ids.origens_vc)),
+      rep("arquivo", length(ids.arquivos_vc)),
+      rep("tabela", length(ids.tabelas_c)),
       "base",
       rep("relatorio", length(ids.relatorios_vc)),
       rep("decisao", length(ids.decisoes_vc))
     ),
     level = c(
+      rep(1, length(ids.origens_vc)), # Origem
       rep(2, length(ids.arquivos_vc)), # Arquivo
-      rep(3, length(ids.origens_vc)), # Origem
+      rep(3, length(ids.tabelas_c)), # Tabela
       4, # Base de dados
       rep(5, length(ids.relatorios_vc)), # Relatório
       rep(6, length(ids.decisoes_vc)) # Decisão
@@ -101,23 +138,23 @@ m_nodes <- function() {
   ) %>%
     mutate(
       color = case_when(
-        level == 1 ~ "lightyellow",
-        level == 2 ~ "yellow",
-        level == 3 ~ "orange",
-        level == 4 ~ "red",
-        level == 5 ~ "blue",
-        level == 6 ~ "purple"
+        level == 1 ~ "red",
+        level == 2 ~ "orange",
+        level == 3 ~ "yellow",
+        level == 4 ~ "black",
+        level == 5 ~ "lightblue",
+        level == 6 ~ "gray"
       ),
       shape = "box",
       size = 25,
       font = case_when(
-        level %in% c(5, 6) ~ list(list(
+        level %in% c(4) ~ list(list(
           "color" = "white",
           "size" = 25,
           "face" = "arial",
           "background" = "undefined"
         )),
-        !(level %in% c(5, 6)) ~ list(list(
+        !(level %in% c(4)) ~ list(list(
           "color" = "black",
           "size" = 25,
           "face" = "arial",
@@ -129,9 +166,11 @@ m_nodes <- function() {
   # Create legends dataframe
   nodes.levels_vn <- sort(unique(nodes_df$level))
   nodes.levels.labels_vc <- c(
-    "Arquivos", "Origens", "Base de dados", "Relatórios", "Decisões"
+    "Origens", "Arquivos", "Tabelas", "Base de dados", "Relatórios", "Decisões"
   )
-  nodes.levels.colors_vc <- c("yellow", "orange", "red", "blue", "purple")
+  nodes.levels.colors_vc <- c(
+    "red", "orange", "yellow", "black", "lightblue", "gray"
+  )
 
   nodes.legends_df <- data.frame(
     label = nodes.levels.labels_vc,
@@ -139,13 +178,13 @@ m_nodes <- function() {
   ) %>%
     mutate(
       font = case_when(
-        label %in% c("Relatórios", "Decisões") ~ list(list(
+        label %in% c("Base de dados") ~ list(list(
           "color" = "white",
           "size" = 50,
           "face" = "arial",
           "background" = "undefined"
         )),
-        !(label %in% c("Relatórios", "Decisões")) ~ list(list(
+        !(label %in% c("Base de dados")) ~ list(list(
           "color" = "black",
           "size" = 50,
           "face" = "arial",
