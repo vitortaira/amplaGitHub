@@ -13,51 +13,53 @@ m_edges <- function() {
   data.frame(
     from =
       c(
-        # Origem
-        "ana", "cef", "cef", "ifk", "ifk", "ifk", "ifk", "ita",
-        # Arquivos
+        # Origens ->
+        rep("ana", 1), rep("cef", 6), rep("ifk", 4), rep("ita", 1),
+        # Arquivos ->
         "com",
-        "ecn", "ecn", "ecn", "ecn", "fre",
+        "cmfcn", "dcd", "ecn", "ecn", "ecn", "ecn", "epr", "extcef", "fre",
         "cntr", "desp", "inad", "rec",
         "extita",
-        # Tabelas
+        # Tabelas ->
         "com_t",
-        "ecn_c", "ecn_i", "ecn_pj", "ecn_u", "fre_t",
+        "cmfcn_t", "dcd_t", "ecn_c", "ecn_i", "ecn_pj", "ecn_u", "epr_t",
+        "extcef_t", "fre_t",
         "cntr_t", "desp_t", "inad_t", "rec_t",
         "extita_t",
-        # Base de dados
+        # Base de dados ->
         rep("dados", 2),
-        # Relatório
+        # Relatórios ->
         "relatorio.financiamento", "dfc"
       ),
     to =
       c(
-        # Origem ->
+        # -> Arquivos
         "com",
-        "ecn", "fre",
+        "cmfcn", "dcd", "ecn", "epr", "extcef", "fre",
         "cntr", "desp", "inad", "rec",
         "extita",
-        # Arquivo ->
+        # -> Tabelas
         "com_t",
-        "ecn_c", "ecn_i", "ecn_pj", "ecn_u", "fre_t",
+        "cmfcn_t", "dcd_t", "ecn_c", "ecn_i", "ecn_pj", "ecn_u", "epr_t",
+        "extcef_t", "fre_t",
         "cntr_t", "desp_t", "inad_t", "rec_t",
         "extita_t",
-        # Tabelas ->
-        rep("dados", 11),
-        # Base de dados ->
+        # -> Base de dados
+        rep("dados", 15),
+        # -> Relatórios
         "relatorio.financiamento", "dfc",
-        # Relatório ->
+        # -> Decisões
         rep("decisao", 2)
-      ),
-    label = c(rep("Label", 34)),
-    title = c(rep("Title", 34))
+      )
   ) %>%
     mutate(
       color =
         case_when(
-          from %in% c("desp", "rec", "ecn") ~ "green",
-          from %in% c("fre", "cef") ~ "yellow",
-          TRUE ~ "red"
+          from %in% c(
+            "com_t"
+          ) ~ "red",
+          from %in% c("fre_t", "extita_t") ~ "yellow",
+          TRUE ~ "green"
         )
     )
 }

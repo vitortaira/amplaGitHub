@@ -72,7 +72,7 @@ m_gnw <- function() {
     ) %>%
     visOptions(
       highlightNearest = list(enabled = TRUE, algorithm = "hierarchical"),
-      nodesIdSelection = TRUE
+      nodesIdSelection = FALSE
     ) %>%
     visInteraction(navigationButtons = TRUE) %>%
     visLegend(
