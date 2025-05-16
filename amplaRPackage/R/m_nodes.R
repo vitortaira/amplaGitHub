@@ -29,52 +29,49 @@ m_nodes <- function() {
     label = "ANAPRO",
     group = "origem",
     level = 1,
-    color = "darkblue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "white", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f041",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   cef_n <- tibble(
     id = "cef",
     label = "Caixa Econômica Federal",
     group = "origem",
     level = 1,
-    color = "darkblue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "white", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f041",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   ifk_n <- tibble(
     id = "ifk",
     label = "Informakon",
     group = "origem",
     level = 1,
-    color = "darkblue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "white", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f041",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   ita_n <- tibble(
     id = "ita",
     label = "Itaú",
     group = "origem",
     level = 1,
-    color = "darkblue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "white", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f041",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   # Arquivos
   com_n <- tibble(
@@ -82,156 +79,156 @@ m_nodes <- function() {
     label = "Comercial",
     group = "arquivo",
     level = 2,
-    color = "blue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "white", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0c5",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   cmfcn_n <- tibble(
     id = "cmfcn",
     label = "CMF_CN",
     group = "arquivo",
     level = 2,
-    color = "blue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "white", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0c5",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   dcd_n <- tibble(
     id = "dcd",
     label = "DCD",
     group = "arquivo",
     level = 2,
-    color = "blue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "white", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0c5",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   ecn_n <- tibble(
     id = "ecn",
     label = "ECN",
     group = "arquivo",
     level = 2,
-    color = "blue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "white", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0c5",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   epr_n <- tibble(
     id = "epr",
     label = "EPR",
     group = "arquivo",
     level = 2,
-    color = "blue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "white", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0c5",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   extcef_n <- tibble(
     id = "extcef",
     label = "Extratos",
     group = "arquivo",
     level = 2,
-    color = "blue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "white", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0c5",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   fre_n <- tibble(
     id = "fre",
     label = "FRE",
     group = "arquivo",
     level = 2,
-    color = "blue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "white", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0c5",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   cntr_n <- tibble(
     id = "cntr",
     label = "Contratos",
     group = "arquivo",
     level = 2,
-    color = "blue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "white", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0c5",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   desp_n <- tibble(
     id = "desp",
     label = "Despesas",
     group = "arquivo",
     level = 2,
-    color = "blue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "white", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0c5",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   inad_n <- tibble(
     id = "inad",
     label = "Inadimplentes",
     group = "arquivo",
     level = 2,
-    color = "blue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "white", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0c5",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   rec_n <- tibble(
     id = "rec",
     label = "Receitas",
     group = "arquivo",
     level = 2,
-    color = "blue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "white", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0c5",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   extita_n <- tibble(
     id = "extita",
     label = "Extratos",
     group = "arquivo",
     level = 2,
-    color = "blue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "white", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0c5",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   # Tabelas
   com_t_n <- tibble(
@@ -239,196 +236,197 @@ m_nodes <- function() {
     label = "Comercial",
     group = "tabela",
     level = 3,
-    color = "lightblue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0ce",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   cmfcn_t_n <- tibble(
     id = "cmfcn_t",
     label = "CMF_CN",
     group = "tabela",
     level = 3,
-    color = "lightblue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0ce",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   dcd_t_n <- tibble(
     id = "dcd_t",
     label = "DCD",
     group = "tabela",
     level = 3,
-    color = "lightblue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0ce",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   ecn_c_n <- tibble(
     id = "ecn_c",
     label = "ECN_C",
     group = "tabela",
     level = 3,
-    color = "lightblue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0ce",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   ecn_i_n <- tibble(
     id = "ecn_i",
     label = "ECN_I",
     group = "tabela",
     level = 3,
-    color = "lightblue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0ce",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   ecn_pj_n <- tibble(
     id = "ecn_pj",
     label = "ECN_PJ",
     group = "tabela",
     level = 3,
-    color = "lightblue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0ce",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   ecn_u_n <- tibble(
     id = "ecn_u",
     label = "ECN_U",
     group = "tabela",
     level = 3,
-    color = "lightblue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0ce",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   epr_t_n <- tibble(
     id = "epr_t",
     label = "EPR",
     group = "tabela",
     level = 3,
-    color = "lightblue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0ce",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   extcef_t_n <- tibble(
     id = "extcef_t",
     label = "Extratos",
     group = "tabela",
     level = 3,
-    color = "lightblue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0ce",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   fre_t_n <- tibble(
     id = "fre_t",
     label = "FRE",
     group = "tabela",
     level = 3,
-    color = "lightblue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0ce",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   cntr_t_n <- tibble(
     id = "cntr_t",
     label = "Contratos",
     group = "tabela",
     level = 3,
-    color = "lightblue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0ce",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   desp_t_n <- tibble(
     id = "desp_t",
     label = "Despesas",
     group = "tabela",
     level = 3,
-    color = "lightblue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0ce",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   inad_t_n <- tibble(
     id = "inad_t",
     label = "Inadimplentes",
     group = "tabela",
     level = 3,
-    color = "lightblue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0ce",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   rec_t_n <- tibble(
     id = "rec_t",
     label = "Receitas",
     group = "tabela",
     level = 3,
-    color = "lightblue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0ce",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   extita_t_n <- tibble(
     id = "extita_t",
     label = "Extratos",
     group = "tabela",
     level = 3,
-    color = "lightblue",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0ce",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
+  # Base
   dados_n <- tibble(
     id = "dados",
     label = "Base de dados",
@@ -466,39 +464,39 @@ m_nodes <- function() {
     label = "Conciliação de extratos",
     group = "relatorio",
     level = 5,
-    color = "green",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f05a",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   dfc_n <- tibble(
     id = "dfc",
     label = "Demonstrativo de fluxo de caixa",
     group = "relatorio",
     level = 5,
-    color = "green",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f05a",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   rinad_n <- tibble(
     id = "rinad",
     label = "Inadimplência",
     group = "relatorio",
     level = 5,
-    color = "green",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    color = "black",
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f05a",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   # Decisões
   fco_n <- tibble(
@@ -506,39 +504,36 @@ m_nodes <- function() {
     label = "Financiamento de obras",
     group = "decisao",
     level = 6,
-    color = "gray",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f059",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   dinad_n <- tibble(
     id = "dinad",
     label = "Política de inadimplência",
     group = "decisao",
     level = 6,
-    color = "gray",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f059",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   land_n <- tibble(
     id = "land",
     label = "Landbanking",
     group = "decisao",
     level = 6,
-    color = "gray",
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f059",
+    icon.size = 75,
+    icon.color = "black",
+    font = list(list(color = "black", size = 25, face = "arial"))
   )
   prdt_n <- tibble(
     id = "prdt",
@@ -680,121 +675,83 @@ m_nodes <- function() {
     cmmk_n, jdtb_n, ctob_n, ctcst_n
   )
 
-  # Get unique colors for each level/group
-  origin_color <- nodes_t %>%
-    filter(group == "origem") %>%
-    distinct(color) %>%
-    pull(color) %>%
-    .[1]
-  files_color <- nodes_t %>%
-    filter(group == "arquivo") %>%
-    distinct(color) %>%
-    pull(color) %>%
-    .[1]
-  tables_color <- nodes_t %>%
-    filter(group == "tabela") %>%
-    distinct(color) %>%
-    pull(color) %>%
-    .[1]
-  database_color <- nodes_t %>%
-    filter(group == "base") %>%
-    distinct(color) %>%
-    pull(color) %>%
-    .[1]
-  reports_color <- nodes_t %>%
-    filter(group == "relatorio") %>%
-    distinct(color) %>%
-    pull(color) %>%
-    .[1]
-  decisions_color <- nodes_t %>%
-    filter(group == "decisao") %>%
-    distinct(color) %>%
-    pull(color) %>%
-    .[1]
-
-  # Create legends as individual tibbles in a more consistent way with the other nodes
   # Legend for origins
-  origin_legend <- tibble(
-    id = "legend_origin",
-    label = "Origens",
-    title = "Sistemas que fornecem os dados",
+  fnt <- tibble(
+    id = "fnt",
+    label = "Fonte",
+    title = "Origem dos dados.",
     group = "legend",
-    color = origin_color,
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "white", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f041",
+    icon.size = 25,
+    icon.color = "black",
+    font = list(list(color = "black", size = 10, face = "arial"))
   )
 
   # Legend for files
-  files_legend <- tibble(
-    id = "legend_files",
-    label = "Arquivos",
-    title = "Arquivos extraídos dos sistemas",
+  arq <- tibble(
+    id = "arq",
+    label = "Tipo do arquivo",
+    title = "Um tipo de arquivo que precisamos consultar regularmente.",
     group = "legend",
-    color = files_color,
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "white", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0c5",
+    icon.size = 25,
+    icon.color = "black",
+    font = list(list(color = "black", size = 10, face = "arial"))
   )
 
   # Legend for tables
-  tables_legend <- tibble(
-    id = "legend_tables",
+  tbl <- tibble(
+    id = "tbl",
     label = "Tabelas",
-    title = "Dados estruturados em tabelas",
+    title = "Dados estruturados em tabelas.",
     group = "legend",
-    color = tables_color,
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0ce",
+    icon.size = 25,
+    icon.color = "black",
+    font = list(list(color = "black", size = 10, face = "arial"))
   )
 
   # Legend for reports
-  reports_legend <- tibble(
-    id = "legend_reports",
-    label = "Relatórios",
-    title = "Informações consolidadas",
+  rlt <- tibble(
+    id = "rlt",
+    label = "Relatório",
+    title = "Uma análise dos dados.",
     group = "legend",
-    color = reports_color,
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f05a",
+    icon.size = 25,
+    icon.color = "black",
+    font = list(list(color = "black", size = 10, face = "arial"))
   )
 
   # Legend for decisions
-  decisions_legend <- tibble(
-    id = "legend_decisions",
-    label = "Decisões",
-    title = "Ações baseadas em informações",
+  dcs <- tibble(
+    id = "dcs",
+    label = "Decisão",
+    title = "Decisão a ser tomada.",
     group = "legend",
-    color = decisions_color,
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "black", size = 25, face = "arial",
-      background = "undefined"
-    ))
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f059",
+    icon.size = 25,
+    icon.color = "black",
+    font = list(list(color = "black", size = 10, face = "arial"))
   )
 
   # Combine all legend nodes
   nodes.legends_t <- bind_rows(
-    origin_legend,
-    files_legend,
-    tables_legend,
-    reports_legend,
-    decisions_legend
+    fnt,
+    arq,
+    tbl,
+    rlt,
+    dcs
   )
 
   # Return the nodes dataframes

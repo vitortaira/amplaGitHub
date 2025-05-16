@@ -22,7 +22,7 @@ m_gnw <- function() {
   ui <- fluidPage(
     div(
       class = "minimal-frame",
-      selectInput("edge_color", "Filtrar cor da aresta:",
+      selectInput("edge_color", "Filtrar por status (cor das setas):",
         choices = c("Todas", unique(edges_df$color)), selected = "Todas"
       )
     ),
@@ -65,8 +65,6 @@ m_gnw <- function() {
       visNetwork(
         filtered_nodes(),
         filtered_edges(),
-        main = "Fluxo dos dados",
-        footer = "Da informação à decisão."
       ) %>%
         visNodes(shape = "box", font = list(multi = TRUE)) %>%
         visEdges(arrows = "to", smooth = list(enabled = TRUE, type = "cubicBezier")) %>%
@@ -78,7 +76,11 @@ m_gnw <- function() {
           edgeMinimization = TRUE
         ) %>%
         visOptions(
-          highlightNearest = list(enabled = TRUE, algorithm = "hierarchical"),
+          highlightNearest = list(
+            algorithm = "all",
+            enabled = TRUE,
+            hover = FALSE
+          ),
           nodesIdSelection = FALSE
         ) %>%
         visInteraction(navigationButtons = TRUE, dragView = TRUE) %>%
