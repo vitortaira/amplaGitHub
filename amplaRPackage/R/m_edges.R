@@ -27,9 +27,9 @@ m_edges <- function() {
         "cntr_t", "desp_t", "inad_t", "rec_t",
         "extita_t",
         # Base de dados ->
-        rep("dados", 2),
+        rep("dados", 4),
         # Relatórios ->
-        "relatorio.financiamento", "dfc"
+        "cext", "dfc", "rinad"
       ),
     to =
       c(
@@ -46,15 +46,25 @@ m_edges <- function() {
         "extita_t",
         # -> Base de dados
         rep("dados", 15),
+        "dash",
         # -> Relatórios
-        "relatorio.financiamento", "dfc",
+        "cext", "dfc", "rinad",
         # -> Decisões
-        rep("decisao", 2)
+        rep("fco", 2), "dinad"
       )
   ) %>%
     mutate(
       color =
         case_when(
+          from %in% c(
+            # Fontes
+            "ana", "cef", "ifk", "ita",
+            # Arquivos
+            "com",
+            "cmfcn", "dcd", "ecn", "epr", "extcef", "fre",
+            "cntr", "desp", "inad", "rec",
+            "extita"
+          ) ~ "black",
           from %in% c(
             "com_t"
           ) ~ "red",
