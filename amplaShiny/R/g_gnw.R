@@ -22,8 +22,7 @@ g_gnw_server <- function(id, dados) {
         dados$gnw_nodes,
         dados$gnw_edges,
         width = "100%",
-        height = "500px",
-        footer = "Da informação à decisão."
+        height = "500px"
       ) %>%
         visNodes(
           shape = "box",
@@ -67,6 +66,7 @@ g_gnw_server <- function(id, dados) {
           addNodes  = dados$gnw_nodes_legends,
           zoom      = FALSE
         ) %>%
+        addFontAwesome() %>%
         htmlwidgets::onRender("
           function(el, x) {
             setTimeout(function() {

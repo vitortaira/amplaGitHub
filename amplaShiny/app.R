@@ -24,12 +24,13 @@ library(visNetwork) # Para visualização de redes e grafos
 # CARREGAMENTO DE MÓDULOS
 # =============================================================================
 # Carrega componentes modulares da aplicação
-source(here("R", "login.R")) # Sistema de autenticação
+source(here("R", "b_dados.R")) # Módulo de busca de dados
 source(here("R", "filtro_periodo.R")) # Filtros temporais para os dados
 source(here("R", "g_desp.traj.R")) # Visualização de trajetória de despesas
 source(here("R", "g_gnw.R")) # Rede de grafos
 source(here("R", "g_rec.traj.R")) # Visualização de trajetória de receitas
 source(here("R", "g_metadados.hist.R")) # Histograma de metadados
+source(here("R", "login.R")) # Sistema de autenticação
 
 # =============================================================================
 # DADOS DE AUTENTICAÇÃO
@@ -145,17 +146,19 @@ server <- function(input, output, session) {
                   "Buscar",
                   value = "Buscar",
                   fluidPage(
-                    h2("Buscar"),
-                    tags$ul(
-                      tags$li("Placeholder para mecanismo de busca..."),
-                    )
+                    b_dados_ui("buscar")
                   )
                 ),
                 tabPanel(
                   "Mapas",
                   value = "Mapas",
                   fluidPage(
-                    h2("Mapas"),
+                    tags$div(
+                      class = "alert alert-info",
+                      style = "margin-bottom: 15px; padding: 10px; border-left: 3px solid #007BFF; background-color: #f8f9fa;",
+                      tags$strong("Calloutbox")
+                    ),
+                    h2("Fluxo dos dados"),
                     g_gnw_ui("gnw")
                   )
                 ),
@@ -303,6 +306,9 @@ server <- function(input, output, session) {
   # ===========================================================================
   # INICIALIZAÇÃO DOS MÓDULOS
   # ===========================================================================
+
+  # Inicializa o módulo de busca de dados
+  b_dados_server("buscar", dados_l)
 
   # Inicializa o módulo de filtro de período e obtém valores selecionados
   filtroVals <- filtro_periodo_module_server("myFiltro")
