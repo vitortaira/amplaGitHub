@@ -429,34 +429,35 @@ m_nodes <- function() {
       background = "undefined"
     ))
   )
-dados_n <- tibble(
-  id    = "dados",
-  label = "Base de dados",
-  group = "base",
-  level = 4,
-  shape = "icon",
-  icon.face = "FontAwesome",
-  icon.code = "f1c0",          # <- hex code-point of fa-database
-  icon.size = 25,              # <- use icon.size, not size
-  icon.color = "black",        # <- use icon.color, not color
-  font = I(list(list(          # I() keeps the inner list as a single cell
-    color = "white",
-    size  = 25,
-    face  = "arial"
-  )))
-)
+  dados_n <- tibble(
+    id = "dados",
+    label = "Base de dados",
+    group = "base",
+    level = 4,
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f1c0",
+    icon.size = 100,
+    icon.color = "black",
+    font = list(list(
+      color = "black",
+      size  = 40,
+      face  = "arial"
+    ))
+  )
 
   dash_n <- tibble(
     id = "dash",
     label = "Dashboard",
     group = "base",
     level = 4,
-    color = "black",
-    shape = "box",
-    size = 25,
+    shape = "icon",
+    icon.face = "FontAwesome",
+    icon.code = "f0e4",
+    icon.size = 100,
+    icon.color = "black",
     font = list(list(
-      color = "white", size = 50, face = "arial",
-      background = "undefined"
+      color = "black", size = 40, face = "arial"
     ))
   )
   # Relatórios
@@ -680,12 +681,36 @@ dados_n <- tibble(
   )
 
   # Get unique colors for each level/group
-  origin_color   <- nodes_t %>% filter(group == "origem")   %>% distinct(color) %>% pull(color) %>% .[1]
-  files_color    <- nodes_t %>% filter(group == "arquivo")  %>% distinct(color) %>% pull(color) %>% .[1]
-  tables_color   <- nodes_t %>% filter(group == "tabela")   %>% distinct(color) %>% pull(color) %>% .[1]
-  database_color <- nodes_t %>% filter(group == "base")     %>% distinct(color) %>% pull(color) %>% .[1]
-  reports_color  <- nodes_t %>% filter(group == "relatorio")%>% distinct(color) %>% pull(color) %>% .[1]
-  decisions_color<- nodes_t %>% filter(group == "decisao")  %>% distinct(color) %>% pull(color) %>% .[1]
+  origin_color <- nodes_t %>%
+    filter(group == "origem") %>%
+    distinct(color) %>%
+    pull(color) %>%
+    .[1]
+  files_color <- nodes_t %>%
+    filter(group == "arquivo") %>%
+    distinct(color) %>%
+    pull(color) %>%
+    .[1]
+  tables_color <- nodes_t %>%
+    filter(group == "tabela") %>%
+    distinct(color) %>%
+    pull(color) %>%
+    .[1]
+  database_color <- nodes_t %>%
+    filter(group == "base") %>%
+    distinct(color) %>%
+    pull(color) %>%
+    .[1]
+  reports_color <- nodes_t %>%
+    filter(group == "relatorio") %>%
+    distinct(color) %>%
+    pull(color) %>%
+    .[1]
+  decisions_color <- nodes_t %>%
+    filter(group == "decisao") %>%
+    distinct(color) %>%
+    pull(color) %>%
+    .[1]
 
   # Create legends as individual tibbles in a more consistent way with the other nodes
   # Legend for origins
@@ -733,21 +758,6 @@ dados_n <- tibble(
     ))
   )
 
-  # Legend for database
-  database_legend <- tibble(
-    id = "legend_database",
-    label = "Base de dados",
-    title = "Repositório centralizado",
-    group = "legend",
-    color = database_color,
-    shape = "box",
-    size = 25,
-    font = list(list(
-      color = "white", size = 25, face = "arial",
-      background = "undefined"
-    ))
-  )
-
   # Legend for reports
   reports_legend <- tibble(
     id = "legend_reports",
@@ -783,7 +793,6 @@ dados_n <- tibble(
     origin_legend,
     files_legend,
     tables_legend,
-    database_legend,
     reports_legend,
     decisions_legend
   )

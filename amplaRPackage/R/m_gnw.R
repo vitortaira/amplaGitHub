@@ -109,7 +109,8 @@ m_gnw <- function() {
           useGroups = FALSE,
           addNodes = nodes.legends_df,
           zoom = FALSE
-        )
+        ) %>%
+        addFontAwesome()
     })
   }
 
