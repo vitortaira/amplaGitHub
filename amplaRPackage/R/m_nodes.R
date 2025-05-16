@@ -441,7 +441,7 @@ m_nodes <- function() {
     icon.color = "black",
     font = list(list(
       color = "black",
-      size  = 40,
+      size  = 30,
       face  = "arial"
     ))
   )
@@ -457,7 +457,7 @@ m_nodes <- function() {
     icon.size = 100,
     icon.color = "black",
     font = list(list(
-      color = "black", size = 40, face = "arial"
+      color = "black", size = 30, face = "arial"
     ))
   )
   # Relatórios

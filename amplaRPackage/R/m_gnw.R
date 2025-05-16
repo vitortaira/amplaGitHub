@@ -20,65 +20,44 @@ m_gnw <- function() {
   edges_df <- m_edges()
 
   ui <- fluidPage(
-    tags$style(HTML("
-      .minimal-frame {
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        padding: 16px;
-        background: #fafbfc;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-        margin-bottom: 20px;
-      }
-      .minimal-title {
-        font-size: 1.3em;
-        font-weight: 500;
-        margin-bottom: 10px;
-        color: #333;
-      }
-      .chart-frame {
-        border: 2px solid #bbb;
-        border-radius: 10px;
-        background: #fff;
-        padding: 10px;
-        margin-bottom: 20px;
-        position: relative;
-      }
-      /* Make legend box background light gray */
-      .vis-legend {
-        background-color: #f0f0f0 !important;
-        border: 1px solid #ddd !important;
-        border-radius: 4px !important;
-        padding: 8px !important;
-      }
-    ")),
-    div(class = "minimal-frame",
-      div(class = "minimal-title", "Filtro de Arestas"),
+    div(
+      class = "minimal-frame",
       selectInput("edge_color", "Filtrar cor da aresta:",
-                  choices = c("Todas", unique(edges_df$color)), selected = "Todas")
+        choices = c("Todas", unique(edges_df$color)), selected = "Todas"
+      )
     ),
-    div(class = "minimal-frame chart-frame",
-      div(class = "minimal-title", "Visualização"),
+    div(
+      class = "minimal-frame chart-frame",
+      div(class = "minimal-divider"),
       visNetworkOutput("graph", width = "100%", height = "600px")
     )
   )
 
   server <- function(input, output, session) {
+    # Store original data
+    original_nodes <- nodes_df
+    original_edges <- edges_df
+
+    # Use reactiveVal for current state
+    current_nodes <- reactiveVal(original_nodes)
+    current_edges <- reactiveVal(original_edges)
+
     filtered_edges <- reactive({
       color <- input$edge_color
       if (is.null(color) || color == "Todas") {
-        edges_df
+        current_edges()
       } else {
-        edges_df[edges_df$color == color, ]
+        current_edges()[current_edges()$color == color, ]
       }
     })
 
     filtered_nodes <- reactive({
       if (is.null(input$edge_color) || input$edge_color == "Todas") {
-        nodes_df
+        current_nodes()
       } else {
         edges <- filtered_edges()
         node_ids <- unique(c(edges$from, edges$to))
-        nodes_df[nodes_df$id %in% node_ids, ]
+        current_nodes()[current_nodes()$id %in% node_ids, ]
       }
     })
 
@@ -102,7 +81,7 @@ m_gnw <- function() {
           highlightNearest = list(enabled = TRUE, algorithm = "hierarchical"),
           nodesIdSelection = FALSE
         ) %>%
-        visInteraction(navigationButtons = TRUE) %>%
+        visInteraction(navigationButtons = TRUE, dragView = TRUE) %>%
         visLegend(
           position = "left",
           main = "Legendas:",
@@ -110,7 +89,10 @@ m_gnw <- function() {
           addNodes = nodes.legends_df,
           zoom = FALSE
         ) %>%
-        addFontAwesome()
+        addFontAwesome() %>%
+        visEvents(stabilizationIterationsDone = "function() {
+          this.setOptions({nodes: {fixed: {x: true, y: true}}});
+        }")
     })
   }
 
