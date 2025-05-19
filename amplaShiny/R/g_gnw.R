@@ -23,7 +23,10 @@ g_gnw_server <- function(id, dados) {
         height = "500px"
       ) %>%
         visNodes(shape = "box", font = list(multi = TRUE)) %>%
-        visEdges(arrows = "to", smooth = list(enabled = TRUE, type = "cubicBezier")) %>%
+        visEdges(
+          arrows = "to",
+          smooth = list(enabled = TRUE, type = "cubicBezier")
+        ) %>%
         visHierarchicalLayout(
           enabled = TRUE,
           direction = "LR",

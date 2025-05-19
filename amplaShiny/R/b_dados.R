@@ -1,6 +1,6 @@
 #' b_dados_ui
 #'
-#' A Shiny module UI for searching nested data frames by "Variável" or "Tabela".
+#' A Shiny module UI for searching nested data frames by "Variável" or "Tabela", with optional date-range filter.
 #' @param id Shiny module ID
 b_dados_ui <- function(id) {
   ns <- shiny::NS(id)
@@ -8,10 +8,16 @@ b_dados_ui <- function(id) {
     shiny::fluidRow(
       shiny::column(
         width = 4,
+        # Choose search type: "Variável" or "Tabela"
         shiny::selectInput(ns("searchType"), "Tipo de busca:",
           choices = c("Variável", "Tabela")
         ),
-        shiny::selectInput(ns("searchValue"), "Escolha:", choices = NULL)
+        # Choices: either col names (if Variável) or table names (if Tabela)
+        shiny::selectInput(ns("searchValue"), "Escolha:", choices = NULL),
+
+        # Date range for filtering. We'll show/hide based on user selection.
+        # Default is last 30 days. Adjust as needed.
+        shiny::uiOutput(ns("periodo_ui"))
       ),
       shiny::column(
         width = 8,
@@ -23,77 +29,120 @@ b_dados_ui <- function(id) {
 
 #' b_dados_server
 #'
-#' A Shiny module server for searching nested data frames by "Variável" or "Tabela".
+#' A Shiny module server for searching nested data frames by "Variável" or "Tabela", with optional date-range filter.
 #' @param id Shiny module ID
 #' @param dados_l A nested list containing tibbles/data.frames at its leaves.
 b_dados_server <- function(id, dados_l) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # 1) Flatten the nested list; keep only data frames
-    #    Named list of data frames, with paths as names
+    # 1) Flatten the nested list: keep only data frames
     df_list <- shiny::reactive({
       dados_l %>%
-        purrr::flatten() %>%                # flatten one level; or flatten_dfr for data frames
-        purrr::keep(~ inherits(.x, "data.frame"))  # keep only data frames/tibbles
+        purrr::flatten() %>%
+        purrr::keep(~ inherits(.x, "data.frame"))
     })
 
-    # 2) Table names (keys in df_list)
+    # 2) Table names
     table_names <- shiny::reactive({
       names(df_list())
     })
 
-    # 3) Collect all column names across all tables
+    # 3) All column names across all tables
     col_names <- shiny::reactive({
       df_list() %>%
-        purrr::map(names) %>%  # each data frame's column names
-        unlist() %>%           # unlist them into a single character vector
-        unique()               # remove duplicates
+        purrr::map(names) %>%
+        unlist() %>%
+        unique()
     })
 
-    # 4) Update the second dropdown based on user-chosen search type
+    # 4) When user changes searchType, update searchValue
     shiny::observeEvent(input$searchType,
       {
         if (input$searchType == "Tabela") {
-          shiny::updateSelectInput(session, "searchValue",
-            choices = table_names()
-          )
+          shiny::updateSelectInput(session, "searchValue", choices = table_names())
         } else {
-          # Variável
-          shiny::updateSelectInput(session, "searchValue",
-            choices = col_names()
-          )
+          shiny::updateSelectInput(session, "searchValue", choices = col_names())
         }
       },
       ignoreInit = TRUE
     )
 
-    # 5) Build a reactive data frame to display
-    combined_data <- shiny::reactive({
-      shiny::req(input$searchType, input$searchValue)
-      if (input$searchType == "Tabela") {
-        # Show the entire chosen table
-        df_list()[[input$searchValue]]
-      } else {
-        # Show rows from all tables containing the chosen column
-        chosen_col <- input$searchValue
+    # 5) Dynamically show date range only if "Variável" is selected AND chosen column is date/datetime
+    output$periodo_ui <- shiny::renderUI({
+      if (input$searchType == "Variável" && !is.null(input$searchValue) && input$searchValue != "") {
+        # Check if the chosen variable is date/datetime in at least one table
+        # We find the first table that has this column; if it's a date/datetime, we show the filter
+        col_is_date <- FALSE
         df_list_filtered <- df_list() %>%
-          purrr::keep(~ chosen_col %in% names(.x))
-
-        if (length(df_list_filtered) == 0) {
-          dplyr::tibble(Mensagem = "Nenhum data frame contém essa variável.")
-        } else {
-          # Row-bind them, adding a .table_name column
-          purrr::map2_df(
-            df_list_filtered,
-            names(df_list_filtered),
-            ~ dplyr::mutate(.x, .table_name = .y)
-          )
+          purrr::keep(~ input$searchValue %in% names(.x))
+        if (length(df_list_filtered) > 0) {
+          # Inspect the first table that has that column
+          first_df <- df_list_filtered[[1]]
+          the_col <- first_df[[input$searchValue]]
+          # If it's a Date, POSIXct, or POSIXlt, we show the dateRangeInput
+          col_is_date <- inherits(the_col, "Date") || inherits(the_col, "POSIXt")
         }
+        if (col_is_date) {
+          shiny::dateRangeInput(
+            ns("filtro_periodo"),
+            "Filtrar período:",
+            start = Sys.Date() - 30,
+            end   = Sys.Date()
+          )
+        } else {
+          # If not a date/datetime, no date range input
+          NULL
+        }
+      } else {
+        NULL
       }
     })
 
-    # 6) Render the resulting table
+    # 6) Build a reactive data frame to display
+    combined_data <- shiny::reactive({
+      shiny::req(input$searchType, input$searchValue)
+
+      # Searching by Tabela => show entire chosen table
+      if (input$searchType == "Tabela") {
+        return(df_list()[[input$searchValue]])
+      }
+
+      # Searching by Variável => gather rows from all tables that contain that col
+      chosen_col <- input$searchValue
+      df_list_filtered <- df_list() %>%
+        purrr::keep(~ chosen_col %in% names(.x))
+
+      if (length(df_list_filtered) == 0) {
+        return(dplyr::tibble(Mensagem = "Nenhum data frame contém essa variável."))
+      }
+
+      # Combine all relevant rows & add .table_name column
+      combined <- purrr::map2_df(
+        df_list_filtered,
+        names(df_list_filtered),
+        ~ dplyr::mutate(.x, .table_name = .y)
+      )
+
+      # Check if user selected a date column AND a date range
+      # If so, filter by that period
+      req_var <- chosen_col
+      if (req_var %in% names(combined)) {
+        the_col <- combined[[req_var]]
+        # If it's a date/datetime, see if user provided a range
+        if ((inherits(the_col, "Date") || inherits(the_col, "POSIXt")) &&
+          !is.null(input$filtro_periodo)) {
+          start_date <- input$filtro_periodo[1]
+          end_date <- input$filtro_periodo[2]
+          # Filter rows that fall within [start_date, end_date]
+          combined <- combined %>%
+            dplyr::filter(the_col >= start_date & the_col <= end_date)
+        }
+      }
+      combined
+    })
+
+    # 7) Render the resulting table
     output$dt_result <- DT::renderDT({
       shiny::req(combined_data())
       DT::datatable(combined_data())

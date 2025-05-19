@@ -20,6 +20,9 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
+    # 1) add a place to store the last detail_data
+    detail_rv <- reactiveVal(NULL)
+
     # Compute date range based on selected period
     period <- reactive({
       req(filtro_periodo())
@@ -56,7 +59,7 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
           )
         }
       )
-      sprintf("Trajetória das despesas por %s %s", var_name, period_text)
+      sprintf("Despesas empilhadas por %s %s", var_name, period_text)
     })
 
     # Reactive data preparation
@@ -181,12 +184,16 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
             as.character(.data[[input$variavel]]) == clicked_var
           )
 
+        # store for download
+        detail_rv(detail_data)
+
         # If no rows match, show a message instead of crashing
         if (nrow(detail_data) == 0) {
           showModal(modalDialog(
             title = "No details found",
             "No matching data for the selected segment.",
-            easyClose = TRUE
+            easyClose = TRUE,
+            footer = modalButton("Fechar")
           ))
         } else {
           detail_data <- detail_data %>% select(-.dt)
@@ -194,7 +201,11 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
             title = paste("Detalhes:", clicked_var, "-", format(clicked_month, "%b %Y")),
             DT::dataTableOutput(ns("detail_table")),
             size = "l",
-            easyClose = TRUE
+            easyClose = TRUE,
+            footer = tagList(
+              downloadButton(ns("download_detail"), "Baixar XLSX"),
+              modalButton("Fechar")
+            )
           ))
           output$detail_table <- DT::renderDataTable({
             DT::datatable(detail_data,
@@ -210,5 +221,19 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
         }
       }
     })
+
+    # 2) add downloadHandler
+    output$download_detail <- downloadHandler(
+      filename = function() {
+        # use date + var for filename
+        paste0("detalhes_",
+               format(Sys.Date(), "%Y%m%d"), "_",
+               input$variavel, ".xlsx")
+      },
+      content = function(file) {
+        # write the stored detail data to xlsx
+        writexl::write_xlsx(detail_rv(), path = file)
+      }
+    )
   })
 }

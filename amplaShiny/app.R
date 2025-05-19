@@ -290,11 +290,13 @@ server <- function(input, output, session) {
           tabPanel("Relatórios",
             value = "Relatórios",
             fluidPage(
-              h2("Conciliação de extratos bancários"),
+              h2("Conciliação de extratos"),
               "Links para as planilhas.",
               h2("Demonstrativo de fluxo de caixa"),
               "Links para as planilhas.",
               h2("Orçado x Realizado"),
+              "Links para as planilhas.",
+              h2("Relatório de inadimplência"),
               "Links para as planilhas."
             )
           )
