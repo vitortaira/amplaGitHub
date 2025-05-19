@@ -150,7 +150,7 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
             )
         }
       }
-      p <- p %>%
+      p %>%
         layout(
           title = list(text = chart_title(), font = list(size = 16)),
           barmode = "stack",
@@ -162,9 +162,22 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
           ),
           autosize = TRUE
         ) %>%
-        event_register("plotly_click") %>% # Register the click event here
-        config(displayModeBar = FALSE)
-      return(p)
+        event_register("plotly_click") %>%
+        config(
+          displayModeBar = TRUE,
+          modeBarButtons = list(list("toImage")), # only camera
+          displaylogo    = FALSE
+        ) %>%
+        htmlwidgets::onRender("
+          function(el, x) {
+            // find the camera button by its default English tooltip
+            var btn = el.querySelector('.modebar-btn[data-title=\"Download plot as a png\"]');
+            if (btn) {
+              // change to Portuguese
+              btn.setAttribute('data-title', 'Baixar gráfico como PNG');
+            }
+          }
+        ")
     })
 
     # Observer for click events
