@@ -41,11 +41,12 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
     # Create dynamic chart title
     chart_title <- reactive({
       req(input$variavel, filtro_periodo())
-      var_name <- input$variavel
+      # Put the variable name inside single quotes
+      var_name <- paste0("'", input$variavel, "'")
       period_text <- switch(filtro_periodo(),
-        "ano_corrente" = "no Ano Corrente",
-        "ultimos_12" = "nos Últimos 12 Meses",
-        "desde_inicio" = "desde o Início",
+        "ano_corrente" = "no ano corrente",
+        "ultimos_12" = "nos últimos 12 meses",
+        "desde_inicio" = "desde o início",
         "personalizado" = {
           req(data_inicial(), data_final())
           sprintf(
@@ -55,7 +56,7 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
           )
         }
       )
-      sprintf("Despesas por %s %s", var_name, period_text)
+      sprintf("Trajetória das despesas por %s %s", var_name, period_text)
     })
 
     # Reactive data preparation

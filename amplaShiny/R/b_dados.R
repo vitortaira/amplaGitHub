@@ -1,116 +1,102 @@
-# A module providing a 'Dados > Buscar' pane:
-# It scans the nested list 'dados_list' for all tibbles (data.frames),
-# exposes them by an identifying path, and lets the user browse columns.
-
-# Helper function: Recursively collect paths to all tibbles in a nested list
-find_tibble_paths <- function(x, prefix = character()) {
-  if (is.data.frame(x)) {
-    # Return the path joined by "$" (skip empty prefix)
-    return(paste(prefix, collapse = "$"))
-  }
-  # If it's a list, recurse
-  if (is.list(x)) {
-    out <- c()
-    for (nm in names(x)) {
-      new_prefix <- c(prefix, nm)
-      out <- c(out, find_tibble_paths(x[[nm]], new_prefix))
-    }
-    return(out)
-  }
-  # If it's something else, return nothing
-  character()
-}
-
-# Helper function: Given a path like "foo$bar$df" and a list, return that tibble
-get_tibble_by_path <- function(lst, path) {
-  parts <- strsplit(path, "\\$")[[1]]
-  obj <- lst
-  for (p in parts) {
-    obj <- obj[[p]]
-  }
-  obj
-}
-
-# UI module
+#' b_dados_ui
+#'
+#' A Shiny module UI for searching nested data frames by "Variável" or "Tabela".
+#' @param id Shiny module ID
 b_dados_ui <- function(id) {
-  ns <- NS(id)
-  tagList(
-    h2("Buscar"),
-    fluidRow(
-      column(
-        4,
-        selectInput(ns("tibble_path"), "Escolha um tibble:", choices = NULL),
-        selectInput(ns("col_name"), "Escolha a variável:", choices = NULL),
-        uiOutput(ns("col_filter_ui")) # Filter widget for chosen column
+  ns <- shiny::NS(id)
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(
+        width = 4,
+        shiny::selectInput(ns("searchType"), "Tipo de busca:",
+          choices = c("Variável", "Tabela")
+        ),
+        shiny::selectInput(ns("searchValue"), "Escolha:", choices = NULL)
       ),
-      column(
-        8,
-        DT::dataTableOutput(ns("preview"))
+      shiny::column(
+        width = 8,
+        DT::DTOutput(ns("dt_result"))
       )
     )
   )
 }
 
-# Server module
-b_dados_server <- function(id, dados_list) {
-  moduleServer(id, function(input, output, session) {
+#' b_dados_server
+#'
+#' A Shiny module server for searching nested data frames by "Variável" or "Tabela".
+#' @param id Shiny module ID
+#' @param dados_l A nested list containing tibbles/data.frames at its leaves.
+b_dados_server <- function(id, dados_l) {
+  shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # 1) Identify all tibble paths in dados_list
-    all_paths <- reactive({
-      find_tibble_paths(dados_list)
+    # 1) Flatten the nested list; keep only data frames
+    #    Named list of data frames, with paths as names
+    df_list <- shiny::reactive({
+      dados_l %>%
+        purrr::flatten() %>%                # flatten one level; or flatten_dfr for data frames
+        purrr::keep(~ inherits(.x, "data.frame"))  # keep only data frames/tibbles
     })
 
-    # 2) Update the tibble_path dropdown
-    observeEvent(all_paths(), {
-      path_vec <- all_paths()
-      if (length(path_vec) == 0) path_vec <- "Nenhum tibble encontrado"
-      updateSelectInput(session, "tibble_path",
-        choices = path_vec,
-        selected = path_vec[1]
-      )
+    # 2) Table names (keys in df_list)
+    table_names <- shiny::reactive({
+      names(df_list())
     })
 
-    # 3) The currently chosen tibble
-    chosen_tibble <- reactive({
-      req(input$tibble_path)
-      get_tibble_by_path(dados_list, input$tibble_path)
+    # 3) Collect all column names across all tables
+    col_names <- shiny::reactive({
+      df_list() %>%
+        purrr::map(names) %>%  # each data frame's column names
+        unlist() %>%           # unlist them into a single character vector
+        unique()               # remove duplicates
     })
 
-    # 4) Update column choices
-    observeEvent(chosen_tibble(), {
-      updateSelectInput(session, "col_name",
-        choices = names(chosen_tibble()),
-        selected = names(chosen_tibble())[1]
-      )
-    })
+    # 4) Update the second dropdown based on user-chosen search type
+    shiny::observeEvent(input$searchType,
+      {
+        if (input$searchType == "Tabela") {
+          shiny::updateSelectInput(session, "searchValue",
+            choices = table_names()
+          )
+        } else {
+          # Variável
+          shiny::updateSelectInput(session, "searchValue",
+            choices = col_names()
+          )
+        }
+      },
+      ignoreInit = TRUE
+    )
 
-    # 5) Output filter UI if column is character/factor
-    output$col_filter_ui <- renderUI({
-      req(chosen_tibble(), input$col_name)
-      col_data <- chosen_tibble()[[input$col_name]]
-      if (is.character(col_data) || is.factor(col_data)) {
-        selectInput(ns("col_filter"), "Filtrar valor:",
-          choices = c("Todos", as.character(unique(col_data)))
-        )
+    # 5) Build a reactive data frame to display
+    combined_data <- shiny::reactive({
+      shiny::req(input$searchType, input$searchValue)
+      if (input$searchType == "Tabela") {
+        # Show the entire chosen table
+        df_list()[[input$searchValue]]
       } else {
-        NULL
+        # Show rows from all tables containing the chosen column
+        chosen_col <- input$searchValue
+        df_list_filtered <- df_list() %>%
+          purrr::keep(~ chosen_col %in% names(.x))
+
+        if (length(df_list_filtered) == 0) {
+          dplyr::tibble(Mensagem = "Nenhum data frame contém essa variável.")
+        } else {
+          # Row-bind them, adding a .table_name column
+          purrr::map2_df(
+            df_list_filtered,
+            names(df_list_filtered),
+            ~ dplyr::mutate(.x, .table_name = .y)
+          )
+        }
       }
     })
 
-    # 6) Reactive: filter tibble by column value
-    filtered_tibble <- reactive({
-      req(chosen_tibble(), input$col_name)
-      dat <- chosen_tibble()
-      if (!is.null(input$col_filter) && input$col_filter != "Todos") {
-        dat <- dat[dat[[input$col_name]] == input$col_filter, ]
-      }
-      dat
-    })
-
-    # 7) Preview
-    output$preview <- DT::renderDataTable({
-      DT::datatable(filtered_tibble())
+    # 6) Render the resulting table
+    output$dt_result <- DT::renderDT({
+      shiny::req(combined_data())
+      DT::datatable(combined_data())
     })
   })
 }
