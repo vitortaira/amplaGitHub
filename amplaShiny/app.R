@@ -65,13 +65,20 @@ ui <- fluidPage(
   # Configura o ícone da aplicação na aba do navegador
   tags$head(
     tags$link(rel = "icon", type = "image/jpeg", href = "ampla_icon.jpeg"),
+    # Load the Select2 CSS/JS
     tags$link(
       rel = "stylesheet",
       href = "https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
     ),
     tags$script(
       src = "https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"
-    )
+    ),
+    # Add a small CSS snippet that forces Select2 to appear above other elements
+    tags$style(HTML("
+      .select2-container, .select2-dropdown, .select2-search {
+        z-index: 999999999 !important;
+      }
+    "))
   ),
 
   # Script JavaScript para funcionalidade de copiar para área de transferência

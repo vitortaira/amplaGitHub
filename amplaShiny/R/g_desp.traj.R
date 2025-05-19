@@ -218,19 +218,15 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
                 initComplete = htmlwidgets::JS("
                   function(settings, json) {
                     var api = this.api();
-                    // For each column, attach a click that creates a multi-select
                     api.columns().every(function() {
                       var column = this;
                       var $header = $(column.header());
 
                       $header.off('click').on('click', function(e) {
                         e.stopPropagation();
-
-                        // If we already have a <select>, skip
                         if ($header.find('select').length) return;
 
-                        // Create multi-select
-                        var $select = $('<select multiple style=\"width:95%\"/>')
+                        var $select = $('<select multiple style=\"width:95%\" />')
                           .appendTo($header.empty())
                           .on('click', function(e) { e.stopPropagation(); })
                           .on('change', function() {
@@ -243,16 +239,16 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
                             }
                           });
 
-                        // Populate <select> with unique, sorted values
+                        // populate unique sorted values
                         column.data().unique().sort().each(function(d) {
-                          if (d) $select.append($('<option>').val(d).text(d));
+                          if(d) $select.append($('<option>').val(d).text(d));
                         });
 
-                        // Wait a moment, then turn it into a Select2 for a nicer UI
-                        setTimeout(function() {
+                        // IMPORTANT: set dropdownParent to 'body' (or a Shiny modal container)
+                        setTimeout(function () {
                           $select.select2({
+                            dropdownParent: $('body'),  // ensures the dropdown is appended to <body>
                             width: 'auto',
-                            dropdownParent: $header, // keep the dropdown near the header
                             placeholder: 'Selecione...',
                             allowClear: true
                           });
