@@ -199,7 +199,10 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
           detail_data <- detail_data %>% select(-.dt)
           showModal(modalDialog(
             title = paste("Detalhes:", clicked_var, "-", format(clicked_month, "%b %Y")),
-            DT::dataTableOutput(ns("detail_table")),
+            div( # Wrap the table in a 100%-width div
+              DT::dataTableOutput(ns("detail_table")),
+              style = "width: 100%; overflow-x: auto;"
+            ),
             size = "l",
             easyClose = TRUE,
             footer = tagList(
@@ -210,11 +213,18 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
           output$detail_table <- DT::renderDataTable({
             DT::datatable(
               detail_data,
-              filter = "none", # No text inputs
+              filter = "none",
               options = list(
                 pageLength = 10,
                 scrollX = TRUE,
+                autoWidth = TRUE,
                 language = list(url = "//cdn.datatables.net/plug-ins/1.10.25/i18n/Portuguese-Brasil.json"),
+                columnDefs = list(
+                  list(
+                    targets = "_all",
+                    className = "dt-nowrap"
+                  )
+                ),
                 initComplete = htmlwidgets::JS("
                   function(settings, json) {
                     var api = this.api();
@@ -226,8 +236,22 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
                         e.stopPropagation();
                         if ($header.find('select').length) return;
 
+                        // Store the original column name
+                        var colName = $header.text();
+
+                        // Clear header
+                        $header.empty();
+
+                        // Add the column name in its own block
+                        $header.append(
+                          $('<div>')
+                            .css({'font-weight': 'bold', 'margin-bottom': '6px'})
+                            .text(colName)
+                        );
+
+                        // Create multi-select, appended below the column name
                         var $select = $('<select multiple style=\"width:95%\" />')
-                          .appendTo($header.empty())
+                          .appendTo($header)
                           .on('click', function(e) { e.stopPropagation(); })
                           .on('change', function() {
                             var vals = $(this).val() || [];
@@ -239,15 +263,15 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
                             }
                           });
 
-                        // populate unique sorted values
+                        // Populate with unique sorted values
                         column.data().unique().sort().each(function(d) {
                           if(d) $select.append($('<option>').val(d).text(d));
                         });
 
-                        // IMPORTANT: set dropdownParent to 'body' (or a Shiny modal container)
+                        // After a short delay, enhance it with Select2
                         setTimeout(function () {
                           $select.select2({
-                            dropdownParent: $('body'),  // ensures the dropdown is appended to <body>
+                            dropdownParent: $('body'),
                             width: 'auto',
                             placeholder: 'Selecione...',
                             allowClear: true
@@ -282,3 +306,13 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
     )
   })
 }
+
+# Add a small CSS snippet to clip long text and remove line-breaks
+tags$style(HTML("
+  .dt-nowrap {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px; /* Adjust as desired */
+  }
+"))
