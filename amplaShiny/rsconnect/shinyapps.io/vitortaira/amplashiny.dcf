@@ -5,6 +5,6 @@ account: vitortaira
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 14636721
-bundleId: 10307192
+bundleId: 10308184
 url: https://vitortaira.shinyapps.io/amplashiny/
 version: 1

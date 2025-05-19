@@ -208,14 +208,61 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
             )
           ))
           output$detail_table <- DT::renderDataTable({
-            DT::datatable(detail_data,
+            DT::datatable(
+              detail_data,
+              filter = "none", # No text inputs
               options = list(
                 pageLength = 10,
                 scrollX = TRUE,
-                language = list(
-                  url = "//cdn.datatables.net/plug-ins/1.10.25/i18n/Portuguese-Brasil.json"
-                )
-              )
+                language = list(url = "//cdn.datatables.net/plug-ins/1.10.25/i18n/Portuguese-Brasil.json"),
+                initComplete = htmlwidgets::JS("
+                  function(settings, json) {
+                    var api = this.api();
+                    // For each column, attach a click that creates a multi-select
+                    api.columns().every(function() {
+                      var column = this;
+                      var $header = $(column.header());
+
+                      $header.off('click').on('click', function(e) {
+                        e.stopPropagation();
+
+                        // If we already have a <select>, skip
+                        if ($header.find('select').length) return;
+
+                        // Create multi-select
+                        var $select = $('<select multiple style=\"width:95%\"/>')
+                          .appendTo($header.empty())
+                          .on('click', function(e) { e.stopPropagation(); })
+                          .on('change', function() {
+                            var vals = $(this).val() || [];
+                            if (vals.length) {
+                              var pattern = vals.map($.fn.dataTable.util.escapeRegex).join('|');
+                              column.search(pattern, true, false).draw();
+                            } else {
+                              column.search('', true, false).draw();
+                            }
+                          });
+
+                        // Populate <select> with unique, sorted values
+                        column.data().unique().sort().each(function(d) {
+                          if (d) $select.append($('<option>').val(d).text(d));
+                        });
+
+                        // Wait a moment, then turn it into a Select2 for a nicer UI
+                        setTimeout(function() {
+                          $select.select2({
+                            width: 'auto',
+                            dropdownParent: $header, // keep the dropdown near the header
+                            placeholder: 'Selecione...',
+                            allowClear: true
+                          });
+                        }, 0);
+                      });
+                    });
+                  }
+                ")
+              ),
+              class = "stripe hover cell-border"
             )
           })
         }
@@ -226,9 +273,11 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
     output$download_detail <- downloadHandler(
       filename = function() {
         # use date + var for filename
-        paste0("detalhes_",
-               format(Sys.Date(), "%Y%m%d"), "_",
-               input$variavel, ".xlsx")
+        paste0(
+          "detalhes_",
+          format(Sys.Date(), "%Y%m%d"), "_",
+          input$variavel, ".xlsx"
+        )
       },
       content = function(file) {
         # write the stored detail data to xlsx
