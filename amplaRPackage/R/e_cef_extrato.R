@@ -175,11 +175,15 @@ e_cef_extrato <- function(f_caminho.arquivo_c) {
             str_c("-", .) %>% str_remove("\\s?D$"),
             .
           ) %>% as.numeric(),
-        `Histórico` = str_remove(Linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?"),
+        `Histórico` = str_remove(
+          Linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?"
+        ) %>% str_trim(),
         `Data Lanc.` = NA,
         Conta = word(conta_c, -1) %>% str_trim(),
         `Agência` = str_sub(conta_c, 1, 4),
-        Produto = str_sub(conta_c, 6, -1) %>% str_extract("\\s\\d{4}\\s"),
+        Produto = str_sub(conta_c, 6, -1) %>%
+          str_extract("\\s\\d{4}\\s") %>%
+          str_trim(),
         CNPJ = NA,
         Cliente = cliente_c,
         `Período_início` = str_remove(periodo.consultado_c, "-.*") %>%

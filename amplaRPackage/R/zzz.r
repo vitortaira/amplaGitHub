@@ -13,4 +13,7 @@
 #' @noRd
 .onLoad <- function(libname, pkgname) {
   Sys.setlocale("LC_ALL", "pt_BR.UTF-8")
+  if (is.null(getOption("warn")) || getOption("warn") != 0) {
+    options(warn = 0)
+  }
 }

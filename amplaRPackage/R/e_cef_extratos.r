@@ -54,6 +54,12 @@ e_cef_extratos <-
           str_detect(.x, "2429|2419|2245") &
           !str_detect(.x, "(?i)fundo")
       )
+    # Mensagem informando o número de extratos identificados
+    n_extratos <- length(caminhos.extratos.cef_c)
+    message(sprintf(
+      "%d extratos da CEF foram identificados na rede.",
+      n_extratos
+    ))
     extratos_l <- list()
     extratos_t <- data.frame()
     for (
