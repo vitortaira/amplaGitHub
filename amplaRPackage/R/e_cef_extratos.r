@@ -61,6 +61,7 @@ e_cef_extratos <-
       n_extratos
     ))
     # Documento de linhas referentes a entradas PJ
+    docs.empreendimentos_c <- c("137629", "764647")
     extratos_l <- list()
     extratos_t <- data.frame()
     for (
@@ -75,13 +76,13 @@ e_cef_extratos <-
       mutate(
         Repasse = if_else(
           (`Histórico` == "CR DESBLOQ") &
-            !(Documento %in% c("137629", "764647")),
+            !(Documento %in% docs.empreendimentos_c),
           TRUE,
           FALSE
         ),
         PJ = if_else(
           (`Histórico` == "CR DESBLOQ") &
-            (Documento %in% c("137629", "764647")),
+            (Documento %in% docs.empreendimentos_c),
           TRUE,
           FALSE
         ),

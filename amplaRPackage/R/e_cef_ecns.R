@@ -42,6 +42,14 @@ e_cef_ecns <-
     caminhos.ecn_c <-
       dir_ls(f_caminho.pasta.ciweb_c, recurse = TRUE) %>%
       keep(~ str_ends(.x, "(?i)empreendimento_construcao.pdf"))
+    # Identifica o arquivo mais recente
+    caminho.ecn_c <-
+      caminhos.ecn_c %>%
+      path_file() %>%
+      str_extract("^\\d{8}") %>%
+      ymd() %>%
+      sort(decreasing = TRUE) %>%
+      nth(1)
     ecns.empreendimento_t <-
       caminhos.ecn_c %>%
       map_dfr(~ e_cef_ecn(.x)$Empreendimento) %>%
