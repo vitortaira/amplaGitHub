@@ -60,6 +60,7 @@ e_cef_extratos <-
       "%d extratos da CEF foram identificados na rede.",
       n_extratos
     ))
+    # Documento de linhas referentes a entradas PJ
     extratos_l <- list()
     extratos_t <- data.frame()
     for (
@@ -72,6 +73,18 @@ e_cef_extratos <-
     }
     extratos_t %<>%
       mutate(
+        Repasse = if_else(
+          (`Histórico` == "CR DESBLOQ") &
+            !(Documento %in% c("137629", "764647")),
+          TRUE,
+          FALSE
+        ),
+        PJ = if_else(
+          (`Histórico` == "CR DESBLOQ") &
+            (Documento %in% c("137629", "764647")),
+          TRUE,
+          FALSE
+        ),
         Contrato_6 =
           Documento %>% str_pad(width = 6, side = "left", pad = "0"),
         Arquivo_tipo_tabela = "extcef",
@@ -81,7 +94,7 @@ e_cef_extratos <-
       as_tibble() %>%
       select(
         `Data de lançamento`, `Data de movimento`, Documento, `Histórico`,
-        Valor, Saldo, Conta_interno, Conta, `Agência`, Produto, CNPJ, Cliente,
+        Valor, Saldo, Repasse, PJ, Conta_interno, Conta, `Agência`, Produto, CNPJ, Cliente,
         `Período_início`, `Período_fim`, `Data_consulta`, Contrato_6, Arquivo,
         Arquivo_tipo_tabela, Arquivo_tipo, Arquivo_fonte
       )
