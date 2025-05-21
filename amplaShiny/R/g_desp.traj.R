@@ -31,10 +31,11 @@ g_desp.traj_server <- function(id,
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # Example: store detail data for modal
     detail_rv <- reactiveVal(NULL)
 
-    # 1) Date range logic (unchanged)
+    # 1) Keep track of the top categories in a reactive, so we can access them later
+    top_vars_rv <- reactiveVal(NULL)
+
     period <- reactive({
       req(filtro_periodo())
       today <- Sys.Date()
@@ -52,7 +53,6 @@ g_desp.traj_server <- function(id,
       )
     })
 
-    # 2) Chart title (unchanged)
     chart_title <- reactive({
       req(input$variavel, filtro_periodo())
       var_name <- paste0("'", input$variavel, "'")
@@ -72,7 +72,6 @@ g_desp.traj_server <- function(id,
       sprintf("Despesas empilhadas por %s %s", var_name, period_text)
     })
 
-    # 3) Base data, grouped by Mês and Var
     df_data <- reactive({
       pr <- period()
       req(dados$desp)
@@ -86,49 +85,54 @@ g_desp.traj_server <- function(id,
         summarise(Total = sum(`Total Pago`, na.rm = TRUE), .groups = "drop")
     })
 
-    # 4) Conditionally render the checkbox only if n_distinct() > max_unicos_i
     output$checkbox_wrapper <- renderUI({
       d <- df_data()
       req(d)
       if (n_distinct(d$Var) <= max_unicos_i) {
-        return(NULL) # hide checkbox
+        return(NULL)
       }
-
-      # Show checkbox if categories exceed max_unicos_i
       checkboxInput(
         inputId = ns("show_all_cats"),
         label = div(
           style = "white-space: normal; word-wrap: break-word; max-width: 300px;",
           sprintf("Mostrar todas as categorias de '%s'", input$variavel)
         ),
-        value = FALSE # default: grouped
+        value = FALSE
       )
     })
 
-    # 5) Possibly group categories when user hasn't checked "show_all_cats"
+    # 2) Possibly group categories into “Outros,” and store the top vars
     df_reduced <- reactive({
       d <- df_data()
       req(d)
 
-      # If categories <= max_unicos_i, or user wants all => do nothing
+      # If user wants all or n_distinct() <= max_unicos_i => do nothing
       if (n_distinct(d$Var) <= max_unicos_i || isTRUE(input$show_all_cats)) {
+        # In that case, set top_vars_rv(NULL), because there's no “Outros.”
+        top_vars_rv(NULL)
         return(d)
       }
 
-      # Otherwise, group everything after top (max_unicos_i - 1) as "Outros"
+      # Get the top 19 categories by total
       totals_by_var <- d %>%
         group_by(Var) %>%
         summarise(TotalVar = sum(Total), .groups = "drop") %>%
         arrange(desc(TotalVar))
 
       top_vars <- totals_by_var$Var[seq_len(max_unicos_i - 1)]
+      # Save them so we can reconstruct the details for “Outros.”
+      top_vars_rv(top_vars)
+
+      # Group everything else as “Outros”
       d %>%
-        mutate(Var = ifelse(Var %in% top_vars, Var, "Outros")) %>%
+        mutate(
+          Var = ifelse(Var %in% top_vars, Var, "Outros")
+        ) %>%
         group_by(Mês, Var) %>%
         summarise(Total = sum(Total), .groups = "drop")
     })
 
-    # 6) Summaries, final table, plot, etc. (unchanged)
+    # Summaries and final data
     monthly_totals <- reactive({
       df_reduced() %>%
         group_by(Mês) %>%
@@ -144,6 +148,7 @@ g_desp.traj_server <- function(id,
         )
     })
 
+    # 3) Render the stacked chart (same as before)
     output$plot <- renderPlotly({
       df <- df_final()
       req(df, nrow(df) > 0)
@@ -222,13 +227,27 @@ g_desp.traj_server <- function(id,
         ")
     })
 
-    # 7) Observer for plotly clicks, detail modals, downloadHandler, etc. (unchanged)
+    # 4) When user clicks, if “Outros,” get the omitted categories
     observeEvent(event_data("plotly_click", source = "despPlot"), {
       click_data <- event_data("plotly_click", source = "despPlot")
-      if (!is.null(click_data)) {
-        clicked_month <- as.POSIXct(click_data$x, origin = "1970-01-01")
-        clicked_var <- click_data$key
+      if (is.null(click_data)) return()
 
+      clicked_month <- as.POSIXct(click_data$x, origin = "1970-01-01")
+      clicked_var   <- click_data$key
+      # Get the top vars so we know which were grouped
+      tv <- top_vars_rv()
+
+      # If user clicked “Outros,” retrieve all categories not in tv
+      if (!is.null(tv) && clicked_var == "Outros") {
+        detail_data <- dados$desp %>%
+          mutate(.dt = as.Date(`Data Doc Pagto`)) %>%
+          filter(
+            lubridate::floor_date(.dt, "month") ==
+              lubridate::floor_date(clicked_month, "month"),
+            !as.character(.data[[input$variavel]]) %in% tv
+          )
+      } else {
+        # Standard: filter for the single clicked_var
         detail_data <- dados$desp %>%
           mutate(.dt = as.Date(`Data Doc Pagto`)) %>%
           filter(
@@ -236,104 +255,105 @@ g_desp.traj_server <- function(id,
               lubridate::floor_date(clicked_month, "month"),
             as.character(.data[[input$variavel]]) == clicked_var
           )
+      }
 
-        detail_rv(detail_data)
+      detail_rv(detail_data)
 
-        if (nrow(detail_data) == 0) {
-          showModal(modalDialog(
-            title = "No details found",
-            "No matching data for the selected segment.",
-            easyClose = TRUE,
-            footer = modalButton("Fechar")
-          ))
-        } else {
-          detail_data <- detail_data %>% select(-.dt)
-          showModal(modalDialog(
-            title = paste("Detalhes:", clicked_var, "-", format(clicked_month, "%b %Y")),
-            div(
-              DT::dataTableOutput(ns("detail_table")),
-              style = "width: 100%; overflow-x: auto;"
-            ),
-            size = "l",
-            easyClose = TRUE,
-            footer = tagList(
-              downloadButton(ns("download_detail"), "Baixar XLSX"),
-              modalButton("Fechar")
-            )
-          ))
-          output$detail_table <- DT::renderDataTable({
-            DT::datatable(
-              detail_data,
-              filter = "none",
-              options = list(
-                pageLength = 10,
-                scrollX = TRUE,
-                autoWidth = TRUE,
-                language = list(url = "//cdn.datatables.net/plug-ins/1.10.25/i18n/Portuguese-Brasil.json"),
-                columnDefs = list(
-                  list(
-                    targets = "_all",
-                    className = "dt-nowrap"
-                  )
-                ),
-                initComplete = htmlwidgets::JS("
-                  function(settings, json) {
-                    var api = this.api();
-                    api.columns().every(function() {
-                      var column = this;
-                      var $header = $(column.header());
+      if (nrow(detail_data) == 0) {
+        showModal(modalDialog(
+          title = "No details found",
+          "No matching data for the selected segment.",
+          easyClose = TRUE,
+          footer = modalButton("Fechar")
+        ))
+      } else {
+        detail_data <- detail_data %>% select(-.dt)
+        showModal(modalDialog(
+          title = paste("Detalhes:", clicked_var, "-", format(clicked_month, "%b %Y")),
+          div(
+            DT::dataTableOutput(ns("detail_table")),
+            style = "width: 100%; overflow-x: auto;"
+          ),
+          size = "l",
+          easyClose = TRUE,
+          footer = tagList(
+            downloadButton(ns("download_detail"), "Baixar XLSX"),
+            modalButton("Fechar")
+          )
+        ))
+        output$detail_table <- DT::renderDataTable({
+          DT::datatable(
+            detail_data,
+            filter = "none",
+            options = list(
+              pageLength = 10,
+              scrollX = TRUE,
+              autoWidth = TRUE,
+              language = list(url = "//cdn.datatables.net/plug-ins/1.10.25/i18n/Portuguese-Brasil.json"),
+              columnDefs = list(
+                list(
+                  targets = "_all",
+                  className = "dt-nowrap"
+                )
+              ),
+              initComplete = htmlwidgets::JS("
+                function(settings, json) {
+                  var api = this.api();
+                  api.columns().every(function() {
+                    var column = this;
+                    var $header = $(column.header());
 
-                      $header.off('click').on('click', function(e) {
-                        e.stopPropagation();
-                        if ($header.find('select').length) return;
+                    $header.off('click').on('click', function(e) {
+                      e.stopPropagation();
+                      if ($header.find('select').length) return;
 
-                        var colName = $header.text();
+                      var colName = $header.text();
 
-                        $header.empty();
+                      $header.empty();
 
-                        $header.append(
-                          $('<div>')
-                            .css({'font-weight': 'bold', 'margin-bottom': '6px'})
-                            .text(colName)
-                        );
+                      $header.append(
+                        $('<div>')
+                          .css({'font-weight': 'bold', 'margin-bottom': '6px'})
+                          .text(colName)
+                      );
 
-                        var $select = $('<select multiple style=\"width:95%\" />')
-                          .appendTo($header)
-                          .on('click', function(e) { e.stopPropagation(); })
-                          .on('change', function() {
-                            var vals = $(this).val() || [];
-                            if (vals.length) {
-                              var pattern = vals.map($.fn.dataTable.util.escapeRegex).join('|');
-                              column.search(pattern, true, false).draw();
-                            } else {
-                              column.search('', true, false).draw();
-                            }
-                          });
-
-                        column.data().unique().sort().each(function(d) {
-                          if(d) $select.append($('<option>').val(d).text(d));
+                      var $select = $('<select multiple style=\"width:95%\" />')
+                        .appendTo($header)
+                        .on('click', function(e) { e.stopPropagation(); })
+                        .on('change', function() {
+                          var vals = $(this).val() || [];
+                          if (vals.length) {
+                            var pattern = vals.map($.fn.dataTable.util.escapeRegex).join('|');
+                            column.search(pattern, true, false).draw();
+                          } else {
+                            column.search('', true, false).draw();
+                          }
                         });
 
-                        setTimeout(function () {
-                          $select.select2({
-                            dropdownParent: $('body'),
-                            width: 'auto',
-                            placeholder: 'Selecione...',
-                            allowClear: true
-                          });
-                        }, 0);
+                      column.data().unique().sort().each(function(d) {
+                        if(d) $select.append($('<option>').val(d).text(d));
                       });
+
+                      setTimeout(function () {
+                        $select.select2({
+                          dropdownParent: $('body'),
+                          width: 'auto',
+                          placeholder: 'Selecione...',
+                          allowClear: true
+                        });
+                      }, 0);
                     });
-                  }
-                ")
-              ),
-              class = "stripe hover cell-border"
-            )
-          })
-        }
+                  });
+                }
+              ")
+            ),
+            class = "stripe hover cell-border"
+          )
+        })
       }
     })
 
+    # 5) Download handler for the detail table
     output$download_detail <- downloadHandler(
       filename = function() {
         paste0(
