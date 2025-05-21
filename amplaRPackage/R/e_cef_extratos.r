@@ -60,8 +60,12 @@ e_cef_extratos <-
       "%d extratos da CEF foram identificados na rede.",
       n_extratos
     ))
-    # Documento de linhas referentes a entradas PJ
-    docs.empreendimentos_c <- c("137629", "764647")
+    # Número do contrato do empréstimp PJ
+
+    contratos.pj.6.ultimos_c <- unique(
+      e_cef_ecns()$Emprestimo$`Número`
+    ) %>%
+      str_sub(-6, -1)
     extratos_l <- list()
     extratos_t <- data.frame()
     for (
