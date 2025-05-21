@@ -1,6 +1,8 @@
 # Server and UI for Despesas trajectory chart (modularized, concise, and well-documented)
 
-# UI module for Despesas trajectory chart
+# ----------------------------
+#        UI MODULE
+# ----------------------------
 g_desp.traj_ui <- function(id, choices) {
   ns <- NS(id)
   tagList(
@@ -11,19 +13,28 @@ g_desp.traj_ui <- function(id, choices) {
       choices = choices,
       selected = "Empresa"
     ),
+    # Placeholder for checkbox (conditionally shown in the server)
+    uiOutput(ns("checkbox_wrapper")),
     plotlyOutput(ns("plot"), height = "600px")
   )
 }
 
-# Server module for Despesas trajectory chart
-g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_final) {
+# ----------------------------
+#       SERVER MODULE
+# ----------------------------
+g_desp.traj_server <- function(id,
+                               dados,
+                               filtro_periodo,
+                               data_inicial,
+                               data_final,
+                               max_unicos_i = 20) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # 1) add a place to store the last detail_data
+    # Example: store detail data for modal
     detail_rv <- reactiveVal(NULL)
 
-    # Compute date range based on selected period
+    # 1) Date range logic (unchanged)
     period <- reactive({
       req(filtro_periodo())
       today <- Sys.Date()
@@ -41,10 +52,9 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
       )
     })
 
-    # Create dynamic chart title
+    # 2) Chart title (unchanged)
     chart_title <- reactive({
       req(input$variavel, filtro_periodo())
-      # Put the variable name inside single quotes
       var_name <- paste0("'", input$variavel, "'")
       period_text <- switch(filtro_periodo(),
         "ano_corrente" = "no ano corrente",
@@ -62,9 +72,10 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
       sprintf("Despesas empilhadas por %s %s", var_name, period_text)
     })
 
-    # Reactive data preparation
+    # 3) Base data, grouped by Mês and Var
     df_data <- reactive({
       pr <- period()
+      req(dados$desp)
       dados$desp %>%
         mutate(.dt = as.Date(`Data Doc Pagto`)) %>%
         filter(.dt >= pr$start, .dt <= pr$end) %>%
@@ -75,16 +86,57 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
         summarise(Total = sum(`Total Pago`, na.rm = TRUE), .groups = "drop")
     })
 
-    # Calculate monthly totals separately
+    # 4) Conditionally render the checkbox only if n_distinct() > max_unicos_i
+    output$checkbox_wrapper <- renderUI({
+      d <- df_data()
+      req(d)
+      if (n_distinct(d$Var) <= max_unicos_i) {
+        return(NULL)  # hide checkbox
+      }
+
+      # Show checkbox if categories exceed max_unicos_i
+      checkboxInput(
+        inputId = ns("show_all_cats"),
+        label = div(
+          style = "white-space: normal; word-wrap: break-word; max-width: 300px;",
+          sprintf("Mostrar todas as categorias de '%s'", input$variavel)
+        ),
+        value = FALSE  # default: grouped
+      )
+    })
+
+    # 5) Possibly group categories when user hasn't checked "show_all_cats"
+    df_reduced <- reactive({
+      d <- df_data()
+      req(d)
+
+      # If categories <= max_unicos_i, or user wants all => do nothing
+      if (n_distinct(d$Var) <= max_unicos_i || isTRUE(input$show_all_cats)) {
+        return(d)
+      }
+
+      # Otherwise, group everything after top (max_unicos_i - 1) as "Outros"
+      totals_by_var <- d %>%
+        group_by(Var) %>%
+        summarise(TotalVar = sum(Total), .groups = "drop") %>%
+        arrange(desc(TotalVar))
+
+      top_vars <- totals_by_var$Var[seq_len(max_unicos_i - 1)]
+      d %>%
+        mutate(Var = ifelse(Var %in% top_vars, Var, "Outros")) %>%
+        group_by(Mês, Var) %>%
+        summarise(Total = sum(Total), .groups = "drop")
+    })
+
+    # 6) Summaries, final table, plot, etc. (unchanged)
     monthly_totals <- reactive({
-      df_data() %>%
+      df_reduced() %>%
         group_by(Mês) %>%
         summarise(MonthTotal = sum(Total, na.rm = TRUE), .groups = "drop")
     })
 
-    # Prepare final dataframe with percentages
     df_final <- reactive({
-      df_data() %>%
+      df_reduced() %>%
         left_join(monthly_totals(), by = "Mês") %>%
         mutate(
           MonthTotal = ifelse(MonthTotal == 0, NA, as.numeric(MonthTotal)),
@@ -92,35 +144,28 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
         )
     })
 
-    # Render stacked bar chart with dynamic grouping and color palette
     output$plot <- renderPlotly({
-      # Ensure we have data before proceeding
       df <- df_final()
       req(df, nrow(df) > 0)
 
-      # Calculate variable levels for consistent ordering and coloring
       var_levels <- df %>%
         group_by(Var) %>%
         summarise(Total = sum(Total), .groups = "drop") %>%
         arrange(desc(Total)) %>%
         pull(Var)
 
-      # Convert Var to ordered factor
       df <- df %>% mutate(Var = factor(Var, levels = var_levels))
 
-      # Color palette
       n <- length(var_levels)
       pal8 <- RColorBrewer::brewer.pal(8, "Set2")
       pal <- if (n <= 8) pal8[1:n] else colorRampPalette(pal8)(n)
 
-      # Build the stacked bar chart
       p <- plot_ly(source = "despPlot")
       for (i in seq_along(var_levels)) {
         lvl <- var_levels[i]
         sub_df <- dplyr::filter(df, Var == lvl)
 
         if (nrow(sub_df) > 0) {
-          # Ensure data is numeric
           sub_df$MonthTotal <- as.numeric(sub_df$MonthTotal)
           sub_df$Percentage <- as.numeric(sub_df$Percentage)
 
@@ -133,7 +178,6 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
               type = "bar",
               marker = list(color = pal[i]),
               key = lvl,
-              # Use named fields in customdata instead of array
               customdata = lapply(1:nrow(sub_df), function(i) {
                 list(
                   monthTotal = sub_df$MonthTotal[i],
@@ -165,30 +209,26 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
         event_register("plotly_click") %>%
         config(
           displayModeBar = TRUE,
-          modeBarButtons = list(list("toImage")), # only camera
+          modeBarButtons = list(list("toImage")),
           displaylogo    = FALSE
         ) %>%
         htmlwidgets::onRender("
           function(el, x) {
-            // find the camera button by its default English tooltip
             var btn = el.querySelector('.modebar-btn[data-title=\"Download plot as a png\"]');
             if (btn) {
-              // change to Portuguese
               btn.setAttribute('data-title', 'Baixar gráfico como PNG');
             }
           }
         ")
     })
 
-    # Observer for click events
+    # 7) Observer for plotly clicks, detail modals, downloadHandler, etc. (unchanged)
     observeEvent(event_data("plotly_click", source = "despPlot"), {
       click_data <- event_data("plotly_click", source = "despPlot")
       if (!is.null(click_data)) {
         clicked_month <- as.POSIXct(click_data$x, origin = "1970-01-01")
-        # Use the key set in each trace:
         clicked_var <- click_data$key
 
-        # Filter the underlying dataset based on the clicked month and variable.
         detail_data <- dados$desp %>%
           mutate(.dt = as.Date(`Data Doc Pagto`)) %>%
           filter(
@@ -197,10 +237,8 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
             as.character(.data[[input$variavel]]) == clicked_var
           )
 
-        # store for download
         detail_rv(detail_data)
 
-        # If no rows match, show a message instead of crashing
         if (nrow(detail_data) == 0) {
           showModal(modalDialog(
             title = "No details found",
@@ -212,7 +250,7 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
           detail_data <- detail_data %>% select(-.dt)
           showModal(modalDialog(
             title = paste("Detalhes:", clicked_var, "-", format(clicked_month, "%b %Y")),
-            div( # Wrap the table in a 100%-width div
+            div(
               DT::dataTableOutput(ns("detail_table")),
               style = "width: 100%; overflow-x: auto;"
             ),
@@ -249,20 +287,16 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
                         e.stopPropagation();
                         if ($header.find('select').length) return;
 
-                        // Store the original column name
                         var colName = $header.text();
 
-                        // Clear header
                         $header.empty();
 
-                        // Add the column name in its own block
                         $header.append(
                           $('<div>')
                             .css({'font-weight': 'bold', 'margin-bottom': '6px'})
                             .text(colName)
                         );
 
-                        // Create multi-select, appended below the column name
                         var $select = $('<select multiple style=\"width:95%\" />')
                           .appendTo($header)
                           .on('click', function(e) { e.stopPropagation(); })
@@ -276,12 +310,10 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
                             }
                           });
 
-                        // Populate with unique sorted values
                         column.data().unique().sort().each(function(d) {
                           if(d) $select.append($('<option>').val(d).text(d));
                         });
 
-                        // After a short delay, enhance it with Select2
                         setTimeout(function () {
                           $select.select2({
                             dropdownParent: $('body'),
@@ -302,10 +334,8 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
       }
     })
 
-    # 2) add downloadHandler
     output$download_detail <- downloadHandler(
       filename = function() {
-        # use date + var for filename
         paste0(
           "detalhes_",
           format(Sys.Date(), "%Y%m%d"), "_",
@@ -313,19 +343,17 @@ g_desp.traj_server <- function(id, dados, filtro_periodo, data_inicial, data_fin
         )
       },
       content = function(file) {
-        # write the stored detail data to xlsx
         writexl::write_xlsx(detail_rv(), path = file)
       }
     )
   })
 }
 
-# Add a small CSS snippet to clip long text and remove line-breaks
 tags$style(HTML("
   .dt-nowrap {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 200px; /* Adjust as desired */
+    max-width: 200px;
   }
 "))
