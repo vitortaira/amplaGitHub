@@ -63,15 +63,11 @@ e_cef_ecns <-
       )
     # Identifica o arquivo mais recente de cada empreendimento
     contratos.empreendimentos.12.primeiros_c <-
-      ecns.empreendimento_t %>%
-      distinct(Empreendimento, Contrato) %>%
-      mutate(Contrato = str_sub(Contrato, 1, 12)) %>%
-      {
-        set_names(.$Contrato, .$Empreendimento)
-      }
-    caminhos.ecn.recentes_c <- map2(
+      caminhos.ecn_c %>%
+      str_extract("\\d{12}") %>%
+      unique()
+    caminhos.ecn.recentes_c <- map(
       contratos.empreendimentos.12.primeiros_c,
-      names(contratos.empreendimentos.12.primeiros_c),
       ~ {
         i <- caminhos.ecn_c %>%
           str_subset(.x) %>%
@@ -79,16 +75,11 @@ e_cef_ecns <-
           str_extract("^\\d{8}") %>%
           ymd() %>%
           which.max()
-
-        # Se nenhum corresponder, retorna NA para esse Empreendimento
-        if (is.na(i) || i == 0) {
-          set_names(NA_character_, .y)
-        } else {
-          set_names(caminhos.ecn_c[i], .y)
-        }
+        caminhos.ecn_c[i]
       }
     ) %>%
-      flatten_chr()
+      flatten_chr() %>%
+      unname()
     # Tabelas cumulativas
     ecns.consolidado_t <-
       caminhos.ecn.recentes_c %>%

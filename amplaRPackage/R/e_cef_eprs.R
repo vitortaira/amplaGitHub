@@ -33,13 +33,32 @@ e_cef_eprs <-
   function(f_caminho.pasta.ciweb_c =
              c_caminhos_pastas("ciweb")) {
     # Consolida os dados dos relatórios EPR da CEF na pasta "Relatorios - CIWEB"
-    caminhos.cef.epr_c <-
+    caminhos.epr_c <-
       dir_ls(f_caminho.pasta.ciweb_c, recurse = TRUE, type = "file") %>%
       keep(~ str_ends(.x, "CONTRATOS_EMPREEND.pdf"))
+    # Identifica o arquivo mais recente de cada empreendimento
+    contratos.empreendimentos.12.primeiros_c <-
+      caminhos.epr_c %>%
+      str_extract("\\d{12}") %>%
+      unique()
+    caminhos.epr.recentes_c <- map(
+      contratos.empreendimentos.12.primeiros_c,
+      ~ {
+        i <- caminhos.epr_c %>%
+          str_subset(.x) %>%
+          path_file() %>%
+          str_extract("^\\d{8}") %>%
+          ymd() %>%
+          which.max()
+        caminhos.epr_c[i]
+      }
+    ) %>%
+      flatten_chr() %>%
+      unname()
     eprs_l <- list()
     eprs_t <- data.frame()
     for (
-      i_caminho.cef.epr_c in caminhos.cef.epr_c
+      i_caminho.cef.epr_c in caminhos.epr.recentes_c
     ) {
       eprs_l[[i_caminho.cef.epr_c]] <-
         e_cef_epr(i_caminho.cef.epr_c)

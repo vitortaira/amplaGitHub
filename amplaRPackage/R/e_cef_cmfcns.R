@@ -33,14 +33,32 @@
 
 e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = c_caminhos_pastas("ciweb")) {
   # Consolida os dados dos relatórios CMF_CN na pasta "Relatorios - CIWEB"
-  caminhos.cmfcns_c <-
+  caminhos.cmfcn_c <-
     dir_ls(f_caminho.pasta.ciweb_c, recurse = TRUE, type = "file") %>%
     keep(~ str_detect(.x, "MOV_FINANC_CN.pdf"))
+  # Identifica o arquivo mais recente de cada empreendimento
+  contratos.empreendimentos.12.primeiros_c <-
+    caminhos.cmfcn_c %>%
+    str_extract("\\d{12}") %>%
+    unique()
+  caminhos.cmfcn.recentes_c <- map(
+    contratos.empreendimentos.12.primeiros_c,
+    ~ {
+      i <- caminhos.cmfcn_c %>%
+        str_subset(.x) %>%
+        path_file() %>%
+        str_extract("^\\d{8}") %>%
+        ymd() %>%
+        which.max()
+      caminhos.cmfcn_c[i]
+    }
+  ) %>%
+    flatten_chr() %>%
+    unname()
+  #
   cmfcns_l <- list()
   cmfcns_t <- data.frame()
-  for (
-    i_caminho.cmfcn_c in caminhos.cmfcns_c
-  ) {
+  for (i_caminho.cmfcn_c in caminhos.cmfcn.recentes_c) {
     cmfcns_l[[i_caminho.cmfcn_c]] <-
       e_cef_cmfcn(i_caminho.cmfcn_c)
     cmfcns_t <-

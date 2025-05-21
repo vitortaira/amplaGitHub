@@ -43,12 +43,18 @@ e_dados <- function() {
     obj
   }
   # Create the futures
-  cefFut <- future({
-    e_cef()
-  })
-  ikFut <- future({
-    e_ik()
-  })
+  cefFut <- future(
+    {
+      e_cef()
+    },
+    seed = TRUE
+  )
+  ikFut <- future(
+    {
+      e_ik()
+    },
+    seed = TRUE
+  )
   # Manually get them with value()
   dados_l <- list(
     cef = value(cefFut),

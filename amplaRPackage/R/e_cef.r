@@ -23,15 +23,52 @@
 #' @importFrom magrittr %>%
 #' @export
 e_cef <- function() {
+  plan(multisession)
+  dcd_f <- future(
+    {
+      e_cef_dcds_resumo()
+    },
+    seed = TRUE
+  )
+  ecn.e_f <- future(
+    {
+      e_cef_ecns()$Empreendimento
+    },
+    seed = TRUE
+  )
+  ecn.pj_f <- future(
+    {
+      e_cef_ecns()$Emprestimo
+    },
+    seed = TRUE
+  )
+  ecn.u_f <- future(
+    {
+      e_cef_ecns()$Unidades
+    },
+    seed = TRUE
+  )
+  ecn.c_f <- future(
+    {
+      e_cef_ecns()$Consolidado
+    },
+    seed = TRUE
+  )
+  extcef_f <- future(
+    {
+      e_cef_extratos()
+    },
+    seed = TRUE
+  )
   dados.cef_l <- list(
     cmfcn = e_cef_cmfcns(),
-    dcd = e_cef_dcds_resumo(),
-    ecn_e = e_cef_ecns()$Empreendimento,
-    ecn_pj = e_cef_ecns()$Emprestimo,
-    ecn_u = e_cef_ecns()$Unidades,
-    ecn_c = e_cef_ecns()$Consolidado,
+    dcd = value(dcd_f),
+    ecn_e = value(ecn.e_f),
+    ecn_pj = value(ecn.pj_f),
+    ecn_u = value(ecn.u_f),
+    ecn_c = value(ecn.c_f),
     epr = e_cef_eprs(),
-    extcef = e_cef_extratos()
+    extcef = value(extcef_f)
   )
   return(dados.cef_l)
 }
