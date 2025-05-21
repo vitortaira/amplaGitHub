@@ -91,7 +91,7 @@ g_desp.traj_server <- function(id,
       d <- df_data()
       req(d)
       if (n_distinct(d$Var) <= max_unicos_i) {
-        return(NULL)  # hide checkbox
+        return(NULL) # hide checkbox
       }
 
       # Show checkbox if categories exceed max_unicos_i
@@ -101,7 +101,7 @@ g_desp.traj_server <- function(id,
           style = "white-space: normal; word-wrap: break-word; max-width: 300px;",
           sprintf("Mostrar todas as categorias de '%s'", input$variavel)
         ),
-        value = FALSE  # default: grouped
+        value = FALSE # default: grouped
       )
     })
 
@@ -199,7 +199,7 @@ g_desp.traj_server <- function(id,
           title = list(text = chart_title(), font = list(size = 16)),
           barmode = "stack",
           xaxis = list(
-            tickformat = "%b %Y",
+            tickformat = "%m-%Y",
             type = "date",
             tickvals = unique(df$Mês),
             rangeslider = list(visible = (filtro_periodo() == "desde_inicio"))
