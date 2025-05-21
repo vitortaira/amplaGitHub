@@ -42,14 +42,7 @@ e_cef_ecns <-
     caminhos.ecn_c <-
       dir_ls(f_caminho.pasta.ciweb_c, recurse = TRUE) %>%
       keep(~ str_ends(.x, "(?i)empreendimento_construcao.pdf"))
-    # Identifica o arquivo mais recente
-    caminho.ecn_c <-
-      caminhos.ecn_c %>%
-      path_file() %>%
-      str_extract("^\\d{8}") %>%
-      ymd() %>%
-      sort(decreasing = TRUE) %>%
-      nth(1)
+    # Tabelas não-cumulativas
     ecns.empreendimento_t <-
       caminhos.ecn_c %>%
       map_dfr(~ e_cef_ecn(.x)$Empreendimento) %>%
@@ -68,8 +61,37 @@ e_cef_ecns <-
         Arquivo_tipo = "ecn",
         Arquivo_fonte = "cef",
       )
+    # Identifica o arquivo mais recente de cada empreendimento
+    contratos.empreendimentos.12.primeiros_c <-
+      ecns.empreendimento_t %>%
+      distinct(Empreendimento, Contrato) %>%
+      mutate(Contrato = str_sub(Contrato, 1, 12)) %>%
+      {
+        set_names(.$Contrato, .$Empreendimento)
+      }
+    caminhos.ecn.recentes_c <- map2(
+      contratos.empreendimentos.12.primeiros_c,
+      names(contratos.empreendimentos.12.primeiros_c),
+      ~ {
+        i <- caminhos.ecn_c %>%
+          str_subset(.x) %>%
+          path_file() %>%
+          str_extract("^\\d{8}") %>%
+          ymd() %>%
+          which.max()
+
+        # Se nenhum corresponder, retorna NA para esse Empreendimento
+        if (is.na(i) || i == 0) {
+          set_names(NA_character_, .y)
+        } else {
+          set_names(caminhos.ecn_c[i], .y)
+        }
+      }
+    ) %>%
+      flatten_chr()
+    # Tabelas cumulativas
     ecns.consolidado_t <-
-      caminhos.ecn_c %>%
+      caminhos.ecn.recentes_c %>%
       map_dfr(~ e_cef_ecn(.x)$Consolidado) %>%
       distinct() %>%
       mutate(
@@ -78,7 +100,7 @@ e_cef_ecns <-
         Arquivo_fonte = "cef"
       )
     ecns.unidades_t <-
-      caminhos.ecn_c %>%
+      caminhos.ecn.recentes_c %>%
       map_dfr(~ e_cef_ecn(.x)$Unidades) %>%
       distinct() %>%
       mutate(

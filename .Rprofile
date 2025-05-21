@@ -15,7 +15,7 @@ load_pkg <- function(f_pkg) {
 
 # List of desired packages
 packages_c <- c(
-  "devtools", "fs", "here", "htmlwidgets", "lubridate", "magrittr", "openxlsx", "pdftools", "readxl",
+  "devtools", "fs", "future", "future.apply", "here", "htmlwidgets", "lubridate", "magrittr", "openxlsx", "pdftools", "readxl",
   "tidyverse", "usethis", "visNetwork"
 )
 

@@ -29,6 +29,7 @@
 #'
 #' @export
 e_dados <- function() {
+  plan(multisession)
   normalize_names <- function(obj) {
     # If the object has names, normalize them
     if (!is.null(names(obj))) {
@@ -41,10 +42,19 @@ e_dados <- function() {
     # For data.frames, only fix the names; leave content unchanged.
     obj
   }
+  # Create the futures
+  cefFut <- future({
+    e_cef()
+  })
+  ikFut <- future({
+    e_ik()
+  })
+  # Manually get them with value()
   dados_l <- list(
-    "cef" = e_cef(),
-    "ik"  = e_ik()
+    cef = value(cefFut),
+    ik  = value(ikFut)
   )
+  # Normalize names in the list
   normalize_names(dados_l)
   arquivos_c <- dados_l %>%
     flatten() %>%

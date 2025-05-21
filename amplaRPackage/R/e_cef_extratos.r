@@ -80,13 +80,13 @@ e_cef_extratos <-
       mutate(
         Repasse = if_else(
           (`Histórico` == "CR DESBLOQ") &
-            !(Documento %in% docs.empreendimentos_c),
+            !(Documento %in% contratos.pj.6.ultimos_c),
           TRUE,
           FALSE
         ),
         PJ = if_else(
           (`Histórico` == "CR DESBLOQ") &
-            (Documento %in% docs.empreendimentos_c),
+            (Documento %in% contratos.pj.6.ultimos_c),
           TRUE,
           FALSE
         ),
