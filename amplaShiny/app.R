@@ -79,26 +79,42 @@ ui <- fluidPage(
       }
     ")),
     tags$style(HTML("
-      /* Make top-level tabs fixed or sticky */
+      /* Make top-level tabs sticky */
       .nav-tabs {
-        position: sticky;      /* or 'fixed' */
+        position: sticky;
         top: 0;
-        z-index: 9999;         /* ensure they appear on top */
+        z-index: 1040;
         background-color: #fff;
-        margin-bottom: 0;      /* remove extra space */
+        margin-bottom: 0;
+        border-bottom: 1px solid #ddd;
       }
 
-      /* If you have nested sub-tabs, customize them similarly */
+      /* Make sub-tabs sticky, with less vertical offset from the top tabs */
       .tab-content .nav-tabs {
-        position: sticky;      /* or 'fixed' */
-        top: 46px;             /* offset so they appear under main tabs */
-        z-index: 9998;
+        position: sticky;
+        top: 10px; /* Reduced from 40px */
+        z-index: 1039;
         background-color: #fff;
+        margin-bottom: 20;
+        border-bottom: 1px solid #ddd;
       }
 
-      /* Give your content enough top margin so it doesn't hide behind the fixed tabs */
+      /* Shrink top margin on content so sub-tabs are closer to main tabs */
       .tab-content {
-        margin-top: 60px;      /* adjust as needed */
+        margin-top: 50px; /* Reduced from 80px */
+      }
+
+      /* For detail tables: prevent text wrapping, clip if too long */
+      .dt-nowrap td, .dt-nowrap th {
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        max-width: 250px; /* adjust as needed */
+      }
+
+      /* Ensure modals (detail tables, etc.) appear above sticky tabs */
+      .modal {
+        z-index: 9999 !important;
       }
     "))
   ),

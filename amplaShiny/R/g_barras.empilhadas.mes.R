@@ -21,7 +21,10 @@ g_barras.empilhadas.mes_ui <- function(
     ),
     # Placeholder for the checkbox (conditionally shown in the server)
     uiOutput(ns("checkbox_wrapper")),
-    plotlyOutput(ns("plot"), height = "600px")
+    plotlyOutput(
+      ns("plot"),
+      height = "600px"
+    )
   )
 }
 
@@ -284,7 +287,10 @@ g_barras.empilhadas.mes_server <- function(
         detail_data <- dplyr::select(detail_data, -.dt)
         showModal(modalDialog(
           title = paste("Detalhes:", clicked_var, "-", format(clicked_month, "%b %Y")),
-          DT::dataTableOutput(ns("detail_table")),
+          div( # Wrap the table in a 100%-width div
+            DT::dataTableOutput(ns("detail_table")),
+            style = "width: 100%; overflow-x: auto;"
+          ),
           size = "l",
           easyClose = TRUE,
           footer = tagList(
@@ -297,10 +303,73 @@ g_barras.empilhadas.mes_server <- function(
             detail_data,
             filter = "none",
             options = list(
-              pageLength = 10,
+              pageLength = 25,
               scrollX = TRUE,
               autoWidth = TRUE,
-              language = list(url = "//cdn.datatables.net/plug-ins/1.10.25/i18n/Portuguese-Brasil.json")
+              language = list(url = "//cdn.datatables.net/plug-ins/1.10.25/i18n/Portuguese-Brasil.json"),
+              columnDefs = list(
+                list(
+                  targets = "_all",
+                  className = "dt-nowrap"
+                )
+              ),
+              initComplete = htmlwidgets::JS("
+                  function(settings, json) {
+                    var api = this.api();
+                    // For each column, attach a click that creates a multi-select
+                    api.columns().every(function() {
+                      var column = this;
+                      var $header = $(column.header());
+
+                      $header.off('click').on('click', function(e) {
+                        e.stopPropagation();
+                        if ($header.find('select').length) return;
+
+                        // Store the original column name
+                        var colName = $header.text();
+
+                        // Clear header
+                        $header.empty();
+
+                        // Add the column name in its own block
+                        $header.append(
+                          $('<div>')
+                            .css({'font-weight': 'bold', 'margin-bottom': '6px'})
+                            .text(colName)
+                        );
+
+                        // Create multi-select, appended below the column name
+                        var $select = $('<select multiple style=\"width:95%\"/>')
+                          .appendTo($header)
+                          .on('click', function(e) { e.stopPropagation(); })
+                          .on('change', function() {
+                            var vals = $(this).val() || [];
+                            if (vals.length) {
+                              var pattern = vals.map($.fn.dataTable.util.escapeRegex).join('|');
+                              column.search(pattern, true, false).draw();
+                            } else {
+                              column.search('', true, false).draw();
+                            }
+                          });
+
+                        // Populate with unique sorted values
+                        column.data().unique().sort().each(function(d) {
+                          if(d) $select.append($('<option>').val(d).text(d));
+                        });
+
+                        // Wait a moment, then turn it into a Select2 for a nicer UI
+                        setTimeout(function() {
+                          $select.select2({
+                            width: 'auto',
+                            dropdownParent: $('body'),
+                            placeholder: 'Selecione...',
+                            allowClear: true
+                          });
+                        }, 0);
+                      });
+                    });
+                  }
+                ")
             ),
             class = "stripe hover cell-border dt-nowrap" # <-- added "dt-nowrap"
           )
@@ -321,10 +390,10 @@ g_barras.empilhadas.mes_server <- function(
 }
 
 tags$style(HTML("
-  .dt-nowrap td, .dt-nowrap th {
+  .dt-nowrap {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 250px; /* adjust width as needed */
+    max-width: 200px; /* Adjust as desired */
   }
 "))
