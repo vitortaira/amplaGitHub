@@ -26,7 +26,7 @@ library(visNetwork) # Para visualização de redes e grafos
 # Carrega componentes modulares da aplicação
 source(here("R", "b_dados.R")) # Módulo de busca de dados
 source(here("R", "filtro_periodo.R")) # Filtros temporais para os dados
-source(here("R", "g_desp.traj.R")) # Visualização de trajetória de despesas
+source(here("R", "g_barras.empilhadas.mes.R")) # Visualização de trajetória de despesas
 source(here("R", "g_gnw.R")) # Rede de grafos
 source(here("R", "g_rec.traj.R")) # Visualização de trajetória de receitas
 source(here("R", "g_metadados.hist.R")) # Histograma de metadados
@@ -263,14 +263,19 @@ server <- function(input, output, session) {
                   fluidPage(
                     # Filtro temporal para os gráficos financeiros
                     filtro_periodo_module_ui("myFiltro"),
+
                     # Gráfico de trajetória de despesas com opções de segmentação
-                    g_desp.traj_ui(
+                    g_barras.empilhadas.mes_ui(
                       "desp",
-                      c(
+                      choices = c(
                         "Agente Financeiro", "Credor", "Centro de Negócio",
                         "Empresa", "N° Conta", "Parcela"
-                      )
+                      ),
+                      total = "Total Pago", # numeric column
+                      data = "Data Doc Pagto", # date column
+                      comeco.titulo = "Despesas" # static prefix for chart title
                     ),
+
                     # Gráfico de trajetória de receitas com todas as dimensões disponíveis
                     g_rec.traj_ui(
                       "rec",
@@ -330,12 +335,16 @@ server <- function(input, output, session) {
   filtroVals <- filtro_periodo_module_server("myFiltro")
 
   # Inicializa o módulo de visualização de despesas
-  g_desp.traj_server(
+  g_barras.empilhadas.mes_server(
     "desp",
-    dados_l[["ik"]],
-    filtroVals$filtro_periodo,
-    filtroVals$data_inicial,
-    filtroVals$data_final
+    dados = dados_l[["ik"]][["desp"]],
+    filtro_periodo = filtroVals$filtro_periodo,
+    data_inicial = filtroVals$data_inicial,
+    data_final = filtroVals$data_final,
+    max_unicos_i = 20,
+    total = "Total Pago", # same as the UI param
+    data = "Data Doc Pagto", # same as the UI param
+    comeco.titulo = "Despesas empilhadas por" # same as the UI param
   )
 
   # Inicializa o módulo de visualização de receitas

@@ -3,17 +3,24 @@
 # ----------------------------
 #        UI MODULE
 # ----------------------------
-g_desp.traj_ui <- function(id, choices) {
+g_barras.empilhadas.mes_ui <- function(
+    id,
+    choices,
+    total = "Total Pago", # default column name
+    data = "Data Doc Pagto", # default date column name
+    comeco.titulo = "Despesas" # default chart title prefix
+    ) {
   ns <- NS(id)
   tagList(
-    h2("Despesas"),
+    h2(comeco.titulo),
+    # Let user pick stacking variable
     selectInput(
       inputId = ns("variavel"),
       label = "Empilhar barras por:",
       choices = choices,
       selected = "Empresa"
     ),
-    # Placeholder for checkbox (conditionally shown in the server)
+    # Placeholder for the checkbox (conditionally shown in the server)
     uiOutput(ns("checkbox_wrapper")),
     plotlyOutput(ns("plot"), height = "600px")
   )
@@ -22,20 +29,24 @@ g_desp.traj_ui <- function(id, choices) {
 # ----------------------------
 #       SERVER MODULE
 # ----------------------------
-g_desp.traj_server <- function(id,
-                               dados,
-                               filtro_periodo,
-                               data_inicial,
-                               data_final,
-                               max_unicos_i = 20) {
+g_barras.empilhadas.mes_server <- function(
+    id,
+    dados,
+    filtro_periodo,
+    data_inicial,
+    data_final,
+    max_unicos_i = 20,
+    total = "Total Pago", # name of numeric var
+    data = "Data Doc Pagto", # name of date var
+    comeco.titulo = "Despesas" # static title prefix
+    ) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     detail_rv <- reactiveVal(NULL)
-
-    # 1) Keep track of the top categories in a reactive, so we can access them later
     top_vars_rv <- reactiveVal(NULL)
 
+    # 1) Reactive for date range (unchanged)
     period <- reactive({
       req(filtro_periodo())
       today <- Sys.Date()
@@ -43,7 +54,7 @@ g_desp.traj_server <- function(id,
         "ano_corrente" = list(start = floor_date(today, "year"), end = today),
         "ultimos_12" = list(start = today %m-% months(12), end = today),
         "desde_inicio" = {
-          dt <- as.Date(dados$desp$`Data Doc Pagto`)
+          dt <- as.Date(dados[[data]], origin = "1970-01-01")
           list(start = min(dt, na.rm = TRUE), end = today)
         },
         "personalizado" = {
@@ -53,6 +64,7 @@ g_desp.traj_server <- function(id,
       )
     })
 
+    # 2) Chart title, using comeco.titulo
     chart_title <- reactive({
       req(input$variavel, filtro_periodo())
       var_name <- paste0("'", input$variavel, "'")
@@ -69,27 +81,33 @@ g_desp.traj_server <- function(id,
           )
         }
       )
-      sprintf("Despesas empilhadas por %s %s", var_name, period_text)
+      # Combine the static prefix with the variable and date info
+      sprintf("%s %s %s", comeco.titulo, var_name, period_text)
     })
 
+    # 3) Reactive data: group by month + stacking variable
     df_data <- reactive({
       pr <- period()
-      req(dados$desp)
-      dados$desp %>%
-        mutate(.dt = as.Date(`Data Doc Pagto`)) %>%
+      req(dados)
+      dados %>%
+        mutate(.dt = as.Date(.data[[data]])) %>%
         filter(.dt >= pr$start, .dt <= pr$end) %>%
         group_by(
           Mês = floor_date(.dt, "month"),
           Var = as.character(.data[[input$variavel]])
         ) %>%
-        summarise(Total = sum(`Total Pago`, na.rm = TRUE), .groups = "drop")
+        summarise(
+          Total = sum(.data[[total]], na.rm = TRUE),
+          .groups = "drop"
+        )
     })
 
+    # 4) Conditionally show or hide the checkbox
     output$checkbox_wrapper <- renderUI({
       d <- df_data()
       req(d)
       if (n_distinct(d$Var) <= max_unicos_i) {
-        return(NULL)
+        return(NULL) # hide checkbox completely
       }
       checkboxInput(
         inputId = ns("show_all_cats"),
@@ -101,29 +119,27 @@ g_desp.traj_server <- function(id,
       )
     })
 
-    # 2) Possibly group categories into “Outros,” and store the top vars
+    # 5) Possibly group categories into “Outros”
     df_reduced <- reactive({
       d <- df_data()
       req(d)
 
-      # If user wants all or n_distinct() <= max_unicos_i => do nothing
+      # If user wants all or not many categories => do nothing
       if (n_distinct(d$Var) <= max_unicos_i || isTRUE(input$show_all_cats)) {
-        # In that case, set top_vars_rv(NULL), because there's no “Outros.”
         top_vars_rv(NULL)
         return(d)
       }
 
-      # Get the top 19 categories by total
+      # Identify top (max_unicos_i - 1) categories
       totals_by_var <- d %>%
         group_by(Var) %>%
         summarise(TotalVar = sum(Total), .groups = "drop") %>%
         arrange(desc(TotalVar))
 
       top_vars <- totals_by_var$Var[seq_len(max_unicos_i - 1)]
-      # Save them so we can reconstruct the details for “Outros.”
       top_vars_rv(top_vars)
 
-      # Group everything else as “Outros”
+      # Lump the rest into "Outros"
       d %>%
         mutate(
           Var = ifelse(Var %in% top_vars, Var, "Outros")
@@ -132,7 +148,7 @@ g_desp.traj_server <- function(id,
         summarise(Total = sum(Total), .groups = "drop")
     })
 
-    # Summaries and final data
+    # Summaries
     monthly_totals <- reactive({
       df_reduced() %>%
         group_by(Mês) %>%
@@ -143,12 +159,12 @@ g_desp.traj_server <- function(id,
       df_reduced() %>%
         left_join(monthly_totals(), by = "Mês") %>%
         mutate(
-          MonthTotal = ifelse(MonthTotal == 0, NA, as.numeric(MonthTotal)),
-          Percentage = (Total / MonthTotal) * 100
+          MonthTotal = ifelse(MonthTotal == 0, NA, MonthTotal),
+          Percentage = 100 * Total / MonthTotal
         )
     })
 
-    # 3) Render the stacked chart (same as before)
+    # 6) Render the stacked bar chart
     output$plot <- renderPlotly({
       df <- df_final()
       req(df, nrow(df) > 0)
@@ -169,11 +185,7 @@ g_desp.traj_server <- function(id,
       for (i in seq_along(var_levels)) {
         lvl <- var_levels[i]
         sub_df <- dplyr::filter(df, Var == lvl)
-
         if (nrow(sub_df) > 0) {
-          sub_df$MonthTotal <- as.numeric(sub_df$MonthTotal)
-          sub_df$Percentage <- as.numeric(sub_df$Percentage)
-
           p <- p %>%
             add_trace(
               data = sub_df,
@@ -183,10 +195,10 @@ g_desp.traj_server <- function(id,
               type = "bar",
               marker = list(color = pal[i]),
               key = lvl,
-              customdata = lapply(1:nrow(sub_df), function(i) {
+              customdata = lapply(seq_len(nrow(sub_df)), function(row_i) {
                 list(
-                  monthTotal = sub_df$MonthTotal[i],
-                  percentage = sub_df$Percentage[i]
+                  monthTotal = sub_df$MonthTotal[row_i],
+                  percentage = sub_df$Percentage[row_i]
                 )
               }),
               hovertemplate = paste0(
@@ -206,8 +218,7 @@ g_desp.traj_server <- function(id,
           xaxis = list(
             tickformat = "%m-%Y",
             type = "date",
-            tickvals = unique(df$Mês),
-            rangeslider = list(visible = (filtro_periodo() == "desde_inicio"))
+            tickvals = unique(df$Mês)
           ),
           autosize = TRUE
         ) %>%
@@ -216,44 +227,35 @@ g_desp.traj_server <- function(id,
           displayModeBar = TRUE,
           modeBarButtons = list(list("toImage")),
           displaylogo    = FALSE
-        ) %>%
-        htmlwidgets::onRender("
-          function(el, x) {
-            var btn = el.querySelector('.modebar-btn[data-title=\"Download plot as a png\"]');
-            if (btn) {
-              btn.setAttribute('data-title', 'Baixar gráfico como PNG');
-            }
-          }
-        ")
+        )
     })
 
-    # 4) When user clicks, if “Outros,” get the omitted categories
+    # 7) Handle clicking any bar segment, including “Outros”
     observeEvent(event_data("plotly_click", source = "despPlot"), {
       click_data <- event_data("plotly_click", source = "despPlot")
-      if (is.null(click_data)) return()
+      if (is.null(click_data)) {
+        return()
+      }
 
       clicked_month <- as.POSIXct(click_data$x, origin = "1970-01-01")
-      clicked_var   <- click_data$key
-      # Get the top vars so we know which were grouped
+      clicked_var <- click_data$key
       tv <- top_vars_rv()
 
       # If user clicked “Outros,” retrieve all categories not in tv
       if (!is.null(tv) && clicked_var == "Outros") {
-        detail_data <- dados$desp %>%
-          mutate(.dt = as.Date(`Data Doc Pagto`)) %>%
+        detail_data <- dados %>%
+          mutate(.dt = as.Date(.data[[data]])) %>%
           filter(
-            lubridate::floor_date(.dt, "month") ==
-              lubridate::floor_date(clicked_month, "month"),
-            !as.character(.data[[input$variavel]]) %in% tv
+            floor_date(.dt, "month") == floor_date(clicked_month, "month"),
+            !(.data[[input$variavel]] %in% tv)
           )
       } else {
-        # Standard: filter for the single clicked_var
-        detail_data <- dados$desp %>%
-          mutate(.dt = as.Date(`Data Doc Pagto`)) %>%
+        # Normal category
+        detail_data <- dados %>%
+          mutate(.dt = as.Date(.data[[data]])) %>%
           filter(
-            lubridate::floor_date(.dt, "month") ==
-              lubridate::floor_date(clicked_month, "month"),
-            as.character(.data[[input$variavel]]) == clicked_var
+            floor_date(.dt, "month") == floor_date(clicked_month, "month"),
+            .data[[input$variavel]] == clicked_var
           )
       }
 
@@ -267,13 +269,10 @@ g_desp.traj_server <- function(id,
           footer = modalButton("Fechar")
         ))
       } else {
-        detail_data <- detail_data %>% select(-.dt)
+        detail_data <- dplyr::select(detail_data, -.dt)
         showModal(modalDialog(
           title = paste("Detalhes:", clicked_var, "-", format(clicked_month, "%b %Y")),
-          div(
-            DT::dataTableOutput(ns("detail_table")),
-            style = "width: 100%; overflow-x: auto;"
-          ),
+          DT::dataTableOutput(ns("detail_table")),
           size = "l",
           easyClose = TRUE,
           footer = tagList(
@@ -289,63 +288,7 @@ g_desp.traj_server <- function(id,
               pageLength = 10,
               scrollX = TRUE,
               autoWidth = TRUE,
-              language = list(url = "//cdn.datatables.net/plug-ins/1.10.25/i18n/Portuguese-Brasil.json"),
-              columnDefs = list(
-                list(
-                  targets = "_all",
-                  className = "dt-nowrap"
-                )
-              ),
-              initComplete = htmlwidgets::JS("
-                function(settings, json) {
-                  var api = this.api();
-                  api.columns().every(function() {
-                    var column = this;
-                    var $header = $(column.header());
-
-                    $header.off('click').on('click', function(e) {
-                      e.stopPropagation();
-                      if ($header.find('select').length) return;
-
-                      var colName = $header.text();
-
-                      $header.empty();
-
-                      $header.append(
-                        $('<div>')
-                          .css({'font-weight': 'bold', 'margin-bottom': '6px'})
-                          .text(colName)
-                      );
-
-                      var $select = $('<select multiple style=\"width:95%\" />')
-                        .appendTo($header)
-                        .on('click', function(e) { e.stopPropagation(); })
-                        .on('change', function() {
-                          var vals = $(this).val() || [];
-                          if (vals.length) {
-                            var pattern = vals.map($.fn.dataTable.util.escapeRegex).join('|');
-                            column.search(pattern, true, false).draw();
-                          } else {
-                            column.search('', true, false).draw();
-                          }
-                        });
-
-                      column.data().unique().sort().each(function(d) {
-                        if(d) $select.append($('<option>').val(d).text(d));
-                      });
-
-                      setTimeout(function () {
-                        $select.select2({
-                          dropdownParent: $('body'),
-                          width: 'auto',
-                          placeholder: 'Selecione...',
-                          allowClear: true
-                        });
-                      }, 0);
-                    });
-                  });
-                }
-              ")
+              language = list(url = "//cdn.datatables.net/plug-ins/1.10.25/i18n/Portuguese-Brasil.json")
             ),
             class = "stripe hover cell-border"
           )
@@ -353,14 +296,10 @@ g_desp.traj_server <- function(id,
       }
     })
 
-    # 5) Download handler for the detail table
+    # 8) Download for the details
     output$download_detail <- downloadHandler(
       filename = function() {
-        paste0(
-          "detalhes_",
-          format(Sys.Date(), "%Y%m%d"), "_",
-          input$variavel, ".xlsx"
-        )
+        paste0("detalhes_", format(Sys.Date(), "%Y%m%d"), "_", input$variavel, ".xlsx")
       },
       content = function(file) {
         writexl::write_xlsx(detail_rv(), path = file)
