@@ -28,7 +28,6 @@ source(here("R", "b_dados.R")) # Módulo de busca de dados
 source(here("R", "filtro_periodo.R")) # Filtros temporais para os dados
 source(here("R", "g_barras.empilhadas.mes.R")) # Visualização de trajetória de despesas
 source(here("R", "g_gnw.R")) # Rede de grafos
-source(here("R", "g_rec.traj.R")) # Visualização de trajetória de receitas
 source(here("R", "g_metadados.hist.R")) # Histograma de metadados
 source(here("R", "login.R")) # Sistema de autenticação
 
@@ -77,6 +76,29 @@ ui <- fluidPage(
     tags$style(HTML("
       .select2-container, .select2-dropdown, .select2-search {
         z-index: 999999999 !important;
+      }
+    ")),
+    tags$style(HTML("
+      /* Make top-level tabs fixed or sticky */
+      .nav-tabs {
+        position: sticky;      /* or 'fixed' */
+        top: 0;
+        z-index: 9999;         /* ensure they appear on top */
+        background-color: #fff;
+        margin-bottom: 0;      /* remove extra space */
+      }
+
+      /* If you have nested sub-tabs, customize them similarly */
+      .tab-content .nav-tabs {
+        position: sticky;      /* or 'fixed' */
+        top: 46px;             /* offset so they appear under main tabs */
+        z-index: 9998;
+        background-color: #fff;
+      }
+
+      /* Give your content enough top margin so it doesn't hide behind the fixed tabs */
+      .tab-content {
+        margin-top: 60px;      /* adjust as needed */
       }
     "))
   ),
@@ -263,27 +285,40 @@ server <- function(input, output, session) {
                   fluidPage(
                     # Filtro temporal para os gráficos financeiros
                     filtro_periodo_module_ui("myFiltro"),
-
+                    h2("Despesas"),
                     # Gráfico de trajetória de despesas com opções de segmentação
                     g_barras.empilhadas.mes_ui(
-                      "desp",
+                      "g_barras.empilhadas.mes.desp",
                       choices = c(
                         "Agente Financeiro", "Credor", "Centro de Negócio",
                         "Empresa", "N° Conta", "Parcela"
                       ),
                       total = "Total Pago", # numeric column
                       data = "Data Doc Pagto", # date column
-                      comeco.titulo = "Despesas" # static prefix for chart title
+                      comeco.titulo = "Despesas empilhadas por" # static prefix for chart title
                     ),
-
+                    h2("Extratos"),
+                    g_barras.empilhadas.mes_ui(
+                      "g_barras.empilhadas.mes.extcef",
+                      choices = c(
+                        "Cliente", "Conta_interno"
+                      ),
+                      total = "Valor",
+                      data = "Data de movimento",
+                      comeco.titulo = "Entradas e saídas empilhadas por"
+                    ),
+                    h2("Receitas"),
                     # Gráfico de trajetória de receitas com todas as dimensões disponíveis
-                    g_rec.traj_ui(
-                      "rec",
-                      c(
+                    g_barras.empilhadas.mes_ui(
+                      "g_barras.empilhadas.mes.rec",
+                      choices = c(
                         "Agente", "Cart.", "Cliente", "Elemento",
                         "Empreendimento", "Empresa", "Esp", "Parcela", "R/F",
                         "Torre"
-                      )
+                      ),
+                      total = "Total", # numeric column
+                      data = "Data Pagto", # date column
+                      comeco.titulo = "Receitas empilhadas por" # static prefix for chart title
                     )
                   )
                 ),
@@ -336,7 +371,7 @@ server <- function(input, output, session) {
 
   # Inicializa o módulo de visualização de despesas
   g_barras.empilhadas.mes_server(
-    "desp",
+    "g_barras.empilhadas.mes.desp",
     dados = dados_l[["ik"]][["desp"]],
     filtro_periodo = filtroVals$filtro_periodo,
     data_inicial = filtroVals$data_inicial,
@@ -344,16 +379,33 @@ server <- function(input, output, session) {
     max_unicos_i = 20,
     total = "Total Pago", # same as the UI param
     data = "Data Doc Pagto", # same as the UI param
-    comeco.titulo = "Despesas empilhadas por" # same as the UI param
+    comeco.titulo = "Despesas" # same as the UI param
   )
 
   # Inicializa o módulo de visualização de receitas
-  g_rec.traj_server(
-    "rec",
-    dados_l[["ik"]],
-    filtroVals$filtro_periodo,
-    filtroVals$data_inicial,
-    filtroVals$data_final
+  g_barras.empilhadas.mes_server(
+    "g_barras.empilhadas.mes.rec",
+    dados = dados_l[["ik"]][["rec"]],
+    filtro_periodo = filtroVals$filtro_periodo,
+    data_inicial = filtroVals$data_inicial,
+    data_final = filtroVals$data_final,
+    max_unicos_i = 20,
+    total = "Total", # same as the UI param
+    data = "Data Pagto", # same as the UI param
+    comeco.titulo = "Receitas empilhadas por" # same as the UI param
+  )
+
+  # Inicializa o módulo de visualização dos extratos
+  g_barras.empilhadas.mes_server(
+    "g_barras.empilhadas.mes.extcef",
+    dados          = dados_l[["cef"]][["extcef"]],
+    filtro_periodo = filtroVals$filtro_periodo,
+    data_inicial   = filtroVals$data_inicial,
+    data_final     = filtroVals$data_final,
+    max_unicos_i   = 20,
+    total          = "Valor",
+    data           = "Data de movimento",
+    comeco.titulo  = "Entradas e saídas empilhadas por"
   )
 
   # Inicializa o módulo de histograma de metadados

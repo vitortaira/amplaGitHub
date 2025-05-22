@@ -12,7 +12,6 @@ g_barras.empilhadas.mes_ui <- function(
     ) {
   ns <- NS(id)
   tagList(
-    h2(comeco.titulo),
     # Let user pick stacking variable
     selectInput(
       inputId = ns("variavel"),
@@ -36,12 +35,20 @@ g_barras.empilhadas.mes_server <- function(
     data_inicial,
     data_final,
     max_unicos_i = 20,
-    total = "Total Pago", # name of numeric var
-    data = "Data Doc Pagto", # name of date var
-    comeco.titulo = "Despesas" # static title prefix
-    ) {
+    total = "Total Pago",
+    data = "Data Doc Pagto",
+    comeco.titulo = "Despesas") {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
+
+    # Map each ID to its matching Plotly source string:
+    plotly_source <- reactive({
+      switch(id,
+        "g_barras.empilhadas.mes.desp"   = "g_barras.empilhadas.mes.click.desp",
+        "g_barras.empilhadas.mes.extcef" = "g_barras.empilhadas.mes.click.extcef",
+        "g_barras.empilhadas.mes.rec"    = "g_barras.empilhadas.mes.click.rec"
+      )
+    })
 
     detail_rv <- reactiveVal(NULL)
     top_vars_rv <- reactiveVal(NULL)
@@ -181,7 +188,8 @@ g_barras.empilhadas.mes_server <- function(
       pal8 <- RColorBrewer::brewer.pal(8, "Set2")
       pal <- if (n <= 8) pal8[1:n] else colorRampPalette(pal8)(n)
 
-      p <- plot_ly(source = "despPlot")
+      p <- plot_ly(source = plotly_source()) %>%
+        event_register("plotly_click")
       for (i in seq_along(var_levels)) {
         lvl <- var_levels[i]
         sub_df <- dplyr::filter(df, Var == lvl)
@@ -213,7 +221,12 @@ g_barras.empilhadas.mes_server <- function(
       }
       p %>%
         layout(
-          title = list(text = chart_title(), font = list(size = 16)),
+          title = list(
+            text = chart_title(),
+            font = list(size = 16),
+            x = 0, # moves title to the left
+            xanchor = "left" # anchor title at left
+          ),
           barmode = "stack",
           xaxis = list(
             tickformat = "%m-%Y",
@@ -222,7 +235,6 @@ g_barras.empilhadas.mes_server <- function(
           ),
           autosize = TRUE
         ) %>%
-        event_register("plotly_click") %>%
         config(
           displayModeBar = TRUE,
           modeBarButtons = list(list("toImage")),
@@ -231,8 +243,8 @@ g_barras.empilhadas.mes_server <- function(
     })
 
     # 7) Handle clicking any bar segment, including “Outros”
-    observeEvent(event_data("plotly_click", source = "despPlot"), {
-      click_data <- event_data("plotly_click", source = "despPlot")
+    observeEvent(event_data("plotly_click", source = plotly_source()), {
+      click_data <- event_data("plotly_click", source = plotly_source())
       if (is.null(click_data)) {
         return()
       }
@@ -290,7 +302,7 @@ g_barras.empilhadas.mes_server <- function(
               autoWidth = TRUE,
               language = list(url = "//cdn.datatables.net/plug-ins/1.10.25/i18n/Portuguese-Brasil.json")
             ),
-            class = "stripe hover cell-border"
+            class = "stripe hover cell-border dt-nowrap" # <-- added "dt-nowrap"
           )
         })
       }
@@ -309,10 +321,10 @@ g_barras.empilhadas.mes_server <- function(
 }
 
 tags$style(HTML("
-  .dt-nowrap {
+  .dt-nowrap td, .dt-nowrap th {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 200px;
+    max-width: 250px; /* adjust width as needed */
   }
 "))
