@@ -27,6 +27,7 @@ library(visNetwork) # Para visualização de redes e grafos
 source(here("R", "b_dados.R")) # Módulo de busca de dados
 source(here("R", "filtro_periodo.R")) # Filtros temporais para os dados
 source(here("R", "g_barras.empilhadas.mes.R")) # Visualização de trajetória de despesas
+source(here("R", "gs_barras.cef.cobra.R"))
 source(here("R", "g_gnw.R")) # Rede de grafos
 source(here("R", "g_metadados.hist.R")) # Histograma de metadados
 source(here("R", "login.R")) # Sistema de autenticação
@@ -301,6 +302,9 @@ server <- function(input, output, session) {
                   fluidPage(
                     # Filtro temporal para os gráficos financeiros
                     filtro_periodo_module_ui("myFiltro"),
+                    h2("Custo de obras"),
+                    # Gráfico de trajetória dos custos de obras
+                    gs_barras.cef.cobra_ui("gs_barras.cef.cobra"),
                     h2("Despesas"),
                     # Gráfico de trajetória de despesas com opções de segmentação
                     g_barras.empilhadas.mes_ui(
@@ -384,6 +388,27 @@ server <- function(input, output, session) {
 
   # Inicializa o módulo de filtro de período e obtém valores selecionados
   filtroVals <- filtro_periodo_module_server("myFiltro")
+
+  gs_barras.cef.cobra_server(
+    "gs_barras.cef.cobra",
+    dados = dados_l[["cef"]][["dcd"]],
+    filtro_periodo = filtroVals$filtro_periodo,
+    data_inicial = filtroVals$data_inicial,
+    data_final = filtroVals$data_final
+  )
+
+  # Inicializa o módulo de visualização de despesas
+  g_barras.empilhadas.mes_server(
+    "g_barras.empilhadas.mes.cobra",
+    dados = dados_l[["cef"]][["dcd"]],
+    filtro_periodo = filtroVals$filtro_periodo,
+    data_inicial = filtroVals$data_inicial,
+    data_final = filtroVals$data_final,
+    max_unicos_i = 20,
+    total = "VR CUSTO OBRA",
+    data = "Data de consulta",
+    comeco.titulo = "Custo de obras"
+  )
 
   # Inicializa o módulo de visualização de despesas
   g_barras.empilhadas.mes_server(

@@ -424,6 +424,9 @@ e_cef_dcd_resumo <-
         `RECOMP. S/ REG ETAPA (PJ)` = `RECOMP. S/ REG ETAPA (PJ)`,
         `VR TOTAL ANTEC (PJ)` = `VR TOTAL ANTEC (PJ)`,
         # Metadados
+        `Data de consulta` = linhas_c[2] %>%
+          str_extract("(?<=\\s)\\d{2}/\\d{2}/\\d{2}\\s?\\d{2}:\\d{2}") %>%
+          dmy_hm(),
         Arquivo = f_caminho.arquivo_c
       )
     return(dados.cef.dcd.resumo_t)
