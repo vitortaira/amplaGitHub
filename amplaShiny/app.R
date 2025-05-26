@@ -90,19 +90,34 @@ ui <- fluidPage(
         border-bottom: 1px solid #ddd;
       }
 
-      /* Make sub-tabs sticky, with less vertical offset from the top tabs */
+      /* Make sub-tabs sticky but without frame/shadow */
       .tab-content .nav-tabs {
         position: sticky;
-        top: 10px; /* Reduced from 40px */
+        top: 42px;
         z-index: 1039;
         background-color: #fff;
-        margin-bottom: 20;
-        border-bottom: 1px solid #ddd;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        /* Removed: border-bottom and box-shadow */
       }
 
-      /* Shrink top margin on content so sub-tabs are closer to main tabs */
+      /* Add proper spacing after main tabs */
       .tab-content {
-        margin-top: 50px; /* Reduced from 80px */
+        margin-top: 10px;
+        padding-top: 40px;
+      }
+
+      /* Style for periodo filter container - make it sticky */
+      .periodo-filter-container {
+        position: sticky;
+        top: 90px; /* Position it below the two tab rows */
+        z-index: 1038; /* Below the tabs but above other content */
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 20px;
+        background-color: #f9f9f9;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
       }
 
       /* For detail tables: prevent text wrapping, clip if too long */
@@ -301,7 +316,11 @@ server <- function(input, output, session) {
                   value = "Financeiro",
                   fluidPage(
                     # Filtro temporal para os gráficos financeiros
-                    filtro_periodo_module_ui("myFiltro"),
+                    div(
+                      class = "periodo-filter-container",
+                      h4("Filtro de Período", style = "margin-top: 0; margin-bottom: 10px;"),
+                      filtro_periodo_module_ui("myFiltro")
+                    ),
                     h2("Custo de obras"),
                     # Gráfico de trajetória dos custos de obras
                     gs_barras.cef.cobra_ui("gs_barras.cef.cobra"),
