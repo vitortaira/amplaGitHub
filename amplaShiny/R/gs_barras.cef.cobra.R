@@ -7,13 +7,10 @@
 gs_barras.cef.cobra_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    selectInput(
-      ns("empreend_select"),
-      "EMPREENDIMENTO",
-      choices = character(0),  # Will be updated in server
-      selected = NULL
-    ),
-    # Placeholder for one or multiple plots
+    # Replace static selectInput with a placeholder
+    uiOutput(ns("empreend_select_container")),
+
+    # Keep the plot container
     uiOutput(ns("plot_container"))
   )
 }
@@ -22,36 +19,43 @@ gs_barras.cef.cobra_ui <- function(id) {
 # SERVER
 # ------------------------------------------------------------------------------
 gs_barras.cef.cobra_server <- function(
-  id,
-  dados,            # normal data.frame
-  filtro_periodo,
-  data_inicial,
-  data_final
-) {
+    id,
+    dados,
+    filtro_periodo,
+    data_inicial,
+    data_final) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # 1) Gather distinct EMPREENDIMENTO values
-    empreend_values <- sort(unique(dados[["EMPREENDIMENTO"]]))
-    # Add "Mostrar todos" on top
-    full_choices <- c("Mostrar todos", empreend_values)
+    # 1) CRITICAL FIX: Define empreend_values as a REACTIVE at module level
+    empreend_values <- reactive({
+      req(dados)
+      sort(unique(as.character(dados$EMPREENDIMENTO)))
+    })
 
-    # 2) Populate the selectInput
-    observe({
-      updateSelectInput(
-        session, "empreend_select",
-        choices = full_choices,
-        selected = empreend_values[1]  # or "Mostrar todos"
+    # 2) Use empreend_values() with parentheses in renderUI
+    output$empreend_select_container <- renderUI({
+      selectInput(
+        inputId = ns("empreend_select"),
+        label = "EMPREENDIMENTO",
+        choices = c("Mostrar todos", empreend_values()), # <-- note the parentheses
+        selected = "Mostrar todos"
       )
     })
 
-    # 3) Determine date range from filtro_periodo
+    # 3) Debug messages (can keep if needed)
+    observe({
+      message("DEBUGGING: nrow(dados) = ", nrow(dados))
+      message("DEBUGGING: empreend_values length = ", length(empreend_values()))
+    })
+
+    # 4) Determine date range from filtro_periodo
     period <- reactive({
       req(filtro_periodo())
       today <- Sys.Date()
       switch(filtro_periodo(),
         "ano_corrente" = list(start = floor_date(today, "year"), end = today),
-        "ultimos_12"   = list(start = today %m-% months(12), end = today),
+        "ultimos_12" = list(start = today %m-% months(12), end = today),
         "desde_inicio" = {
           all_dates <- as.Date(dados[["Data de consulta"]], origin = "1970-01-01")
           list(start = min(all_dates, na.rm = TRUE), end = today)
@@ -63,7 +67,7 @@ gs_barras.cef.cobra_server <- function(
       )
     })
 
-    # 4) Define a function that produces the same stacked bar + line plot
+    # 5) Define a function that produces the same stacked bar + line plot
     build_plot <- function(df_filtered) {
       req(nrow(df_filtered) > 0)
 
@@ -87,9 +91,11 @@ gs_barras.cef.cobra_server <- function(
       p <- plot_ly(df_summarized, x = ~Mês) %>%
         add_trace(y = ~PJ, type = "bar", name = "SALDO MUTUARIO (PJ)", marker = list(color = "#66c2a5")) %>%
         add_trace(y = ~PF, type = "bar", name = "SALDO MUTUARIO (PF)", marker = list(color = "#fc8d62")) %>%
-        add_trace(y = ~(-Etapa), type = "bar", name = "-MAXIMO LIB. ETAPA (PJ)", marker = list(color = "#8da0cb")) %>%
-        add_trace(y = ~Garantia, type = "scatter", mode = "lines+markers",
-          name = "GARANTIA TERMINO OBRA", yaxis = "y2", line = list(color = "black", width = 2)) %>%
+        add_trace(y = ~ (-Etapa), type = "bar", name = "-MAXIMO LIB. ETAPA (PJ)", marker = list(color = "#8da0cb")) %>%
+        add_trace(
+          y = ~Garantia, type = "scatter", mode = "lines+markers",
+          name = "GARANTIA TERMINO OBRA", yaxis = "y2", line = list(color = "black", width = 2)
+        ) %>%
         layout(
           barmode = "relative",
           xaxis = list(type = "date", tickformat = "%m-%Y", title = "Mês"),
@@ -105,13 +111,13 @@ gs_barras.cef.cobra_server <- function(
       p
     }
 
-    # 5) UI logic: single chart or multiple
+    # 6) UI logic: single chart or multiple
     output$plot_container <- renderUI({
       req(input$empreend_select)
       if (input$empreend_select == "Mostrar todos") {
         # Return one plotlyOutput per distinct EMPREENDIMENTO
         tagList(
-          lapply(seq_along(empreend_values), function(i) {
+          lapply(seq_along(empreend_values()), function(i) { # <-- add parentheses
             plotlyOutput(ns(paste0("plot_", i)), height = "400px")
           })
         )
@@ -121,7 +127,7 @@ gs_barras.cef.cobra_server <- function(
       }
     })
 
-    # 6) Render the single plot if a specific EMPREENDIMENTO is chosen
+    # 7) Render the single plot if a specific EMPREENDIMENTO is chosen
     output$plot_single <- renderPlotly({
       req(input$empreend_select != "Mostrar todos")
       df_filtered <- dados %>%
@@ -129,13 +135,13 @@ gs_barras.cef.cobra_server <- function(
       build_plot(df_filtered)
     })
 
-    # 7) Render multiple smaller plots if “Mostrar todos” is chosen
+    # 8) Render multiple smaller plots if “Mostrar todos” is chosen
     observeEvent(input$empreend_select, {
       if (input$empreend_select == "Mostrar todos") {
-        for (i in seq_along(empreend_values)) {
+        for (i in seq_along(empreend_values())) { # <-- add parentheses
           local({
             idx <- i
-            empVal <- empreend_values[idx]
+            empVal <- empreend_values()[idx] # <-- add parentheses
             output[[paste0("plot_", idx)]] <- renderPlotly({
               df_filtered <- dados %>% filter(EMPREENDIMENTO == empVal)
               build_plot(df_filtered) %>% layout(height = 350)

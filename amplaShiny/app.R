@@ -399,19 +399,6 @@ server <- function(input, output, session) {
 
   # Inicializa o módulo de visualização de despesas
   g_barras.empilhadas.mes_server(
-    "g_barras.empilhadas.mes.cobra",
-    dados = dados_l[["cef"]][["dcd"]],
-    filtro_periodo = filtroVals$filtro_periodo,
-    data_inicial = filtroVals$data_inicial,
-    data_final = filtroVals$data_final,
-    max_unicos_i = 20,
-    total = "VR CUSTO OBRA",
-    data = "Data de consulta",
-    comeco.titulo = "Custo de obras"
-  )
-
-  # Inicializa o módulo de visualização de despesas
-  g_barras.empilhadas.mes_server(
     "g_barras.empilhadas.mes.desp",
     dados = dados_l[["ik"]][["desp"]],
     filtro_periodo = filtroVals$filtro_periodo,
