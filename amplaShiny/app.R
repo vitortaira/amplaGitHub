@@ -365,7 +365,7 @@ server <- function(input, output, session) {
                 ),
                 tabPanel("Obras",
                   value = "Obras",
-                  h2("Cronograma contratual com a CEF"),
+                  h2("Cronograma dos contratos com a CEF"),
                   "Linha de crédito: Apoio à Produção",
                   tags$div(
                     g_cronogramas_cef_ui("g_cronogramas.cef"),
@@ -462,10 +462,14 @@ server <- function(input, output, session) {
     comeco.titulo  = "Entradas e saídas empilhadas por"
   )
 
-  # Inicializa o módulo de cronogramas da CEF
+  # Inicializa o módulo de cronogramas da CEF com o dcd filtrado
+  dcd_filtrado <- dados_l[["cef"]][["dcd"]] %>%
+    group_by(EMPREENDIMENTO) %>%
+    filter(`Data de consulta` == max(`Data de consulta`, na.rm = TRUE)) %>%
+    ungroup()
   g_cronogramas_cef_server(
     "g_cronogramas.cef",
-    dados = dados_l[["cef"]][["dcd"]]
+    dados = dcd_filtrado
   )
 
   # Inicializa o módulo de histograma de metadados

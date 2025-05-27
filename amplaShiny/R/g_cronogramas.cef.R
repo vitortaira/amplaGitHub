@@ -48,7 +48,7 @@ g_cronogramas_cef_server <- function(id, dados) {
     # Add jitter to overlapping points
     df_cron <- df_cron %>%
       group_by(EMPREENDIMENTO, Data) %>%
-      mutate(jitter = (row_number() - 1) * 0.15) %>%
+      mutate(jitter = (row_number() - 1) * 0.05) %>%
       ungroup()
 
     # Gray segments: min/max for each empreendimento
@@ -106,7 +106,7 @@ g_cronogramas_cef_server <- function(id, dados) {
             data = df_marco,
             x = ~Data,
             y = ~ as.numeric(EMPREENDIMENTO) + jitter,
-            name = legendas[marco],  # Use custom legend label
+            name = legendas[marco], # Use custom legend label
             marker = list(
               size = 14,
               symbol = shapes[marco],
@@ -126,36 +126,37 @@ g_cronogramas_cef_server <- function(id, dados) {
         xaxis = list(
           title = "Data",
           type = "date",
+          dragmode = "false", # disables drag/select
           rangeslider = list(
             visible = TRUE,
             yaxis = list(range = c(0, 0)),
-            bgcolor = "#f5f5f5",      # Light gray for slider background
-            thickness = 0.10,         # Slightly thicker for distinction
+            bgcolor = "#f5f5f5",
+            thickness = 0.22, # more separation
             bordercolor = "#bbb",
             borderwidth = 1
+            # pad removed, as it is not respected by plotly.js in R
           )
         ),
         yaxis = list(
-          title = "Empreendimento",
+          title = list(text = "Empreendimento", standoff = 50),
           tickvals = seq_along(levels(df_cron$EMPREENDIMENTO)),
           ticktext = levels(df_cron$EMPREENDIMENTO),
           autorange = "reversed",
           automargin = TRUE,
-          standoff = 30              # Space between y label and tick labels
+          standoff = 30 # Space between y label and tick labels
         ),
-        legend = list(title = list(text = "Marco")),
+        legend = list(title = list(text = "Datas")),
         hoverlabel = list(namelength = -1),
-        margin = list(l = 220, r = 10, t = 10, b = 40) # Larger left margin
+        margin = list(l = 200, r = 10, t = 10, b = 40) # Larger left margin
       ) %>%
       config(
         displayModeBar = TRUE,
-        toImageButtonOptions = list(format = "png"),
-        modeBarButtonsToRemove = c(
-          "zoom2d", "select2d", "lasso2d", "autoScale2d",
-          "zoomIn2d", "zoomOut2d", "resetScale2d"
+        modeBarButtonsToRemove = list(
+          "zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud", "toggleHover", "resetViews", "resetViewMapbox", "zoom3d", "pan3d", "orbitRotation", "tableRotation", "resetCameraDefault3d", "resetCameraLastSave3d", "hoverClosest3d", "zoomInGeo", "zoomOutGeo", "resetGeo", "hoverClosestGeo", "toImage", "plotlyLogo" # remove plotly logo explicitly
         ),
-        scrollZoom = FALSE,
-        doubleClick = FALSE
+        modeBarButtonsToKeep = list("toImage"),
+        toImageButtonOptions = list(format = "png"),
+        scrollZoom = FALSE
       )
 
     output$plot_cronogramas <- renderPlotly({
