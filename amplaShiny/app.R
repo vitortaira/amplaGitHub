@@ -15,6 +15,7 @@ library(here) # Para gerenciamento de caminhos relativos ao projeto
 library(htmlwidgets) # Para exportação de gráficos interativos
 library(lubridate) # Para manipulação e formatação de datas
 library(plotly) # Para criação de gráficos interativos
+library(RColorBrewer) # Para paletas de cores
 library(readxl) # Para leitura de arquivos Excel (.xlsx, .xls)
 library(shiny) # Framework para desenvolvimento de aplicações web interativas
 library(tidyverse) # Meta-pacote com dplyr, ggplot2, tidyr, etc
@@ -27,6 +28,7 @@ library(visNetwork) # Para visualização de redes e grafos
 source(here("R", "b_dados.R")) # Módulo de busca de dados
 source(here("R", "filtro_periodo.R")) # Filtros temporais para os dados
 source(here("R", "g_barras.empilhadas.mes.R")) # Visualização de trajetória de despesas
+source(here("R", "g_cronogramas.cef.R")) # Cronogramas nos contratos com a CEF
 source(here("R", "gs_barras.cef.cobra.R"))
 source(here("R", "g_gnw.R")) # Rede de grafos
 source(here("R", "g_metadados.hist.R")) # Histograma de metadados
@@ -365,6 +367,7 @@ server <- function(input, output, session) {
                   value = "Obras",
                   h2("Obras"),
                   tags$div(
+                    g_cronogramas_cef_ui("g_cronogramas.cef"),
                     h3("Gráficos"),
                     tags$ul(
                       tags$li("Status atual dos projetos em andamento"),
@@ -413,7 +416,12 @@ server <- function(input, output, session) {
     dados = dados_l[["cef"]][["dcd"]],
     filtro_periodo = filtroVals$filtro_periodo,
     data_inicial = filtroVals$data_inicial,
-    data_final = filtroVals$data_final
+    data_final = filtroVals$data_final,
+    positive = c("SALDO MUTUARIO (PJ)", "SALDO MUTUARIO (PF)"),
+    negative = c("MAXIMO LIB. ETAPA (PJ)"),
+    line = "GARANTIA TERMINO OBRA",
+    date = "Data de consulta",
+    ref_line_col = "VR CUSTO OBRA"
   )
 
   # Inicializa o módulo de visualização de despesas
@@ -453,6 +461,12 @@ server <- function(input, output, session) {
     total          = "Valor",
     data           = "Data de movimento",
     comeco.titulo  = "Entradas e saídas empilhadas por"
+  )
+
+  # Inicializa o módulo de cronogramas da CEF
+  g_cronogramas_cef_server(
+    "g_cronogramas.cef",
+    dados = dados_l[["cef"]][["dcd"]]
   )
 
   # Inicializa o módulo de histograma de metadados

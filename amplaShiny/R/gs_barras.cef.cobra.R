@@ -23,7 +23,12 @@ gs_barras.cef.cobra_server <- function(
     dados,
     filtro_periodo,
     data_inicial,
-    data_final) {
+    data_final,
+    positive = c("SALDO MUTUARIO (PJ)", "SALDO MUTUARIO (PF)"),
+    negative = c("MAXIMO LIB. ETAPA (PJ)"),
+    line = "GARANTIA TERMINO OBRA",
+    date = "Data de consulta",
+    ref_line_col = "VR CUSTO OBRA") {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -57,7 +62,7 @@ gs_barras.cef.cobra_server <- function(
         "ano_corrente" = list(start = floor_date(today, "year"), end = today),
         "ultimos_12" = list(start = today %m-% months(12), end = today),
         "desde_inicio" = {
-          all_dates <- as.Date(dados[["Data de consulta"]], origin = "1970-01-01")
+          all_dates <- as.Date(dados[[date]], origin = "1970-01-01")
           list(start = min(all_dates, na.rm = TRUE), end = today)
         },
         "personalizado" = {
@@ -71,36 +76,90 @@ gs_barras.cef.cobra_server <- function(
     build_plot <- function(df_filtered) {
       req(nrow(df_filtered) > 0)
 
-      # Get the VR CUSTO OBRA value (assuming it's constant for the EMPREENDIMENTO)
-      vr_custo_obra <- mean(df_filtered$`VR CUSTO OBRA`, na.rm = TRUE)
+      # Get the reference line value (assuming it's constant for the EMPREENDIMENTO)
+      ref_line_value <- mean(df_filtered[[ref_line_col]], na.rm = TRUE)
 
       # Summarize data by month
       pr <- period()
       df_summarized <- df_filtered %>%
-        mutate(.dt = as.Date(`Data de consulta`)) %>%
+        mutate(.dt = as.Date(df_filtered[[date]])) %>%
         filter(.dt >= pr$start, .dt <= pr$end) %>%
-        group_by(Mês = floor_date(.dt, "month")) %>%
-        summarise(
-          PJ       = sum(`SALDO MUTUARIO (PJ)`, na.rm = TRUE),
-          PF       = sum(`SALDO MUTUARIO (PF)`, na.rm = TRUE),
-          Etapa    = sum(`MAXIMO LIB. ETAPA (PJ)`, na.rm = TRUE),
-          Garantia = sum(`GARANTIA TERMINO OBRA`, na.rm = TRUE),
-          .groups  = "drop"
-        )
+        group_by(Mês = floor_date(.dt, "month"))
+
+      # Build summarize expression dynamically
+      summary_exprs <- list(.groups = "drop")
+
+      # Add positive columns
+      for (col in positive) {
+        col_clean <- make.names(col)
+        summary_exprs[[col_clean]] <- rlang::expr(sum(!!rlang::sym(col), na.rm = TRUE))
+      }
+
+      # Add negative columns
+      for (col in negative) {
+        col_clean <- make.names(col)
+        summary_exprs[[col_clean]] <- rlang::expr(sum(!!rlang::sym(col), na.rm = TRUE))
+      }
+
+      # Add line column
+      if (!is.null(line)) {
+        line_clean <- make.names(line)
+        summary_exprs[[line_clean]] <- rlang::expr(sum(!!rlang::sym(line), na.rm = TRUE))
+      }
+
+      # Apply summarization
+      df_summarized <- df_summarized %>%
+        summarise(!!!summary_exprs)
 
       req(nrow(df_summarized) > 0)
 
+      # Color palettes
+      colors_positive <- c("#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854")
+      colors_negative <- c("#8da0cb", "#e78ac3", "#a6d854")
+
       # Build the plot
-      p <- plot_ly(df_summarized, x = ~Mês) %>%
-        add_trace(y = ~PJ, type = "bar", name = "SALDO MUTUARIO (PJ)", marker = list(color = "#66c2a5")) %>%
-        add_trace(y = ~PF, type = "bar", name = "SALDO MUTUARIO (PF)", marker = list(color = "#fc8d62")) %>%
-        add_trace(y = ~ (-Etapa), type = "bar", name = "-MAXIMO LIB. ETAPA (PJ)", marker = list(color = "#8da0cb")) %>%
-        add_trace(
-          y = ~Garantia, type = "scatter", mode = "lines+markers",
-          name = "GARANTIA TERMINO OBRA",
+      p <- plot_ly(df_summarized, x = ~Mês)
+
+      # Add positive traces
+      for (i in seq_along(positive)) {
+        col <- positive[i]
+        col_clean <- make.names(col)
+        color_idx <- (i - 1) %% length(colors_positive) + 1
+        p <- p %>% add_trace(
+          y = as.formula(paste0("~`", col_clean, "`")),
+          type = "bar",
+          name = col,
+          marker = list(color = colors_positive[color_idx])
+        )
+      }
+
+      # Add negative traces
+      for (i in seq_along(negative)) {
+        col <- negative[i]
+        col_clean <- make.names(col)
+        color_idx <- (i - 1) %% length(colors_negative) + 1
+        p <- p %>% add_trace(
+          y = as.formula(paste0("~(-`", col_clean, "`)")),
+          type = "bar",
+          name = paste0("-", col),
+          marker = list(color = colors_negative[color_idx])
+        )
+      }
+
+      # Add line trace if specified
+      if (!is.null(line)) {
+        line_clean <- make.names(line)
+        p <- p %>% add_trace(
+          y = as.formula(paste0("~`", line_clean, "`")),
+          type = "scatter",
+          mode = "lines+markers",
+          name = line,
           line = list(color = "black", width = 2)
-        ) %>%
-        # Add horizontal reference line for VR CUSTO OBRA
+        )
+      }
+
+      # Layout with reference line
+      p <- p %>%
         layout(
           barmode = "relative",
           xaxis = list(type = "date", tickformat = "%m-%Y", title = "Mês"),
@@ -114,8 +173,8 @@ gs_barras.cef.cobra_server <- function(
               type = "line",
               x0 = 0,
               x1 = 1,
-              y0 = vr_custo_obra,
-              y1 = vr_custo_obra,
+              y0 = ref_line_value,
+              y1 = ref_line_value,
               xref = "paper",
               yref = "y",
               line = list(
@@ -127,13 +186,13 @@ gs_barras.cef.cobra_server <- function(
           ),
           annotations = list(
             list(
-              x = 1,
-              y = vr_custo_obra,
+              x = 0,
+              y = ref_line_value,
               xref = "paper",
               yref = "y",
-              text = paste("VR CUSTO OBRA:", format(vr_custo_obra, big.mark = ".", decimal.mark = ",")),
+              text = paste(ref_line_col, ":", format(ref_line_value, big.mark = ".", decimal.mark = ",")),
               showarrow = FALSE,
-              xanchor = "right",
+              xanchor = "left",
               bgcolor = "rgba(255, 255, 255, 0.8)",
               bordercolor = "red",
               borderwidth = 1,
@@ -170,7 +229,7 @@ gs_barras.cef.cobra_server <- function(
       build_plot(df_filtered)
     })
 
-    # 8) Render multiple smaller plots if “Mostrar todos” is chosen
+    # 8) Render multiple smaller plots if "Mostrar todos" is chosen
     observeEvent(input$empreend_select, {
       if (input$empreend_select == "Mostrar todos") {
         for (i in seq_along(empreend_values())) { # <-- add parentheses
