@@ -320,7 +320,7 @@ server <- function(input, output, session) {
                     # Filtro temporal para os gráficos financeiros
                     div(
                       class = "periodo-filter-container",
-                      h4("Filtro de Período", style = "margin-top: 0; margin-bottom: 10px;"),
+                      h4("Período em análise:", style = "margin-top: 0; margin-bottom: 10px;"),
                       filtro_periodo_module_ui("myFiltro")
                     ),
                     h2("Custo de obras"),

@@ -83,15 +83,15 @@ g_cronogramas_cef_server <- function(id, dados) {
         y = ~ as.numeric(EMPREENDIMENTO), yend = ~ as.numeric(EMPREENDIMENTO),
         line = list(color = "#D50000", width = 6), # red and thinner
         hoverinfo = "none",
-        name = "Período de Obra",
+        name = "Período de obra",
         showlegend = TRUE
       )
 
     # Custom legend labels
     legendas <- c(
-      "DATA DE ASSINATURA" = "Assinatura",
+      "DATA DE ASSINATURA" = "Assinatura do contrato",
       "DATA INICIO OBRA" = "Início da obra",
-      "DATA TERMINO SUSPENSIVA" = "Término suspensiva",
+      "DATA TERMINO SUSPENSIVA" = "Término da suspensiva do contrato",
       "DATA TERMINO OBRA ORIGINAL" = "Término original da obra",
       "DATA TERMINO OBRA ATUAL" = "Término atual da obra",
       "DT INICIO ROTINA ATRASO OBRA" = "Início de rotina de atraso da obra"
@@ -126,12 +126,13 @@ g_cronogramas_cef_server <- function(id, dados) {
         xaxis = list(
           title = "Data",
           type = "date",
-          dragmode = "false", # disables drag/select
+          dragmode = "false",
+          fixedrange = TRUE,
           rangeslider = list(
             visible = TRUE,
             yaxis = list(range = c(0, 0)),
             bgcolor = "#f5f5f5",
-            thickness = 0.22, # more separation
+            thickness = 0.25, # more separation
             bordercolor = "#bbb",
             borderwidth = 1
             # pad removed, as it is not respected by plotly.js in R
@@ -139,6 +140,7 @@ g_cronogramas_cef_server <- function(id, dados) {
         ),
         yaxis = list(
           title = list(text = "Empreendimento", standoff = 50),
+          fixedrange = TRUE,
           tickvals = seq_along(levels(df_cron$EMPREENDIMENTO)),
           ticktext = levels(df_cron$EMPREENDIMENTO),
           autorange = "reversed",
@@ -151,10 +153,7 @@ g_cronogramas_cef_server <- function(id, dados) {
       ) %>%
       config(
         displayModeBar = TRUE,
-        modeBarButtonsToRemove = list(
-          "zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud", "toggleHover", "resetViews", "resetViewMapbox", "zoom3d", "pan3d", "orbitRotation", "tableRotation", "resetCameraDefault3d", "resetCameraLastSave3d", "hoverClosest3d", "zoomInGeo", "zoomOutGeo", "resetGeo", "hoverClosestGeo", "toImage", "plotlyLogo" # remove plotly logo explicitly
-        ),
-        modeBarButtonsToKeep = list("toImage"),
+        modeBarButtonsToAdd = list("toImage"),
         toImageButtonOptions = list(format = "png"),
         scrollZoom = FALSE
       )

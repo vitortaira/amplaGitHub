@@ -3,7 +3,7 @@ filtro_periodo_module_ui <- function(id) {
   tagList(
     radioButtons(
       inputId = ns("filtro_periodo"),
-      label = "Filtrar período:",
+      label = NULL,
       choices = c(
         "Ano corrente"     = "ano_corrente",
         "Últimos 12 meses" = "ultimos_12",
