@@ -368,11 +368,9 @@ server <- function(input, output, session) {
                   h2("Obras"),
                   tags$div(
                     g_cronogramas_cef_ui("g_cronogramas.cef"),
-                    h3("Gráficos"),
+                    h2("Pendências"),
                     tags$ul(
-                      tags$li("Status atual dos projetos em andamento"),
-                      tags$li("Cronograma de execução das obras"),
-                      tags$li("Relatórios de progresso por empreendimento"),
+                      tags$li("Progresso dos empreendimentos por etapa"),
                     )
                   )
                 )

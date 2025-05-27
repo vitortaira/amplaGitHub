@@ -13,7 +13,6 @@ g_cronogramas_cef_server <- function(id, dados) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # Names of the 6 important dates in uppercase (wide format)
     nomes_datas <- c(
       "DATA DE ASSINATURA",
       "DATA INICIO OBRA",
@@ -23,27 +22,20 @@ g_cronogramas_cef_server <- function(id, dados) {
       "DT INICIO ROTINA ATRASO OBRA"
     )
 
-    # Custom shapes and colors
     shapes <- c(
-      "square", # DATA DE ASSINATURA (yellow square)
-      "circle", # DATA INICIO OBRA (yellow circle)
-      "square", # DATA TERMINO SUSPENSIVA (green square)
-      "circle", # DATA TERMINO OBRA ORIGINAL (lightgreen circle)
-      "circle", # DATA TERMINO OBRA ATUAL (green circle)
-      "x" # DT INICIO ROTINA ATRASO OBRA (red x)
+      "square", "circle", "square", "circle", "circle", "x"
     )
     names(shapes) <- nomes_datas
 
     cores <- c(
-      "DATA DE ASSINATURA" = "#FFD600", # yellow
-      "DATA INICIO OBRA" = "#FFD600", # yellow
-      "DATA TERMINO SUSPENSIVA" = "#43A047", # green
-      "DATA TERMINO OBRA ORIGINAL" = "#B2FF59", # lightgreen
-      "DATA TERMINO OBRA ATUAL" = "#43A047", # green
-      "DT INICIO ROTINA ATRASO OBRA" = "#D50000" # red
+      "DATA DE ASSINATURA" = "#FFD600",
+      "DATA INICIO OBRA" = "#FFD600",
+      "DATA TERMINO SUSPENSIVA" = "#43A047",
+      "DATA TERMINO OBRA ORIGINAL" = "#B2FF59",
+      "DATA TERMINO OBRA ATUAL" = "#43A047",
+      "DT INICIO ROTINA ATRASO OBRA" = "#D50000"
     )
 
-    # Pivot from wide to long format
     df_cron <- dados %>%
       mutate(EMPREENDIMENTO = factor(EMPREENDIMENTO)) %>%
       tidyr::pivot_longer(
@@ -64,10 +56,15 @@ g_cronogramas_cef_server <- function(id, dados) {
       group_by(EMPREENDIMENTO) %>%
       summarise(x0 = min(Data), x1 = max(Data), .groups = "drop")
 
-    # Build plotly
+    # Highlighted segments: from DATA INICIO OBRA to DATA TERMINO OBRA ATUAL
+    destaques <- dados %>%
+      filter(!is.na(`DATA INICIO OBRA`), !is.na(`DATA TERMINO OBRA ATUAL`)) %>%
+      mutate(EMPREENDIMENTO = factor(EMPREENDIMENTO, levels = levels(df_cron$EMPREENDIMENTO))) %>%
+      select(EMPREENDIMENTO, x0 = `DATA INICIO OBRA`, x1 = `DATA TERMINO OBRA ATUAL`)
+
     fig <- plot_ly()
 
-    # Add gray segments
+    # Add gray segments (full project duration)
     fig <- fig %>%
       add_segments(
         data = linhas_base,
@@ -76,6 +73,18 @@ g_cronogramas_cef_server <- function(id, dados) {
         line = list(color = "lightgray", width = 6),
         hoverinfo = "none",
         showlegend = FALSE
+      )
+
+    # Add highlighted segments (obra period)
+    fig <- fig %>%
+      add_segments(
+        data = destaques,
+        x = ~x0, xend = ~x1,
+        y = ~ as.numeric(EMPREENDIMENTO), yend = ~ as.numeric(EMPREENDIMENTO),
+        line = list(color = "#D50000", width = 6), # red and thinner
+        hoverinfo = "none",
+        name = "Período de Obra",
+        showlegend = TRUE
       )
 
     # Add one trace per Marco for correct color and symbol mapping
@@ -103,13 +112,13 @@ g_cronogramas_cef_server <- function(id, dados) {
 
     fig <- fig %>%
       layout(
-        title = "Cronogramas por Empreendimento",
+        title = NULL,
         xaxis = list(
           title = "Data",
           type = "date",
           rangeslider = list(
             visible = TRUE,
-            yaxis = list(range = c(0, 0)), # This disables the mini-chart!
+            yaxis = list(range = c(0, 0)),
             bgcolor = "white",
             thickness = 0.07,
             bordercolor = "#ddd",
@@ -120,22 +129,19 @@ g_cronogramas_cef_server <- function(id, dados) {
           title = "Empreendimento",
           tickvals = seq_along(levels(df_cron$EMPREENDIMENTO)),
           ticktext = levels(df_cron$EMPREENDIMENTO),
-          autorange = "reversed"
+          autorange = "reversed",
+          automargin = TRUE
         ),
-        legend = list(title = list(text = "Marco")),
+        legend = list(title = list(text = "Datas")),
         hoverlabel = list(namelength = -1),
-        margin = list(l = 90, r = 10, t = 60, b = 40)
+        margin = list(l = 180, r = 10, t = 60, b = 40)
       ) %>%
       config(
         displayModeBar = TRUE,
         toImageButtonOptions = list(format = "png"),
-        scrollZoom = FALSE,      # disables zoom with scroll
-        doubleClick = FALSE,     # disables double click zoom
-        staticPlot = FALSE,      # disables all interactivity if TRUE (set to FALSE to keep hover)
         modeBarButtonsToRemove = c("zoom2d", "select2d", "lasso2d", "autoScale2d", "zoomIn2d", "zoomOut2d", "resetScale2d")
       )
 
-    # Render
     output$plot_cronogramas <- renderPlotly({
       fig
     })
