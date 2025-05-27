@@ -87,6 +87,16 @@ g_cronogramas_cef_server <- function(id, dados) {
         showlegend = TRUE
       )
 
+    # Custom legend labels
+    legendas <- c(
+      "DATA DE ASSINATURA" = "Assinatura",
+      "DATA INICIO OBRA" = "Início da obra",
+      "DATA TERMINO SUSPENSIVA" = "Término suspensiva",
+      "DATA TERMINO OBRA ORIGINAL" = "Término original da obra",
+      "DATA TERMINO OBRA ATUAL" = "Término atual da obra",
+      "DT INICIO ROTINA ATRASO OBRA" = "Início de rotina de atraso da obra"
+    )
+
     # Add one trace per Marco for correct color and symbol mapping
     for (marco in nomes_datas) {
       df_marco <- df_cron %>% filter(Marco == marco)
@@ -96,14 +106,14 @@ g_cronogramas_cef_server <- function(id, dados) {
             data = df_marco,
             x = ~Data,
             y = ~ as.numeric(EMPREENDIMENTO) + jitter,
-            name = marco,
+            name = legendas[marco],  # Use custom legend label
             marker = list(
               size = 14,
               symbol = shapes[marco],
               color = cores[marco],
               line = list(width = 1, color = "black")
             ),
-            hovertemplate = paste("<b>%{customdata}</b><br>", marco, "<br>%{text}<extra></extra>"),
+            hovertemplate = paste("<b>%{customdata}</b><br>", legendas[marco], "<br>%{text}<extra></extra>"),
             text = ~ paste(format(Data, "%d/%m/%Y")),
             customdata = ~EMPREENDIMENTO
           )
@@ -119,9 +129,9 @@ g_cronogramas_cef_server <- function(id, dados) {
           rangeslider = list(
             visible = TRUE,
             yaxis = list(range = c(0, 0)),
-            bgcolor = "white",
-            thickness = 0.07,
-            bordercolor = "#ddd",
+            bgcolor = "#f5f5f5",      # Light gray for slider background
+            thickness = 0.10,         # Slightly thicker for distinction
+            bordercolor = "#bbb",
             borderwidth = 1
           )
         ),
@@ -130,16 +140,22 @@ g_cronogramas_cef_server <- function(id, dados) {
           tickvals = seq_along(levels(df_cron$EMPREENDIMENTO)),
           ticktext = levels(df_cron$EMPREENDIMENTO),
           autorange = "reversed",
-          automargin = TRUE
+          automargin = TRUE,
+          standoff = 30              # Space between y label and tick labels
         ),
-        legend = list(title = list(text = "Datas")),
+        legend = list(title = list(text = "Marco")),
         hoverlabel = list(namelength = -1),
-        margin = list(l = 180, r = 10, t = 60, b = 40)
+        margin = list(l = 220, r = 10, t = 10, b = 40) # Larger left margin
       ) %>%
       config(
         displayModeBar = TRUE,
         toImageButtonOptions = list(format = "png"),
-        modeBarButtonsToRemove = c("zoom2d", "select2d", "lasso2d", "autoScale2d", "zoomIn2d", "zoomOut2d", "resetScale2d")
+        modeBarButtonsToRemove = c(
+          "zoom2d", "select2d", "lasso2d", "autoScale2d",
+          "zoomIn2d", "zoomOut2d", "resetScale2d"
+        ),
+        scrollZoom = FALSE,
+        doubleClick = FALSE
       )
 
     output$plot_cronogramas <- renderPlotly({

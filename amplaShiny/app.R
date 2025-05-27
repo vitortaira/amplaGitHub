@@ -365,7 +365,8 @@ server <- function(input, output, session) {
                 ),
                 tabPanel("Obras",
                   value = "Obras",
-                  h2("Obras"),
+                  h2("Cronograma contratual com a CEF"),
+                  "Linha de crédito: Apoio à Produção",
                   tags$div(
                     g_cronogramas_cef_ui("g_cronogramas.cef"),
                     h2("Pendências"),
