@@ -113,13 +113,18 @@ gs_barras.cef.cobra_server <- function(
 
       req(nrow(df_summarized) > 0)
 
-      # Color palettes
-      colors_positive <- c("#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854")
+      # Color palettes and pretty names
+      colors_positive <- c("#66c2a5", "#fc8d62", "8da0cb", "#e78ac3", "#a6d854")
       colors_negative <- c("#8da0cb", "#e78ac3", "#a6d854")
-
+      pretty_names <- c(
+        "SALDO MUTUARIO (PJ)" = "Saldo mutuário (PJ)",
+        "SALDO MUTUARIO (PF)" = "Saldo mutuário (PF)",
+        "MAXIMO LIB. ETAPA (PJ)" = "Valor máximo de liberação da etapa (PJ)",
+        "GARANTIA TERMINO OBRA" = "Custo obra a incorrer",
+        "VR CUSTO OBRA" = "Custo obra total"
+      )
       # Build the plot
       p <- plot_ly(df_summarized, x = ~Mês)
-
       # Add positive traces
       for (i in seq_along(positive)) {
         col <- positive[i]
@@ -128,11 +133,10 @@ gs_barras.cef.cobra_server <- function(
         p <- p %>% add_trace(
           y = as.formula(paste0("~`", col_clean, "`")),
           type = "bar",
-          name = col,
+          name = pretty_names[[col]],
           marker = list(color = colors_positive[color_idx])
         )
       }
-
       # Add negative traces
       for (i in seq_along(negative)) {
         col <- negative[i]
@@ -141,11 +145,10 @@ gs_barras.cef.cobra_server <- function(
         p <- p %>% add_trace(
           y = as.formula(paste0("~(-`", col_clean, "`)")),
           type = "bar",
-          name = paste0("-", col),
+          name = pretty_names[[col]],
           marker = list(color = colors_negative[color_idx])
         )
       }
-
       # Add line trace if specified
       if (!is.null(line)) {
         line_clean <- make.names(line)
@@ -153,17 +156,28 @@ gs_barras.cef.cobra_server <- function(
           y = as.formula(paste0("~`", line_clean, "`")),
           type = "scatter",
           mode = "lines+markers",
-          name = line,
+          name = pretty_names[[line]],
           line = list(color = "black", width = 2)
         )
       }
-
       # Layout with reference line
       p <- p %>%
         layout(
           barmode = "relative",
-          xaxis = list(type = "date", tickformat = "%m-%Y", title = "Mês"),
-          yaxis = list(title = "Valores"),
+          xaxis = list(
+            type = "date",
+            tickformat = "%b-%Y",
+            title = "Mês",
+            tickmode = "array",
+            tickvals = df_summarized$Mês,
+            ticktext = format(df_summarized$Mês, "%b-%Y"),
+            fixedrange = TRUE,
+            ticklabelmode = "period",
+            tickson = "boundaries",
+            ticklabelposition = "inside",
+            tickangle = 0
+          ),
+          yaxis = list(title = "Valores", fixedrange = TRUE),
           legend = list(orientation = "h", xanchor = "center", x = 0.5, y = -0.1),
           title = unique(df_filtered$EMPREENDIMENTO)[1],
           hovermode = "x",
@@ -190,7 +204,7 @@ gs_barras.cef.cobra_server <- function(
               y = ref_line_value,
               xref = "paper",
               yref = "y",
-              text = paste(ref_line_col, ":", format(ref_line_value, big.mark = ".", decimal.mark = ",")),
+              text = paste(pretty_names[[ref_line_col]], ":", format(ref_line_value, big.mark = ".", decimal.mark = ",")),
               showarrow = FALSE,
               xanchor = "left",
               bgcolor = "rgba(255, 255, 255, 0.8)",
@@ -200,7 +214,15 @@ gs_barras.cef.cobra_server <- function(
             )
           )
         ) %>%
-        config(displayModeBar = TRUE, displaylogo = FALSE)
+        config(
+          displayModeBar = TRUE,
+          modeBarButtonsToRemove = list(
+            "zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d", "hoverClosestCartesian", "hoverCompareCartesian", "toggleSpikelines", "sendDataToCloud", "toggleHover", "resetViews", "resetViewMapbox", "zoom3d", "pan3d", "orbitRotation", "tableRotation", "resetCameraDefault3d", "resetCameraLastSave3d", "hoverClosest3d", "zoomInGeo", "zoomOutGeo", "resetGeo", "hoverClosestGeo", "plotlyLogo"
+          ),
+          modeBarButtonsToKeep = list("toImage"),
+          toImageButtonOptions = list(format = "png"),
+          scrollZoom = FALSE
+        )
 
       p
     }
