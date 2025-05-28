@@ -29,7 +29,7 @@ source(here("R", "b_dados.R")) # Módulo de busca de dados
 source(here("R", "filtro_periodo.R")) # Filtros temporais para os dados
 source(here("R", "g_barras.empilhadas.mes.R")) # Visualização de trajetória de despesas
 source(here("R", "g_cronogramas.cef.R")) # Cronogramas nos contratos com a CEF
-source(here("R", "gs_barras.cef.cobra.R"))
+source(here("R", "gs_barras.empilhadas.mes.R"))
 source(here("R", "g_gnw.R")) # Rede de grafos
 source(here("R", "g_metadados.hist.R")) # Histograma de metadados
 source(here("R", "login.R")) # Sistema de autenticação
@@ -325,7 +325,7 @@ server <- function(input, output, session) {
                     ),
                     h2("Custo de obras"),
                     # Gráfico de trajetória dos custos de obras
-                    gs_barras.cef.cobra_ui("gs_barras.cef.cobra"),
+                    gs_barras.empilhadas.mes_ui("gs_barras.empilhadas.mes"),
                     h2("Despesas"),
                     # Gráfico de trajetória de despesas com opções de segmentação
                     g_barras.empilhadas.mes_ui(
@@ -339,14 +339,8 @@ server <- function(input, output, session) {
                       comeco.titulo = "Despesas empilhadas por" # static prefix for chart title
                     ),
                     h2("Extratos"),
-                    g_barras.empilhadas.mes_ui(
-                      "g_barras.empilhadas.mes.extcef",
-                      choices = c(
-                        "Cliente", "Conta_interno"
-                      ),
-                      total = "Valor",
-                      data = "Data de movimento",
-                      comeco.titulo = "Entradas e saídas empilhadas por"
+                    gs_barras.empilhadas.mes_ui(
+                      "gs_barras.empilhadas.mes.extcef"
                     ),
                     h2("Receitas"),
                     # Gráfico de trajetória de receitas com todas as dimensões disponíveis
@@ -410,8 +404,8 @@ server <- function(input, output, session) {
   # Inicializa o módulo de filtro de período e obtém valores selecionados
   filtroVals <- filtro_periodo_module_server("myFiltro")
 
-  gs_barras.cef.cobra_server(
-    "gs_barras.cef.cobra",
+  gs_barras.empilhadas.mes_server(
+    "gs_barras.empilhadas.mes",
     dados = dados_l[["cef"]][["dcd"]],
     filtro_periodo = filtroVals$filtro_periodo,
     data_inicial = filtroVals$data_inicial,
@@ -460,6 +454,26 @@ server <- function(input, output, session) {
     total          = "Valor",
     data           = "Data de movimento",
     comeco.titulo  = "Entradas e saídas empilhadas por"
+  )
+
+  # Prepara dados para gs_barras.empilhadas.mes.extcef: separa valores positivos e negativos
+  extcef_mod <- dados_l[["cef"]][["extcef"]] %>%
+    mutate(
+      Valor_positivo = ifelse(Valor > 0, Valor, 0),
+      Valor_negativo = ifelse(Valor < 0, abs(Valor), 0),
+      EMPREENDIMENTO = ifelse("EMPREENDIMENTO" %in% names(.), as.character(EMPREENDIMENTO), "Extratos")
+    )
+
+  gs_barras.empilhadas.mes_server(
+    "gs_barras.empilhadas.mes.extcef",
+    dados = extcef_mod,
+    filtro_periodo = filtroVals$filtro_periodo,
+    data_inicial = filtroVals$data_inicial,
+    data_final = filtroVals$data_final,
+    positive = c("Valor_positivo"),
+    negative = c("Valor_negativo"),
+    line = NULL,
+    date = "Data de movimento"
   )
 
   # Inicializa o módulo de cronogramas da CEF com o dcd filtrado

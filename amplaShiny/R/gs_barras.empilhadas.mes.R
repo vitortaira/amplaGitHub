@@ -1,10 +1,15 @@
 #### r
-#### filepath: c:\Users\Ampla\AMPLA INCORPORADORA LTDA\Controladoria - Documentos\amplaGitHub\amplaShiny\R\gs_barras.cef.cobra.R
+#### filepath: c:\Users\Ampla\AMPLA INCORPORADORA LTDA\Controladoria - Documentos\amplaGitHub\amplaShiny\R\gs_barras.empilhadas.mes.R
+
+#' @importFrom shiny NS tagList uiOutput moduleServer reactive req renderUI observe observeEvent plotlyOutput renderPlotly
+#' @importFrom dplyr filter mutate group_by summarise
+#' @importFrom lubridate floor_date %m-% months
+#' @importFrom plotly plot_ly add_trace config
 
 # ------------------------------------------------------------------------------
 # UI
 # ------------------------------------------------------------------------------
-gs_barras.cef.cobra_ui <- function(id) {
+gs_barras.empilhadas.mes_ui <- function(id) {
   ns <- NS(id)
   tagList(
     # Replace static selectInput with a placeholder
@@ -18,7 +23,7 @@ gs_barras.cef.cobra_ui <- function(id) {
 # ------------------------------------------------------------------------------
 # SERVER
 # ------------------------------------------------------------------------------
-gs_barras.cef.cobra_server <- function(
+gs_barras.empilhadas.mes_server <- function(
     id,
     dados,
     filtro_periodo,
