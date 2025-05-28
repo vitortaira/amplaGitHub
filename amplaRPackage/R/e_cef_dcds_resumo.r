@@ -37,6 +37,7 @@ e_cef_dcds_resumo <- function(
       Arquivo_tipo_tabela = "dcd",
       Arquivo_tipo = "dcd",
       Arquivo_fonte = "cef"
-    )
+    ) %>%
+    rename(EMPREENDIMENTO = Empreendimento)
   return(dcds.resumo_t)
 }

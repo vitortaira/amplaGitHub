@@ -460,8 +460,7 @@ server <- function(input, output, session) {
   extcef_mod <- dados_l[["cef"]][["extcef"]] %>%
     mutate(
       Valor_positivo = ifelse(Valor > 0, Valor, 0),
-      Valor_negativo = ifelse(Valor < 0, abs(Valor), 0),
-      EMPREENDIMENTO = ifelse("EMPREENDIMENTO" %in% names(.), as.character(EMPREENDIMENTO), "Extratos")
+      Valor_negativo = ifelse(Valor < 0, abs(Valor), 0)
     )
 
   gs_barras.empilhadas.mes_server(

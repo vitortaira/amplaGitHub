@@ -102,6 +102,7 @@ e_cef_extratos <-
         Valor, Saldo, Repasse, PJ, Conta_interno, Conta, `Agência`, Produto, CNPJ, Cliente,
         `Período_início`, `Período_fim`, `Data_consulta`, Contrato_6, Arquivo,
         Arquivo_tipo_tabela, Arquivo_tipo, Arquivo_fonte
-      )
+      ) %>%
+      rename(Empreendimento = Cliente)
     return(extratos_t)
   }

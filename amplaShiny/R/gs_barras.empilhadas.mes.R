@@ -40,7 +40,7 @@ gs_barras.empilhadas.mes_server <- function(
     # 1) CRITICAL FIX: Define empreend_values as a REACTIVE at module level
     empreend_values <- reactive({
       req(dados)
-      sort(unique(as.character(dados$EMPREENDIMENTO)))
+      sort(unique(as.character(dados$Empreendimento)))
     })
 
     # 2) Use empreend_values() with parentheses in renderUI
@@ -81,7 +81,7 @@ gs_barras.empilhadas.mes_server <- function(
     build_plot <- function(df_filtered) {
       req(nrow(df_filtered) > 0)
 
-      # Get the reference line value (assuming it's constant for the EMPREENDIMENTO)
+      # Get the reference line value (assuming it's constant for the Empreendimento)
       ref_line_value <- mean(df_filtered[[ref_line_col]], na.rm = TRUE)
 
       # Summarize data by month
@@ -184,7 +184,7 @@ gs_barras.empilhadas.mes_server <- function(
           ),
           yaxis = list(title = "Valores", fixedrange = TRUE),
           legend = list(orientation = "h", xanchor = "center", x = 0.5, y = -0.1),
-          title = unique(df_filtered$EMPREENDIMENTO)[1],
+          title = unique(df_filtered$Empreendimento)[1],
           hovermode = "x",
           margin = list(b = 80),
           shapes = list(
@@ -236,7 +236,7 @@ gs_barras.empilhadas.mes_server <- function(
     output$plot_container <- renderUI({
       req(input$empreend_select)
       if (input$empreend_select == "Mostrar todos") {
-        # Return one plotlyOutput per distinct EMPREENDIMENTO
+        # Return one plotlyOutput per distinct Empreendimento
         tagList(
           lapply(seq_along(empreend_values()), function(i) { # <-- add parentheses
             plotlyOutput(ns(paste0("plot_", i)), height = "400px")
@@ -248,11 +248,11 @@ gs_barras.empilhadas.mes_server <- function(
       }
     })
 
-    # 7) Render the single plot if a specific EMPREENDIMENTO is chosen
+    # 7) Render the single plot if a specific Empreendimento is chosen
     output$plot_single <- renderPlotly({
       req(input$empreend_select != "Mostrar todos")
       df_filtered <- dados %>%
-        filter(EMPREENDIMENTO == input$empreend_select)
+        filter(Empreendimento == input$empreend_select)
       build_plot(df_filtered)
     })
 
@@ -264,7 +264,7 @@ gs_barras.empilhadas.mes_server <- function(
             idx <- i
             empVal <- empreend_values()[idx] # <-- add parentheses
             output[[paste0("plot_", idx)]] <- renderPlotly({
-              df_filtered <- dados %>% filter(EMPREENDIMENTO == empVal)
+              df_filtered <- dados %>% filter(Empreendimento == empVal)
               build_plot(df_filtered) %>% layout(height = 350)
             })
           })
