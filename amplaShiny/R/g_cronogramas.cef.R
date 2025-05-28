@@ -37,7 +37,7 @@ g_cronogramas_cef_server <- function(id, dados) {
     )
 
     df_cron <- dados %>%
-      mutate(EMPREENDIMENTO = factor(EMPREENDIMENTO)) %>%
+      mutate(Empreendimento = factor(Empreendimento)) %>%
       tidyr::pivot_longer(
         cols = tidyselect::all_of(nomes_datas),
         names_to = "Marco",
@@ -47,20 +47,20 @@ g_cronogramas_cef_server <- function(id, dados) {
 
     # Add jitter to overlapping points
     df_cron <- df_cron %>%
-      group_by(EMPREENDIMENTO, Data) %>%
+      group_by(Empreendimento, Data) %>%
       mutate(jitter = (row_number() - 1) * 0.05) %>%
       ungroup()
 
     # Gray segments: min/max for each empreendimento
     linhas_base <- df_cron %>%
-      group_by(EMPREENDIMENTO) %>%
+      group_by(Empreendimento) %>%
       summarise(x0 = min(Data), x1 = max(Data), .groups = "drop")
 
     # Highlighted segments: from DATA INICIO OBRA to DATA TERMINO OBRA ATUAL
     destaques <- dados %>%
       filter(!is.na(`DATA INICIO OBRA`), !is.na(`DATA TERMINO OBRA ATUAL`)) %>%
-      mutate(EMPREENDIMENTO = factor(EMPREENDIMENTO, levels = levels(df_cron$EMPREENDIMENTO))) %>%
-      select(EMPREENDIMENTO, x0 = `DATA INICIO OBRA`, x1 = `DATA TERMINO OBRA ATUAL`)
+      mutate(Empreendimento = factor(Empreendimento, levels = levels(df_cron$Empreendimento))) %>%
+      select(Empreendimento, x0 = `DATA INICIO OBRA`, x1 = `DATA TERMINO OBRA ATUAL`)
 
     fig <- plot_ly()
 
@@ -69,7 +69,7 @@ g_cronogramas_cef_server <- function(id, dados) {
       add_segments(
         data = linhas_base,
         x = ~x0, xend = ~x1,
-        y = ~ as.numeric(EMPREENDIMENTO), yend = ~ as.numeric(EMPREENDIMENTO),
+        y = ~ as.numeric(Empreendimento), yend = ~ as.numeric(Empreendimento),
         line = list(color = "lightgray", width = 6),
         hoverinfo = "none",
         showlegend = FALSE
@@ -80,7 +80,7 @@ g_cronogramas_cef_server <- function(id, dados) {
       add_segments(
         data = destaques,
         x = ~x0, xend = ~x1,
-        y = ~ as.numeric(EMPREENDIMENTO), yend = ~ as.numeric(EMPREENDIMENTO),
+        y = ~ as.numeric(Empreendimento), yend = ~ as.numeric(Empreendimento),
         line = list(color = "#D50000", width = 6), # red and thinner
         hoverinfo = "none",
         name = "Período de obra",
@@ -105,7 +105,7 @@ g_cronogramas_cef_server <- function(id, dados) {
           add_markers(
             data = df_marco,
             x = ~Data,
-            y = ~ as.numeric(EMPREENDIMENTO) + jitter,
+            y = ~ as.numeric(Empreendimento) + jitter,
             name = legendas[marco], # Use custom legend label
             marker = list(
               size = 14,
@@ -115,7 +115,7 @@ g_cronogramas_cef_server <- function(id, dados) {
             ),
             hovertemplate = paste("<b>%{customdata}</b><br>", legendas[marco], "<br>%{text}<extra></extra>"),
             text = ~ paste(format(Data, "%d/%m/%Y")),
-            customdata = ~EMPREENDIMENTO
+            customdata = ~Empreendimento
           )
       }
     }
@@ -141,8 +141,8 @@ g_cronogramas_cef_server <- function(id, dados) {
         yaxis = list(
           title = list(text = "Empreendimento", standoff = 50),
           fixedrange = TRUE,
-          tickvals = seq_along(levels(df_cron$EMPREENDIMENTO)),
-          ticktext = levels(df_cron$EMPREENDIMENTO),
+          tickvals = seq_along(levels(df_cron$Empreendimento)),
+          ticktext = levels(df_cron$Empreendimento),
           autorange = "reversed",
           automargin = TRUE,
           standoff = 30 # Space between y label and tick labels
