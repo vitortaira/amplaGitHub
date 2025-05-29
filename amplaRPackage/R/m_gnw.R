@@ -5,7 +5,8 @@
 #'
 #' @return A shiny app representing the data flow
 #'
-#' @importFrom shiny shinyApp fluidPage inputPanel selectInput visNetworkOutput
+#' @importFrom visNetwork visNetworkOutput
+#' @importFrom shiny shinyApp fluidPage inputPanel selectInput
 #' @importFrom htmlwidgets onRender
 #' @importFrom visNetwork visNetwork visNodes visEdges visHierarchicalLayout visPhysics visOptions visInteraction visLegend
 #' @importFrom magrittr %>%

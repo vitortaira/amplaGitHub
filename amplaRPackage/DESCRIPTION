@@ -25,4 +25,7 @@ Imports:
   stringi,
   stringr,
   tibble,
-  tidyr
+  tidyr,
+  htmlwidgets,
+  shiny,
+  visNetwork
