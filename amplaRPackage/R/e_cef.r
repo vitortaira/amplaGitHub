@@ -32,25 +32,25 @@ e_cef <- function() {
   )
   ecn.e_f <- future(
     {
-      e_cef_ecns()$Empreendimento
+      e_cef_ecns()$ecn_e
     },
     seed = TRUE
   )
   ecn.pj_f <- future(
     {
-      e_cef_ecns()$Emprestimo
+      e_cef_ecns()$ecn_pj
     },
     seed = TRUE
   )
   ecn.u_f <- future(
     {
-      e_cef_ecns()$Unidades
+      e_cef_ecns()$ecn_u
     },
     seed = TRUE
   )
   ecn.c_f <- future(
     {
-      e_cef_ecns()$Consolidado
+      e_cef_ecns()$ecn_c
     },
     seed = TRUE
   )

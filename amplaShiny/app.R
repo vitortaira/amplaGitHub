@@ -477,7 +477,7 @@ server <- function(input, output, session) {
 
   # Inicializa o módulo de cronogramas da CEF com o dcd filtrado
   dcd_filtrado <- dados_l[["cef"]][["dcd"]] %>%
-    group_by(Empreendimento) %>%
+    group_by(EMPREENDIMENTO) %>%
     filter(`Data de consulta` == max(`Data de consulta`, na.rm = TRUE)) %>%
     ungroup()
   g_cronogramas_cef_server(

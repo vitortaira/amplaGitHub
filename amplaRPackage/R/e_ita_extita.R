@@ -87,10 +87,11 @@ e_ita_extita <-
         periodo.inicio = periodo.inicio_d,
         periodo.fim = periodo.fim_d,
         data.consulta = data.consulta_dhms,
+        Arquivo = f_caminho.arquivo.extita_c
       ) %>%
       select(
         data, valor, descricao, empresa, cnpj, agencia, conta,
-        periodo.inicio, periodo.fim, data.consulta
+        periodo.inicio, periodo.fim, data.consulta, Arquivo
       )
     # Tabela de saldo da conta corrente
     indice.extita.saldo.inicio_i <- linhas_c %>%
@@ -132,7 +133,7 @@ e_ita_extita <-
       )
     # Retorna a lista com os dados extraídos
     list(
-      extita = extita_t,
+      extita_l = extita_t,
       extita_c = extita.saldo_t
     )
   }

@@ -37,7 +37,7 @@ g_cronogramas_cef_server <- function(id, dados) {
     )
 
     df_cron <- dados %>%
-      mutate(Empreendimento = factor(Empreendimento)) %>%
+      mutate(Empreendimento = factor(EMPREENDIMENTO)) %>%
       tidyr::pivot_longer(
         cols = tidyselect::all_of(nomes_datas),
         names_to = "Marco",
@@ -47,19 +47,19 @@ g_cronogramas_cef_server <- function(id, dados) {
 
     # Add jitter to overlapping points
     df_cron <- df_cron %>%
-      group_by(Empreendimento, Data) %>%
+      group_by(EMPREENDIMENTO, Data) %>%
       mutate(jitter = (row_number() - 1) * 0.05) %>%
       ungroup()
 
     # Gray segments: min/max for each empreendimento
     linhas_base <- df_cron %>%
-      group_by(Empreendimento) %>%
+      group_by(EMPREENDIMENTO) %>%
       summarise(x0 = min(Data), x1 = max(Data), .groups = "drop")
 
     # Highlighted segments: from DATA INICIO OBRA to DATA TERMINO OBRA ATUAL
     destaques <- dados %>%
       filter(!is.na(`DATA INICIO OBRA`), !is.na(`DATA TERMINO OBRA ATUAL`)) %>%
-      mutate(Empreendimento = factor(Empreendimento, levels = levels(df_cron$Empreendimento))) %>%
+      mutate(Empreendimento = factor(EMPREENDIMENTO, levels = levels(df_cron$EMPREENDIMENTO))) %>%
       select(Empreendimento, x0 = `DATA INICIO OBRA`, x1 = `DATA TERMINO OBRA ATUAL`)
 
     fig <- plot_ly()

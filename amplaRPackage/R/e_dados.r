@@ -55,10 +55,17 @@ e_dados <- function() {
     },
     seed = TRUE
   )
+  itaFut <- future(
+    {
+      e_ita()
+    },
+    seed = TRUE
+  )
   # Manually get them with value()
   dados_l <- list(
     cef = value(cefFut),
-    ik  = value(ikFut)
+    ik  = value(ikFut),
+    ita = value(itaFut)
   )
   # Normalize names in the list
   normalize_names(dados_l)
