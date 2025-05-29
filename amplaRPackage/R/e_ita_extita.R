@@ -1,14 +1,6 @@
 e_ita_extita <-
-  function() {
+  function(f_caminho.arquivo.extita_c) {
     # paginas_l e linhas_c ----------------------------------------------------
-    caminhos_extita_c <-
-      dir_ls(c_caminhos_pastas("extratos"), recurse = TRUE, type = "file") %>%
-      keep(
-        ~ str_ends(.x, ".pdf") &
-          str_detect(.x, "(?i)extrato") &
-          str_detect(.x, "5441")
-      )
-    f_caminho.arquivo.extita_c <- caminhos_extita_c[7]
     paginas_l <- pdf_text(f_caminho.arquivo.extita_c) %>%
       map(
         ~ str_split(.x, "\n")[[1]] %>%
@@ -104,7 +96,7 @@ e_ita_extita <-
     indice.extita.saldo.inicio_i <- linhas_c %>%
       str_which("(?i)^descri[cç][aã]o\\s?valor") + 1
     indice.extita.saldo.fim_i <- linhas_c %>%
-      str_which("(?i)^total\\s?dispon[ií]vel\\s?para\\s?uso")
+      str_which("(?i)^aviso:")
     extita.saldo_t <- linhas_c[
       indice.extita.saldo.inicio_i:indice.extita.saldo.fim_i
     ] %>%
