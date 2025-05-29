@@ -101,10 +101,10 @@ e_cef_ecns <-
       )
     ecns_l <-
       list(
-        Empreendimento = ecns.empreendimento_t,
-        Emprestimo = ecns.emprestimo_t,
-        Consolidado = ecns.consolidado_t,
-        Unidades = ecns.unidades_t
+        ecn_e = ecns.empreendimento_t,
+        ecn_pj = ecns.emprestimo_t,
+        ecn_c = ecns.consolidado_t,
+        ecn_u = ecns.unidades_t
       )
     return(ecns_l)
   }
