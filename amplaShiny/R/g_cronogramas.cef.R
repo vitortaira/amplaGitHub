@@ -47,13 +47,13 @@ g_cronogramas_cef_server <- function(id, dados) {
 
     # Add jitter to overlapping points
     df_cron <- df_cron %>%
-      group_by(EMPREENDIMENTO, Data) %>%
+      group_by(Empreendimento, Data) %>%
       mutate(jitter = (row_number() - 1) * 0.05) %>%
       ungroup()
 
     # Gray segments: min/max for each empreendimento
     linhas_base <- df_cron %>%
-      group_by(EMPREENDIMENTO) %>%
+      group_by(Empreendimento) %>%
       summarise(x0 = min(Data), x1 = max(Data), .groups = "drop")
 
     # Highlighted segments: from DATA INICIO OBRA to DATA TERMINO OBRA ATUAL

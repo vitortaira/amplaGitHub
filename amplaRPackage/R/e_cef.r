@@ -7,7 +7,7 @@
 #'
 #' @details
 #' Internamente chama as funções \code{e_cef_cmfcns()}, \code{e_cef_ecns()},
-#' \code{e_cef_eprs()} e \code{e_cef_extratos()}, reunindo tudo num único objeto.
+#' \code{e_cef_eprs()} e \code{e_cef_extcefs()}, reunindo tudo num único objeto.
 #'
 #' @return
 #' Retorna uma lista contendo todos os dados extraídos das várias fontes:
@@ -56,7 +56,7 @@ e_cef <- function() {
   )
   extcef_f <- future(
     {
-      e_cef_extratos()
+      e_cef_extcefs()
     },
     seed = TRUE
   )

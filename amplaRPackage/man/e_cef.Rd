@@ -16,7 +16,7 @@ como CMF_CN, ECN, EPR e Extratos, num só objeto (lista).
 }
 \details{
 Internamente chama as funções \code{e_cef_cmfcns()}, \code{e_cef_ecns()},
-\code{e_cef_eprs()} e \code{e_cef_extratos()}, reunindo tudo num único objeto.
+\code{e_cef_eprs()} e \code{e_cef_extcefs()}, reunindo tudo num único objeto.
 }
 \examples{
 \dontrun{

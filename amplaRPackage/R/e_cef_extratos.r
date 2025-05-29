@@ -13,7 +13,7 @@
 #' A função percorre a pasta especificada buscando arquivos PDF que
 #' contenham os códigos 2429, 2419 ou 2245, ignorando aqueles que contenham
 #' a palavra "fundo". Para cada arquivo encontrado, chama a função
-#' \code{e_cef_extrato} para realizar a extração dos dados e, posteriormente,
+#' \code{e_cef_extcef} para realizar a extração dos dados e, posteriormente,
 #' consolida os resultados em um único tibble.
 #'
 #' @return
@@ -36,7 +36,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' extratos <- e_cef_extratos(
+#' extratos <- e_cef_extcefs(
 #'   f_caminho.pasta.extratos_c = "caminho/para/a/pasta/dos/extratos"
 #' )
 #' print(extratos)
@@ -44,7 +44,7 @@
 #'
 #' @export
 
-e_cef_extratos <-
+e_cef_extcefs <-
   function(f_caminho.pasta.extratos_c = c_caminhos_pastas("extratos")) {
     # Consolida os dados dos extratos da CEF na pasta "Relatorios - Extratos"
     caminhos.extratos.cef_c <-
@@ -72,7 +72,7 @@ e_cef_extratos <-
       i_caminho.extrato.cef_c in caminhos.extratos.cef_c
     ) {
       extratos_l[[i_caminho.extrato.cef_c]] <-
-        e_cef_extrato(i_caminho.extrato.cef_c)
+        e_cef_extcef(i_caminho.extrato.cef_c)
       extratos_t <-
         bind_rows(extratos_t, extratos_l[[i_caminho.extrato.cef_c]])
     }

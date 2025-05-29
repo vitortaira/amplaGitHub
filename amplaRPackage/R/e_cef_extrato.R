@@ -32,25 +32,25 @@
 #'
 #' @examples
 #' \dontrun{
-#' extrato <- e_cef_extrato(
+#' extrato <- e_cef_extcef(
 #'   f_caminho.arquivo_c = "caminho/para/o/extrato.pdf"
 #' )
 #' print(extrato)
 #'
 #' library(dplyr)
-#' extrato_filtrado <- e_cef_extrato("caminho/para/o/extrato.pdf") %>%
+#' extrato_filtrado <- e_cef_extcef("caminho/para/o/extrato.pdf") %>%
 #'   filter(Valor > 0)
 #' summary(extrato_filtrado)
 #' }
 #'
 #' @seealso
-#' Consulte \code{\link{e_cef_extratos}}.
+#' Consulte \code{\link{e_cef_extcefs}}.
 #'
 #' @references
 #' Consulte \code{\link{pdf_text}} para extracao de texto de arquivos PDF.
 #'
 #' @export
-e_cef_extrato <- function(f_caminho.arquivo_c) {
+e_cef_extcef <- function(f_caminho.arquivo_c) {
   # Define paginas_l
   paginas_l <- pdf_text(f_caminho.arquivo_c) %>%
     map(function(page) {
@@ -322,6 +322,6 @@ e_cef_extrato <- function(f_caminho.arquivo_c) {
 # Teste -------------------------------------------------------------------
 
 # f_caminho.arquivo_c <- caminhos.extratos.cef_c[4]
-# e_cef_extrato(f_caminho.arquivo_c)
+# e_cef_extcef(f_caminho.arquivo_c)
 # shell.exec(f_caminho.arquivo_c)
 # sapply(caminhos.extratos.cef_c, shell.exec)

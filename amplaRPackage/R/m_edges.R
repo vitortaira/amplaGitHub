@@ -71,7 +71,7 @@ m_edges <- function() {
             to %in% c(
               "cext", "dfc", "fco"
             ) ~ "red",
-          from %in% c("fre_t", "extita_t") ~ "yellow",
+          from %in% c("fre_t") ~ "yellow",
           TRUE ~ "green"
         )
     )

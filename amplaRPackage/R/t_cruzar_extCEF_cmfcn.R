@@ -40,7 +40,7 @@
 t_cruzar_extcef_cmfcn <-
   function(f_caminho.pasta.extratos_c, f_caminho.pasta.ciweb_c) {
     # Consolida os dados dos extratos da CEF na pasta "Relatorios - Extratos"
-    extratos_t <- e_cef_extratos()
+    extratos_t <- e_cef_extcefs()
     # Consolida os dados dos relatórios CMF_CN na pasta "Relatorios - CIWEB"
     cmfcns_t <- e_cef_cmfcns()
     # Cruza os dados consolidados
