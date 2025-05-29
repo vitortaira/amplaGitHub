@@ -30,8 +30,8 @@
 #'   - Produto: Character.
 #'   - CNPJ: Character.
 #'   - Cliente: Character.
-#'   - Período_início: Date.
-#'   - Período_fim: Date.
+#'   - periodo.inicio: Date.
+#'   - periodo.fim: Date.
 #'   - Data_consulta: POSIXct.
 #'
 #' @examples
@@ -79,13 +79,13 @@ e_cef_extcefs <-
     extratos_t %<>%
       mutate(
         Repasse = if_else(
-          (`Histórico` == "CR DESBLOQ") &
+          (descricao == "CR DESBLOQ") &
             !(Documento %in% contratos.pj.6.ultimos_c),
           TRUE,
           FALSE
         ),
         PJ = if_else(
-          (`Histórico` == "CR DESBLOQ") &
+          (descricao == "CR DESBLOQ") &
             (Documento %in% contratos.pj.6.ultimos_c),
           TRUE,
           FALSE
@@ -98,9 +98,9 @@ e_cef_extcefs <-
       ) %>%
       as_tibble() %>%
       select(
-        `Data de lançamento`, `Data de movimento`, Documento, `Histórico`,
+        data.lancamento, data.movimento, Documento, descricao,
         Valor, Saldo, Repasse, PJ, Conta_interno, Conta, `Agência`, Produto, CNPJ, Cliente,
-        `Período_início`, `Período_fim`, `Data_consulta`, Contrato_6, Arquivo,
+        `periodo.inicio`, `periodo.fim`, `Data_consulta`, Contrato_6, Arquivo,
         Arquivo_tipo_tabela, Arquivo_tipo, Arquivo_fonte
       ) %>%
       rename(Empreendimento = Cliente)

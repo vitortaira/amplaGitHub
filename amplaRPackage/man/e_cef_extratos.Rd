@@ -25,8 +25,8 @@ Retorna um tibble com as seguintes colunas:
 \item Produto: Character.
 \item CNPJ: Character.
 \item Cliente: Character.
-\item Período_início: Date.
-\item Período_fim: Date.
+\item periodo.inicio: Date.
+\item periodo.fim: Date.
 \item Data_consulta: POSIXct.
 }
 }
