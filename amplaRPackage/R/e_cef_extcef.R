@@ -16,7 +16,7 @@
 #' Retorna uma tibble com as seguintes colunas:
 #'   - Data de lancamento  : Date
 #'   - Data de movimento   : Date
-#'   - Documento           : Character
+#'   - documento           : Character
 #'   - Historico           : Character
 #'   - Valor               : Numeric
 #'   - Saldo               : Numeric
@@ -24,8 +24,8 @@
 #'   - Conta               : Character
 #'   - Agencia             : Character
 #'   - Produto             : Character
-#'   - CNPJ                : Character
-#'   - Cliente             : Character
+#'   - cnpj                : Character
+#'   - cliente             : Character
 #'   - Periodo_inicio      : Date
 #'   - Periodo_fim         : Date
 #'   - Data_consulta       : POSIXct
@@ -68,9 +68,9 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
     # Metadados
     cliente_c <- linhas_c %>%
       keep(function(x) {
-        str_starts(x, "Cliente:")
+        str_starts(x, "cliente:")
       }) %>%
-      str_remove("^Cliente: ") %>%
+      str_remove("^cliente: ") %>%
       str_trim()
 
     conta_c <- linhas_c %>%
@@ -148,27 +148,27 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
       last()
 
     extrato_t <- linhas_c %>%
-      as_tibble_col(column_name = "Linhas") %>%
+      as_tibble_col(column_name = "linhas") %>%
       slice(indice.comeco_i:indice.fim_i) %>%
       mutate(
         `Data Mov.` = if_else(
-          word(Linhas) == "000000",
+          word(linhas) == "000000",
           str_extract(periodo.consultado_c, ".*(?=-)") %>%
-            as.Date(format = "%d/%m/%Y") %>% rep(length(Linhas)),
-          word(Linhas) %>% as.Date(format = "%d/%m/%Y")
+            as.Date(format = "%d/%m/%Y") %>% rep(length(linhas)),
+          word(linhas) %>% as.Date(format = "%d/%m/%Y")
         ),
-        Linhas = str_remove(Linhas, "^\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
-        `Nr. Doc` = word(Linhas),
-        Linhas = str_remove(Linhas, str_c("^", word(Linhas))) %>% str_trim(),
-        Saldo = str_extract(Linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?$") %>%
+        linhas = str_remove(linhas, "^\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
+        `Nr. Doc` = word(linhas),
+        linhas = str_remove(linhas, str_c("^", word(linhas))) %>% str_trim(),
+        Saldo = str_extract(linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?$") %>%
           str_remove("\\s?C") %>% str_remove_all("\\.") %>%
           str_replace("\\,", "\\.") %>%
           if_else(str_detect(., "D$"),
             str_c("-", .) %>% str_remove("\\s?D$"),
             .
           ) %>% as.numeric(),
-        Linhas = str_remove(Linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?$"),
-        Valor = str_extract(Linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?") %>%
+        linhas = str_remove(linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?$"),
+        Valor = str_extract(linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?") %>%
           str_remove("\\s?C") %>% str_remove_all("\\.") %>%
           str_replace("\\,", "\\.") %>%
           if_else(str_detect(., "D$"),
@@ -176,16 +176,16 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
             .
           ) %>% as.numeric(),
         descricao = str_remove(
-          Linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?"
+          linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?"
         ) %>% str_trim(),
         `Data Lanc.` = NA,
         Conta = word(conta_c, -1) %>% str_trim(),
-        `Agência` = str_sub(conta_c, 1, 4),
+        agencia = str_sub(conta_c, 1, 4),
         Produto = str_sub(conta_c, 6, -1) %>%
           str_extract("\\s\\d{4}\\s") %>%
           str_trim(),
-        CNPJ = NA,
-        Cliente = cliente_c,
+        cnpj = NA,
+        cliente = cliente_c,
         `periodo.inicio` = str_remove(periodo.consultado_c, "-.*") %>%
           as.Date(format = "%d/%m/%Y"),
         `periodo.fim` = str_remove(periodo.consultado_c, ".*-") %>%
@@ -197,13 +197,13 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
       ) %>%
       select(
         `Data Lanc.`, `Data Mov.`, `Nr. Doc`, descricao, Valor, Saldo,
-        Conta_interno, Conta, `Agência`, Produto, CNPJ, Cliente,
+        Conta_interno, Conta, agencia, Produto, cnpj, cliente,
         `periodo.inicio`, `periodo.fim`, Data_consulta, Arquivo
       ) %>%
       rename(
         data.lancamento = `Data Lanc.`,
         data.movimento = `Data Mov.`,
-        Documento = `Nr. Doc`
+        documento = `Nr. Doc`
       )
 
     return(extrato_t)
@@ -231,7 +231,7 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
 
     cnpj_c <- linhas_c %>%
       nth(2) %>%
-      str_remove("^CNPJ:\\s*") %>%
+      str_remove("^cnpj:\\s*") %>%
       str_remove_all("[A-Za-z]") %>%
       str_trim()
 
@@ -274,27 +274,27 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
       last()
 
     extrato_t <- linhas_c %>%
-      as_tibble_col(column_name = "Linhas") %>%
+      as_tibble_col(column_name = "linhas") %>%
       slice(indice.comeco_i:indice.fim_i) %>%
       mutate(
-        data.lancamento = str_extract(Linhas, "\\d{2}/\\d{2}/\\d{4}") %>%
+        data.lancamento = str_extract(linhas, "\\d{2}/\\d{2}/\\d{4}") %>%
           as.Date(format = "%d/%m/%Y"),
-        Linhas = str_remove(Linhas, "\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
-        data.movimento = str_extract(Linhas, "\\d{2}/\\d{2}/\\d{4}") %>%
+        linhas = str_remove(linhas, "\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
+        data.movimento = str_extract(linhas, "\\d{2}/\\d{2}/\\d{4}") %>%
           as.Date(format = "%d/%m/%Y"),
-        Linhas = str_remove(Linhas, "\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
-        Documento = str_remove(Linhas, "[A-Za-z].*") %>% str_trim(),
-        Linhas = str_extract(Linhas, "(?i)[A-Za-z].*") %>% str_trim(),
-        descricao = str_remove(Linhas, "R\\$.*") %>% str_trim(),
-        Linhas = str_extract(Linhas, "(?<=R\\$).*") %>% str_trim(),
-        `Valor(R$)` = str_remove(Linhas, "R\\$.*") %>%
+        linhas = str_remove(linhas, "\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
+        documento = str_remove(linhas, "[A-Za-z].*") %>% str_trim(),
+        linhas = str_extract(linhas, "(?i)[A-Za-z].*") %>% str_trim(),
+        descricao = str_remove(linhas, "R\\$.*") %>% str_trim(),
+        linhas = str_extract(linhas, "(?<=R\\$).*") %>% str_trim(),
+        valor = str_remove(linhas, "R\\$.*") %>%
           str_remove_all("\\.") %>% str_replace("\\,", "\\.") %>% as.numeric(),
-        `Saldo(R$)` = str_extract(Linhas, "(?<=R\\$).*") %>%
+        saldo = str_extract(linhas, "(?<=R\\$).*") %>%
           str_trim() %>% str_remove_all("\\.") %>% str_replace("\\,", "\\.") %>%
           as.numeric(),
-        `Agência` = agencia_c,
-        Cliente = cliente_c,
-        CNPJ = cnpj_c,
+        agencia = agencia_c,
+        cliente = cliente_c,
+        cnpj = cnpj_c,
         Conta = conta_c,
         Data_consulta = data.consulta_h,
         `periodo.inicio` = str_remove(periodo.consultado_c, "-.*") %>%
@@ -307,12 +307,12 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
         Arquivo = f_caminho.arquivo_c
       ) %>%
       select(
-        data.lancamento, data.movimento, Documento, descricao,
-        `Valor(R$)`, `Saldo(R$)`,
-        Conta_interno, Conta, `Agência`, Produto, CNPJ, Cliente,
+        data.lancamento, data.movimento, documento, descricao,
+        valor, saldo,
+        Conta_interno, Conta, agencia, Produto, cnpj, cliente,
         `periodo.inicio`, `periodo.fim`, Data_consulta, Arquivo
       ) %>%
-      rename(Saldo = `Saldo(R$)`, Valor = `Valor(R$)`)
+      rename(Saldo = saldo, Valor = valor)
 
     return(extrato_t)
   } else {

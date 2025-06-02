@@ -1,0 +1,10 @@
+name: amplashiny
+title:
+username: ampladashboard
+account: ampladashboard
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 14852860
+bundleId: 10368182
+url: https://ampladashboard.shinyapps.io/amplashiny/
+version: 1
