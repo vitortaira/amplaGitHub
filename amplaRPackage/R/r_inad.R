@@ -33,6 +33,26 @@ r_inad <-
     inads_t <-
       e_ik_inads(xlsx = FALSE) %>%
       rename(Contrato_Ampla = "Contrato")
+    caminho.inads_c <-
+      dir_ls(c_caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
+      keep(
+        ~ str_detect(.x, "(?i)inadimpl.ncia-.*\\.xlsx") &
+          !str_detect(.x, "(?i)consolidado")
+      )
+    empreendimentos_c <- unique(
+      inads_t$Empreendimento
+    )
+    caminhos.inads_t <- caminho.inads_c %>%
+      map_dfr(~ {
+        # Extrair a data do nome do arquivo no formato %Y_%m (ex: 2025_04)
+        data_str <- str_extract(.x, "-\\d{4}_\\d{2}") %>%
+          str_remove("-")
+        data <- suppressWarnings(as.Date(paste0(data_str, "_01"), format = "%Y_%m_%d"))
+        tibble(caminho = .x, data = data, nome = fs::path_file(.x))
+      }) %>%
+      arrange(desc(data)) %>%
+      distinct(nome, .keep_all = TRUE)
+    caminhos.inads.recentes_c <- caminhos.inads_t$caminho
     contrs_t <- e_ik_contrs()
     # Cruza inads_t e contrs_t
     r_inad.parcelas_t <-
@@ -84,7 +104,7 @@ r_inad <-
     #     eprs_t,
     #     by = c("CONTRATO_12", "Data de Assinatura", "Data de Inclusão")
     #   ) %>%
-    #   rename(Cliente = "NOME MUTUARIO")
+    #   rename(Cliente = "NOME MUTARIO")
 
     # Salvando num xlsx -------------------------------------------------------
 
@@ -283,6 +303,46 @@ r_inad <-
       caminho.xlsx_c,
       str_c(c_caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c)
     )
+    if (nrow(caminhos.inads_t) > 0) {
+      meses <- format(caminhos.inads_t$data, "%Y-%m")
+      if (length(unique(meses)) == 1) {
+        message("\u2705 Os relatórios mais recentes de inadimplência de todos os empreendimentos são do mês ", unique(meses))
+      } else {
+        msg <- paste0(
+          "\u274C Os relatórios mais recentes de inadimplência são de meses diferentes entre os empreendimentos:\n",
+          capture.output(print(caminhos.inads_t[, c("caminho", "data")], row.names = FALSE)) %>%
+            paste(collapse = "\n")
+        )
+        message(msg)
+      }
+    }
+    # Filtrar contrs_t para apenas o arquivo mais recente por empreendimento
+    caminho.contrs_c <-
+      dir_ls(c_caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
+      keep(~ str_detect(.x, "(?i)contratos-.*\\.xlsx") & !str_detect(.x, "(?i)consolidado"))
+    caminhos.contrs_t <- caminho.contrs_c %>%
+      map_dfr(~ {
+        data_str <- str_extract(.x, "-\\d{4}_\\d{2}") %>% str_remove("-")
+        data <- suppressWarnings(as.Date(paste0(data_str, "_01"), format = "%Y_%m_%d"))
+        tibble(caminho = .x, data = data, nome = fs::path_file(.x))
+      }) %>%
+      arrange(desc(data)) %>%
+      distinct(nome, .keep_all = TRUE)
+    caminhos.contrs.recentes_c <- caminhos.contrs_t$caminho
+    # Mensagem de verificação para contratos
+    if (nrow(caminhos.contrs_t) > 0) {
+      meses_contrs <- format(caminhos.contrs_t$data, "%Y-%m")
+      if (length(unique(meses_contrs)) == 1) {
+        message("\u2705 Os contratos mais recentes de todos os empreendimentos são do mês ", unique(meses_contrs))
+      } else {
+        msg_contrs <- paste0(
+          "\u274C Os contratos mais recentes são de meses diferentes entre os empreendimentos:\n",
+          capture.output(print(caminhos.contrs_t[, c("caminho", "data")], row.names = FALSE)) %>%
+            paste(collapse = "\n")
+        )
+        message(msg_contrs)
+      }
+    }
     return(r_inad_l)
   }
 
