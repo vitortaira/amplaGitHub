@@ -133,28 +133,28 @@ e_cef_ecn <-
       separate_wider_delim(
         cols = everything(),
         names = c(
-          "Contrato",
-          "APF",
-          "Valor Aporte",
-          "Total de Unidade",
-          "Unidades Comercializadas",
-          "Unidades Financiadas Construção",
-          "Unidades Complementares",
-          "Data Término de Obra",
-          "Data Ini - Enc Fiador"
+          "contrato",
+          "apf",
+          "valor.aporte",
+          "unidades.total",
+          "unidades.comercializadas",
+          "unidades.financiadas.construcao",
+          "unidades.complementares",
+          "data.termino.obra",
+          "data.ini.enc.fiador"
         ),
         delim = " "
       ) %>%
       ### Garantindo que as colunas sejam da classe adequada
       mutate(
-        Empreendimento = empreendimento_c,
-        `Data de consulta` = data_consulta_p,
-        Arquivo = f_caminho.arquivo_c
+        empreendimento = empreendimento_c,
+        data.consulta = data_consulta_p,
+        arquivo = f_caminho.arquivo_c
       ) %>%
-      select(Empreendimento, everything(), `Data de consulta`, Arquivo) %>%
+      select(empreendimento, everything(), data.consulta, arquivo) %>%
       mutate(
-        `Valor Aporte` =
-          `Valor Aporte` %>%
+        valor.aporte =
+          valor.aporte %>%
             str_remove_all("\\.") %>%
             str_replace("\\,", "\\.") %>%
             as.numeric()
@@ -174,48 +174,48 @@ e_cef_ecn <-
       separate_wider_delim(
         cols = everything(),
         names = c(
-          "Número",
-          "Data da Assinatura",
-          "Valor Empréstimo",
-          "Valor Reduzido",
-          "Valor Utilizado",
-          "Saldo Devedor"
+          "numero",
+          "data.assinatura",
+          "valor.emprestimo",
+          "valor.reduzido",
+          "valor.utilizado",
+          "saldo.devedor"
         ),
         delim = " "
       ) %>%
       ### Garantindo que as colunas sejam da classe adequada
       mutate(
-        `Valor Empréstimo` =
-          `Valor Empréstimo` %>%
+        `valor.emprestimo` =
+          `valor.emprestimo` %>%
             str_remove_all("\\.") %>%
             str_replace("\\,", "\\.") %>%
             as.numeric(),
-        `Valor Reduzido` =
-          `Valor Reduzido` %>%
+        `valor.reduzido` =
+          `valor.reduzido` %>%
             str_remove_all("\\.") %>%
             str_replace("\\,", "\\.") %>%
             as.numeric(),
-        `Valor Utilizado` =
-          `Valor Utilizado` %>%
+        `valor.utilizado` =
+          `valor.utilizado` %>%
             str_remove_all("\\.") %>%
             str_replace("\\,", "\\.") %>%
             as.numeric(),
-        `Saldo Devedor` =
-          `Saldo Devedor` %>%
+        `saldo.devedor` =
+          `saldo.devedor` %>%
             str_remove_all("\\.") %>%
             str_replace("\\,", "\\.") %>%
             as.numeric(),
-        `Linha de financiamento` = as.character(financiamento.linha_c),
-        `Tipo de financiamento` = as.character(financiamento.tipo_c),
-        Empreendimento = empreendimento_c,
-        `Data de consulta` = data_consulta_p,
-        Arquivo = f_caminho.arquivo_c
+        `linha.financiamento` = as.character(financiamento.linha_c),
+        `tipo.financiamento` = as.character(financiamento.tipo_c),
+        empreendimento = empreendimento_c,
+        data.consulta = data_consulta_p,
+        arquivo = f_caminho.arquivo_c
       ) %>%
       select(
-        Empreendimento,
+        empreendimento,
         everything(),
-        `Data de consulta`,
-        Arquivo
+        data.consulta,
+        arquivo
       )
 
     # Tabela "Informações consolidadas" ---------------------------------------
@@ -249,40 +249,40 @@ e_cef_ecn <-
       separate_wider_delim(
         cols = everything(),
         names = c(
-          "Período",
-          "Unidade",
-          "Valor Creditado",
-          "Valor Desbloqueado",
-          "Valor Amortizado",
-          "Encargo Quitado do PJ"
+          "periodo",
+          "unidade",
+          "valor.creditado",
+          "valor.desbloqueado",
+          "valor.amortizado",
+          "encargo.quitado.pj"
         ),
         delim = " "
       ) %>%
       ### Garantindo que as colunas sejam da classe adequada
       mutate(
-        `Período` = format(as.Date(`Período`, format = "%d/%m/%Y"), "%d/%m/%Y"),
-        Unidade = as.character(Unidade),
-        `Valor Creditado` = str_remove_all(`Valor Creditado`, "\\.") %>%
+        `periodo` = format(as.Date(`periodo`, format = "%d/%m/%Y"), "%d/%m/%Y"),
+        unidade = as.character(unidade),
+        `valor.creditado` = str_remove_all(`valor.creditado`, "\\.") %>%
           str_replace_all("\\,", "\\.") %>%
           as.numeric(),
-        `Valor Desbloqueado` = str_remove_all(`Valor Desbloqueado`, "\\.") %>%
+        `valor.desbloqueado` = str_remove_all(`valor.desbloqueado`, "\\.") %>%
           str_replace_all("\\,", "\\.") %>%
           as.numeric(),
-        `Valor Amortizado` = str_remove_all(`Valor Amortizado`, "\\.") %>%
+        `valor.amortizado` = str_remove_all(`valor.amortizado`, "\\.") %>%
           str_replace_all("\\,", "\\.") %>%
           as.numeric(),
-        `Encargo Quitado do PJ` = str_remove_all(`Encargo Quitado do PJ`, "\\.") %>%
+        `encargo.quitado.pj` = str_remove_all(`encargo.quitado.pj`, "\\.") %>%
           str_replace_all("\\,", "\\.") %>%
           as.numeric(),
-        Empreendimento = empreendimento_c,
-        `Data de consulta` = data_consulta_p,
-        Arquivo = f_caminho.arquivo_c
+        empreendimento = empreendimento_c,
+        data.consulta = data_consulta_p,
+        arquivo = f_caminho.arquivo_c
       ) %>%
       select(
-        Empreendimento,
+        empreendimento,
         everything(),
-        `Data de consulta`,
-        Arquivo
+        data.consulta,
+        arquivo
       )
 
     # Tabela "Unidades" -------------------------------------------------------
@@ -316,73 +316,73 @@ e_cef_ecn <-
       separate_wider_delim(
         cols = everything(),
         names = c(
-          "Contrato",
-          "TP",
-          "Data de Assinatura",
-          "Data de Inclusão",
-          "Data de Registro",
-          "Financiamento",
-          "Desconto Subsídio",
-          "FGTS",
-          "Recursos Próprios",
-          "Compra / Venda",
-          "Valor de Avaliação",
-          "Valor Liberado Terreno",
-          "Valor Liberado Obra",
-          "Amortização"
+          "contrato",
+          "tp",
+          "data.assinatura",
+          "data.inclusao",
+          "data.registro",
+          "financiamento",
+          "desconto.subsidio",
+          "fgts",
+          "recursos.proprios",
+          "compra/venda",
+          "valor.avaliacao",
+          "valor.liberado.terreno",
+          "valor.liberado.obra",
+          "amortizacao"
         ),
         delim = " "
       ) %>%
       #### Garantindo que as colunas sejam das classes adequadas
       mutate(
-        Contrato = as.character(Contrato),
-        TP = as.character(TP),
-        `Data de Assinatura` = as.Date(`Data de Assinatura`,
+        contrato = as.character(contrato),
+        tp = as.character(tp),
+        `data.assinatura` = as.Date(`data.assinatura`,
           format = "%d/%m/%Y"
         ),
-        `Data de Inclusão` = as.Date(`Data de Inclusão`,
+        `data.inclusao` = as.Date(`data.inclusao`,
           format = "%d/%m/%Y"
         ),
-        `Data de Registro` = as.Date(
-          `Data de Registro`,
+        `data.registro` = as.Date(
+          `data.registro`,
           "%d/%m/%Y"
         ),
-        Financiamento = str_remove_all(Financiamento, "\\.") %>%
+        financiamento = str_remove_all(financiamento, "\\.") %>%
           str_replace_all("\\,", "\\.") %>%
           as.numeric(),
-        `Desconto Subsídio` = str_remove_all(`Desconto Subsídio`, "\\.") %>%
+        `desconto.subsidio` = str_remove_all(`desconto.subsidio`, "\\.") %>%
           str_replace_all("\\,", "\\.") %>%
           as.numeric(),
-        FGTS = str_remove_all(FGTS, "\\.") %>%
+        fgts = str_remove_all(fgts, "\\.") %>%
           str_replace_all("\\,", "\\.") %>%
           as.numeric(),
-        `Recursos Próprios` = str_remove_all(`Recursos Próprios`, "\\.") %>%
+        `recursos.proprios` = str_remove_all(`recursos.proprios`, "\\.") %>%
           str_replace_all("\\,", "\\.") %>%
           as.numeric(),
-        `Compra / Venda` = str_remove_all(`Compra / Venda`, "\\.") %>%
+        `compra/venda` = str_remove_all(`compra/venda`, "\\.") %>%
           str_replace_all("\\,", "\\.") %>%
           as.numeric(),
-        `Valor de Avaliação` = str_remove_all(`Valor de Avaliação`, "\\.") %>%
+        `valor.avaliacao` = str_remove_all(`valor.avaliacao`, "\\.") %>%
           str_replace_all("\\,", "\\.") %>%
           as.numeric(),
-        `Valor Liberado Terreno` = str_remove_all(`Valor Liberado Terreno`, "\\.") %>%
+        `valor.liberado.terreno` = str_remove_all(`valor.liberado.terreno`, "\\.") %>%
           str_replace_all("\\,", "\\.") %>%
           as.numeric(),
-        `Valor Liberado Obra` = str_remove_all(`Valor Liberado Obra`, "\\.") %>%
+        `valor.liberado.obra` = str_remove_all(`valor.liberado.obra`, "\\.") %>%
           str_replace_all("\\,", "\\.") %>%
           as.numeric(),
-        `Amortização` = str_remove_all(`Amortização`, "\\.") %>%
+        amortizacao = str_remove_all(amortizacao, "\\.") %>%
           str_replace_all("\\,", "\\.") %>%
           as.numeric(),
-        Empreendimento = empreendimento_c,
-        `Data de consulta` = data_consulta_p,
-        Arquivo = f_caminho.arquivo_c
+        empreendimento = empreendimento_c,
+        data.consulta = data_consulta_p,
+        arquivo = f_caminho.arquivo_c
       ) %>%
       select(
-        Empreendimento,
+        empreendimento,
         everything(),
-        `Data de consulta`,
-        Arquivo
+        data.consulta,
+        arquivo
       )
     ## Criando a lista a ser retornada pela função e_cef_ecn()
     dados.arquivo.ecn_l <- list(
