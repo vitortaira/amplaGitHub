@@ -7,7 +7,7 @@ e_ik_inads <-
     caminhos.inads_c <-
       dir_ls(caminho.pasta.cobranca_c, recurse = TRUE, type = "file") %>%
       keep(
-        ~ str_detect(.x, "(?i)inadimpl.ncia-.*\\.xlsx") &
+        ~ str_detect(.x, "(?i)/inadimpl.ncia\\s?-.*\\.xlsx") &
           !str_detect(.x, "(?i)consolidado")
       )
     # Extrair todos os dados dos arquivos relevantes da pasta "inadimplentes"

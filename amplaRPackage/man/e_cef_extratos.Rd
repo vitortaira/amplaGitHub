@@ -19,15 +19,15 @@ Retorna um tibble com as seguintes colunas:
 \item Histórico: Character.
 \item Valor: Numeric.
 \item Saldo: Numeric.
-\item Conta_interno: Character.
+\item conta.interno: Character.
 \item Conta: Character.
 \item Agência: Character.
-\item Produto: Character.
+\item produto: Character.
 \item CNPJ: Character.
 \item Cliente: Character.
 \item periodo.inicio: Date.
 \item periodo.fim: Date.
-\item Data_consulta: POSIXct.
+\item data.consulta: POSIXct.
 }
 }
 \description{

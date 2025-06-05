@@ -36,7 +36,7 @@ r_inad <-
     caminho.inads_c <-
       dir_ls(c_caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
       keep(
-        ~ str_detect(.x, "(?i)inadimpl.ncia-.*\\.xlsx") &
+        ~ str_detect(.x, "(?i)/inadimpl.ncia\\s?-.*\\.xlsx") &
           !str_detect(.x, "(?i)consolidado")
       )
     empreendimentos_c <- unique(
@@ -45,8 +45,8 @@ r_inad <-
     caminhos.inads_t <- caminho.inads_c %>%
       map_dfr(~ {
         # Extrair a data do nome do arquivo no formato %Y_%m (ex: 2025_04)
-        data_str <- str_extract(.x, "-\\d{4}_\\d{2}") %>%
-          str_remove("-")
+        data_str <- str_extract(.x, "-\\s?\\d{4}_\\d{2}") %>%
+          str_extract("\\d{4}_\\d{2}")
         data <- suppressWarnings(as.Date(paste0(data_str, "_01"), format = "%Y_%m_%d"))
         tibble(caminho = .x, data = data, nome = fs::path_file(.x))
       }) %>%
@@ -322,12 +322,20 @@ r_inad <-
       keep(~ str_detect(.x, "(?i)contratos-.*\\.xlsx") & !str_detect(.x, "(?i)consolidado"))
     caminhos.contrs_t <- caminho.contrs_c %>%
       map_dfr(~ {
-        data_str <- str_extract(.x, "-\\d{4}_\\d{2}") %>% str_remove("-")
+        data_str <- str_extract(.x, "-\\s?\\d{4}_\\d{2}") %>%
+          str_extract("\\d{4}_\\d{2}")
         data <- suppressWarnings(as.Date(paste0(data_str, "_01"), format = "%Y_%m_%d"))
-        tibble(caminho = .x, data = data, nome = fs::path_file(.x))
+        empreendimento_c <- str_extract(.x, "-\\s?\\w{3}\\s?-") %>%
+          str_extract("\\w{3}")
+        tibble(
+          caminho = .x,
+          data = data,
+          nome = fs::path_file(.x),
+          empreendimento = empreendimento_c
+        )
       }) %>%
       arrange(desc(data)) %>%
-      distinct(nome, .keep_all = TRUE)
+      distinct(empreendimento, .keep_all = TRUE)
     caminhos.contrs.recentes_c <- caminhos.contrs_t$caminho
     # Mensagem de verificação para contratos
     if (nrow(caminhos.contrs_t) > 0) {

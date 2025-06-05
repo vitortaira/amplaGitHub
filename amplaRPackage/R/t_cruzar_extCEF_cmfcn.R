@@ -55,9 +55,9 @@ t_cruzar_extcef_cmfcn <-
         Contrato_6, `Data de movimento`, Valor,
         # Extratos
         "Data de lan\u00e7amento", Documento, "Hist\u00f3rico", Saldo,
-        Conta_interno, Conta, "Ag\u00eancia",
-        Produto, CNPJ, Cliente, "Per\u00edodo_in\u00edcio", "Per\u00edodo_fim",
-        `Data_consulta`,
+        conta.interno, Conta, "Ag\u00eancia",
+        produto, CNPJ, Cliente, "Per\u00edodo_in\u00edcio", "Per\u00edodo_fim",
+        `data.consulta`,
         # CMF_CNs
         CONTRATO, `DT. LANCTO`, `LANCAMENTOS`, NP, `CONTA SIDEC/NSGD`,
         SITUACAO, `MOT.`
@@ -251,7 +251,7 @@ t_cruzar_extcef_cmfcn <-
           numFmt = "YYYY-MM-DD HH:MM"
         ),
       rows = 2:(nrow(extratos.cruzados_t) + 1),
-      cols = which(colnames(extratos.cruzados_t) == "Data_consulta"),
+      cols = which(colnames(extratos.cruzados_t) == "data.consulta"),
       gridExpand = T
     )
     # Formatar valores monetários
@@ -402,7 +402,7 @@ t_cruzar_extcef_cmfcn <-
           numFmt = "YYYY-MM-DD HH:MM"
         ),
       rows = 2:(nrow(extratos_t) + 1),
-      cols = which(colnames(extratos_t) == "Data_consulta"),
+      cols = which(colnames(extratos_t) == "data.consulta"),
       gridExpand = T
     )
     # Formatar valores monetários

@@ -20,15 +20,15 @@
 #'   - Historico           : Character
 #'   - Valor               : Numeric
 #'   - Saldo               : Numeric
-#'   - Conta_interno       : Character
-#'   - Conta               : Character
+#'   - conta.interno       : Character
+#'   - conta               : Character
 #'   - Agencia             : Character
-#'   - Produto             : Character
+#'   - produto             : Character
 #'   - cnpj                : Character
 #'   - cliente             : Character
 #'   - Periodo_inicio      : Date
 #'   - Periodo_fim         : Date
-#'   - Data_consulta       : POSIXct
+#'   - data.consulta       : POSIXct
 #'
 #' @examples
 #' \dontrun{
@@ -179,9 +179,9 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
           linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?"
         ) %>% str_trim(),
         `Data Lanc.` = NA,
-        Conta = word(conta_c, -1) %>% str_trim(),
+        conta = word(conta_c, -1) %>% str_trim(),
         agencia = str_sub(conta_c, 1, 4),
-        Produto = str_sub(conta_c, 6, -1) %>%
+        produto = str_sub(conta_c, 6, -1) %>%
           str_extract("\\s\\d{4}\\s") %>%
           str_trim(),
         cnpj = NA,
@@ -190,15 +190,15 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
           as.Date(format = "%d/%m/%Y"),
         `periodo.fim` = str_remove(periodo.consultado_c, ".*-") %>%
           as.Date(format = "%d/%m/%Y"),
-        Data_consulta = data.consulta_h,
-        Conta_interno = basename(f_caminho.arquivo_c) %>%
+        data.consulta = data.consulta_h,
+        conta.interno = basename(f_caminho.arquivo_c) %>%
           str_extract("\\d{4}"),
-        Arquivo = f_caminho.arquivo_c
+        arquivo = f_caminho.arquivo_c
       ) %>%
       select(
         `Data Lanc.`, `Data Mov.`, `Nr. Doc`, descricao, Valor, Saldo,
-        Conta_interno, Conta, agencia, Produto, cnpj, cliente,
-        `periodo.inicio`, `periodo.fim`, Data_consulta, Arquivo
+        conta.interno, conta, agencia, produto, cnpj, cliente,
+        `periodo.inicio`, `periodo.fim`, data.consulta, arquivo
       ) %>%
       rename(
         data.lancamento = `Data Lanc.`,
@@ -222,7 +222,7 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
       keep(function(x) {
         str_starts(x, "Agência:")
       }) %>%
-      str_remove("\\s*Produto:.*") %>%
+      str_remove("\\s*produto:.*") %>%
       str_sub(-4, -1)
 
     cliente_c <- linhas_c %>%
@@ -265,7 +265,7 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
         str_starts(x, "Agência:")
       }) %>%
       str_remove("\\s*Conta:.*") %>%
-      str_remove(".*Produto:\\s*") %>%
+      str_remove(".*produto:\\s*") %>%
       str_trim()
 
     indice.comeco_i <- linhas_c %>% str_which("^Extrato") + 1
@@ -295,22 +295,22 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
         agencia = agencia_c,
         cliente = cliente_c,
         cnpj = cnpj_c,
-        Conta = conta_c,
-        Data_consulta = data.consulta_h,
+        conta = conta_c,
+        data.consulta = data.consulta_h,
         `periodo.inicio` = str_remove(periodo.consultado_c, "-.*") %>%
           as.Date(format = "%d/%m/%Y"),
         `periodo.fim` = str_remove(periodo.consultado_c, ".*-") %>%
           as.Date(format = "%d/%m/%Y"),
-        Produto = produto_c,
-        Conta_interno = basename(f_caminho.arquivo_c) %>%
+        produto = produto_c,
+        conta.interno = basename(f_caminho.arquivo_c) %>%
           str_extract("\\d{4}"),
-        Arquivo = f_caminho.arquivo_c
+        arquivo = f_caminho.arquivo_c
       ) %>%
       select(
         data.lancamento, data.movimento, documento, descricao,
         valor, saldo,
-        Conta_interno, Conta, agencia, Produto, cnpj, cliente,
-        `periodo.inicio`, `periodo.fim`, Data_consulta, Arquivo
+        conta.interno, conta, agencia, produto, cnpj, cliente,
+        `periodo.inicio`, `periodo.fim`, data.consulta, arquivo
       ) %>%
       rename(Saldo = saldo, Valor = valor)
 

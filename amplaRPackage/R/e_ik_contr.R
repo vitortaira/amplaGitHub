@@ -1,13 +1,13 @@
 e_ik_contr <-
   function(caminho.contr_c) {
-    contr_t <- readxl::read_excel(
+    contr_t <- suppressMessages(readxl::read_excel(
       caminho.contr_c,
       sheet = 1,
       col_names = TRUE,
       col_types = NULL,
       na = c("", "NA"),
       skip = 0
-    ) %>%
+    )) %>%
       as_tibble()
     empreendimento_c <- contr_t[1, 1] %>%
       str_remove("^.*\\:\\s?") %>%

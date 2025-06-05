@@ -24,15 +24,15 @@
 #'   - Histórico: Character.
 #'   - Valor: Numeric.
 #'   - Saldo: Numeric.
-#'   - Conta_interno: Character.
+#'   - conta.interno: Character.
 #'   - Conta: Character.
 #'   - Agência: Character.
-#'   - Produto: Character.
+#'   - produto: Character.
 #'   - CNPJ: Character.
 #'   - Cliente: Character.
 #'   - periodo.inicio: Date.
 #'   - periodo.fim: Date.
-#'   - Data_consulta: POSIXct.
+#'   - data.consulta: POSIXct.
 #'
 #' @examples
 #' \dontrun{
@@ -71,10 +71,20 @@ e_cef_extcefs <-
     for (
       i_caminho.extrato.cef_c in caminhos.extratos.cef_c
     ) {
-      extratos_l[[i_caminho.extrato.cef_c]] <-
-        e_cef_extcef(i_caminho.extrato.cef_c)
-      extratos_t <-
-        bind_rows(extratos_t, extratos_l[[i_caminho.extrato.cef_c]])
+      extrato <- tryCatch(
+        e_cef_extcef(i_caminho.extrato.cef_c),
+        error = function(e) {
+          message(sprintf("Falha ao extrair: %s", basename(i_caminho.extrato.cef_c)))
+          return(NULL)
+        }
+      )
+      if (!is.null(extrato) && nrow(extrato) > 0) {
+        message(sprintf("Arquivo extraído com sucesso: %s", basename(i_caminho.extrato.cef_c)))
+        extratos_l[[i_caminho.extrato.cef_c]] <- extrato
+        extratos_t <- bind_rows(extratos_t, extrato)
+      } else {
+        message(sprintf("Arquivo vazio ou não extraído: %s", basename(i_caminho.extrato.cef_c)))
+      }
     }
     extratos_t %<>%
       mutate(
@@ -99,9 +109,9 @@ e_cef_extcefs <-
       as_tibble() %>%
       select(
         data.lancamento, data.movimento, Documento, descricao,
-        Valor, Saldo, Repasse, PJ, Conta_interno, Conta, `Agência`, Produto, CNPJ, Cliente,
-        `periodo.inicio`, `periodo.fim`, `Data_consulta`, Contrato_6, Arquivo,
-        Arquivo_tipo_tabela, Arquivo_tipo, Arquivo_fonte
+        Valor, Saldo, Repasse, PJ, conta.interno, Conta, `Agência`, produto, CNPJ, Cliente,
+        `periodo.inicio`, `periodo.fim`, `data.consulta`, Contrato_6, Arquivo,
+        arquivo_tipo_tabela, Arquivo_tipo, Arquivo_fonte
       ) %>%
       rename(Empreendimento = Cliente)
     return(extratos_t)

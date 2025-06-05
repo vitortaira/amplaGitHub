@@ -1,15 +1,15 @@
 e_ik_contrs <- function(caminhos.pasta.cobranca_c = c_caminhos_pastas("cobranca")) {
-  # Make sure the path is a directory path
+  # Certifique-se de que o caminho é um diretório válido
   if (!dir.exists(caminhos.pasta.cobranca_c)) {
-    stop("The path provided is not a directory: ", caminhos.pasta.cobranca_c)
+    stop("O caminho fornecido não é um diretório: ", caminhos.pasta.cobranca_c)
   }
 
   caminhos.contrs_c <-
     dir_ls(caminhos.pasta.cobranca_c, recurse = TRUE, type = "file") %>%
     keep(~ str_detect(.x, "(?i)contratos-.*\\.xlsx"))
 
-  # Debug the paths to make sure they're valid files
-  message("Found ", length(caminhos.contrs_c), " contract files")
+  # Mensagem para depuração: quantidade de arquivos de contratos encontrados
+  message(length(caminhos.contrs_c), " arquivos do tipo contr")
 
   contrs_t <-
     caminhos.contrs_c %>%
@@ -17,12 +17,11 @@ e_ik_contrs <- function(caminhos.pasta.cobranca_c = c_caminhos_pastas("cobranca"
       tryCatch(
         {
           result <- e_ik_contr(.x)
-          message("Successfully processed: ", .x)
           result
         },
         error = function(e) {
-          warning("Error processing file ", .x, ": ", e$message)
-          return(NULL) # Return NULL for failed files
+          warning("Erro ao processar o arquivo ", .x, ": ", e$message)
+          return(NULL) # Retorna NULL para arquivos com erro
         }
       )
     }) %>%
