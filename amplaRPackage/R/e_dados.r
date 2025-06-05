@@ -73,19 +73,19 @@ e_dados <- function() {
     flatten() %>%
     map_dfr(~ dplyr::select(
       .x,
-      Arquivo, Arquivo_tipo_tabela, Arquivo_tipo, Arquivo_fonte
+      arquivo, tabela.tipo, arquivo_tipo, arquivo_fonte
     )) %>%
     distinct()
-  info.arquivos_t <- file_info(arquivos_c$Arquivo)
+  info.arquivos_t <- file_info(arquivos_c$arquivo)
   metadados_t <-
     tibble(
-      Arquivo = info.arquivos_t$path,
-      Arquivo_tipo_tabela = arquivos_c$Arquivo_tipo_tabela,
-      Arquivo_tipo = arquivos_c$Arquivo_tipo,
-      Arquivo_fonte = arquivos_c$Arquivo_fonte,
-      Nome = Arquivo %>% basename() %>% str_remove("\\..*$"),
-      Pasta = Arquivo %>% dirname() %>% str_extract("[^/]+$"),
-      Extensao = path_ext(Arquivo) %>% str_to_lower() %>% as.factor(),
+      arquivo = info.arquivos_t$path,
+      tabela.tipo = arquivos_c$tabela.tipo,
+      arquivo_tipo = arquivos_c$arquivo_tipo,
+      arquivo_fonte = arquivos_c$arquivo_fonte,
+      Nome = arquivo %>% basename() %>% str_remove("\\..*$"),
+      Pasta = arquivo %>% dirname() %>% str_extract("[^/]+$"),
+      Extensao = path_ext(arquivo) %>% str_to_lower() %>% as.factor(),
       Tamanho_bytes = as.numeric(info.arquivos_t$size),
       Data_modificacao = info.arquivos_t$modification_time,
       Data_mudanca = info.arquivos_t$change_time,

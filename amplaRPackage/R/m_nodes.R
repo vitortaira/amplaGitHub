@@ -73,7 +73,7 @@ m_nodes <- function() {
     icon.color = "black",
     font = list(list(color = "black", size = 25, face = "arial"))
   )
-  # Arquivos
+  # arquivos
   com_n <- tibble(
     id = "com",
     label = "Comercial",
@@ -650,7 +650,7 @@ m_nodes <- function() {
     nodes_t,
     # Origens
     ana_n, cef_n, ifk_n, ita_n,
-    # Arquivos
+    # arquivos
     com_n, cmfcn_n, dcd_n, ecn_n, epr_n, extcef_n, fre_n, cntr_n, desp_n,
     inad_n, rec_n, extita_n,
     # Tabelas

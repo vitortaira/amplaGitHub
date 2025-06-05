@@ -33,7 +33,7 @@ e_ik_contr <-
         ) %>%
           as.factor(),
         Empreendimento = as.factor(empreendimento_c),
-        Arquivo = caminho.contr_c
+        arquivo = caminho.contr_c
       ) %>%
       select(
         Empreendimento, Contrato_Ampla, Contrato_CEF, Repassado,

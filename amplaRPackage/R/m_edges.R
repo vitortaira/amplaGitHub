@@ -15,7 +15,7 @@ m_edges <- function() {
       c(
         # Origens ->
         rep("ana", 1), rep("cef", 6), rep("ifk", 4), rep("ita", 1),
-        # Arquivos ->
+        # arquivos ->
         "com",
         "cmfcn", "dcd", "ecn", "ecn", "ecn", "ecn", "epr", "extcef", "fre",
         "cntr", "desp", "inad", "rec",
@@ -33,7 +33,7 @@ m_edges <- function() {
       ),
     to =
       c(
-        # -> Arquivos
+        # -> arquivos
         "com",
         "cmfcn", "dcd", "ecn", "epr", "extcef", "fre",
         "cntr", "desp", "inad", "rec",
@@ -59,7 +59,7 @@ m_edges <- function() {
           from %in% c(
             # Fontes
             "ana", "cef", "ifk", "ita",
-            # Arquivos
+            # arquivos
             "com",
             "cmfcn", "dcd", "ecn", "epr", "extcef", "fre",
             "cntr", "desp", "inad", "rec",

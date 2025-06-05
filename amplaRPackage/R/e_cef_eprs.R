@@ -65,12 +65,12 @@ e_cef_eprs <-
       eprs_t <-
         bind_rows(eprs_t, eprs_l[[i_caminho.cef.epr_c]])
     }
-    eprs_t %<>% distinct(across(-Arquivo), .keep_all = TRUE) %>%
+    eprs_t %<>% distinct(across(-arquivo), .keep_all = TRUE) %>%
       as_tibble() %>%
       mutate(
-        Arquivo_tipo_tabela = "epr",
-        Arquivo_tipo = "epr",
-        Arquivo_fonte = "cef"
+        tabela.tipo = "epr",
+        arquivo_tipo = "epr",
+        arquivo_fonte = "cef"
       )
     return(eprs_t)
   }

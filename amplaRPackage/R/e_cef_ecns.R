@@ -48,18 +48,18 @@ e_cef_ecns <-
       map_dfr(~ e_cef_ecn(.x)$Empreendimento) %>%
       distinct() %>%
       mutate(
-        Arquivo_tipo = "ecn",
-        Arquivo_tipo_tabela = "ecn_e",
-        Arquivo_fonte = "cef"
+        arquivo_tipo = "ecn",
+        tabela.tipo = "ecn_e",
+        arquivo_fonte = "cef"
       )
     ecns.emprestimo_t <-
       caminhos.ecn_c %>%
       map_dfr(~ e_cef_ecn(.x)$Emprestimo) %>%
       distinct() %>%
       mutate(
-        Arquivo_tipo_tabela = "ecn_pj",
-        Arquivo_tipo = "ecn",
-        Arquivo_fonte = "cef",
+        tabela.tipo = "ecn_pj",
+        arquivo_tipo = "ecn",
+        arquivo_fonte = "cef",
       )
     # Identifica o arquivo mais recente de cada empreendimento
     contratos.empreendimentos.12.primeiros_c <-
@@ -86,18 +86,18 @@ e_cef_ecns <-
       map_dfr(~ e_cef_ecn(.x)$Consolidado) %>%
       distinct() %>%
       mutate(
-        Arquivo_tipo_tabela = "ecn_c",
-        Arquivo_tipo = "ecn",
-        Arquivo_fonte = "cef"
+        tabela.tipo = "ecn_c",
+        arquivo_tipo = "ecn",
+        arquivo_fonte = "cef"
       )
     ecns.unidades_t <-
       caminhos.ecn.recentes_c %>%
       map_dfr(~ e_cef_ecn(.x)$Unidades) %>%
       distinct() %>%
       mutate(
-        Arquivo_tipo_tabela = "ecn_u",
-        Arquivo_tipo = "ecn",
-        Arquivo_fonte = "cef"
+        tabela.tipo = "ecn_u",
+        arquivo_tipo = "ecn",
+        arquivo_fonte = "cef"
       )
     ecns_l <-
       list(

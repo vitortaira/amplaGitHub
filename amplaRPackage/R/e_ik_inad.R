@@ -1,7 +1,7 @@
 # Descrição ---------------------------------------------------------------
 
 # Condições para o funcionamento:
-# Arquivos em ".xlsx":
+# arquivos em ".xlsx":
 # (1) Estejam na pasta ".../Controladoria - Docmentos/AmplaR/dados/cef
 # /inadimplentes
 # (2) Sejam nomeados somente com um breve nome do empreendimento
@@ -162,13 +162,13 @@ e_ik_inad <-
         Contrato = as.character(parcelas.contratos_vc),
         Unidade = as.character(parcelas.unidades_vc),
         Telefone = as.character(parcelas.telefones_vc),
-        Arquivo = caminho_arquivo_inadimplentes.c
+        arquivo = caminho_arquivo_inadimplentes.c
       ) %>%
       select(
         Empreendimento, Contrato, Unidade, Cliente, Telefone, Esp, Parcela,
         `Quantidade de parcelas`, Ele, Vencto, Atraso, `R/F`, Principal, Juros,
         Encargos, `Juros de Mora`, Multa, Seguro, Total, `Data da consulta`,
-        Arquivo
+        arquivo
       )
     return("Parcelas" = parcelas_df)
   }

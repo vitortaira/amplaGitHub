@@ -60,7 +60,7 @@ r_inad <-
       left_join(
         contrs_t %>%
           select(-c(
-            "Arquivo_tipo_tabela", "Arquivo_tipo", "Arquivo_fonte", "Cliente",
+            "tabela.tipo", "arquivo.tipo", "arquivo_fonte", "Cliente",
             "Esp"
           )),
         by = c("Contrato_Ampla", "Empreendimento")

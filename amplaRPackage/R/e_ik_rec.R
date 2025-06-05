@@ -81,17 +81,17 @@ e_ik_rec <- function(
       Torre = as.character(Torre),
       Total = as.numeric(Total),
       Vencimento = as.Date(Vencimento),
-      Arquivo = caminho_arquivo_receitas,
-      Arquivo_tipo_tabela = "rec",
-      Arquivo_tipo = "rec",
-      Arquivo_fonte = "ik"
+      arquivo = caminho_arquivo_receitas,
+      arquivotipo = "rec",
+      arquivo.tipo = "rec",
+      arquivo_fonte = "ik"
     ) %>%
     select(
       Empreendimento, Empresa, Cliente, Contrato, Torre, Apto, Esp,
       Parcela, Elemento, Vencimento, `Data Pagto`, `Mês`, `R/F`, Agente,
       Principal, Juros, Reajuste, Encargos, `Juros de Mora`, Multa,
-      Seguro, Desconto, `Cart.`, Total, Arquivo, Arquivo_tipo_tabela,
-      Arquivo_tipo, Arquivo_fonte
+      Seguro, Desconto, `Cart.`, Total, arquivo, arquivo.tipo
+      arquivo.tipo, arquivo_fonte
     )
 
   # Se solicitado, salva em xlsx

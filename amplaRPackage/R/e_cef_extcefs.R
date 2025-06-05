@@ -20,7 +20,7 @@
 #' Retorna um tibble com as seguintes colunas:
 #'   - Data de lançamento: Date.
 #'   - Data de movimento: Date.
-#'   - Documento: Character.
+#'   - documento: Character.
 #'   - Histórico: Character.
 #'   - Valor: Numeric.
 #'   - Saldo: Numeric.
@@ -79,40 +79,39 @@ e_cef_extcefs <-
         }
       )
       if (!is.null(extrato) && nrow(extrato) > 0) {
-        message(sprintf("Arquivo extraído com sucesso: %s", basename(i_caminho.extrato.cef_c)))
+        message(sprintf("arquivo extraído com sucesso: %s", basename(i_caminho.extrato.cef_c)))
         extratos_l[[i_caminho.extrato.cef_c]] <- extrato
         extratos_t <- bind_rows(extratos_t, extrato)
       } else {
-        message(sprintf("Arquivo vazio ou não extraído: %s", basename(i_caminho.extrato.cef_c)))
+        message(sprintf("arquivo vazio ou não extraído: %s", basename(i_caminho.extrato.cef_c)))
       }
     }
     extratos_t %<>%
       mutate(
-        Repasse = if_else(
+        repasse = if_else(
           (descricao == "CR DESBLOQ") &
-            !(Documento %in% contratos.pj.6.ultimos_c),
+            !(documento %in% contratos.pj.6.ultimos_c),
           TRUE,
           FALSE
         ),
-        PJ = if_else(
+        pj = if_else(
           (descricao == "CR DESBLOQ") &
-            (Documento %in% contratos.pj.6.ultimos_c),
+            (documento %in% contratos.pj.6.ultimos_c),
           TRUE,
           FALSE
         ),
-        Contrato_6 =
-          Documento %>% str_pad(width = 6, side = "left", pad = "0"),
-        Arquivo_tipo_tabela = "extcef",
-        Arquivo_tipo = "extcef",
-        Arquivo_fonte = "cef"
+        contrato.6 =
+          documento %>% str_pad(width = 6, side = "left", pad = "0"),
+        arquivo.tipo.tabela = "extcef",
+        arquivo.tipo = "extcef",
+        arquivo.fonte = "cef"
       ) %>%
       as_tibble() %>%
       select(
-        data.lancamento, data.movimento, Documento, descricao,
-        Valor, Saldo, Repasse, PJ, conta.interno, Conta, `Agência`, produto, CNPJ, Cliente,
-        `periodo.inicio`, `periodo.fim`, `data.consulta`, Contrato_6, Arquivo,
-        arquivo_tipo_tabela, Arquivo_tipo, Arquivo_fonte
+        data.lancamento, data.movimento, documento, descricao, valor, saldo, repasse, pj, conta.interno, conta, agencia, produto, cnpj, cliente,
+        periodo.inicio, periodo.fim, data.consulta, contrato.6, arquivo,
+        arquivo.tipo.tabela, arquivo.tipo, arquivo.fonte
       ) %>%
-      rename(Empreendimento = Cliente)
+      rename(empreendimento = cliente)
     return(extratos_t)
   }

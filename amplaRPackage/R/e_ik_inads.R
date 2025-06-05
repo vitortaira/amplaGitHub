@@ -31,9 +31,9 @@ e_ik_inads <-
       ) %>%
       bind_rows() %>%
       mutate(
-        Arquivo_tipo_tabela = "inad",
-        Arquivo_tipo = "inad",
-        Arquivo_fonte = "ik"
+        tabela.tipo = "inad",
+        arquivo.tipo = "inad",
+        arquivo_fonte = "ik"
       )
 
     # Salvando num xlsx -------------------------------------------------------

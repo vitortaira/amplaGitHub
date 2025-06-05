@@ -61,16 +61,16 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
       })
     })
 
-  # Se o extrato da CEF for do tipo com o título "Extrato por período"
+  # Se o extrato da CEF for do tipo com o título "Extrato por período" (1)
   if (sum(str_detect(paginas_l[[1]], "Extra([A-Za-z]{2})? por per")) > 0) {
     linhas_c <- unlist(paginas_l, use.names = FALSE)
 
     # Metadados
     cliente_c <- linhas_c %>%
       keep(function(x) {
-        str_starts(x, "cliente:")
+        str_starts(x, "(?i)cliente:")
       }) %>%
-      str_remove("^cliente: ") %>%
+      str_remove("^(?i)cliente: ") %>%
       str_trim()
 
     conta_c <- linhas_c %>%
@@ -178,7 +178,7 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
         descricao = str_remove(
           linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?"
         ) %>% str_trim(),
-        `Data Lanc.` = NA,
+        data.lancamento = NA,
         conta = word(conta_c, -1) %>% str_trim(),
         agencia = str_sub(conta_c, 1, 4),
         produto = str_sub(conta_c, 6, -1) %>%
@@ -186,9 +186,9 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
           str_trim(),
         cnpj = NA,
         cliente = cliente_c,
-        `periodo.inicio` = str_remove(periodo.consultado_c, "-.*") %>%
+        periodo.inicio = str_remove(periodo.consultado_c, "-.*") %>%
           as.Date(format = "%d/%m/%Y"),
-        `periodo.fim` = str_remove(periodo.consultado_c, ".*-") %>%
+        periodo.fim = str_remove(periodo.consultado_c, ".*-") %>%
           as.Date(format = "%d/%m/%Y"),
         data.consulta = data.consulta_h,
         conta.interno = basename(f_caminho.arquivo_c) %>%
@@ -196,12 +196,12 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
         arquivo = f_caminho.arquivo_c
       ) %>%
       select(
-        `Data Lanc.`, `Data Mov.`, `Nr. Doc`, descricao, Valor, Saldo,
+        data.lancamento, `Data Mov.`, `Nr. Doc`, descricao, Valor, Saldo,
         conta.interno, conta, agencia, produto, cnpj, cliente,
-        `periodo.inicio`, `periodo.fim`, data.consulta, arquivo
+        periodo.inicio, periodo.fim, data.consulta, arquivo
       ) %>%
       rename(
-        data.lancamento = `Data Lanc.`,
+        data.lancamento = data.lancamento,
         data.movimento = `Data Mov.`,
         documento = `Nr. Doc`
       )
@@ -297,9 +297,9 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
         cnpj = cnpj_c,
         conta = conta_c,
         data.consulta = data.consulta_h,
-        `periodo.inicio` = str_remove(periodo.consultado_c, "-.*") %>%
+        periodo.inicio = str_remove(periodo.consultado_c, "-.*") %>%
           as.Date(format = "%d/%m/%Y"),
-        `periodo.fim` = str_remove(periodo.consultado_c, ".*-") %>%
+        periodo.fim = str_remove(periodo.consultado_c, ".*-") %>%
           as.Date(format = "%d/%m/%Y"),
         produto = produto_c,
         conta.interno = basename(f_caminho.arquivo_c) %>%
@@ -310,9 +310,8 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
         data.lancamento, data.movimento, documento, descricao,
         valor, saldo,
         conta.interno, conta, agencia, produto, cnpj, cliente,
-        `periodo.inicio`, `periodo.fim`, data.consulta, arquivo
-      ) %>%
-      rename(Saldo = saldo, Valor = valor)
+        periodo.inicio, periodo.fim, data.consulta, arquivo
+      )
 
     return(extrato_t)
   } else {

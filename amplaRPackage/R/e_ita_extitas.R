@@ -10,9 +10,9 @@ e_ita_extitas <-
     extita.l_t <- caminhos_extita_c %>%
       map_dfr(~ e_ita_extita(.x)$extita_l) %>%
       mutate(
-        Arquivo_tipo_tabela = "extita_l",
-        Arquivo_tipo = "extita",
-        Arquivo_fonte = "ita"
+        tabela.tipo = "extita_l",
+        arquivo_tipo = "extita",
+        arquivo_fonte = "ita"
       )
     list(
       extita_l = extita.l_t
