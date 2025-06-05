@@ -81,7 +81,7 @@ e_ik_desp <- function(
       `Total Pago` = as.numeric(`Total Pago`),
       `Valor Titulo` = as.numeric(`Valor Titulo`),
       Arquivo = caminho_arquivo_despesas,
-      tabela.tipo = "desp",
+      arquivo.tabela.tipo = "desp",
       Arquivo_tipo = "desp",
       Arquivo_fonte = "ik"
     ) %>%
@@ -91,7 +91,7 @@ e_ik_desp <- function(
       `Nº Entrada`, Documento, Parcela, `Data Vencimento`,
       `Data Vencimento Origem`, `Valor Titulo`, `Acréscimos`, Descontos,
       Encargos, `Descontos Adiant.`, Multa, `Total Pago`, `a/c`,
-      `Observação`, Arquivo, tabela.tipo, Arquivo_tipo,
+      `Observação`, Arquivo, arquivo.tabela.tipo, Arquivo_tipo,
       Arquivo_fonte
     )
 

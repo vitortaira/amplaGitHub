@@ -173,7 +173,7 @@ e_ik <-
             `Total Pago` = as.numeric(`Total Pago`),
             `Valor Titulo` = as.numeric(`Valor Titulo`),
             Arquivo = caminho_arquivo_informakon.c,
-            tabela.tipo = "desp",
+            arquivo.tabela.tipo = "desp",
             Arquivo_tipo = "desp",
             Arquivo_fonte = "ik"
           ) %>%
@@ -183,7 +183,7 @@ e_ik <-
             `Nº Entrada`, Documento, Parcela, `Data Vencimento`,
             `Data Vencimento Origem`, `Valor Titulo`, `Acréscimos`, Descontos,
             Encargos, `Descontos Adiant.`, Multa, `Total Pago`, `a/c`,
-            `Observação`, Arquivo, tabela.tipo, Arquivo_tipo,
+            `Observação`, Arquivo, arquivo.tabela.tipo, Arquivo_tipo,
             Arquivo_fonte
           )
       }
@@ -219,7 +219,7 @@ e_ik <-
             Total = as.numeric(Total),
             Vencimento = as.Date(Vencimento),
             Arquivo = caminho_arquivo_informakon.c,
-            tabela.tipo = "rec",
+            arquivo.tabela.tipo = "rec",
             Arquivo_tipo = "rec",
             Arquivo_fonte = "ik"
           ) %>%
@@ -227,7 +227,7 @@ e_ik <-
             Empreendimento, Empresa, Cliente, Contrato, Torre, Apto, Esp,
             Parcela, Elemento, Vencimento, `Data Pagto`, `Mês`, `R/F`, Agente,
             Principal, Juros, Reajuste, Encargos, `Juros de Mora`, Multa,
-            Seguro, Desconto, `Cart.`, Total, Arquivo, tabela.tipo,
+            Seguro, Desconto, `Cart.`, Total, Arquivo, arquivo.tabela.tipo,
             Arquivo_tipo, Arquivo_fonte
           )
       }

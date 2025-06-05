@@ -31,7 +31,7 @@ e_ik_inads <-
       ) %>%
       bind_rows() %>%
       mutate(
-        tabela.tipo = "inad",
+        arquivo.tabela.tipo = "inad",
         arquivo.tipo = "inad",
         arquivo_fonte = "ik"
       )

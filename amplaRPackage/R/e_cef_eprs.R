@@ -68,7 +68,7 @@ e_cef_eprs <-
     eprs_t %<>% distinct(across(-arquivo), .keep_all = TRUE) %>%
       as_tibble() %>%
       mutate(
-        tabela.tipo = "epr",
+        arquivo.tabela.tipo = "epr",
         arquivo_tipo = "epr",
         arquivo_fonte = "cef"
       )

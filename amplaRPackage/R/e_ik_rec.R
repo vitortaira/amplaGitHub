@@ -57,41 +57,41 @@ e_ik_rec <- function(
   caminho_arquivo_receitas <- obter_caminho_receitas()
   receitas_df <- read_excel(caminho_arquivo_receitas, skip = 3) %>%
     mutate(
-      Agente = as.character(Agente),
-      Apto = as.integer(Apto),
-      `Cart.` = as.factor(`Cart.`),
-      Cliente = as.character(Cliente),
-      Contrato = as.character(Contrato),
-      `Data Pagto` = as.Date(`Data Pagto`, format = "%d/%m/%Y"),
-      Desconto = as.numeric(Desconto),
-      Elemento = as.character(Elemento),
-      Empreendimento = as.character(Empreendimento),
-      Empresa = Empreendimento %>% str_sub(1, 3),
-      Encargos = as.numeric(Encargos),
-      Esp = as.character(Esp),
-      Juros = as.numeric(Juros),
-      `Juros de Mora` = as.numeric(`Juros de Mora`),
-      `Mês` = floor_date(`Data Pagto`, "month"),
-      Multa = as.numeric(Multa),
-      Parcela = as.character(Parcela),
-      Principal = as.numeric(Principal),
-      `R/F` = as.factor(`R/F`),
-      Reajuste = as.numeric(Reajuste),
-      Seguro = as.numeric(Seguro),
-      Torre = as.character(Torre),
-      Total = as.numeric(Total),
-      Vencimento = as.Date(Vencimento),
+      agente = as.character(agente),
+      apto = as.integer(apto),
+      cart = as.factor(cart),
+      cliente = as.character(cliente),
+      contrato = as.character(contrato),
+      data.pagamento = as.Date(data.pagamento, format = "%d/%m/%Y"),
+      desconto = as.numeric(desconto),
+      elemento = as.character(elemento),
+      empreendimento = as.character(empreendimento),
+      empresa = empreendimento %>% str_sub(1, 3),
+      encargo = as.numeric(encargo),
+      esp = as.character(esp),
+      juros = as.numeric(juros),
+      juros.mora = as.numeric(juros.mora),
+      mes = floor_date(data.pagamento, "month"),
+      multa = as.numeric(multa),
+      parcela = as.character(parcela),
+      principal = as.numeric(principal),
+      `r/f` = as.factor(`r/f`),
+      reajuste = as.numeric(reajuste),
+      seguro = as.numeric(seguro),
+      torre = as.character(torre),
+      total = as.numeric(total),
+      vencimento = as.Date(vencimento),
       arquivo = caminho_arquivo_receitas,
-      arquivotipo = "rec",
       arquivo.tipo = "rec",
-      arquivo_fonte = "ik"
+      arquivo.tabela.tipo = "rec",
+      arquivo.fonte = "ik"
     ) %>%
     select(
-      Empreendimento, Empresa, Cliente, Contrato, Torre, Apto, Esp,
-      Parcela, Elemento, Vencimento, `Data Pagto`, `Mês`, `R/F`, Agente,
-      Principal, Juros, Reajuste, Encargos, `Juros de Mora`, Multa,
-      Seguro, Desconto, `Cart.`, Total, arquivo, arquivo.tipo
-      arquivo.tipo, arquivo_fonte
+      empreendimento, empresa, cliente, contrato, torre, apto, esp,
+      parcela, elemento, vencimento, data.pagamento, mes, `r/f`, agente,
+      principal, juros, reajuste, encargo, juros.mora, multa,
+      seguro, desconto, cart, total, arquivo, arquivo.tipo,
+      arquivo.tabela.tipo, arquivo.fonte
     )
 
   # Se solicitado, salva em xlsx

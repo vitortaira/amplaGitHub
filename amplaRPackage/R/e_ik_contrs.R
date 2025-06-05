@@ -26,7 +26,7 @@ e_ik_contrs <- function(caminhos.pasta.cobranca_c = c_caminhos_pastas("cobranca"
       )
     }) %>%
     mutate(
-      tabela.tipo = "contr",
+      arquivo.tabela.tipo = "contr",
       arquivo.tipo = "contr",
       arquivo_fonte = "cef"
     )

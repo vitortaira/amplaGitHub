@@ -73,14 +73,14 @@ e_dados <- function() {
     flatten() %>%
     map_dfr(~ dplyr::select(
       .x,
-      arquivo, tabela.tipo, arquivo_tipo, arquivo_fonte
+      arquivo, arquivo.tabela.tipo, arquivo_tipo, arquivo_fonte
     )) %>%
     distinct()
   info.arquivos_t <- file_info(arquivos_c$arquivo)
   metadados_t <-
     tibble(
       arquivo = info.arquivos_t$path,
-      tabela.tipo = arquivos_c$tabela.tipo,
+      arquivo.tabela.tipo = arquivos_c$arquivo.tabela.tipo,
       arquivo_tipo = arquivos_c$arquivo_tipo,
       arquivo_fonte = arquivos_c$arquivo_fonte,
       Nome = arquivo %>% basename() %>% str_remove("\\..*$"),
