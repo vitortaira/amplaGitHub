@@ -18,7 +18,7 @@
 #'   - Data de movimento   : Date
 #'   - documento           : Character
 #'   - Historico           : Character
-#'   - Valor               : Numeric
+#'   - valor               : Numeric
 #'   - Saldo               : Numeric
 #'   - conta.interno       : Character
 #'   - conta               : Character
@@ -39,7 +39,7 @@
 #'
 #' library(dplyr)
 #' extrato_filtrado <- e_cef_extcef("caminho/para/o/extrato.pdf") %>%
-#'   filter(Valor > 0)
+#'   filter(valor > 0)
 #' summary(extrato_filtrado)
 #' }
 #'
@@ -151,14 +151,14 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
       as_tibble_col(column_name = "linhas") %>%
       slice(indice.comeco_i:indice.fim_i) %>%
       mutate(
-        `Data Mov.` = if_else(
+        data.movimentacao = if_else(
           word(linhas) == "000000",
           str_extract(periodo.consultado_c, ".*(?=-)") %>%
             as.Date(format = "%d/%m/%Y") %>% rep(length(linhas)),
           word(linhas) %>% as.Date(format = "%d/%m/%Y")
         ),
         linhas = str_remove(linhas, "^\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
-        `Nr. Doc` = word(linhas),
+        documento = word(linhas),
         linhas = str_remove(linhas, str_c("^", word(linhas))) %>% str_trim(),
         Saldo = str_extract(linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?$") %>%
           str_remove("\\s?C") %>% str_remove_all("\\.") %>%
@@ -168,7 +168,7 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
             .
           ) %>% as.numeric(),
         linhas = str_remove(linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?$"),
-        Valor = str_extract(linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?") %>%
+        valor = str_extract(linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?") %>%
           str_remove("\\s?C") %>% str_remove_all("\\.") %>%
           str_replace("\\,", "\\.") %>%
           if_else(str_detect(., "D$"),
@@ -196,14 +196,9 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
         arquivo = f_caminho.arquivo_c
       ) %>%
       select(
-        data.lancamento, `Data Mov.`, `Nr. Doc`, descricao, Valor, Saldo,
+        data.lancamento, data.movimentacao, documento, descricao, valor, Saldo,
         conta.interno, conta, agencia, produto, cnpj, cliente,
         periodo.inicio, periodo.fim, data.consulta, arquivo
-      ) %>%
-      rename(
-        data.lancamento = data.lancamento,
-        data.movimento = `Data Mov.`,
-        documento = `Nr. Doc`
       )
 
     return(extrato_t)

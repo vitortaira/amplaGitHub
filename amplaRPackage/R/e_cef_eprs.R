@@ -69,8 +69,8 @@ e_cef_eprs <-
       as_tibble() %>%
       mutate(
         arquivo.tabela.tipo = "epr",
-        arquivo_tipo = "epr",
-        arquivo_fonte = "cef"
+        arquivo.tipo = "epr",
+        arquivo.fonte = "cef"
       )
     return(eprs_t)
   }
