@@ -39,28 +39,59 @@ r_inad <-
         ~ str_detect(.x, "(?i)/inadimpl.ncia\\s?-.*\\.xlsx") &
           !str_detect(.x, "(?i)consolidado")
       )
-    empreendimentos_c <- unique(
-      inads_t$Empreendimento
-    )
     caminhos.inads_t <- caminho.inads_c %>%
       map_dfr(~ {
         # Extrair a data do nome do arquivo no formato %Y_%m (ex: 2025_04)
         data_str <- str_extract(.x, "-\\s?\\d{4}_\\d{2}") %>%
           str_extract("\\d{4}_\\d{2}")
         data <- suppressWarnings(as.Date(paste0(data_str, "_01"), format = "%Y_%m_%d"))
-        tibble(caminho = .x, data = data, nome = fs::path_file(.x))
+        empreendimentos_c <- str_extract(.x, "-\\s?\\w{3}\\s?-") %>%
+          str_extract("\\w{3}")
+        tibble(
+          caminho = .x,
+          data = data,
+          empreendimento = empreendimentos_c
+        )
       }) %>%
       arrange(desc(data)) %>%
-      distinct(nome, .keep_all = TRUE)
+      distinct(empreendimento, .keep_all = TRUE)
     caminhos.inads.recentes_c <- caminhos.inads_t$caminho
     contrs_t <- e_ik_contrs()
+    # Filtrar contrs_t para apenas o arquivo mais recente por empreendimento
+    caminho.contrs_c <-
+      dir_ls(c_caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
+      keep(
+        ~ str_detect(.x, "(?i)contratos-.*\\.xlsx") &
+          !str_detect(.x, "(?i)consolidado")
+      )
+    caminhos.contrs_t <- caminho.contrs_c %>%
+      map_dfr(~ {
+        data_str <- str_extract(.x, "-\\s?\\d{4}_\\d{2}") %>%
+          str_extract("\\d{4}_\\d{2}")
+        data <- suppressWarnings(as.Date(
+          paste0(data_str, "_01"),
+          format = "%Y_%m_%d"
+        ))
+        empreendimento_c <- str_extract(.x, "-\\s?\\w{3}\\s?-") %>%
+          str_extract("\\w{3}")
+        tibble(
+          caminho = .x,
+          data = data,
+          empreendimento = empreendimento_c
+        )
+      }) %>%
+      arrange(desc(data)) %>%
+      distinct(empreendimento, .keep_all = TRUE)
+    caminhos.contrs.recentes_c <- caminhos.contrs_t$caminho
     # Cruza inads_t e contrs_t
     r_inad.parcelas_t <-
       inads_t %>%
+      dplyr::filter(arquivo %in% caminhos.inads.recentes_c) %>%
       left_join(
         contrs_t %>%
+          filter(arquivo %in% caminhos.contrs.recentes_c) %>%
           select(-c(
-            "arquivo.tabela.tipo", "arquivo.tipo", "arquivo_fonte", "Cliente",
+            "arquivo.tabela.tipo", "arquivo.tipo", "arquivo.fonte", "Cliente",
             "Esp"
           )),
         by = c("Contrato_Ampla", "Empreendimento")
@@ -316,27 +347,6 @@ r_inad <-
         message(msg)
       }
     }
-    # Filtrar contrs_t para apenas o arquivo mais recente por empreendimento
-    caminho.contrs_c <-
-      dir_ls(c_caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
-      keep(~ str_detect(.x, "(?i)contratos-.*\\.xlsx") & !str_detect(.x, "(?i)consolidado"))
-    caminhos.contrs_t <- caminho.contrs_c %>%
-      map_dfr(~ {
-        data_str <- str_extract(.x, "-\\s?\\d{4}_\\d{2}") %>%
-          str_extract("\\d{4}_\\d{2}")
-        data <- suppressWarnings(as.Date(paste0(data_str, "_01"), format = "%Y_%m_%d"))
-        empreendimento_c <- str_extract(.x, "-\\s?\\w{3}\\s?-") %>%
-          str_extract("\\w{3}")
-        tibble(
-          caminho = .x,
-          data = data,
-          nome = fs::path_file(.x),
-          empreendimento = empreendimento_c
-        )
-      }) %>%
-      arrange(desc(data)) %>%
-      distinct(empreendimento, .keep_all = TRUE)
-    caminhos.contrs.recentes_c <- caminhos.contrs_t$caminho
     # Mensagem de verificação para contratos
     if (nrow(caminhos.contrs_t) > 0) {
       meses_contrs <- format(caminhos.contrs_t$data, "%Y-%m")
@@ -355,19 +365,3 @@ r_inad <-
   }
 
 # Teste -------------------------------------------------------------------
-
-# t_cruzar_extcef_cmfcn()
-# f_caminho.arquivo.extrato_cef_c <-
-#   here::here(
-#     "..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
-#     "Estação", "Fevereiro 2025", "CAIXA -  2419 - FEVEREIRO.pdf"
-#   )
-# f_caminho.arquivo.extrato_cef_c <-
-#   here::here(
-#     "..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
-#     "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
-#   )
-# View(extrair_dados_arquivo_extrato_cef(caminhos.extratos.cef_c[2])$Dados)
-# extrato <- extrair_dados_arquivo_extrato_cef(f_caminho.arquivo.extrato_cef_c)
-# teste <- extrair_dados_arquivo_extrato_cef(f_caminho.arquivo.extrato_cef_c)
-# shell.exec(f_caminho.arquivo.extrato_cef_c)

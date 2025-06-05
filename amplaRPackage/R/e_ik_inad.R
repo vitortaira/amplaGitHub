@@ -121,40 +121,82 @@ e_ik_inad <-
         Vencto = as.character(Vencto) %>% as.Date(format = "%d/%m/%Y"),
         `R/F` = as.character(`R/F`),
         Principal =
-          Principal %>%
-            str_remove_all("\\.") %>%
-            str_replace("\\,", "\\.") %>%
-            as.numeric(),
+          ifelse(
+            str_detect(Principal, "\\.") &
+              !str_detect(Principal, ",") &
+              str_detect(Principal, "\\.\\d{3,}|\\d{3,}\\."),
+            as.numeric(Principal),
+            Principal %>%
+              str_remove_all("\\.") %>%
+              str_replace(",", ".") %>%
+              as.numeric()
+          ),
         Juros =
-          Juros %>%
-            str_remove_all("\\.") %>%
-            str_replace("\\,", "\\.") %>%
-            as.numeric(),
+          ifelse(
+            str_detect(Juros, "\\.") &
+              !str_detect(Juros, ",") &
+              str_detect(Juros, "\\.\\d{3,}|\\d{3,}\\."),
+            as.numeric(Juros),
+            Juros %>%
+              str_remove_all("\\.") %>%
+              str_replace(",", ".") %>%
+              as.numeric()
+          ),
         Encargos =
-          Encargos %>%
-            str_remove_all("\\.") %>%
-            str_replace("\\,", "\\.") %>%
-            as.numeric(),
+          ifelse(
+            str_detect(Encargos, "\\.") &
+              !str_detect(Encargos, ",") &
+              str_detect(Encargos, "\\.\\d{3,}|\\d{3,}\\."),
+            as.numeric(Encargos),
+            Encargos %>%
+              str_remove_all("\\.") %>%
+              str_replace(",", ".") %>%
+              as.numeric()
+          ),
         `Juros de Mora` =
-          `Juros de Mora` %>%
-            str_remove_all("\\.") %>%
-            str_replace("\\,", "\\.") %>%
-            as.numeric(),
+          ifelse(
+            str_detect(`Juros de Mora`, "\\.") &
+              !str_detect(`Juros de Mora`, ",") &
+              str_detect(`Juros de Mora`, "\\.\\d{3,}|\\d{3,}\\."),
+            as.numeric(`Juros de Mora`),
+            `Juros de Mora` %>%
+              str_remove_all("\\.") %>%
+              str_replace(",", ".") %>%
+              as.numeric()
+          ),
         Multa =
-          Multa %>%
-            str_remove_all("\\.") %>%
-            str_replace("\\,", "\\.") %>%
-            as.numeric(),
+          ifelse(
+            str_detect(Multa, "\\.") &
+              !str_detect(Multa, ",") &
+              str_detect(Multa, "\\.\\d{3,}|\\d{3,}\\."),
+            as.numeric(Multa),
+            Multa %>%
+              str_remove_all("\\.") %>%
+              str_replace(",", ".") %>%
+              as.numeric()
+          ),
         Seguro =
-          Seguro %>%
-            str_remove_all("\\.") %>%
-            str_replace("\\,", "\\.") %>%
-            as.numeric(),
+          ifelse(
+            str_detect(Seguro, "\\.") &
+              !str_detect(Seguro, ",") &
+              str_detect(Seguro, "\\.\\d{3,}|\\d{3,}\\."),
+            as.numeric(Seguro),
+            Seguro %>%
+              str_remove_all("\\.") %>%
+              str_replace(",", ".") %>%
+              as.numeric()
+          ),
         Total =
-          Total %>%
-            str_remove_all("\\.") %>%
-            str_replace("\\,", "\\.") %>%
-            as.numeric(),
+          ifelse(
+            str_detect(Total, "\\.") &
+              !str_detect(Total, ",") &
+              str_detect(Total, "\\.\\d{3,}|\\d{3,}\\."),
+            as.numeric(Total),
+            Total %>%
+              str_remove_all("\\.") %>%
+              str_replace(",", ".") %>%
+              as.numeric()
+          ),
         `Data da consulta` =
           as.POSIXct(data.impressao_p, format = "%Y-%m-%d %H:%M:%S"),
         Atraso = as.integer(Atraso),

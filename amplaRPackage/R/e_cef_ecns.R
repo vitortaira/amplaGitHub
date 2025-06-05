@@ -12,14 +12,14 @@
 #' contenham "empreendimento_construcao" no nome. Para cada arquivo encontrado,
 #' chama a função \code{e_cef_ecn} para realizar a extração dos dados e,
 #' posteriormente, consolida os resultados em uma lista com quatro elementos:
-#' Empreendimento, Empréstimo, Consolidados e Unidades.
+#' ecn_e, Empréstimo, ecn_cs e ecn_u.
 #'
 #' @return
 #' Retorna uma lista com os seguintes elementos:
-#'   - Empreendimento: Tibble com os dados dos empreendimentos.
-#'   - Emprestimo: Tibble com os dados dos empréstimos.
-#'   - Consolidado: Tibble com os dados consolidados.
-#'   - Unidades: Tibble com os dados das unidades.
+#'   - ecn_e: Tibble com os dados dos empreendimentos.
+#'   - ecn_pj: Tibble com os dados dos empréstimos.
+#'   - ecn_c: Tibble com os dados consolidados.
+#'   - ecn_u: Tibble com os dados das unidades.
 #'
 #' @examples
 #' \dontrun{
@@ -45,21 +45,21 @@ e_cef_ecns <-
     # Tabelas não-cumulativas
     ecns.empreendimento_t <-
       caminhos.ecn_c %>%
-      map_dfr(~ e_cef_ecn(.x)$Empreendimento) %>%
+      map_dfr(~ e_cef_ecn(.x)$ecn_e) %>%
       distinct() %>%
       mutate(
-        arquivo_tipo = "ecn",
+        arquivo.tipo = "ecn",
         arquivo.tabela.tipo = "ecn_e",
-        arquivo_fonte = "cef"
+        arquivo.fonte = "cef"
       )
     ecns.emprestimo_t <-
       caminhos.ecn_c %>%
-      map_dfr(~ e_cef_ecn(.x)$Emprestimo) %>%
+      map_dfr(~ e_cef_ecn(.x)$ecn_pj) %>%
       distinct() %>%
       mutate(
         arquivo.tabela.tipo = "ecn_pj",
-        arquivo_tipo = "ecn",
-        arquivo_fonte = "cef",
+        arquivo.tipo = "ecn",
+        arquivo.fonte = "cef",
       )
     # Identifica o arquivo mais recente de cada empreendimento
     contratos.empreendimentos.12.primeiros_c <-
@@ -83,21 +83,21 @@ e_cef_ecns <-
     # Tabelas cumulativas
     ecns.consolidado_t <-
       caminhos.ecn.recentes_c %>%
-      map_dfr(~ e_cef_ecn(.x)$Consolidado) %>%
+      map_dfr(~ e_cef_ecn(.x)$ecn_c) %>%
       distinct() %>%
       mutate(
         arquivo.tabela.tipo = "ecn_c",
-        arquivo_tipo = "ecn",
-        arquivo_fonte = "cef"
+        arquivo.tipo = "ecn",
+        arquivo.fonte = "cef"
       )
     ecns.unidades_t <-
       caminhos.ecn.recentes_c %>%
-      map_dfr(~ e_cef_ecn(.x)$Unidades) %>%
+      map_dfr(~ e_cef_ecn(.x)$ecn_u) %>%
       distinct() %>%
       mutate(
         arquivo.tabela.tipo = "ecn_u",
-        arquivo_tipo = "ecn",
-        arquivo_fonte = "cef"
+        arquivo.tipo = "ecn",
+        arquivo.fonte = "cef"
       )
     ecns_l <-
       list(
