@@ -35,8 +35,8 @@ e_cef_dcds_resumo <- function(
     map_dfr(~ e_cef_dcd_resumo(.x)) %>%
     mutate(
       arquivo.tabela.tipo = "dcd",
-      arquivo_tipo = "dcd",
-      arquivo_fonte = "cef"
+      arquivo.tipo = "dcd",
+      arquivo.fonte = "cef"
     )
   return(dcds.resumo_t)
 }
