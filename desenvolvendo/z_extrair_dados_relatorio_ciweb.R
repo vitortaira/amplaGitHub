@@ -22,12 +22,12 @@ extrair_dados_relatorio_ciweb <-
     # Criar lista para armazenar todos os dados do relatório
     dados.ciweb.relatorio_l <- list()
     # Iterar por empreendimento
-    for (empreendimento.c in caminhos_ciweb_relatorio.l$Empreendimentos) {
+    for (empreendimento.c in caminhos_ciweb_relatorio.l$empreendimentos) {
       # Criar lista para armazenar todos os dados do empreendimento
       dados.ciweb.relatorio_l[[empreendimento.c]] <- list()
       # Extrair tipos de relatórios a serem analisados
       tipos_vc <-
-        setdiff(names(caminhos_ciweb_relatorio.l), c("Empreendimentos", "Contagem"))
+        setdiff(names(caminhos_ciweb_relatorio.l), c("empreendimentos", "Contagem"))
       # Iterar por tipo de relatório a ser analisado
       for (tipo.c in tipos_vc) {
         # Preencher a lista com os dados por empreendimento e tipo de relatório

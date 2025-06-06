@@ -7,7 +7,7 @@ knitr:
   opts_chunk:
     warning: false
     message: false
-output: 
+output:
   html_document:
     code_folding: hide
     highlight: tango

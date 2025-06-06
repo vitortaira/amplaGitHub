@@ -205,7 +205,7 @@ e_ik <-
             Empreendimento = as.character(Empreendimento),
             Empresa = Empreendimento %>% str_sub(1, 3),
             Encargos = as.numeric(Encargos),
-            Esp = as.character(Esp),
+            esp = as.character(esp),
             Juros = as.numeric(Juros),
             `Juros de Mora` = as.numeric(`Juros de Mora`),
             `Mês` = floor_date(`Data Pagto`, "month"),
@@ -224,7 +224,7 @@ e_ik <-
             Arquivo_fonte = "ik"
           ) %>%
           select(
-            Empreendimento, Empresa, Cliente, Contrato, Torre, Apto, Esp,
+            Empreendimento, Empresa, Cliente, Contrato, Torre, Apto, esp,
             Parcela, Elemento, Vencimento, `Data Pagto`, `Mês`, `R/F`, Agente,
             Principal, Juros, Reajuste, Encargos, `Juros de Mora`, Multa,
             Seguro, Desconto, `Cart.`, Total, Arquivo, arquivo.tabela.tipo,

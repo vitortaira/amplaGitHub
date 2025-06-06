@@ -32,7 +32,7 @@ r_inad <-
     # Consolida os dados dos inadimplentes da pasta "inadimplentes"
     inads_t <-
       e_ik_inads(xlsx = FALSE) %>%
-      rename(Contrato_Ampla = "Contrato")
+      rename(arquivo.fonte = "Contrato")
     caminho.inads_c <-
       dir_ls(c_caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
       keep(
@@ -92,15 +92,15 @@ r_inad <-
           filter(arquivo %in% caminhos.contrs.recentes_c) %>%
           select(-c(
             "arquivo.tabela.tipo", "arquivo.tipo", "arquivo.fonte", "Cliente",
-            "Esp"
+            "esp"
           )),
-        by = c("Contrato_Ampla", "Empreendimento")
+        by = c("arquivo.fonte", "empreendimento")
       ) %>%
       mutate(
-        Repassado = if_else(Repassado == "Repassado", "Sim", "Não")
+        repassado = if_else(repassado == "repassado", "Sim", "Não")
       ) %>%
       select(
-        Empreendimento, Contrato_Ampla, Repassado, Contrato_CEF,
+        empreendimento, arquivo.fonte, repassado, contrato.cef,
         Unidade, Cliente, Telefone, everything()
       ) %>%
       distinct()
@@ -110,8 +110,8 @@ r_inad <-
       summarise(
         Total = sum(Total, na.rm = TRUE),
         Atraso_meses = max(Atraso, na.rm = TRUE) / 30,
-        Empreendimento = first(Empreendimento),
-        Repassado = first(Repassado)
+        empreendimento = first(empreendimento),
+        repassado = first(repassado)
       ) %>%
       ungroup()
     r_inad_l <- list(

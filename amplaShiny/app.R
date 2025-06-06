@@ -348,7 +348,7 @@ server <- function(input, output, session) {
                       "g_barras.empilhadas.mes.rec",
                       choices = c(
                         "Agente", "Cart.", "Cliente", "Elemento",
-                        "Empreendimento", "Empresa", "Esp", "Parcela", "R/F",
+                        "Empreendimento", "Empresa", "esp", "Parcela", "R/F",
                         "Torre"
                       ),
                       total = "Total", # numeric column

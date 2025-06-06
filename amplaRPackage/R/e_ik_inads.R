@@ -33,7 +33,7 @@ e_ik_inads <-
       mutate(
         arquivo.tabela.tipo = "inad",
         arquivo.tipo = "inad",
-        arquivo_fonte = "ik"
+        arquivo.fonte = "ik"
       )
 
     # Salvando num xlsx -------------------------------------------------------

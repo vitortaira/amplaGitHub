@@ -40,7 +40,7 @@ e_ik_inad <-
       as.POSIXct(format = "%d/%m/%Y %H:%M:%S")
     indice.linhas.remover_vn <-
       linhas_vc %>%
-      str_which("^Folha|^Relatório de Inadimplência|^Título|^Esp ")
+      str_which("^Folha|^Relatório de Inadimplência|^Título|^esp ")
     linhas_vc <-
       linhas_vc[-indice.linhas.remover_vn]
     indice.clientes_vn <-
@@ -92,14 +92,14 @@ e_ik_inad <-
         cols = everything(),
         names =
           c(
-            "Esp", "Parcela", "Ele", "Vencto", "Atraso", "R/F", "Principal",
+            "esp", "Parcela", "Ele", "Vencto", "Atraso", "R/F", "Principal",
             "Juros", "Encargos", "Juros de Mora", "Multa", "Seguro", "Total"
           ),
         delim = " "
       ) %>%
       mutate(
         Cliente = parcelas.clientes_vc,
-        Esp = as.character(Esp),
+        esp = as.character(esp),
         Parcela = as.character(Parcela),
         Ele = as.character(Ele),
         Vencto = as.character(Vencto) %>% as.Date(format = "%d/%m/%Y"),

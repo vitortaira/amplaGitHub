@@ -39,7 +39,7 @@ e_ik_inad <-
       as.POSIXct(format = "%d/%m/%Y %H:%M:%S")
     indice.linhas.remover_vn <-
       linhas_vc %>%
-      str_which("^Folha|^Relatório de Inadimplência|^Título|^Esp ")
+      str_which("^Folha|^Relatório de Inadimplência|^Título|^esp ")
     linhas_vc <-
       linhas_vc[-indice.linhas.remover_vn] %>%
       str_remove("Imobiliaria/Corretor:") %>%
@@ -107,14 +107,14 @@ e_ik_inad <-
         cols = everything(),
         names =
           c(
-            "Esp", "Parcela", "Ele", "Vencto", "Atraso", "R/F", "Principal",
+            "esp", "Parcela", "Ele", "Vencto", "Atraso", "R/F", "Principal",
             "Juros", "Encargos", "Juros de Mora", "Multa", "Seguro", "Total"
           ),
         delim = " "
       ) %>%
       mutate(
         Cliente = parcelas.clientes_vc,
-        Esp = as.character(Esp),
+        esp = as.character(esp),
         Parcela = as.character(Parcela),
         `Quantidade de parcelas` = as.integer(parcelas.abertas_vi),
         Ele = as.character(Ele),
@@ -200,14 +200,14 @@ e_ik_inad <-
         `Data da consulta` =
           as.POSIXct(data.impressao_p, format = "%Y-%m-%d %H:%M:%S"),
         Atraso = as.integer(Atraso),
-        Empreendimento = empreendimento_c,
+        empreendimento = empreendimento_c,
         Contrato = as.character(parcelas.contratos_vc),
         Unidade = as.character(parcelas.unidades_vc),
         Telefone = as.character(parcelas.telefones_vc),
         arquivo = caminho_arquivo_inadimplentes.c
       ) %>%
       select(
-        Empreendimento, Contrato, Unidade, Cliente, Telefone, Esp, Parcela,
+        empreendimento, Contrato, Unidade, Cliente, Telefone, esp, Parcela,
         `Quantidade de parcelas`, Ele, Vencto, Atraso, `R/F`, Principal, Juros,
         Encargos, `Juros de Mora`, Multa, Seguro, Total, `Data da consulta`,
         arquivo

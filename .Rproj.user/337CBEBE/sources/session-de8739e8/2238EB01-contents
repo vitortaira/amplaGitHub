@@ -1,12 +1,12 @@
 inadimplentes <- read_excel("dados/cef/inadimplentes/formatados/inadimplentes 2025_04_07 15_21_31.xlsx")
-inadimplentes.consolidado <- 
-  inadimplentes %>% 
-    group_by(Empreendimento, Contrato_Ampla) %>% 
-    summarise(
-      total = sum(Total, na.rm = TRUE),
-      media_atraso = mean(Atraso, na.rm = TRUE),
-      cliente = first(Cliente),
-      repassado = first(`Repassado?`),
-      Contrato_CEF = first(Contrato_CEF),
-      .groups = "drop"
-    )
+inadimplentes.consolidado <-
+  inadimplentes %>%
+  group_by(empreendimento, arquivo.fonte) %>%
+  summarise(
+    total = sum(Total, na.rm = TRUE),
+    media_atraso = mean(Atraso, na.rm = TRUE),
+    cliente = first(Cliente),
+    repassado = first(`repassado?`),
+    contrato.cef = first(contrato.cef),
+    .groups = "drop"
+  )

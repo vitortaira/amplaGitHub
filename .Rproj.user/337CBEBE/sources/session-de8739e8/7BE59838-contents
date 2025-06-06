@@ -27,10 +27,9 @@ library(styler) # Funções para formatar códigos, e.g. style_file()
 library(tidyverse) # Pacotes úteis para a análise de dados, e.g. dplyr e ggplot2
 
 extrair_dados_pasta_informakon <-
-  function(
-      caminho_pasta_informakon.c =
-        here("Controladoria - Documentos", "Ampla_Github", "dados", "informakon"),
-      xlsx = FALSE) {
+  function(caminho_pasta_informakon.c =
+             here("Controladoria - Documentos", "Ampla_Github", "dados", "informakon"),
+           xlsx = FALSE) {
     extrair_caminhos_relatorio_informakon <-
       function(caminho_pasta_informakon.c = here("Controladoria - Documentos", "Ampla_Github", "dados", "informakon")) {
         if (!dir.exists(caminho_pasta_informakon.c)) {
@@ -178,9 +177,9 @@ extrair_dados_pasta_informakon <-
             `Data Pagto`    = as.Date(`Data Pagto`, format = "%d/%m/%Y"),
             Desconto        = as.numeric(Desconto),
             Elemento        = as.character(Elemento),
-            Empreendimento  = as.character(Empreendimento),
+            empreendimento  = as.character(empreendimento),
             Encargos        = as.numeric(Encargos),
-            Esp             = as.character(Esp),
+            esp             = as.character(esp),
             Juros           = as.numeric(Juros),
             `Juros de Mora` = as.numeric(`Juros de Mora`),
             Mês             = floor_date(`Data Pagto`, "month"),
@@ -211,7 +210,7 @@ extrair_dados_pasta_informakon <-
     # Receitas
     dados.receitas.bp.informakon_df <-
       dados.pasta.informakon_l[["Receitas"]] %>%
-      group_by(Empreendimento, Mês) %>%
+      group_by(empreendimento, Mês) %>%
       summarise(
         Total = sum(Total, na.rm = T),
         .groups = "drop"

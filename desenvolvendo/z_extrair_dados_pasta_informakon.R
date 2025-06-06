@@ -178,7 +178,7 @@ extrair_dados_pasta_informakon <-
             Elemento = as.character(Elemento),
             Empreendimento = as.character(Empreendimento),
             Encargos = as.numeric(Encargos),
-            Esp = as.character(Esp),
+            esp = as.character(esp),
             Juros = as.numeric(Juros),
             `Juros de Mora` = as.numeric(`Juros de Mora`),
             `Mês` = floor_date(`Data Pagto`, "month"),

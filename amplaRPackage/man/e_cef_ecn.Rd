@@ -21,7 +21,7 @@ consolidados e unidades.
 }
 \details{
 A função lê o arquivo PDF, modela as informações e retorna uma lista
-com dados de Empreendimento, Empréstimo, Consolidados e Unidades, baseada
+com dados de empreendimento, Empréstimo, Consolidados e Unidades, baseada
 no layout do extrato da CEF.
 }
 \examples{
