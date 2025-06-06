@@ -108,7 +108,7 @@ e_cef_extcefs <-
       ) %>%
       as_tibble() %>%
       select(
-        data.lancamento, data.movimento, documento, descricao, valor, saldo, repasse, pj, conta.interno, conta, agencia, produto, cnpj, cliente,
+        data.lancamento, data.movimentacao, documento, descricao, valor, saldo, repasse, pj, conta.interno, conta, agencia, produto, cnpj, cliente,
         periodo.inicio, periodo.fim, data.consulta, contrato.6, arquivo,
         arquivo.tipo.tabela, arquivo.tipo, arquivo.fonte
       ) %>%

@@ -275,7 +275,7 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
         data.lancamento = str_extract(linhas, "\\d{2}/\\d{2}/\\d{4}") %>%
           as.Date(format = "%d/%m/%Y"),
         linhas = str_remove(linhas, "\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
-        data.movimento = str_extract(linhas, "\\d{2}/\\d{2}/\\d{4}") %>%
+        data.movimentacao = str_extract(linhas, "\\d{2}/\\d{2}/\\d{4}") %>%
           as.Date(format = "%d/%m/%Y"),
         linhas = str_remove(linhas, "\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
         documento = str_remove(linhas, "[A-Za-z].*") %>% str_trim(),
@@ -302,7 +302,7 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
         arquivo = f_caminho.arquivo_c
       ) %>%
       select(
-        data.lancamento, data.movimento, documento, descricao,
+        data.lancamento, data.movimentacao, documento, descricao,
         valor, saldo,
         conta.interno, conta, agencia, produto, cnpj, cliente,
         periodo.inicio, periodo.fim, data.consulta, arquivo

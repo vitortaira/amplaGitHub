@@ -73,7 +73,7 @@ e_dados <- function() {
     flatten() %>%
     map_dfr(~ dplyr::select(
       .x,
-      arquivo, arquivo.tabela.tipo, arquivo_tipo, arquivo_fonte
+      arquivo, arquivo.tabela.tipo, arquivo.tipo, arquivo.fonte
     )) %>%
     distinct()
   info.arquivos_t <- file_info(arquivos_c$arquivo)
@@ -81,8 +81,8 @@ e_dados <- function() {
     tibble(
       arquivo = info.arquivos_t$path,
       arquivo.tabela.tipo = arquivos_c$arquivo.tabela.tipo,
-      arquivo_tipo = arquivos_c$arquivo_tipo,
-      arquivo_fonte = arquivos_c$arquivo_fonte,
+      arquivo.tipo = arquivos_c$arquivo.tipo,
+      arquivo.fonte = arquivos_c$arquivo.fonte,
       Nome = arquivo %>% basename() %>% str_remove("\\..*$"),
       Pasta = arquivo %>% dirname() %>% str_extract("[^/]+$"),
       Extensao = path_ext(arquivo) %>% str_to_lower() %>% as.factor(),

@@ -11,8 +11,8 @@ e_ita_extitas <-
       map_dfr(~ e_ita_extita(.x)$extita_l) %>%
       mutate(
         arquivo.tabela.tipo = "extita_l",
-        arquivo_tipo = "extita",
-        arquivo_fonte = "ita"
+        arquivo.tipo = "extita",
+        arquivo.fonte = "ita"
       )
     list(
       extita_l = extita.l_t
