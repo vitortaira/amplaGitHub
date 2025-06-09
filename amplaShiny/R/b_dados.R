@@ -53,7 +53,8 @@ b_dados_server <- function(id, dados_l) {
       df_list() %>%
         purrr::map(names) %>%
         unlist() %>%
-        unique()
+        unique() %>%
+        sort()
     })
 
     # 4) When user changes searchType, update searchValue
