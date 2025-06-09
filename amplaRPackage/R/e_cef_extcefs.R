@@ -102,7 +102,7 @@ e_cef_extcefs <-
         ),
         contrato.6 =
           documento %>% str_pad(width = 6, side = "left", pad = "0"),
-        arquivo.tipo.tabela = "extcef",
+        arquivo.tabela.tipo = "extcef",
         arquivo.tipo = "extcef",
         arquivo.fonte = "cef"
       ) %>%
@@ -110,7 +110,7 @@ e_cef_extcefs <-
       select(
         data.lancamento, data.movimentacao, documento, descricao, valor, saldo, repasse, pj, conta.interno, conta, agencia, produto, cnpj, cliente,
         periodo.inicio, periodo.fim, data.consulta, contrato.6, arquivo,
-        arquivo.tipo.tabela, arquivo.tipo, arquivo.fonte
+        arquivo.tabela.tipo, arquivo.tipo, arquivo.fonte
       ) %>%
       rename(empreendimento = cliente)
     return(extratos_t)

@@ -5,7 +5,8 @@ e_ita_extitas <-
       keep(
         ~ str_ends(.x, ".pdf") &
           str_detect(.x, "(?i)extrato") &
-          str_detect(.x, "0186|2633|5441")
+          str_detect(.x, "0186|2633|5441") &
+          !str_detect(.x, "(?i)pix")
       )
     extita.l_t <- caminhos_extita_c %>%
       map_dfr(~ e_ita_extita(.x)$extita_l) %>%

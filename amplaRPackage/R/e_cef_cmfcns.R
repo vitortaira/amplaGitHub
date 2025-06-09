@@ -78,7 +78,7 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = c_caminhos_pastas("ciweb")) {
     select(
       contrato, data.lancamento, data.movimento, lancamentos, np,
       `conta.sidec/nsgd`, valor, situacao, mot, contrato.6, arquivo,
-      arquivo.tipo, arquivo.tabela.tipo
+      arquivo.tipo, arquivo.tabela.tipo, arquivo.fonte
     )
   return(cmfcns_t)
 }
