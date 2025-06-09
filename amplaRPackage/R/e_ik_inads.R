@@ -132,7 +132,7 @@ e_ik_inads <-
             wrapText = T
           ),
         rows = 2:(nrow(dados.pasta_df) + 1),
-        cols = which(colnames(dados.pasta_df) %in% c("Cliente", "Unidade")),
+        cols = which(colnames(dados.pasta_df) %in% c("cliente", "unidade")),
         gridExpand = T
       )
       # Formatar a coluna "Vencto" como data
@@ -147,7 +147,7 @@ e_ik_inads <-
             numFmt = "DD/MM/YYYY"
           ),
         rows = 2:(nrow(dados.pasta_df) + 1),
-        cols = which(colnames(dados.pasta_df) == "Vencto"),
+        cols = which(colnames(dados.pasta_df) == "vencimento"),
         gridExpand = T
       )
       # Formatar a coluna "Data da consulta" como uma data com horário
@@ -181,8 +181,8 @@ e_ik_inads <-
           which(
             colnames(dados.pasta_df) %in%
               c(
-                "Principal", "Juros", "Encargos", "Juros de Mora", "Multa",
-                "Seguro", "Total"
+                "principal", "juros", "encargos", "juros.mora", "multa",
+                "seguro", "total"
               )
           ),
         gridExpand = T

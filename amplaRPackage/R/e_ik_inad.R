@@ -39,32 +39,32 @@ e_ik_inad <-
       as.POSIXct(format = "%d/%m/%Y %H:%M:%S")
     indice.linhas.remover_vn <-
       linhas_vc %>%
-      str_which("^Folha|^Relatório de Inadimplência|^Título|^esp ")
+      str_which("^Folha|^Relatório de Inadimplência|^Título|^Esp ")
     linhas_vc <-
       linhas_vc[-indice.linhas.remover_vn] %>%
       str_remove("Imobiliaria/Corretor:") %>%
       keep(~ .x != "")
     indice.clientes_vn <-
       linhas_vc %>%
-      str_which("^Cliente: ")
+      str_which("^(?i)cliente: ")
     clientes_vc <-
       linhas_vc[indice.clientes_vn] %>%
-      str_remove(".*Cliente: ") %>%
-      str_remove(" Contrato: .*") %>%
+      str_remove(".*(?i)cliente: ") %>%
+      str_remove("(?i)\\s?contrato:\\s?.*") %>%
       str_trim()
     contratos_vc <-
       linhas_vc[indice.clientes_vn] %>%
-      str_remove(".* Contrato: ")
+      str_remove(".* (?i)contrato: ")
     telefones_vc <-
       linhas_vc[indice.clientes_vn + 1] %>%
-      str_remove("^Telefones: ") %>%
-      str_remove(" Unidade:.*") %>%
+      str_remove("^(?i)telefones: ") %>%
+      str_remove(" (?i)unidade:.*") %>%
       str_remove(" ") %>%
       str_remove("0xx") %>%
       str_trim()
     unidades_vc <-
       linhas_vc[indice.clientes_vn + 1] %>%
-      str_remove(".*Unidade: ") %>%
+      str_remove(".*(?i)unidade: ") %>%
       str_trim()
     indice.fim.clientes_vn <-
       linhas_vc %>%
@@ -107,112 +107,112 @@ e_ik_inad <-
         cols = everything(),
         names =
           c(
-            "esp", "Parcela", "Ele", "Vencto", "Atraso", "R/F", "Principal",
-            "Juros", "Encargos", "Juros de Mora", "Multa", "Seguro", "Total"
+            "esp", "parcela", "ele", "vencimento", "atraso", "r/f", "principal",
+            "juros", "encargos", "juros.mora", "multa", "seguro", "total"
           ),
         delim = " "
       ) %>%
       mutate(
-        Cliente = parcelas.clientes_vc,
+        cliente = parcelas.clientes_vc,
         esp = as.character(esp),
-        Parcela = as.character(Parcela),
-        `Quantidade de parcelas` = as.integer(parcelas.abertas_vi),
-        Ele = as.character(Ele),
-        Vencto = as.character(Vencto) %>% as.Date(format = "%d/%m/%Y"),
-        `R/F` = as.character(`R/F`),
-        Principal =
+        parcela = as.character(parcela),
+        quantidade.parcelas = as.integer(parcelas.abertas_vi),
+        ele = as.character(ele),
+        vencimento = as.character(vencimento) %>% as.Date(format = "%d/%m/%Y"),
+        `r/f` = as.character(`r/f`),
+        principal =
           ifelse(
-            str_detect(Principal, "\\.") &
-              !str_detect(Principal, ",") &
-              str_detect(Principal, "\\.\\d{3,}|\\d{3,}\\."),
-            as.numeric(Principal),
-            Principal %>%
+            str_detect(principal, "\\.") &
+              !str_detect(principal, ",") &
+              str_detect(principal, "\\.\\d{3,}|\\d{3,}\\."),
+            as.numeric(principal),
+            principal %>%
               str_remove_all("\\.") %>%
               str_replace(",", ".") %>%
               as.numeric()
           ),
-        Juros =
+        juros =
           ifelse(
-            str_detect(Juros, "\\.") &
-              !str_detect(Juros, ",") &
-              str_detect(Juros, "\\.\\d{3,}|\\d{3,}\\."),
-            as.numeric(Juros),
-            Juros %>%
+            str_detect(juros, "\\.") &
+              !str_detect(juros, ",") &
+              str_detect(juros, "\\.\\d{3,}|\\d{3,}\\."),
+            as.numeric(juros),
+            juros %>%
               str_remove_all("\\.") %>%
               str_replace(",", ".") %>%
               as.numeric()
           ),
-        Encargos =
+        encargos =
           ifelse(
-            str_detect(Encargos, "\\.") &
-              !str_detect(Encargos, ",") &
-              str_detect(Encargos, "\\.\\d{3,}|\\d{3,}\\."),
-            as.numeric(Encargos),
-            Encargos %>%
+            str_detect(encargos, "\\.") &
+              !str_detect(encargos, ",") &
+              str_detect(encargos, "\\.\\d{3,}|\\d{3,}\\."),
+            as.numeric(encargos),
+            encargos %>%
               str_remove_all("\\.") %>%
               str_replace(",", ".") %>%
               as.numeric()
           ),
-        `Juros de Mora` =
+        juros.mora =
           ifelse(
-            str_detect(`Juros de Mora`, "\\.") &
-              !str_detect(`Juros de Mora`, ",") &
-              str_detect(`Juros de Mora`, "\\.\\d{3,}|\\d{3,}\\."),
-            as.numeric(`Juros de Mora`),
-            `Juros de Mora` %>%
+            str_detect(juros.mora, "\\.") &
+              !str_detect(juros.mora, ",") &
+              str_detect(juros.mora, "\\.\\d{3,}|\\d{3,}\\."),
+            as.numeric(juros.mora),
+            juros.mora %>%
               str_remove_all("\\.") %>%
               str_replace(",", ".") %>%
               as.numeric()
           ),
-        Multa =
+        multa =
           ifelse(
-            str_detect(Multa, "\\.") &
-              !str_detect(Multa, ",") &
-              str_detect(Multa, "\\.\\d{3,}|\\d{3,}\\."),
-            as.numeric(Multa),
-            Multa %>%
+            str_detect(multa, "\\.") &
+              !str_detect(multa, ",") &
+              str_detect(multa, "\\.\\d{3,}|\\d{3,}\\."),
+            as.numeric(multa),
+            multa %>%
               str_remove_all("\\.") %>%
               str_replace(",", ".") %>%
               as.numeric()
           ),
-        Seguro =
+        seguro =
           ifelse(
-            str_detect(Seguro, "\\.") &
-              !str_detect(Seguro, ",") &
-              str_detect(Seguro, "\\.\\d{3,}|\\d{3,}\\."),
-            as.numeric(Seguro),
-            Seguro %>%
+            str_detect(seguro, "\\.") &
+              !str_detect(seguro, ",") &
+              str_detect(seguro, "\\.\\d{3,}|\\d{3,}\\."),
+            as.numeric(seguro),
+            seguro %>%
               str_remove_all("\\.") %>%
               str_replace(",", ".") %>%
               as.numeric()
           ),
-        Total =
+        total =
           ifelse(
-            str_detect(Total, "\\.") &
-              !str_detect(Total, ",") &
-              str_detect(Total, "\\.\\d{3,}|\\d{3,}\\."),
-            as.numeric(Total),
-            Total %>%
+            str_detect(total, "\\.") &
+              !str_detect(total, ",") &
+              str_detect(total, "\\.\\d{3,}|\\d{3,}\\."),
+            as.numeric(total),
+            total %>%
               str_remove_all("\\.") %>%
               str_replace(",", ".") %>%
               as.numeric()
           ),
-        `Data da consulta` =
+        data.consulta =
           as.POSIXct(data.impressao_p, format = "%Y-%m-%d %H:%M:%S"),
-        Atraso = as.integer(Atraso),
+        atraso = as.integer(atraso),
         empreendimento = empreendimento_c,
-        Contrato = as.character(parcelas.contratos_vc),
-        Unidade = as.character(parcelas.unidades_vc),
-        Telefone = as.character(parcelas.telefones_vc),
+        contrato = as.character(parcelas.contratos_vc),
+        unidade = as.character(parcelas.unidades_vc),
+        telefone = as.character(parcelas.telefones_vc),
         arquivo = caminho_arquivo_inadimplentes.c
       ) %>%
       select(
-        empreendimento, Contrato, Unidade, Cliente, Telefone, esp, Parcela,
-        `Quantidade de parcelas`, Ele, Vencto, Atraso, `R/F`, Principal, Juros,
-        Encargos, `Juros de Mora`, Multa, Seguro, Total, `Data da consulta`,
+        empreendimento, contrato, unidade, cliente, telefone, esp, parcela,
+        quantidade.parcelas, ele, vencimento, atraso, `r/f`, principal, juros,
+        encargos, juros.mora, multa, seguro, total, data.consulta,
         arquivo
       )
-    return("Parcelas" = parcelas_df)
+    return(inad = parcelas_df)
   }
 
 # Teste -------------------------------------------------------------------

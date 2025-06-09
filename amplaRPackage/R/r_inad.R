@@ -32,7 +32,7 @@ r_inad <-
     # Consolida os dados dos inadimplentes da pasta "inadimplentes"
     inads_t <-
       e_ik_inads(xlsx = FALSE) %>%
-      rename(arquivo.fonte = "Contrato")
+      rename(arquivo.fonte = "contrato")
     caminho.inads_c <-
       dir_ls(c_caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
       keep(
@@ -120,7 +120,7 @@ r_inad <-
     )
     # ecns_t <-
     #   e_cef_ecns()$Unidades %>%
-    #   mutate(CONTRATO_12 = Contrato %>% str_sub(1, -3))
+    #   mutate(CONTRATO_12 = contrato %>% str_sub(1, -3))
     # eprs_t <-
     #   e_cef_eprs() %>%
     #   rename(
