@@ -56,6 +56,31 @@ e_ik_rec <- function(
   # Carrega o arquivo de receitas mais recente
   caminho_arquivo_receitas <- obter_caminho_receitas()
   receitas_df <- read_excel(caminho_arquivo_receitas, skip = 3) %>%
+    # Padroniza nomes
+    rename(
+      empreendimento = Empreendimento,
+      cliente = Cliente,
+      contrato = Contrato,
+      torre = Torre,
+      apto = Apto,
+      esp = Esp,
+      parcela = Parcela,
+      elemento = Elemento,
+      vencimento = Vencimento,
+      data.pagamento = `Data Pagto`,
+      `r/f` = `R/F`,
+      agente = Agente,
+      principal = Principal,
+      juros = Juros,
+      reajuste = Reajuste,
+      encargos = Encargos,
+      juros.mora = `Juros de Mora`,
+      multa = Multa,
+      seguro = Seguro,
+      desconto = Desconto,
+      cart = `Cart.`,
+      total = Total
+    ) %>%
     mutate(
       agente = as.character(agente),
       apto = as.integer(apto),
@@ -67,7 +92,7 @@ e_ik_rec <- function(
       elemento = as.character(elemento),
       empreendimento = as.character(empreendimento),
       empresa = empreendimento %>% str_sub(1, 3),
-      encargo = as.numeric(encargo),
+      encargos = as.numeric(encargos),
       esp = as.character(esp),
       juros = as.numeric(juros),
       juros.mora = as.numeric(juros.mora),
@@ -89,7 +114,7 @@ e_ik_rec <- function(
     select(
       empreendimento, empresa, cliente, contrato, torre, apto, esp,
       parcela, elemento, vencimento, data.pagamento, mes, `r/f`, agente,
-      principal, juros, reajuste, encargo, juros.mora, multa,
+      principal, juros, reajuste, encargos, juros.mora, multa,
       seguro, desconto, cart, total, arquivo, arquivo.tipo,
       arquivo.tabela.tipo, arquivo.fonte
     )
