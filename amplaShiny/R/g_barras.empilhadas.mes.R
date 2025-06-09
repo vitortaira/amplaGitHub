@@ -6,8 +6,8 @@
 g_barras.empilhadas.mes_ui <- function(
     id,
     choices,
-    total = "Total Pago", # default column name
-    data = "Data Doc Pagto", # default date column name
+    total = "total.pago", # default column name
+    data = "data.doc.pagto", # default date column name
     comeco.titulo = "Despesas" # default chart title prefix
     ) {
   ns <- NS(id)
@@ -17,7 +17,7 @@ g_barras.empilhadas.mes_ui <- function(
       inputId = ns("variavel"),
       label = "Empilhar barras por:",
       choices = choices,
-      selected = "Empresa"
+      selected = "empresa"
     ),
     # Placeholder for the checkbox (conditionally shown in the server)
     uiOutput(ns("checkbox_wrapper")),
@@ -38,8 +38,8 @@ g_barras.empilhadas.mes_server <- function(
     data_inicial,
     data_final,
     max_unicos_i = 20,
-    total = "Total Pago",
-    data = "Data Doc Pagto",
+    total = "total.pago",
+    data = "data.doc.pagto",
     comeco.titulo = "Despesas") {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
