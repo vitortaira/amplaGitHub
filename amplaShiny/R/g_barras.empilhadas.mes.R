@@ -6,10 +6,9 @@
 g_barras.empilhadas.mes_ui <- function(
     id,
     choices,
-    total = "total.pago", # default column name
-    data = "data.doc.pagto", # default date column name
-    comeco.titulo = "Despesas" # default chart title prefix
-    ) {
+    total = "total.pago",
+    data = "data.doc.pagto",
+    comeco.titulo = "Despesas") {
   ns <- NS(id)
   tagList(
     # Let user pick stacking variable
@@ -103,11 +102,11 @@ g_barras.empilhadas.mes_server <- function(
         mutate(.dt = as.Date(.data[[data]])) %>%
         filter(.dt >= pr$start, .dt <= pr$end) %>%
         group_by(
-          Mês = floor_date(.dt, "month"),
-          Var = as.character(.data[[input$variavel]])
+          mes = floor_date(.dt, "month"),
+          var = as.character(.data[[input$variavel]])
         ) %>%
         summarise(
-          Total = sum(.data[[total]], na.rm = TRUE),
+          total = sum(.data[[total]], na.rm = TRUE),
           .groups = "drop"
         )
     })
@@ -116,7 +115,7 @@ g_barras.empilhadas.mes_server <- function(
     output$checkbox_wrapper <- renderUI({
       d <- df_data()
       req(d)
-      if (n_distinct(d$Var) <= max_unicos_i) {
+      if (n_distinct(d$var) <= max_unicos_i) {
         return(NULL) # hide checkbox completely
       }
       checkboxInput(
@@ -135,42 +134,42 @@ g_barras.empilhadas.mes_server <- function(
       req(d)
 
       # If user wants all or not many categories => do nothing
-      if (n_distinct(d$Var) <= max_unicos_i || isTRUE(input$show_all_cats)) {
+      if (n_distinct(d$var) <= max_unicos_i || isTRUE(input$show_all_cats)) {
         top_vars_rv(NULL)
         return(d)
       }
 
       # Identify top (max_unicos_i - 1) categories
       totals_by_var <- d %>%
-        group_by(Var) %>%
-        summarise(TotalVar = sum(Total), .groups = "drop") %>%
-        arrange(desc(TotalVar))
+        group_by(var) %>%
+        summarise(totalvar = sum(total), .groups = "drop") %>%
+        arrange(desc(totalvar))
 
-      top_vars <- totals_by_var$Var[seq_len(max_unicos_i - 1)]
+      top_vars <- totals_by_var$var[seq_len(max_unicos_i - 1)]
       top_vars_rv(top_vars)
 
       # Lump the rest into "Outros"
       d %>%
         mutate(
-          Var = ifelse(Var %in% top_vars, Var, "Outros")
+          var = ifelse(var %in% top_vars, var, "Outros")
         ) %>%
-        group_by(Mês, Var) %>%
-        summarise(Total = sum(Total), .groups = "drop")
+        group_by(mes, var) %>%
+        summarise(total = sum(total), .groups = "drop")
     })
 
     # Summaries
     monthly_totals <- reactive({
       df_reduced() %>%
-        group_by(Mês) %>%
-        summarise(MonthTotal = sum(Total, na.rm = TRUE), .groups = "drop")
+        group_by(mes) %>%
+        summarise(monthtotal = sum(total, na.rm = TRUE), .groups = "drop")
     })
 
     df_final <- reactive({
       df_reduced() %>%
-        left_join(monthly_totals(), by = "Mês") %>%
+        left_join(monthly_totals(), by = "mes") %>%
         mutate(
-          MonthTotal = ifelse(MonthTotal == 0, NA, MonthTotal),
-          Percentage = 100 * Total / MonthTotal
+          monthtotal = ifelse(monthtotal == 0, NA, monthtotal),
+          percentage = 100 * total / monthtotal
         )
     })
 
@@ -180,12 +179,12 @@ g_barras.empilhadas.mes_server <- function(
       req(df, nrow(df) > 0)
 
       var_levels <- df %>%
-        group_by(Var) %>%
-        summarise(Total = sum(Total), .groups = "drop") %>%
-        arrange(desc(Total)) %>%
-        pull(Var)
+        group_by(var) %>%
+        summarise(total = sum(total), .groups = "drop") %>%
+        arrange(desc(total)) %>%
+        pull(var)
 
-      df <- df %>% mutate(Var = factor(Var, levels = var_levels))
+      df <- df %>% mutate(var = factor(var, levels = var_levels))
 
       n <- length(var_levels)
       pal8 <- RColorBrewer::brewer.pal(8, "Set2")
@@ -195,27 +194,27 @@ g_barras.empilhadas.mes_server <- function(
         event_register("plotly_click")
       for (i in seq_along(var_levels)) {
         lvl <- var_levels[i]
-        sub_df <- dplyr::filter(df, Var == lvl)
+        sub_df <- dplyr::filter(df, var == lvl)
         if (nrow(sub_df) > 0) {
           p <- p %>%
             add_trace(
               data = sub_df,
-              x = ~Mês,
-              y = ~Total,
+              x = ~mes,
+              y = ~total,
               name = lvl,
               type = "bar",
               marker = list(color = pal[i]),
               key = lvl,
               customdata = lapply(seq_len(nrow(sub_df)), function(row_i) {
                 list(
-                  monthTotal = sub_df$MonthTotal[row_i],
-                  percentage = sub_df$Percentage[row_i]
+                  monthtotal = sub_df$monthtotal[row_i],
+                  percentage = sub_df$percentage[row_i]
                 )
               }),
               hovertemplate = paste0(
                 "<b>%{fullData.name}</b><br>",
                 "Valor: R$ %{y:,.2f}<br>",
-                "Total do mês: R$ %{customdata.monthTotal:,.2f}<br>",
+                "Total do mês: R$ %{customdata.monthtotal:,.2f}<br>",
                 "Percentual: %{customdata.percentage:.1f}%<br>",
                 "<extra></extra>"
               )
@@ -234,7 +233,7 @@ g_barras.empilhadas.mes_server <- function(
           xaxis = list(
             tickformat = "%m-%Y",
             type = "date",
-            tickvals = unique(df$Mês)
+            tickvals = unique(df$mes)
           ),
           autosize = TRUE
         ) %>%

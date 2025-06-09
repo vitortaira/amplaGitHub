@@ -252,7 +252,7 @@ server <- function(input, output, session) {
                     g_metadados.hist_i(
                       "metaHist",
                       choices = setdiff(
-                        names(dados_l[["metadados"]]$metadados), "Arquivo"
+                        names(dados_l[["metadados"]]$metadados), "arquivo"
                       )
                     ),
                     h3("Tabela"),
@@ -331,12 +331,12 @@ server <- function(input, output, session) {
                     g_barras.empilhadas.mes_ui(
                       "g_barras.empilhadas.mes.desp",
                       choices = c(
-                        "Agente Financeiro", "Credor", "Centro de Negócio",
-                        "Empresa", "N° Conta", "Parcela"
+                        "agente.financeiro", "credor", "centro.negocio",
+                        "empresa", "numero.conta", "parcela"
                       ),
-                      total = "Total Pago", # numeric column
-                      data = "Data Doc Pagto", # date column
-                      comeco.titulo = "Despesas empilhadas por" # static prefix for chart title
+                      total = "total.pago",
+                      data = "data.doc.pagto",
+                      comeco.titulo = "Despesas empilhadas por"
                     ),
                     h2("Extratos"),
                     gs_barras.empilhadas.mes_ui(
@@ -347,13 +347,13 @@ server <- function(input, output, session) {
                     g_barras.empilhadas.mes_ui(
                       "g_barras.empilhadas.mes.rec",
                       choices = c(
-                        "Agente", "Cart.", "Cliente", "Elemento",
-                        "Empreendimento", "Empresa", "esp", "Parcela", "R/F",
-                        "Torre"
+                        "agente", "cart", "cliente", "elemento",
+                        "empreendimento", "empresa", "esp", "parcela", "r/f",
+                        "torre"
                       ),
-                      total = "Total", # numeric column
-                      data = "Data Pagto", # date column
-                      comeco.titulo = "Receitas empilhadas por" # static prefix for chart title
+                      total = "total",
+                      data = "data.pagamento",
+                      comeco.titulo = "Receitas empilhadas por"
                     )
                   )
                 ),
@@ -410,11 +410,11 @@ server <- function(input, output, session) {
     filtro_periodo = filtroVals$filtro_periodo,
     data_inicial = filtroVals$data_inicial,
     data_final = filtroVals$data_final,
-    positive = c("SALDO MUTUARIO (PJ)", "SALDO MUTUARIO (PF)"),
-    negative = c("MAXIMO LIB. ETAPA (PJ)"),
-    line = "GARANTIA TERMINO OBRA",
-    date = "Data de consulta",
-    ref_line_col = "VR CUSTO OBRA"
+    positive = c("saldo.mutuario.pj", "saldo.mutuario.pf"),
+    negative = c("max.lib.etapa.pj"),
+    line = "garantia.termino.obra",
+    date = "data.consulta",
+    ref_line_col = "valor.custo.obra"
   )
 
   # Inicializa o módulo de visualização de despesas
@@ -425,9 +425,9 @@ server <- function(input, output, session) {
     data_inicial = filtroVals$data_inicial,
     data_final = filtroVals$data_final,
     max_unicos_i = 20,
-    total = "Total Pago", # same as the UI param
-    data = "Data Doc Pagto", # same as the UI param
-    comeco.titulo = "Despesas" # same as the UI param
+    total = "total.pago",
+    data = "data.doc.pagto",
+    comeco.titulo = "Despesas"
   )
 
   # Inicializa o módulo de visualização de receitas
@@ -438,9 +438,9 @@ server <- function(input, output, session) {
     data_inicial = filtroVals$data_inicial,
     data_final = filtroVals$data_final,
     max_unicos_i = 20,
-    total = "Total", # same as the UI param
-    data = "Data Pagto", # same as the UI param
-    comeco.titulo = "Receitas empilhadas por" # same as the UI param
+    total = "total",
+    data = "data.pagamento",
+    comeco.titulo = "Receitas empilhadas por"
   )
 
   # Inicializa o módulo de visualização dos extratos
@@ -451,16 +451,16 @@ server <- function(input, output, session) {
     data_inicial   = filtroVals$data_inicial,
     data_final     = filtroVals$data_final,
     max_unicos_i   = 20,
-    total          = "Valor",
-    data           = "Data de movimento",
+    total          = "valor",
+    data           = "data.movimentacao",
     comeco.titulo  = "Entradas e saídas empilhadas por"
   )
 
   # Prepara dados para gs_barras.empilhadas.mes.extcef: separa valores positivos e negativos
   extcef_mod <- dados_l[["cef"]][["extcef"]] %>%
     mutate(
-      Valor_positivo = ifelse(Valor > 0, Valor, 0),
-      Valor_negativo = ifelse(Valor < 0, abs(Valor), 0)
+      Valor_positivo = ifelse(valor > 0, valor, 0),
+      Valor_negativo = ifelse(valor < 0, abs(valor), 0)
     )
 
   gs_barras.empilhadas.mes_server(
@@ -477,8 +477,8 @@ server <- function(input, output, session) {
 
   # Inicializa o módulo de cronogramas da CEF com o dcd filtrado
   dcd_filtrado <- dados_l[["cef"]][["dcd"]] %>%
-    group_by(EMPREENDIMENTO) %>%
-    filter(`Data de consulta` == max(`Data de consulta`, na.rm = TRUE)) %>%
+    group_by(empreendimento) %>%
+    filter(data.consulta == max(data.consulta, na.rm = TRUE)) %>%
     ungroup()
   g_cronogramas_cef_server(
     "g_cronogramas.cef",
