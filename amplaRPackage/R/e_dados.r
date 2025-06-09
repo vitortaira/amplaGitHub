@@ -83,14 +83,14 @@ e_dados <- function() {
       arquivo.tabela.tipo = arquivos_c$arquivo.tabela.tipo,
       arquivo.tipo = arquivos_c$arquivo.tipo,
       arquivo.fonte = arquivos_c$arquivo.fonte,
-      Nome = arquivo %>% basename() %>% str_remove("\\..*$"),
-      Pasta = arquivo %>% dirname() %>% str_extract("[^/]+$"),
-      Extensao = path_ext(arquivo) %>% str_to_lower() %>% as.factor(),
-      Tamanho_bytes = as.numeric(info.arquivos_t$size),
-      Data_modificacao = info.arquivos_t$modification_time,
-      Data_mudanca = info.arquivos_t$change_time,
-      Data_acesso = info.arquivos_t$access_time,
-      Data_criacao = info.arquivos_t$birth_time
+      nome = arquivo %>% basename() %>% str_remove("\\..*$"),
+      pasta = arquivo %>% dirname() %>% str_extract("[^/]+$"),
+      extensao = path_ext(arquivo) %>% str_to_lower() %>% as.factor(),
+      tamanho.bytes = as.numeric(info.arquivos_t$size),
+      data.modificacao = info.arquivos_t$modification_time,
+      data.mudanca = info.arquivos_t$change_time,
+      data.acesso = info.arquivos_t$access_time,
+      data.criacao = info.arquivos_t$birth_time
     )
   dados_l$metadados$metadados <- metadados_t
   dados_l$metadados$gnw_nodes <- m_nodes()$nodes
