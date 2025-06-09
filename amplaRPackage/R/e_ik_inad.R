@@ -14,7 +14,8 @@ e_ik_inad <-
       read_excel(caminho_arquivo_inadimplentes.c, col_names = F) %>%
       unite("linhas", everything(), sep = " ", remove = T) %>%
       unlist() %>%
-      str_remove_all("NA") %>%
+      str_remove_all("(?<![[:alnum:][:punct:]])NA(?![A-Za-z])") %>%
+      str_replace_all("^NA$", "") %>%
       str_trim() %>%
       suppressMessages()
     linhas_vc <-
