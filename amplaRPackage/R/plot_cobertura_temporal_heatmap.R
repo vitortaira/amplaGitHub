@@ -81,13 +81,13 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
         .groups = "drop"
       ) %>%
       mutate(
-        n_partial = n_paths - n_full,
+        n_incomplete = n_paths - n_full,
         color_code = case_when(
           n_paths == 0 ~ "empty",
           n_full > 1 ~ "multiple",
-          n_full == 1 & n_partial == 0 ~ "full",
-          n_full == 1 & n_partial > 0 ~ "partial",
-          n_full == 0 & n_partial > 0 ~ "partial",
+          n_full == 1 & n_incomplete == 0 ~ "full",
+          n_full == 1 & n_incomplete > 0 ~ "incomplete",
+          n_full == 0 & n_incomplete > 0 ~ "incomplete",
           TRUE ~ "other"
         )
       ) %>%
@@ -167,7 +167,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
   }
 
   # --- Helper Function: Create Heatmap Matrix, Colors, Text ---
-  .create_heatmap_elements <- function(prepared_data) {
+  .create_heatmap_elements <- function(prepared_data, status_translation_map) { # Added status_translation_map
     agg <- prepared_data$agg_data
     row_keys <- prepared_data$row_keys
     formatted_months <- prepared_data$formatted_months
@@ -200,7 +200,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
 
     color_map <- c(
       "empty"    = "lightgray",
-      "partial"  = "yellow",
+      "incomplete"  = "yellow",
       "multiple" = "red",
       "full"     = "#b7e3b7",
       "other"    = "magenta"
@@ -262,12 +262,20 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
         cell_data <- agg %>%
           filter(arquivo.tipo == tipo, empresa == emp, month_date == current_month_date)
 
+        raw_status_code <- mat[r_idx, c_idx]
+        base_status_code <- if (startsWith(raw_status_code, "full_")) "full" else raw_status_code
+
+        display_status_name <- status_translation_map[[base_status_code]]
+        if (is.null(display_status_name) || is.na(display_status_name)) {
+          display_status_name <- base_status_code # Fallback
+        }
+
         if (nrow(cell_data) > 0) {
           text_matrix[r_idx, c_idx] <- paste0(
             "Tipo: ", tipo, "<br>",
             "Empresa: ", emp, "<br>",
             "Mês: ", format(current_month_date, "%Y-%m"), "<br>",
-            "Status: ", mat[r_idx, c_idx], "<br>",
+            "Status: ", display_status_name, "<br>", # Use display_status_name
             "Nº arquivos: ", cell_data$n_paths[1]
           )
         } else {
@@ -275,7 +283,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
             "Tipo: ", tipo, "<br>",
             "Empresa: ", emp, "<br>",
             "Mês: ", format(current_month_date, "%Y-%m"), "<br>",
-            "Status: empty<br>",
+            "Status: ", status_translation_map[["empty"]] %||% "Vazio", "<br>", # Explicitly use mapped "empty"
             "Nº arquivos: 0"
           )
         }
@@ -319,10 +327,10 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
 
     # --- Define and Add Discrete Legend Items ---
     legend_definitions <- list(
-      list(id = "empty",    name = "Vazio",                base_color_key = "empty"),
-      list(id = "partial",  name = "Parcial",              base_color_key = "partial"),
+      list(id = "full",     name = "Completo",      base_color_key = "full"),
+      list(id = "incomplete",  name = "Incompleto",        base_color_key = "incomplete"),
       list(id = "multiple", name = "Múltiplo",             base_color_key = "multiple"),
-      list(id = "full",     name = "Completo (Base)",      base_color_key = "full") # Represents the base 'full' color
+      list(id = "empty",    name = "Vazio",                base_color_key = "empty")
     )
 
     legend_group_name <- "cobertura_status_legend"
@@ -360,7 +368,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
       zmin = if (length(heatmap_ordered_color_names) > 0) 1 else NULL,
       zmax = if (length(heatmap_ordered_color_names) > 0) length(heatmap_ordered_color_names) else NULL,
       text = text_matrix,
-      hoverinfo = "text",
+      hovertemplate = "%{text}<extra></extra>", # Replaced hoverinfo with hovertemplate for better hover control
       xgap = 0.5, ygap = 0.5,
       showscale = FALSE,    # Hide the continuous colorscale bar
       showlegend = FALSE    # The heatmap itself does not add to the discrete legend
@@ -368,33 +376,45 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
 
     # Apply layout
     p <- layout(p,
-      title = "Cobertura Temporal dos Arquivos",
+      title = "Cobertura temporal dos arquivos",
       xaxis = list(
         title = "Mês",
         type = "category",
         categoryorder = "array",
         categoryarray = levels(x_axis_labels), # Sorted month strings
         showgrid = FALSE,
-        tickangle = -45
+        tickangle = -45,
+        rangeslider = list(visible = FALSE) # Ensure horizontal range slider is removed
       ),
       yaxis = list(
-        title = "Tipo de Arquivo | Empresa",
+        title = "Tipo de arquivo | Empresa",
         type = "category",
         categoryorder = "array", # Use the order from categoryarray
         categoryarray = levels(y_axis_labels), # Sorted row keys (A-Z)
-        autorange = "reversed", # Changed from TRUE to "reversed"
-        showgrid = FALSE
+        autorange = "reversed",
+        showgrid = FALSE,
+        rangeslider = list(visible = FALSE) # Ensure vertical range slider is removed
       ),
       legend = list(
-        title = list(text = "<b>Cobertura</b>"),
+        title = list(text = "<b>Status</b>"),
         orientation = "v",
         traceorder = "normal",
-        bgcolor = "rgba(250, 250, 250, 0.8)", # Light background
-        bordercolor = "rgba(100, 100, 100, 0.6)", # Border
+        bgcolor = "rgba(250, 250, 250, 0.8)",
+        bordercolor = "rgba(100, 100, 100, 0.6)",
         borderwidth = 1
       ),
-      showlegend = TRUE # Global switch to ensure legend area is displayed
-    )
+      showlegend = TRUE
+    ) %>%
+      config(
+        modeBarButtonsToRemove = list(
+          "zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d",
+          "hoverClosestCartesian", "hoverCompareCartesian",
+          "zoom3d", "pan3d", "orbitRotation", "tableRotation", "handleDrag3d", "resetCameraDefault3d", "resetCameraLastSave3d", "hoverClosest3d",
+          "sendDataToCloud", "hoverClosestGl2d", "hoverClosestPie", "toggleHover", "resetViews", "toggleSpikelines", "resetViewMapbox"
+        ),
+        displaylogo = FALSE, # Remove Plotly logo
+        locale = 'pt-BR'    # Set locale for button hover text
+      )
 
     return(p)
   }
@@ -414,7 +434,21 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
     message(paste("Formatted months for matrix:", length(prepared_data$formatted_months)))
   }
 
-  plot_elements <- .create_heatmap_elements(prepared_data)
+  # Define status translation map based on legend names used in .generate_plotly_figure
+  # This map helps keep hover text consistent with legend text.
+  status_translation_map <- c(
+    "full" = "Completo",
+    "incomplete" = "Incompleto",
+    "multiple" = "Múltiplo",
+    "empty" = "Vazio",
+    "other" = "Outro" # Default for 'other' status, not in current legend_definitions
+  )
+
+  # Check for rlang::`%||%` and provide a simple alternative if not available/desired
+  `%||%` <- function(a, b) if (!is.null(a) && !is.na(a)) a else b
+
+
+  plot_elements <- .create_heatmap_elements(prepared_data, status_translation_map) # Pass the map
 
   if (is.null(plot_elements$z)) {
       if (interactive()) message("Failed to create heatmap matrix (z). Returning empty plot.")
@@ -446,4 +480,4 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
 # Add to global variables to avoid R CMD check notes for NSE in dplyr
 utils::globalVariables(c(".", "periodo.inicio_parsed", "periodo.fim_parsed", "month_date",
                          "month_start", "month_end", "full_month_coverage", "n_paths",
-                         "n_full", "n_partial", "color_code", "label", "original_date"))
+                         "n_full", "n_incomplete", "color_code", "label", "original_date"))
