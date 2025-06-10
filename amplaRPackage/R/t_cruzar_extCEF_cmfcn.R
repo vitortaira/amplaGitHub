@@ -563,7 +563,7 @@ t_cruzar_extcef_cmfcn <-
     saveWorkbook(
       xlsx,
       paste0(
-        c_caminhos_pastas("extratos"),
+        caminhos_pastas("extratos"),
         "/Extratos cruzados/",
         nome.xlsx_c
       ),

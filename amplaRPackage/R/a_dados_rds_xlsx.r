@@ -7,7 +7,7 @@
 #' nomes predefinidos.
 #'
 #' @param f_caminho.pasta.dados_c Caminho para a pasta onde os dados originais estão
-#'   armazenados. Valor padrão: \code{c_caminhos_pastas("dados")}.
+#'   armazenados. Valor padrão: \code{caminhos_pastas("dados")}.
 #'
 #' @return Gera e salva um arquivo XLSX no diretório especificado, com o nome
 #'   incluindo a data e a hora da criação.
@@ -28,7 +28,7 @@
 #'
 #' @export
 a_dados_rds_xlsx <- function(
-    f_caminho.pasta.dados_c = c_caminhos_pastas("dados"),
+    f_caminho.pasta.dados_c = caminhos_pastas("dados"),
     f_dashboard = FALSE) {
   # Valida argumentos
   if (!dir.exists(f_caminho.pasta.dados_c)) {
@@ -95,7 +95,7 @@ a_dados_rds_xlsx <- function(
     }
   )
   nome.xlsx_c <- str_c(
-    c_caminhos_pastas("dados"),
+    caminhos_pastas("dados"),
     "/Dados_",
     format(Sys.time(), format = "%Y_%m_%d-%H_%M_%S"),
     ".xlsx"
@@ -107,12 +107,12 @@ a_dados_rds_xlsx <- function(
   saveRDS(
     dados_l,
     file = str_c(
-      c_caminhos_pastas("shiny"),
+      caminhos_pastas("shiny"),
       "/inst/dados/",
       str_replace(basename(nome.xlsx_c), "\\.xlsx$", ".rds")
     )
   )
   if (f_dashboard) {
-    rsconnect::deployApp(c_caminhos_pastas("shiny"))
+    rsconnect::deployApp(caminhos_pastas("shiny"))
   }
 }

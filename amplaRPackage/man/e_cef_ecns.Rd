@@ -4,7 +4,7 @@
 \alias{e_cef_ecns}
 \title{Consolidação dos dados dos relatórios ECN da CEF}
 \usage{
-e_cef_ecns(f_caminho.pasta.ciweb_c = c_caminhos_pastas("ciweb"))
+e_cef_ecns(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb"))
 }
 \arguments{
 \item{f_caminho.pasta.ciweb_c}{Caminho para a pasta "Relatorios - CIWEB".

@@ -31,7 +31,7 @@
 #' @export
 e_cef_eprs <-
   function(f_caminho.pasta.ciweb_c =
-             c_caminhos_pastas("ciweb")) {
+             caminhos_pastas("ciweb")) {
     # Consolida os dados dos relatórios EPR da CEF na pasta "Relatorios - CIWEB"
     caminhos.epr_c <-
       dir_ls(f_caminho.pasta.ciweb_c, recurse = TRUE, type = "file") %>%

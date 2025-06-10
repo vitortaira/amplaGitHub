@@ -34,7 +34,7 @@ r_inad <-
       e_ik_inads(xlsx = FALSE) %>%
       rename(arquivo.fonte = "contrato")
     caminho.inads_c <-
-      dir_ls(c_caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
+      dir_ls(caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
       keep(
         ~ str_detect(.x, "(?i)/inadimpl.ncia\\s?-.*\\.xlsx") &
           !str_detect(.x, "(?i)consolidado")
@@ -59,7 +59,7 @@ r_inad <-
     contrs_t <- e_ik_contrs()
     # Filtrar contrs_t para apenas o arquivo mais recente por empreendimento
     caminho.contrs_c <-
-      dir_ls(c_caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
+      dir_ls(caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
       keep(
         ~ str_detect(.x, "(?i)contratos-.*\\.xlsx") &
           !str_detect(.x, "(?i)consolidado")
@@ -148,13 +148,13 @@ r_inad <-
       )
     # Criando uma cópia de "Template.xlsx"
     file.copy(
-      str_c(c_caminhos_pastas("github"), "/templates/Template-Inadimplencia.xlsx"),
-      str_c(c_caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c)
+      str_c(caminhos_pastas("github"), "/templates/Template-Inadimplencia.xlsx"),
+      str_c(caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c)
     )
     # Definir a cópia criada como o workbook ativo
     xlsx <-
       loadWorkbook(
-        str_c(c_caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c),
+        str_c(caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c),
       )
     deleteNamedRegion(xlsx, name = "parcelas")
     # Preenchendo os dados da aba "Parcelas"
@@ -304,12 +304,12 @@ r_inad <-
     # Salvar a planilha localmente
     saveWorkbook(
       xlsx,
-      str_c(c_caminhos_pastas("temp"), "/", nome.xlsx_c),
+      str_c(caminhos_pastas("temp"), "/", nome.xlsx_c),
       overwrite = TRUE
     )
     # Caminho da planilha na pasta local
     caminho.xlsx_c <-
-      str_c(c_caminhos_pastas("temp"), "/", nome.xlsx_c) %>%
+      str_c(caminhos_pastas("temp"), "/", nome.xlsx_c) %>%
       normalizePath(winslash = "/", mustWork = FALSE)
     # Comando no PowerShell para clicar em "Atualizar tudo" na planilha
     ps_cmd <-
@@ -332,7 +332,7 @@ r_inad <-
     # Movendo a planilha da pasta local para o OneDrive
     file.rename(
       caminho.xlsx_c,
-      str_c(c_caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c)
+      str_c(caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c)
     )
     if (nrow(caminhos.inads_t) > 0) {
       meses <- format(caminhos.inads_t$data, "%Y-%m")

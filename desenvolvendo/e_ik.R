@@ -5,7 +5,7 @@
 #' preenche-os em uma planilha xlsx (opcional) e os retorna em uma lista.
 #'
 #' @param f_caminho.pasta.ik_c String do caminho da pasta "informakon".
-#'   Valor padrão: \code{c_caminhos_pastas("informakon")}.
+#'   Valor padrão: \code{caminhos_pastas("informakon")}.
 #' @param xlsx Logical. Se \code{TRUE}, cria um arquivo xlsx com os dados extraídos.
 #'   Valor padrão: \code{FALSE}.
 #'
@@ -41,7 +41,7 @@
 
 e_ik <-
   function(f_caminho.pasta.ik_c =
-             c_caminhos_pastas("informakon"),
+             caminhos_pastas("informakon"),
            xlsx = FALSE) {
     extrair_caminhos_relatorio_informakon <-
       function() {
@@ -51,15 +51,15 @@ e_ik <-
         # Despesas
         caminhos.arquivos.despesas_vc <-
           setdiff(
-            dir_ls(c_caminhos_pastas("informakon"), recurse = TRUE, type = "file")[
-              dir_ls(c_caminhos_pastas("informakon"), recurse = TRUE, type = "file") %>%
+            dir_ls(caminhos_pastas("informakon"), recurse = TRUE, type = "file")[
+              dir_ls(caminhos_pastas("informakon"), recurse = TRUE, type = "file") %>%
                 basename() %>%
                 str_which("^despesas")
             ],
             c(
-              dir_ls(c_caminhos_pastas("informakon"), recurse = TRUE, type = "file")[
+              dir_ls(caminhos_pastas("informakon"), recurse = TRUE, type = "file")[
                 str_which(
-                  dir_ls(c_caminhos_pastas("informakon"), type = "file"),
+                  dir_ls(caminhos_pastas("informakon"), type = "file"),
                   "^Informakon.*"
                 )
               ]
@@ -79,15 +79,15 @@ e_ik <-
         # Receitas
         caminhos.arquivos.receitas_vc <-
           setdiff(
-            dir_ls(c_caminhos_pastas("informakon"), recurse = TRUE, type = "file")[
-              dir_ls(c_caminhos_pastas("informakon"), recurse = TRUE, type = "file") %>%
+            dir_ls(caminhos_pastas("informakon"), recurse = TRUE, type = "file")[
+              dir_ls(caminhos_pastas("informakon"), recurse = TRUE, type = "file") %>%
                 basename() %>%
                 str_which("^receitas")
             ],
             c(
-              dir_ls(c_caminhos_pastas("informakon"), recurse = TRUE, type = "file")[
+              dir_ls(caminhos_pastas("informakon"), recurse = TRUE, type = "file")[
                 str_which(
-                  dir_ls(c_caminhos_pastas("informakon"), type = "file"),
+                  dir_ls(caminhos_pastas("informakon"), type = "file"),
                   "^Informakon.*"
                 )
               ]

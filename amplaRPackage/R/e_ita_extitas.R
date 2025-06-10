@@ -1,5 +1,5 @@
 e_ita_extitas <-
-  function(f_caminho.pasta.extratos_c = c_caminhos_pastas("extratos")) {
+  function(f_caminho.pasta.extratos_c = caminhos_pastas("extratos")) {
     caminhos_extita_c <-
       dir_ls(f_caminho.pasta.extratos_c, recurse = TRUE, type = "file") %>%
       keep(

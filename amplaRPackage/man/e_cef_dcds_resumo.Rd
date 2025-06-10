@@ -4,11 +4,11 @@
 \alias{e_cef_dcds_resumo}
 \title{Extração e Consolidação de Relatórios DCDS da CEF}
 \usage{
-e_cef_dcds_resumo(f_caminho.pasta.ciweb_c = c_caminhos_pastas("ciweb"))
+e_cef_dcds_resumo(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb"))
 }
 \arguments{
 \item{f_caminho.pasta.ciweb_c}{Caminho para a pasta "Relatorios - CIWEB".
-O valor padrão é \code{c_caminhos_pastas("ciweb")}.}
+O valor padrão é \code{caminhos_pastas("ciweb")}.}
 }
 \value{
 Um tibble com os dados compilados dos relatórios DCDS da CEF.

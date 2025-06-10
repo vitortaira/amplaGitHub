@@ -5,7 +5,7 @@
 #' "Relatorios - CIWEB", retornando em um tibble as informações extraídas.
 #'
 #' @param f_caminho.pasta.ciweb_c Caminho para a pasta "Relatorios - CIWEB".
-#'   O valor padrão é \code{c_caminhos_pastas("ciweb")}.
+#'   O valor padrão é \code{caminhos_pastas("ciweb")}.
 #'
 #' @details
 #' Identifica todos os arquivos DCDS com final "demonst_cronograma.pdf" e
@@ -24,7 +24,7 @@
 #' @importFrom purrr keep map_dfr
 #' @export
 e_cef_dcds_resumo <- function(
-    f_caminho.pasta.ciweb_c = c_caminhos_pastas("ciweb")) {
+    f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
   # Consolida os dados dos relatórios DCDS da CEF na pasta "Relatorios - CIWEB"
   caminhos.dcds_c <-
     dir_ls(f_caminho.pasta.ciweb_c, recurse = TRUE, type = "file") %>%

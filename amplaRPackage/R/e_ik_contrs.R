@@ -1,4 +1,4 @@
-e_ik_contrs <- function(caminhos.pasta.cobranca_c = c_caminhos_pastas("cobranca")) {
+e_ik_contrs <- function(caminhos.pasta.cobranca_c = caminhos_pastas("cobranca")) {
   # Certifique-se de que o caminho é um diretório válido
   if (!dir.exists(caminhos.pasta.cobranca_c)) {
     stop("O caminho fornecido não é um diretório: ", caminhos.pasta.cobranca_c)

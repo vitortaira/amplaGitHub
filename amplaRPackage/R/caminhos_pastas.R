@@ -11,14 +11,14 @@
 #'
 #' @examples
 #' \dontrun{
-#' c_caminhos_pastas("github")
-#' c_caminhos_pastas("ciweb")
+#' caminhos_pastas("github")
+#' caminhos_pastas("ciweb")
 #' }
 #'
 #' @importFrom stringi stri_c
 #'
 #' @export
-c_caminhos_pastas <- function(alias) {
+caminhos_pastas <- function(alias) {
   caminhos_c <- list(
     ciweb = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - CIWEB",
     cobranca = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - Cobrança",

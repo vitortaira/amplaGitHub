@@ -1,5 +1,5 @@
 e_ik_inads <-
-  function(caminho.pasta.cobranca_c = c_caminhos_pastas("cobranca"),
+  function(caminho.pasta.cobranca_c = caminhos_pastas("cobranca"),
            xlsx = FALSE) {
     # Formatar todos os arquivos da pasta -------------------------------------
 

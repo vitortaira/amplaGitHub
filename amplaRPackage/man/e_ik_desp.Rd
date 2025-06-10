@@ -4,11 +4,11 @@
 \alias{e_ik_desp}
 \title{Extração de Despesas Informakon}
 \usage{
-e_ik_desp(f_caminho.pasta.ik_c = c_caminhos_pastas("informakon"), xlsx = FALSE)
+e_ik_desp(f_caminho.pasta.ik_c = caminhos_pastas("informakon"), xlsx = FALSE)
 }
 \arguments{
 \item{f_caminho.pasta.ik_c}{String do caminho da pasta "informakon".
-Valor padrão: \code{c_caminhos_pastas("informakon")}.}
+Valor padrão: \code{caminhos_pastas("informakon")}.}
 
 \item{xlsx}{Logical. Se \code{TRUE}, cria um arquivo xlsx com os dados extraídos.
 Valor padrão: \code{FALSE}.}

@@ -5,13 +5,13 @@
 \title{Exporta os dados para um arquivo XLSX}
 \usage{
 a_dados_rds_xlsx(
-  f_caminho.pasta.dados_c = c_caminhos_pastas("dados"),
+  f_caminho.pasta.dados_c = caminhos_pastas("dados"),
   f_dashboard = FALSE
 )
 }
 \arguments{
 \item{f_caminho.pasta.dados_c}{Caminho para a pasta onde os dados originais estão
-armazenados. Valor padrão: \code{c_caminhos_pastas("dados")}.}
+armazenados. Valor padrão: \code{caminhos_pastas("dados")}.}
 }
 \value{
 Gera e salva um arquivo XLSX no diretório especificado, com o nome

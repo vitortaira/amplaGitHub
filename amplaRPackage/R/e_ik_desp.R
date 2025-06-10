@@ -7,7 +7,7 @@
 #' um data frame.
 #'
 #' @param f_caminho.pasta.ik_c String do caminho da pasta "informakon".
-#'   Valor padrão: \code{c_caminhos_pastas("informakon")}.
+#'   Valor padrão: \code{caminhos_pastas("informakon")}.
 #' @param xlsx Logical. Se \code{TRUE}, cria um arquivo xlsx com os dados extraídos.
 #'   Valor padrão: \code{FALSE}.
 #'
@@ -26,7 +26,7 @@
 #' @importFrom lubridate floor_date
 #' @export
 e_ik_desp <- function(
-    f_caminho.pasta.ik_c = c_caminhos_pastas("informakon"),
+    f_caminho.pasta.ik_c = caminhos_pastas("informakon"),
     xlsx = FALSE) {
   # Função interna para buscar o arquivo de despesas mais recente
   obter_caminho_despesas <- function() {
