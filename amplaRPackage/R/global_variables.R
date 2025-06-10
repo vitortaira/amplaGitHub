@@ -19,4 +19,8 @@ datas.b_pt.en <- c(
   "dez" = "12"
 )
 
-# Add other global variables below as needed.
+# Contratos de empréstimos PJ
+contratos.pj.6.ultimos_c <- unique(
+  e_cef_ecns()$Emprestimo$`Número`
+) %>%
+  str_sub(-6, -1)

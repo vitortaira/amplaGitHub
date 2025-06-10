@@ -46,30 +46,17 @@
 
 e_cef_extcefs <-
   function(f_caminho.pasta.extratos_c = caminhos_pastas("extratos")) {
-    # Consolida os dados dos extratos da CEF na pasta "Relatorios - Extratos"
-    caminhos.extratos.cef_c <-
-      dir_ls(f_caminho.pasta.extratos_c, recurse = TRUE, type = "file") %>%
-      keep(
-        ~ str_ends(.x, ".pdf") &
-          str_detect(.x, "2429|2419|2245") &
-          !str_detect(.x, "(?i)fundo")
-      )
     # Mensagem informando o número de extratos identificados
-    n_extratos <- length(caminhos.extratos.cef_c)
-    message(sprintf(
-      "%d extratos da CEF foram identificados na rede.",
-      n_extratos
-    ))
-    # Número do contrato do empréstimp PJ
+    # n_extratos <- length(caminhos.extratos.cef_c)
+    # message(sprintf(
+    #   "%d extratos da CEF foram identificados na rede.",
+    #   n_extratos
+    # ))
 
-    contratos.pj.6.ultimos_c <- unique(
-      e_cef_ecns()$Emprestimo$`Número`
-    ) %>%
-      str_sub(-6, -1)
     extratos_l <- list()
     extratos_t <- data.frame()
     for (
-      i_caminho.extrato.cef_c in caminhos.extratos.cef_c
+      i_caminho.extrato.cef_c in e_metadados("extcef")$caminho
     ) {
       extrato <- tryCatch(
         e_cef_extcef(i_caminho.extrato.cef_c),
