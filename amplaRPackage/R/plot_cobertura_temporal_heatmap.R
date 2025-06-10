@@ -382,7 +382,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
         type = "category",
         categoryorder = "array", # Use the order from categoryarray
         categoryarray = levels(y_axis_labels), # Sorted row keys (A-Z)
-        autorange = TRUE, # Should ensure A-Z bottom-to-top based on categoryarray
+        autorange = "reversed", # Changed from TRUE to "reversed"
         showgrid = FALSE
       ),
       legend = list(
