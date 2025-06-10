@@ -185,7 +185,7 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
           str_extract("\\s\\d{4}\\s") %>%
           str_trim(),
         cnpj = NA,
-        cliente = cliente_c,
+        empresa = cliente_c,
         periodo.inicio = str_remove(periodo.consultado_c, "-.*") %>%
           as.Date(format = "%d/%m/%Y"),
         periodo.fim = str_remove(periodo.consultado_c, ".*-") %>%
@@ -197,7 +197,7 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
       ) %>%
       select(
         data.lancamento, data.movimentacao, documento, descricao, valor, Saldo,
-        conta.interno, conta, agencia, produto, cnpj, cliente,
+        conta.interno, conta, agencia, produto, cnpj, empresa,
         periodo.inicio, periodo.fim, data.consulta, arquivo
       )
 
@@ -288,7 +288,7 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
           str_trim() %>% str_remove_all("\\.") %>% str_replace("\\,", "\\.") %>%
           as.numeric(),
         agencia = agencia_c,
-        cliente = cliente_c,
+        empresa = cliente_c,
         cnpj = cnpj_c,
         conta = conta_c,
         data.consulta = data.consulta_h,
@@ -304,7 +304,7 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
       select(
         data.lancamento, data.movimentacao, documento, descricao,
         valor, saldo,
-        conta.interno, conta, agencia, produto, cnpj, cliente,
+        conta.interno, conta, agencia, produto, cnpj, empresa,
         periodo.inicio, periodo.fim, data.consulta, arquivo
       )
 

@@ -75,6 +75,12 @@ e_cef_extcefs <-
     }
     extratos_t %<>%
       mutate(
+        empresa = case_when(
+          str_detect(empresa, "(?i)ampla\\s?incorporadora") ~ "AMP",
+          str_detect(empresa, "(?i)metro\\s?vila\\s?sonia") ~ "AVS",
+          str_detect(empresa, "(?i)sonia\\s?ii") ~ "SN2",
+          TRUE ~ NA_character_
+        ),
         repasse = if_else(
           (descricao == "CR DESBLOQ") &
             !(documento %in% contratos.pj.6.ultimos_c),
@@ -95,10 +101,9 @@ e_cef_extcefs <-
       ) %>%
       as_tibble() %>%
       select(
-        data.lancamento, data.movimentacao, documento, descricao, valor, saldo, repasse, pj, conta.interno, conta, agencia, produto, cnpj, cliente,
+        data.lancamento, data.movimentacao, documento, descricao, valor, saldo, repasse, pj, conta.interno, conta, agencia, produto, cnpj, empresa,
         periodo.inicio, periodo.fim, data.consulta, contrato.6, arquivo,
         arquivo.tabela.tipo, arquivo.tipo, arquivo.fonte
-      ) %>%
-      rename(empreendimento = cliente)
+      )
     return(extratos_t)
   }
