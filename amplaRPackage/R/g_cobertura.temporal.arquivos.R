@@ -6,6 +6,7 @@ g_cobertura.temporal.arquivos <- function() {
       select(
         arquivo,
         empresa,
+        conta,
         periodo.inicio,
         periodo.fim
       ),
@@ -18,6 +19,7 @@ g_cobertura.temporal.arquivos <- function() {
       select(
         arquivo,
         empresa,
+        conta,
         periodo.inicio,
         periodo.fim
       ),
@@ -27,7 +29,8 @@ g_cobertura.temporal.arquivos <- function() {
     extcef_t,
     extita_t
   ) %>%
-  distinct() %>%
-  filter(!is.na(empresa))
+    distinct() %>%
+    filter(!is.na(empresa)) %>%
+    mutate(conta = str_remove(conta, "-") %>% str_sub(-4, -1))
   return(cobertura_t)
 }
