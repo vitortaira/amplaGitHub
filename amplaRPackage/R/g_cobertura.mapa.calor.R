@@ -5,14 +5,13 @@
 #' @import dplyr, tidyr, lubridate, plotly, purrr
 #' @export
 
-plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.arquivos()) {
-
+g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
   # --- Helper Function: Prepare and Clean Data ---
   .prepare_heatmap_data <- function(raw_data) {
     required_cols <- c("arquivo.tipo", "empresa", "conta", "periodo.inicio", "periodo.fim", "arquivo") # Added "conta"
     if (!all(required_cols %in% names(raw_data))) {
       missing_cols <- required_cols[!required_cols %in% names(raw_data)]
-      stop(paste("Input \\'cobertura_t\\' is missing required columns:", paste(missing_cols, collapse=", ")))
+      stop(paste("Input \\'cobertura_t\\' is missing required columns:", paste(missing_cols, collapse = ", ")))
     }
 
     # Initial cleaning and type conversion
@@ -48,16 +47,19 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
       do({
         row_df <- .
         months_seq <- seq(floor_date(row_df$periodo.inicio, "month"), floor_date(row_df$periodo.fim, "month"), by = "month")
-        if (length(months_seq) == 0) tibble()
-        else tibble(
-          arquivo = row_df$arquivo,
-          empresa = row_df$empresa,
-          arquivo.tipo = row_df$arquivo.tipo,
-          conta = row_df$conta, # Added conta
-          month_date = months_seq, # Keep as Date object
-          periodo.inicio = row_df$periodo.inicio,
-          periodo.fim = row_df$periodo.fim
-        )
+        if (length(months_seq) == 0) {
+          tibble()
+        } else {
+          tibble(
+            arquivo = row_df$arquivo,
+            empresa = row_df$empresa,
+            arquivo.tipo = row_df$arquivo.tipo,
+            conta = row_df$conta, # Added conta
+            month_date = months_seq, # Keep as Date object
+            periodo.inicio = row_df$periodo.inicio,
+            periodo.fim = row_df$periodo.fim
+          )
+        }
       }) %>%
       ungroup()
 
@@ -109,8 +111,9 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
 
       # Create a complete sequence of months from min to max
       all_months_seq <- seq(floor_date(min_overall_date, "month"),
-                            floor_date(max_overall_date, "month"),
-                            by = "month")
+        floor_date(max_overall_date, "month"),
+        by = "month"
+      )
       all_months_seq <- as.Date(all_months_seq, origin = "1970-01-01") # Ensure it's Date
     } else {
       # Fallback if no valid dates at all, though earlier checks should prevent this
@@ -119,19 +122,19 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
     }
 
     if (length(all_months_seq) == 0) {
-        if (interactive()) message("Month sequence is empty after generation.")
-        return(NULL)
+      if (interactive()) message("Month sequence is empty after generation.")
+      return(NULL)
     }
 
     valid_row_pairs <- agg_data %>%
       distinct(arquivo.tipo, empresa, conta) %>% # Added conta
       filter(!arquivo.tipo %in% c("", "0", "0-", NA) &
-             !empresa %in% c("", "0", "0-", NA) &
-             !conta %in% c("", "0", "0-", NA)) # Added conta
+        !empresa %in% c("", "0", "0-", NA) &
+        !conta %in% c("", "0", "0-", NA)) # Added conta
 
-    if(nrow(valid_row_pairs) == 0) {
-        if(interactive()) message("No valid (arquivo.tipo, empresa, conta) pairs after filtering agg_data.") # Updated message
-        return(NULL)
+    if (nrow(valid_row_pairs) == 0) {
+      if (interactive()) message("No valid (arquivo.tipo, empresa, conta) pairs after filtering agg_data.") # Updated message
+      return(NULL)
     }
 
     row_keys <- valid_row_pairs %>%
@@ -172,10 +175,10 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
     }
 
     if (interactive()) {
-        message("--- POST-PREPARE DIAGNOSTICS ---")
-        message(paste("Number of row_keys:", length(row_keys)))
-        message(paste("Number of final_formatted_months:", length(final_formatted_months)))
-        message(paste("Number of final_month_dates:", length(final_month_dates)))
+      message("--- POST-PREPARE DIAGNOSTICS ---")
+      message(paste("Number of row_keys:", length(row_keys)))
+      message(paste("Number of final_formatted_months:", length(final_formatted_months)))
+      message(paste("Number of final_month_dates:", length(final_month_dates)))
     }
 
     return(list(
@@ -194,9 +197,10 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
     month_dates <- prepared_data$month_dates
 
     mat <- matrix(NA_character_,
-                  nrow = length(row_keys),
-                  ncol = length(formatted_months),
-                  dimnames = list(row_keys, formatted_months))
+      nrow = length(row_keys),
+      ncol = length(formatted_months),
+      dimnames = list(row_keys, formatted_months)
+    )
 
     for (r_idx in seq_along(row_keys)) {
       current_row_key <- row_keys[r_idx]
@@ -220,11 +224,11 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
     }
 
     color_map <- c(
-      "empty"    = "lightgray",
-      "incomplete"  = "yellow",
+      "empty" = "lightgray",
+      "incomplete" = "yellow",
       "multiple" = "red",
-      "full"     = "#5cb85c",  # Changed to a more vibrant green
-      "other"    = "magenta"
+      "full" = "#5cb85c", # Changed to a more vibrant green
+      "other" = "magenta"
     )
 
     full_coverage_details <- agg %>%
@@ -248,9 +252,9 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
             specific_full_code <- paste0("full_", detail$n_paths)
             mat[r_idx, c_idx] <- specific_full_code
             if (detail$n_paths <= max_val) {
-                 color_map[specific_full_code] <- green_palette[detail$n_paths]
+              color_map[specific_full_code] <- green_palette[detail$n_paths]
             } else {
-                 color_map[specific_full_code] <- green_palette[max_val]
+              color_map[specific_full_code] <- green_palette[max_val]
             }
           }
         }
@@ -260,19 +264,20 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
     unique_mat_values <- unique(as.vector(mat))
     for (val in unique_mat_values) {
       if (!val %in% names(color_map)) {
-        if(interactive()) message(paste("Warning: Mat value \\'", val, "\\' not in color_map. Assigning magenta.", sep=""))
+        if (interactive()) message(paste("Warning: Mat value \\'", val, "\\' not in color_map. Assigning magenta.", sep = ""))
         color_map[val] <- "magenta"
       }
     }
 
     ordered_color_names <- names(color_map)
     z <- matrix(match(mat, ordered_color_names),
-                nrow = nrow(mat),
-                ncol = ncol(mat),
-                dimnames = NULL)
+      nrow = nrow(mat),
+      ncol = ncol(mat),
+      dimnames = NULL
+    )
 
     text_matrix <- matrix("", nrow = length(row_keys), ncol = length(formatted_months))
-     for (r_idx in seq_along(row_keys)) {
+    for (r_idx in seq_along(row_keys)) {
       current_row_key <- row_keys[r_idx]
       key_parts <- strsplit(current_row_key, " | ", fixed = TRUE)[[1]]
       tipo <- key_parts[1]
@@ -302,7 +307,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
             "Nº arquivos: ", cell_data$n_paths[1]
           )
         } else {
-           text_matrix[r_idx, c_idx] <- paste0(
+          text_matrix[r_idx, c_idx] <- paste0(
             "Tipo: ", tipo, "<br>",
             "Empresa: ", emp, "<br>",
             "Conta: ", cta, "<br>", # Added Conta
@@ -334,16 +339,18 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
     heatmap_ordered_color_names <- plot_elements$ordered_color_names
     heatmap_colorscale <- vector("list", length(heatmap_ordered_color_names))
     if (length(heatmap_ordered_color_names) > 0) {
-      for(i in seq_along(heatmap_ordered_color_names)){
-          scale_val <- (i-1) / max(1, (length(heatmap_ordered_color_names)-1))
-          heatmap_colorscale[[i]] <- list(scale_val, color_map[[ heatmap_ordered_color_names[i] ]])
+      for (i in seq_along(heatmap_ordered_color_names)) {
+        scale_val <- (i - 1) / max(1, (length(heatmap_ordered_color_names) - 1))
+        heatmap_colorscale[[i]] <- list(scale_val, color_map[[heatmap_ordered_color_names[i]]])
       }
       if (length(heatmap_ordered_color_names) == 1) { # Single color case
-          heatmap_colorscale <- list(list(0, color_map[[heatmap_ordered_color_names[1]]]),
-                                   list(1, color_map[[heatmap_ordered_color_names[1]]]))
+        heatmap_colorscale <- list(
+          list(0, color_map[[heatmap_ordered_color_names[1]]]),
+          list(1, color_map[[heatmap_ordered_color_names[1]]])
+        )
       }
     } else { # Fallback if no colors somehow (should not happen if data exists)
-        heatmap_colorscale <- list(list(0, "lightgray"), list(1, "lightgray"))
+      heatmap_colorscale <- list(list(0, "lightgray"), list(1, "lightgray"))
     }
 
     # Initialize plot
@@ -351,10 +358,10 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
 
     # --- Define and Add Discrete Legend Items ---
     legend_definitions <- list(
-      list(id = "full",     name = "Completo",      base_color_key = "full"),
-      list(id = "incomplete",  name = "Incompleto",        base_color_key = "incomplete"),
-      list(id = "multiple", name = "Múltiplo",             base_color_key = "multiple"),
-      list(id = "empty",    name = "Vazio",                base_color_key = "empty")
+      list(id = "full", name = "Completo", base_color_key = "full"),
+      list(id = "incomplete", name = "Incompleto", base_color_key = "incomplete"),
+      list(id = "multiple", name = "Múltiplo", base_color_key = "multiple"),
+      list(id = "empty", name = "Vazio", base_color_key = "empty")
     )
 
     legend_group_name <- "cobertura_status_legend"
@@ -377,7 +384,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
         )
       } else {
         if (interactive()) {
-            message(paste("Legend item '", leg_def$name, "' skipped, color not found for key '", leg_def$base_color_key, "'."))
+          message(paste("Legend item '", leg_def$name, "' skipped, color not found for key '", leg_def$base_color_key, "'."))
         }
       }
     }
@@ -394,8 +401,8 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
       text = text_matrix,
       hovertemplate = "%{text}<extra></extra>", # Replaced hoverinfo with hovertemplate for better hover control
       xgap = 0.5, ygap = 0.5,
-      showscale = FALSE,    # Hide the continuous colorscale bar
-      showlegend = FALSE    # The heatmap itself does not add to the discrete legend
+      showscale = FALSE, # Hide the continuous colorscale bar
+      showlegend = FALSE # The heatmap itself does not add to the discrete legend
     )
 
     # Apply layout
@@ -437,7 +444,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
           "sendDataToCloud", "hoverClosestGl2d", "hoverClosestPie", "toggleHover", "resetViews", "toggleSpikelines", "resetViewMapbox"
         ),
         displaylogo = FALSE, # Remove Plotly logo
-        locale = 'pt-BR'    # Set locale for button hover text
+        locale = "pt-BR" # Set locale for button hover text
       )
 
     return(p)
@@ -449,7 +456,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
 
   if (is.null(prepared_data) || length(prepared_data$row_keys) == 0 || length(prepared_data$formatted_months) == 0) {
     if (interactive()) message("Insufficient data to generate heatmap. Returning empty plot.")
-    return(plot_ly() %>% layout(title = "No data available to display.", annotations = list(text="No data to display", showarrow=FALSE)))
+    return(plot_ly() %>% layout(title = "No data available to display.", annotations = list(text = "No data to display", showarrow = FALSE)))
   }
 
   if (interactive()) {
@@ -475,8 +482,8 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
   plot_elements <- .create_heatmap_elements(prepared_data, status_translation_map) # Pass the map
 
   if (is.null(plot_elements$z)) {
-      if (interactive()) message("Failed to create heatmap matrix (z). Returning empty plot.")
-      return(plot_ly() %>% layout(title = "Error in matrix generation.", annotations = list(text="No data to display", showarrow=FALSE)))
+    if (interactive()) message("Failed to create heatmap matrix (z). Returning empty plot.")
+    return(plot_ly() %>% layout(title = "Error in matrix generation.", annotations = list(text = "No data to display", showarrow = FALSE)))
   }
 
   if (interactive()) message("--- Heatmap elements created. Generating Plotly figure. ---")
@@ -487,7 +494,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
   return(final_plot)
 }
 
-# Example usage (ensure g_cobertura.temporal.arquivos() is available and returns data):
+# Example usage (ensure e_cobertura.arquivos() is available and returns data):
 # if (interactive()) {
 #   # sample_data <- tibble::tribble(
 #   #  ~arquivo, ~empresa, ~periodo.inicio, ~periodo.fim, ~arquivo.tipo,
@@ -498,10 +505,12 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
 #   #  "file5.csv", "0-INV", "2023-01-01", "2023-01-31", "TypeX",
 #   #  "file6.csv", "EMP C", "1999-01-01", "1999-01-31", "TypeY"
 #   # )
-#   # plot_cobertura_temporal_heatmap(sample_data)
+#   # g_cobertura.arquivos(sample_data)
 # }
 
 # Add to global variables to avoid R CMD check notes for NSE in dplyr
-utils::globalVariables(c(".", "periodo.inicio_parsed", "periodo.fim_parsed", "month_date",
-                         "month_start", "month_end", "full_month_coverage", "n_paths",
-                         "n_full", "n_incomplete", "color_code", "label", "original_date", "conta")) # Added "conta"
+utils::globalVariables(c(
+  ".", "periodo.inicio_parsed", "periodo.fim_parsed", "month_date",
+  "month_start", "month_end", "full_month_coverage", "n_paths",
+  "n_full", "n_incomplete", "color_code", "label", "original_date", "conta"
+)) # Added "conta"

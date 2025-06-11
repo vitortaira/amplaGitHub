@@ -1,4 +1,4 @@
-g_cobertura.temporal.arquivos <- function() {
+e_cobertura.arquivos <- function() {
   extcef_t <- left_join(
     e_metadados("extcef") %>%
       rename(arquivo = "caminho"),
@@ -24,7 +24,7 @@ g_cobertura.temporal.arquivos <- function() {
         periodo.fim
       ),
     by = "arquivo"
-    )
+  )
   cobertura_t <- bind_rows(
     extcef_t,
     extita_t

@@ -21,6 +21,6 @@ datas.b_pt.en <- c(
 
 # Contratos de empréstimos PJ
 contratos.pj.6.ultimos_c <- unique(
-  e_cef_ecns()$Emprestimo$`Número`
+  e_cef_ecns()$ecn_pj$numero
 ) %>%
   str_sub(-6, -1)
