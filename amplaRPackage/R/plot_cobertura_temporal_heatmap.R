@@ -13,7 +13,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
 
   # --- Helper Function: Prepare and Clean Data ---
   .prepare_heatmap_data <- function(raw_data) {
-    required_cols <- c("arquivo.tipo", "empresa", "periodo.inicio", "periodo.fim", "arquivo")
+    required_cols <- c("arquivo.tipo", "empresa", "conta", "periodo.inicio", "periodo.fim", "arquivo") # Added "conta"
     if (!all(required_cols %in% names(raw_data))) {
       missing_cols <- required_cols[!required_cols %in% names(raw_data)]
       stop(paste("Input \\'cobertura_t\\' is missing required columns:", paste(missing_cols, collapse=", ")))
@@ -27,12 +27,14 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
         periodo.inicio = if_else(is.na(periodo.inicio_parsed), ymd(periodo.inicio, quiet = TRUE), as.Date(periodo.inicio_parsed)),
         periodo.fim = if_else(is.na(periodo.fim_parsed), ymd(periodo.fim, quiet = TRUE), as.Date(periodo.fim_parsed)),
         arquivo.tipo = trimws(as.character(arquivo.tipo)),
-        empresa = trimws(as.character(empresa))
+        empresa = trimws(as.character(empresa)),
+        conta = trimws(as.character(conta)) # Added conta cleaning
       ) %>%
       select(-periodo.inicio_parsed, -periodo.fim_parsed) %>%
       filter(
         !is.na(arquivo.tipo) & !arquivo.tipo %in% c("", "0", "0-"),
         !is.na(empresa) & !empresa %in% c("", "0", "0-"),
+        !is.na(conta) & !conta %in% c("", "0", "0-"), # Added conta filter
         !is.na(periodo.inicio), !is.na(periodo.fim),
         periodo.inicio <= periodo.fim,
         periodo.inicio >= as.Date("2000-01-01"), # Filter out very old/invalid dates
@@ -55,6 +57,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
           arquivo = row_df$arquivo,
           empresa = row_df$empresa,
           arquivo.tipo = row_df$arquivo.tipo,
+          conta = row_df$conta, # Added conta
           month_date = months_seq, # Keep as Date object
           periodo.inicio = row_df$periodo.inicio,
           periodo.fim = row_df$periodo.fim
@@ -74,7 +77,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
         month_end = ceiling_date(month_date, "month") - days(1),
         full_month_coverage = (periodo.inicio <= month_start & periodo.fim >= month_end)
       ) %>%
-      group_by(arquivo.tipo, empresa, month_date) %>%
+      group_by(arquivo.tipo, empresa, conta, month_date) %>% # Added conta to grouping
       summarise(
         n_paths = n(),
         n_full = sum(full_month_coverage),
@@ -94,6 +97,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
       filter(
         !is.na(arquivo.tipo) & !arquivo.tipo %in% c("", "0", "0-"),
         !is.na(empresa) & !empresa %in% c("", "0", "0-"),
+        !is.na(conta) & !conta %in% c("", "0", "0-"), # Added conta filter
         !is.na(month_date) & month_date >= as.Date("2000-01-01")
       )
 
@@ -124,16 +128,18 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
     }
 
     valid_row_pairs <- agg_data %>%
-      distinct(arquivo.tipo, empresa) %>%
-      filter(!arquivo.tipo %in% c("", "0", "0-", NA) & !empresa %in% c("", "0", "0-", NA))
+      distinct(arquivo.tipo, empresa, conta) %>% # Added conta
+      filter(!arquivo.tipo %in% c("", "0", "0-", NA) &
+             !empresa %in% c("", "0", "0-", NA) &
+             !conta %in% c("", "0", "0-", NA)) # Added conta
 
     if(nrow(valid_row_pairs) == 0) {
-        if(interactive()) message("No valid (arquivo.tipo, empresa) pairs after filtering agg_data.")
+        if(interactive()) message("No valid (arquivo.tipo, empresa, conta) pairs after filtering agg_data.") # Updated message
         return(NULL)
     }
 
     row_keys <- valid_row_pairs %>%
-      mutate(label = paste0(arquivo.tipo, " | ", empresa)) %>%
+      mutate(label = paste0(arquivo.tipo, " | ", empresa, " | ", conta)) %>% # Added conta to label
       pull(label) %>%
       unique() %>%
       sort() # Reverted to ascending sort
@@ -201,12 +207,13 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
       key_parts <- strsplit(current_row_key, " | ", fixed = TRUE)[[1]]
       tipo <- key_parts[1]
       emp <- key_parts[2]
+      cta <- key_parts[3] # Added cta
 
       for (c_idx in seq_along(formatted_months)) {
         current_month_date <- month_dates[c_idx]
 
         cell_data <- agg %>%
-          filter(arquivo.tipo == tipo, empresa == emp, month_date == current_month_date)
+          filter(arquivo.tipo == tipo, empresa == emp, conta == cta, month_date == current_month_date) # Added conta == cta
 
         if (nrow(cell_data) == 0 || is.na(cell_data$color_code[1])) {
           mat[r_idx, c_idx] <- "empty"
@@ -226,7 +233,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
 
     full_coverage_details <- agg %>%
       filter(color_code == "full" & n_paths > 0 & !is.na(n_paths)) %>%
-      select(arquivo.tipo, empresa, month_date, n_paths)
+      select(arquivo.tipo, empresa, conta, month_date, n_paths) # Added conta
 
     if (nrow(full_coverage_details) > 0) {
       max_val <- max(full_coverage_details$n_paths, na.rm = TRUE)
@@ -235,7 +242,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
 
         for (i in 1:nrow(full_coverage_details)) {
           detail <- full_coverage_details[i, ]
-          row_label <- paste0(detail$arquivo.tipo, " | ", detail$empresa)
+          row_label <- paste0(detail$arquivo.tipo, " | ", detail$empresa, " | ", detail$conta) # Added conta
           month_label <- format(detail$month_date, "%Y-%m")
 
           r_idx <- which(row_keys == row_label)
@@ -274,11 +281,12 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
       key_parts <- strsplit(current_row_key, " | ", fixed = TRUE)[[1]]
       tipo <- key_parts[1]
       emp <- key_parts[2]
+      cta <- key_parts[3] # Added cta
 
       for (c_idx in seq_along(formatted_months)) {
         current_month_date <- month_dates[c_idx]
         cell_data <- agg %>%
-          filter(arquivo.tipo == tipo, empresa == emp, month_date == current_month_date)
+          filter(arquivo.tipo == tipo, empresa == emp, conta == cta, month_date == current_month_date) # Added conta == cta
 
         raw_status_code <- mat[r_idx, c_idx]
         base_status_code <- if (startsWith(raw_status_code, "full_")) "full" else raw_status_code
@@ -292,6 +300,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
           text_matrix[r_idx, c_idx] <- paste0(
             "Tipo: ", tipo, "<br>",
             "Empresa: ", emp, "<br>",
+            "Conta: ", cta, "<br>", # Added Conta
             "Mês: ", format(current_month_date, "%Y-%m"), "<br>",
             "Status: ", display_status_name, "<br>", # Use display_status_name
             "Nº arquivos: ", cell_data$n_paths[1]
@@ -300,6 +309,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
            text_matrix[r_idx, c_idx] <- paste0(
             "Tipo: ", tipo, "<br>",
             "Empresa: ", emp, "<br>",
+            "Conta: ", cta, "<br>", # Added Conta
             "Mês: ", format(current_month_date, "%Y-%m"), "<br>",
             "Status: ", status_translation_map[["empty"]] %||% "Vazio", "<br>", # Explicitly use mapped "empty"
             "Nº arquivos: 0"
@@ -405,7 +415,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
         rangeslider = list(visible = FALSE) # Ensure horizontal range slider is removed
       ),
       yaxis = list(
-        title = "Tipo de arquivo | Empresa",
+        title = "Tipo de arquivo | Empresa | Conta", # Updated y-axis title
         type = "category",
         categoryorder = "array", # Use the order from categoryarray
         categoryarray = levels(y_axis_labels), # Sorted row keys (A-Z)
@@ -498,4 +508,4 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
 # Add to global variables to avoid R CMD check notes for NSE in dplyr
 utils::globalVariables(c(".", "periodo.inicio_parsed", "periodo.fim_parsed", "month_date",
                          "month_start", "month_end", "full_month_coverage", "n_paths",
-                         "n_full", "n_incomplete", "color_code", "label", "original_date"))
+                         "n_full", "n_incomplete", "color_code", "label", "original_date", "conta")) # Added "conta"
