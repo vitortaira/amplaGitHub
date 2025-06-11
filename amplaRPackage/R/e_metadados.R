@@ -12,10 +12,10 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
   # CEF
     # Extratos (extcef)
       extcef_t <-
-        dir_ls(caminhos_pastas("extratos"), recurse = TRUE, type = "file") %>%
+        dir_ls(caminhos_pastas("financeiro"), recurse = TRUE, type = "file") %>%
         keep(
           ~ str_ends(.x, ".pdf") &
-            str_detect(.x, "2245|2419|2429|2399") &
+            str_detect(.x, "600|2245|2362|2419|2429|2399") &
             !str_detect(.x, "(?i)fundo") &
             !str_detect(.x, "(?i)aplica[cç][aã]o")
         ) %>%

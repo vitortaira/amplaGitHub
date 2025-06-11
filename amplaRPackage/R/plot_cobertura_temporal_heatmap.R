@@ -4,6 +4,7 @@
 #' @return Plotly heatmap object
 #' @import dplyr, tidyr, lubridate, plotly, purrr
 #' @export
+
 plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.arquivos()) {
 
   # --- Helper Function: Prepare and Clean Data ---
@@ -398,10 +399,10 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
     )
 
     # Apply layout
-    p <- layout(p,
-      title = list(text = "Cobertura temporal dos arquivos", pad = list(t = 20)), # Added top padding to title
+    p <- plotly::layout(p, # Explicitly call plotly::layout
+      title = list(text = "Cobertura temporal dos arquivos", pad = list(t = 20)),
       xaxis = list(
-        title = "Mês",
+        title = list(text = "Mês"), # Ensure title is a list for consistency
         type = "category",
         categoryorder = "array",
         categoryarray = levels(x_axis_labels), # Sorted month strings
