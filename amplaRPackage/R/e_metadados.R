@@ -15,8 +15,9 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
         dir_ls(caminhos_pastas("extratos"), recurse = TRUE, type = "file") %>%
         keep(
           ~ str_ends(.x, ".pdf") &
-            str_detect(.x, "2429|2419|2245") &
-            !str_detect(.x, "(?i)fundo")
+            str_detect(.x, "2245|2419|2429|2399") &
+            !str_detect(.x, "(?i)fundo") &
+            !str_detect(.x, "(?i)aplica[cç][aã]o")
         ) %>%
         as_tibble_col("caminho") %>%
         mutate(
@@ -32,7 +33,7 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
       keep(
         ~ str_ends(.x, ".pdf") &
         str_detect(.x, "(?i)extrato") &
-        str_detect(.x, "0186|2633|5441") &
+        str_detect(.x, "0186|2633|5441|9756") &
         !str_detect(.x, "(?i)pix")
       ) %>%
       as_tibble_col("caminho") %>%

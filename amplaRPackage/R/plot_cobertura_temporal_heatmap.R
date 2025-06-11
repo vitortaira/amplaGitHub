@@ -5,11 +5,6 @@
 #' @import dplyr, tidyr, lubridate, plotly, purrr
 #' @export
 plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.arquivos()) {
-  library(dplyr)
-  library(tidyr)
-  library(lubridate)
-  library(plotly)
-  library(purrr)
 
   # --- Helper Function: Prepare and Clean Data ---
   .prepare_heatmap_data <- function(raw_data) {
@@ -227,7 +222,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
       "empty"    = "lightgray",
       "incomplete"  = "yellow",
       "multiple" = "red",
-      "full"     = "#b7e3b7",
+      "full"     = "#5cb85c",  # Changed to a more vibrant green
       "other"    = "magenta"
     )
 
@@ -238,7 +233,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
     if (nrow(full_coverage_details) > 0) {
       max_val <- max(full_coverage_details$n_paths, na.rm = TRUE)
       if (is.finite(max_val) && max_val > 0) {
-        green_palette <- colorRampPalette(c("#b7e3b7", "#006400"))(max_val)
+        green_palette <- colorRampPalette(c("#5cb85c", "#006400"))(max_val) # Updated start of green palette
 
         for (i in 1:nrow(full_coverage_details)) {
           detail <- full_coverage_details[i, ]
@@ -404,7 +399,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
 
     # Apply layout
     p <- layout(p,
-      title = "Cobertura temporal dos arquivos",
+      title = list(text = "Cobertura temporal dos arquivos", pad = list(t = 20)), # Added top padding to title
       xaxis = list(
         title = "Mês",
         type = "category",
@@ -415,7 +410,7 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
         rangeslider = list(visible = FALSE) # Ensure horizontal range slider is removed
       ),
       yaxis = list(
-        title = "Tipo de arquivo | Empresa | Conta", # Updated y-axis title
+        title = list(text = "Tipo de arquivo | Empresa | Conta", standoff = 15), # Added standoff for y-axis title
         type = "category",
         categoryorder = "array", # Use the order from categoryarray
         categoryarray = levels(y_axis_labels), # Sorted row keys (A-Z)
