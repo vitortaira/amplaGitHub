@@ -102,6 +102,27 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
       return(NULL)
     }
 
+    # Determine the overall date range for the x-axis (months)
+    if (nrow(agg_data) > 0 && any(!is.na(agg_data$month_date))) {
+      min_overall_date <- min(agg_data$month_date, na.rm = TRUE)
+      max_overall_date <- max(agg_data$month_date, na.rm = TRUE)
+
+      # Create a complete sequence of months from min to max
+      all_months_seq <- seq(floor_date(min_overall_date, "month"),
+                            floor_date(max_overall_date, "month"),
+                            by = "month")
+      all_months_seq <- as.Date(all_months_seq, origin = "1970-01-01") # Ensure it's Date
+    } else {
+      # Fallback if no valid dates at all, though earlier checks should prevent this
+      if (interactive()) message("No valid month_date values to determine overall date range.")
+      return(NULL)
+    }
+
+    if (length(all_months_seq) == 0) {
+        if (interactive()) message("Month sequence is empty after generation.")
+        return(NULL)
+    }
+
     valid_row_pairs <- agg_data %>%
       distinct(arquivo.tipo, empresa) %>%
       filter(!arquivo.tipo %in% c("", "0", "0-", NA) & !empresa %in% c("", "0", "0-", NA))
@@ -122,30 +143,27 @@ plot_cobertura_temporal_heatmap <- function(cobertura_t = g_cobertura.temporal.a
       return(NULL)
     }
 
-    valid_months_dates <- agg_data %>%
-      pull(month_date) %>%
-      unique() %>%
-      sort() %>%
-      as.Date(origin="1970-01-01")
+    # Use the complete sequence of all months (all_months_seq) for the x-axis.
+    # all_months_seq was generated earlier and is a sequence of Date objects (first day of each month).
+    # Filter out any NA or very old dates.
+    final_month_dates_temp <- all_months_seq[!is.na(all_months_seq) & all_months_seq >= as.Date("2000-01-01")]
 
-    valid_months_dates <- valid_months_dates[!is.na(valid_months_dates) & valid_months_dates >= as.Date("2000-01-01")]
-
-    if (length(valid_months_dates) == 0) {
-      if (interactive()) message("No valid month dates found in agg_data.")
+    if (length(final_month_dates_temp) == 0) {
+      if (interactive()) message("No valid month dates after creating full sequence from all_months_seq and filtering.")
       return(NULL)
     }
 
-    formatted_months <- format(valid_months_dates, "%Y-%m")
+    # Create formatted month strings and ensure a unique, chronologically-ordered mapping
+    # between formatted strings and original Date objects.
+    month_map_df <- data.frame(original_date = final_month_dates_temp) %>%
+      mutate(formatted = format(original_date, "%Y-%m")) %>%
+      distinct(formatted, .keep_all = TRUE) %>%
+      arrange(original_date)
 
-    unique_formatted_months_map <- data.frame(
-        formatted = formatted_months,
-        original_date = valid_months_dates
-    ) %>% distinct(formatted, .keep_all = TRUE)
+    final_formatted_months <- month_map_df$formatted
+    final_month_dates <- month_map_df$original_date
 
-    final_formatted_months <- unique_formatted_months_map$formatted
-    final_month_dates <- unique_formatted_months_map$original_date
-
-
+    # The existing check for length(final_formatted_months) == 0 will catch issues here.
     if (length(final_formatted_months) == 0) {
       if (interactive()) message("No formatted month keys generated.")
       return(NULL)
