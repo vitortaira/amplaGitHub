@@ -26,9 +26,6 @@ e_ita_extita <- function(file_path) {
       purrr::discard(~ .x == ""))
   linhas_c <- unlist(paginas_l, use.names = FALSE)
 
-  # Debugging: Print linhas_c for inspection
-  print(linhas_c)
-
   # Handle empty linhas_c
   if (length(linhas_c) == 0) {
     stop("The PDF file does not contain any extractable text.")
@@ -106,7 +103,12 @@ e_ita_extita <- function(file_path) {
       Linhas = stringr::str_remove(Linhas, "^\\d{2}\\s?/\\s?[A-Za*z]{3}\\s?"),
       valor = stringr::str_extract(Linhas, "-?\\d{1,3}(\\.\\d{3})*(,\\d{2})") %>%
         readr::parse_number(locale = readr::locale(decimal_mark = ",", grouping_mark = ".")),
-      descricao = stringr::str_remove(Linhas, "\\s?-?\\d{1,3}(\\.\\d{3})*(,\\d{2})"),
+      descricao = stringr::str_remove(Linhas, "\\s?-?\\d{1,3}(\\.\\d{3})*(,\\d{2})")
+    ) %>%
+    dplyr::mutate(
+      descricao = stringr::str_remove(descricao, "^\\d{1,2}\\s*/\\s*[a-zA-Z]{3}\\s*")
+    ) %>%
+    dplyr::mutate(
       empresa = empresa_c,
       cnpj = cnpj_c,
       agencia = agencia_c,
