@@ -17,7 +17,7 @@ test_that("e_ita_extita returns expected structure", {
 })
 
 test_that("e_ita_extita parses extita_example PDF robustly", {
-  example_file <- testthat::test_path("data", "extita_example.pdf")
+  example_file <- testthat::test_path("data", "extita.pdf")
   expect_true(file.exists(example_file))
   result <- e_ita_extita(example_file)
   # Structure
