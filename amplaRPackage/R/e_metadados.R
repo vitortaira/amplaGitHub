@@ -15,8 +15,10 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
     dir_ls(caminhos_pastas("financeiro"), recurse = TRUE, type = "file") %>%
     keep(
       ~ str_ends(.x, ".pdf") &
-        !str_detect(.x, "(?i)fundo") &
-        !str_detect(.x, "(?i)aplica[cç][aã]o") &
+        str_detect(.x, "(?i)cont[aá]bil") &
+        !str_detect(.x, "(?i)aplica[cç][aã]o|cdb|fundo|parcela|pix|simples") &
+        !str_detect(.x, "(?i)6\\s?meses|comprovante|inativas|nota|nf\\s") &
+        !str_detect(.x, "(?i)facil|investimento|recebiveis|sihex|topazio") &
         # AMP
         (str_detect(.x, "600|2362|2429") |
           # AVS

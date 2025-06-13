@@ -38,6 +38,15 @@ test_that("e_ita_extita parses extita_example PDF robustly", {
   # No NA in required columns
   expect_false(any(is.na(result$extita_l$data)))
   expect_false(any(is.na(result$extita_l$valor)))
+  expect_false(any(is.na(result$extita_l$descricao)))
+  expect_false(any(is.na(result$extita_l$empresa)))
+  expect_false(any(is.na(result$extita_l$cnpj)))
+  expect_false(any(is.na(result$extita_l$agencia)))
+  expect_false(any(is.na(result$extita_l$conta)))
+  expect_false(any(is.na(result$extita_l$periodo.inicio)))
+  expect_false(any(is.na(result$extita_l$periodo.fim)))
+  expect_false(any(is.na(result$extita_l$data.consulta)))
+  expect_false(any(is.na(result$extita_l$arquivo)))
   # File path is correct
   expect_true(all(result$extita_l$arquivo == example_file))
   # Saldos must include saldo.disponivel.conta
@@ -48,4 +57,16 @@ test_that("e_ita_extita parses extita_example PDF robustly", {
   expect_type(result$extita_c$valor, "double")
   # No duplicated rows in saldos
   expect_equal(nrow(result$extita_c), length(unique(result$extita_c$descricao)))
+  # Descrição não deve começar com data
+  expect_false(any(grepl("^\\d{1,2}\\s*/\\s*[a-zA-Z]{3}", result$extita_l$descricao)))
+  # Datas dentro do período
+  expect_true(all(result$extita_l$data >= min(result$extita_l$periodo.inicio)))
+  expect_true(all(result$extita_l$data <= max(result$extita_l$periodo.fim)))
+  # Datas de consulta coerentes
+  expect_true(all(!is.na(result$extita_l$data.consulta)))
+  # CNPJ formato válido
+  expect_true(all(grepl("\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}", result$extita_l$cnpj)))
+  # Agência e conta numéricas
+  expect_true(all(grepl("^\\d+$", result$extita_l$agencia)))
+  expect_true(all(grepl("^\\d+$", result$extita_l$conta)))
 })

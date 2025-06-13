@@ -41,6 +41,12 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
       return(NULL)
     }
 
+    # Remove date pattern from descricao if present (robustness for downstream)
+    if ("descricao" %in% names(clean_data)) {
+      clean_data <- clean_data %>%
+        dplyr::mutate(descricao = stringr::str_remove(descricao, "^\\d{1,2}\\s*/\\s*[a-zA-Z]{3}\\s*"))
+    }
+
     # Expand to months
     expanded_data <- clean_data %>%
       rowwise() %>%

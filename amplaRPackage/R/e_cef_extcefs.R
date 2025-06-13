@@ -78,8 +78,15 @@ e_cef_extcefs <-
         empresa = case_when(
           str_detect(empresa, "(?i)ampla\\s?incorporadora") ~ "AMP",
           str_detect(empresa, "(?i)metro\\s?vila\\s?sonia") ~ "AVS",
+          str_detect(empresa, "(?i)grauca") ~ "GRA",
+          str_detect(empresa, "(?i)incorflora") ~ "INC",
+          str_detect(empresa, "(?i)sao\\s?l") ~ "LUC",
+          str_detect(empresa, "(?i)pompeia") ~ "POM",
+          str_detect(empresa, "(?i)up\\s?s\\.") ~ "SAU",
           str_detect(empresa, "(?i)sonia\\s?ii") ~ "SN2",
-          TRUE ~ NA_character_
+          str_detect(empresa, "(?i)sonia\\s?iv") ~ "SN4",
+          TRUE ~ empresa
+          # TRUE ~ NA_character_
         ),
         repasse = if_else(
           (descricao == "CR DESBLOQ") &

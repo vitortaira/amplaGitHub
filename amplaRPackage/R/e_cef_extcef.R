@@ -168,13 +168,10 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
             .
           ) %>% as.numeric(),
         linhas = str_remove(linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?$"),
-        valor = str_extract(linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?") %>%
-          str_remove("\\s?C") %>% str_remove_all("\\.") %>%
-          str_replace("\\,", "\\.") %>%
-          if_else(str_detect(., "D$"),
-            str_c("-", .) %>% str_remove("\\s?D$"),
-            .
-          ) %>% as.numeric(),
+        valor = stringr::str_extract(linhas, "-?\\d{1,3}(\\.\\d{3})*(,\\d{2})?") %>%
+          readr::parse_number(locale = readr::locale(decimal_mark = ",", grouping_mark = ".")),
+        saldo = stringr::str_extract(linhas, "-?\\d{1,3}(\\.\\d{3})*(,\\d{2})?") %>%
+          readr::parse_number(locale = readr::locale(decimal_mark = ",", grouping_mark = ".")),
         descricao = str_remove(
           linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?"
         ) %>% str_trim(),
