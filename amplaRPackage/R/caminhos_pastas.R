@@ -31,7 +31,8 @@ caminhos_pastas <- function(alias) {
     shiny = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaShiny",
     shinydata = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaShiny/dados",
     temp = "C:/Users/Ampla/OneDrive - AMPLA INCORPORADORA LTDA/Documentos/temp",
-    templates = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/templates"
+    templates = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/templates",
+    testthat = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaRPackage/tests/testthat"
   )
 
   if (!alias %in% names(caminhos_c)) {
