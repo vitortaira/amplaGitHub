@@ -66,11 +66,11 @@ e_cef_extcefs <-
         }
       )
       if (!is.null(extrato) && nrow(extrato) > 0) {
-        message(sprintf("arquivo extraído com sucesso: %s", basename(i_caminho.extrato.cef_c)))
+        message(sprintf("Arquivo extraído com sucesso: %s", basename(i_caminho.extrato.cef_c)))
         extratos_l[[i_caminho.extrato.cef_c]] <- extrato
         extratos_t <- bind_rows(extratos_t, extrato)
       } else {
-        message(sprintf("arquivo vazio ou não extraído: %s", basename(i_caminho.extrato.cef_c)))
+        message(sprintf("Arquivo vazio ou não extraído: %s", basename(i_caminho.extrato.cef_c)))
       }
     }
     extratos_t %<>%
@@ -108,9 +108,10 @@ e_cef_extcefs <-
       ) %>%
       as_tibble() %>%
       select(
-        data.lancamento, data.movimentacao, documento, descricao, valor, saldo, repasse, pj, conta.interno, conta, agencia, produto, cnpj, empresa,
+        data.lancamento, data.movimentacao, documento, descricao, valor, saldo,
+        repasse, pj, conta.interno, conta, agencia, produto, cnpj, empresa,
         periodo.inicio, periodo.fim, data.consulta, contrato.6, arquivo,
-        arquivo.tabela.tipo, arquivo.tipo, arquivo.fonte
+        tipo.extcef, arquivo.tabela.tipo, arquivo.tipo, arquivo.fonte
       )
     return(extratos_t)
   }
