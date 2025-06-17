@@ -117,7 +117,6 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
       str_remove("\\s*Conta:.*") %>%
       str_remove(".*produto:\\s*") %>%
       str_trim()
-    # indice.comeco_i <- linhas_c %>% str_which("^Extrato") + 1
     indice.comeco_i <- linhas_c %>%
       str_which("^\\d{2}/\\d{2}/\\d{4}") %>%
       first()
@@ -136,13 +135,32 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
         linhas = str_remove(linhas, "\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
         documento = str_remove(linhas, "[A-Za-z].*") %>% str_trim(),
         linhas = str_extract(linhas, "(?i)[A-Za-z].*") %>% str_trim(),
-        descricao = str_remove(linhas, "R\\$.*") %>% str_trim(),
-        linhas = str_extract(linhas, "(?<=R\\$).*") %>% str_trim(),
-        valor = str_remove(linhas, "R\\$.*") %>%
-          str_remove_all("\\.") %>% str_replace("\\,", "\\.") %>% as.numeric(),
-        saldo = str_extract(linhas, "(?<=R\\$).*") %>%
-          str_trim() %>% str_remove_all("\\.") %>% str_replace("\\,", "\\.") %>%
-          as.numeric(),
+        valor = str_extract(
+          linhas,
+          "(?:R\\$)?\\s?-?\\s?(?:\\d{1,3}(\\.\\d{3})*)?(\\,\\d{2})"
+        ) %>%
+          str_remove_all("\\s") %>%
+          readr::parse_number(
+            locale = readr::locale(decimal_mark = ",", grouping_mark = ".")
+          ),
+        linhas = str_remove(
+          linhas,
+          "(?:R\\$)?\\s?-?\\s?(?:\\d{1,3}(\\.\\d{3})*)?(\\,\\d{2})"
+        ) %>%
+          str_trim(),
+        saldo = str_extract(
+          linhas,
+          "(?:R\\$)?\\s?-?\\s?(?:\\d{1,3}(\\.\\d{3})*)?(\\,\\d{2})"
+        ) %>%
+          str_remove_all("\\s") %>%
+          readr::parse_number(
+            locale = readr::locale(decimal_mark = ",", grouping_mark = ".")
+          ),
+        descricao = str_remove(
+          linhas,
+          "(?:R\\$)?\\s?-?\\s?(?:\\d{1,3}(\\.\\d{3})*)?(\\,\\d{2})"
+        ) %>%
+          str_trim(),
         agencia = agencia_c,
         empresa = cliente_c,
         cnpj = cnpj_c,
