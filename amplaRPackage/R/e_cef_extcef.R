@@ -106,7 +106,8 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
       } %>%
       pull(texto) %>%
       discard(~ str_starts(
-        .x, "about\\:|\\d{2}/\\d{2}/\\d{4}\\,\\s?\\d{2}\\:\\d{2}"
+        .x,
+        "about\\:|\\d{2}/\\d{2}/\\d{4}\\,\\s?\\d{2}\\:\\d{2}|\\d{2}/\\d{2}/\\d{4}$"
       ))
   }
   if (tipo_c == "extcef2") {
