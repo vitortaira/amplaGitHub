@@ -68,6 +68,46 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
   tipo_c <- c_cef_extcef(f_caminho.arquivo_c, linhas_c)
   if (tipo_c == "extcef1") {
     message(sprintf("Formato pendente para o arquivo: %s", f_caminho.arquivo_c))
+    paginas_l <-
+      pdf_data(f_caminho.arquivo_c)
+    palavras_t <-
+      map_dfr(seq_along(paginas_l), ~ paginas_l[[.x]] %>% mutate(pagina = .x))
+    linhas_c <-
+      palavras_t %>%
+      arrange(pagina, y, x) %>%
+      group_by(pagina) %>%
+      mutate(
+        dif.y = abs(y - dplyr::lag(y, default = first(y))),
+        linha = cumsum(row_number() == 1 | dif.y > 10)
+      ) %>%
+      ungroup() %>%
+      group_by(pagina, linha) %>%
+      summarise(
+        texto =
+          str_c(text, collapse = " ") %>%
+            str_replace_all("\\s+", " ") %>%
+            str_trim(),
+        y = mean(y),
+        .groups = "drop"
+      ) %>%
+      dplyr::select(texto, everything()) %>%
+      # Concatenate lines starting with hh:mm:ss to the previous line
+      {
+        time_line_idx <- stringr::str_which(.$texto, "^\\d{2}:\\d{2}:\\d{2}")
+        if (length(time_line_idx) > 0) {
+          for (idx in rev(time_line_idx)) {
+            if (idx > 1) {
+              .$texto[idx - 1] <- paste(.$texto[idx - 1], .$texto[idx], sep = " ")
+            }
+          }
+          . <- .[-time_line_idx, ]
+        }
+        .
+      } %>%
+      pull(texto) %>%
+      discard(~ str_starts(
+        .x, "about\\:|\\d{2}/\\d{2}/\\d{4}\\,\\s?\\d{2}\\:\\d{2}"
+      ))
   }
   if (tipo_c == "extcef2") {
     # Se o extrato da CEF for do tipo sem o título "Extrato por período"
