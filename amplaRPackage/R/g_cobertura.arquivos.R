@@ -56,14 +56,17 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
         if (length(months_seq) == 0) {
           tibble()
         } else {
+          # Always propagate tipo.extcef if present, else NA
+          tipo_extcef_val <- if ("tipo.extcef" %in% names(row_df)) row_df$tipo.extcef else if ("arquivo.subtipo" %in% names(row_df)) row_df$arquivo.subtipo else NA_character_
           tibble(
             arquivo = row_df$arquivo,
             empresa = row_df$empresa,
             arquivo.tipo = row_df$arquivo.tipo,
-            conta = row_df$conta, # Added conta
-            month_date = months_seq, # Keep as Date object
+            conta = row_df$conta,
+            month_date = months_seq,
             periodo.inicio = row_df$periodo.inicio,
-            periodo.fim = row_df$periodo.fim
+            periodo.fim = row_df$periodo.fim,
+            tipo.extcef = tipo_extcef_val
           )
         }
       }) %>%
@@ -81,10 +84,23 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
         month_end = ceiling_date(month_date, "month") - days(1),
         full_month_coverage = (periodo.inicio <= month_start & periodo.fim >= month_end)
       ) %>%
-      group_by(arquivo.tipo, empresa, conta, month_date) %>% # Added conta to grouping
+      group_by(arquivo.tipo, empresa, conta, month_date) %>%
       summarise(
         n_paths = n(),
         n_full = sum(full_month_coverage),
+        arquivos = list(arquivo),
+        # Ensure subtipos is always a character vector with no NAs or empty strings
+        subtipos = list({
+          st <- as.character(tipo.extcef)
+          st <- st[!is.na(st) & st != ""]
+          if (length(st) == 0 && "arquivo.subtipo" %in% names(cur_data())) {
+            st2 <- as.character(cur_data()$arquivo.subtipo)
+            st2 <- st2[!is.na(st2) & st2 != ""]
+            st <- st2
+          }
+          if (length(st) == 0) st <- NA_character_
+          st
+        }),
         .groups = "drop"
       ) %>%
       mutate(
@@ -101,7 +117,7 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
       filter(
         !is.na(arquivo.tipo) & !arquivo.tipo %in% c("", "0", "0-"),
         !is.na(empresa) & !empresa %in% c("", "0", "0-"),
-        !is.na(conta) & !conta %in% c("", "0", "0-"), # Added conta filter
+        !is.na(conta) & !conta %in% c("", "0", "0-"),
         !is.na(month_date) & month_date >= as.Date("2000-01-01")
       )
 
@@ -303,23 +319,48 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
           display_status_name <- base_status_code # Fallback
         }
 
+        # --- NEW: Basenames and arquivo.subtipo counts ---
         if (nrow(cell_data) > 0) {
+          arquivos_basenames <- cell_data$arquivos[[1]]
+          if (!is.null(arquivos_basenames) && length(arquivos_basenames) > 0) {
+            arquivos_basenames <- basename(arquivos_basenames)
+            arquivos_basenames_str <- paste(arquivos_basenames, collapse = ", ")
+          } else {
+            arquivos_basenames_str <- "-"
+          }
+
+          # Count subtipos
+          subtipos_vec <- cell_data$subtipos[[1]]
+          # Only count valid subtipos (non-NA, non-empty)
+          subtipos_vec <- as.character(subtipos_vec)
+          subtipos_vec <- subtipos_vec[!is.na(subtipos_vec) & subtipos_vec != ""]
+          if (length(subtipos_vec) > 0) {
+            subtipo_counts <- table(subtipos_vec)
+            subtipo_str <- paste(names(subtipo_counts), subtipo_counts, sep = ": ", collapse = ", ")
+          } else {
+            subtipo_str <- "-"
+          }
+
           text_matrix[r_idx, c_idx] <- paste0(
             "Tipo: ", tipo, "<br>",
             "Empresa: ", emp, "<br>",
-            "Conta: ", cta, "<br>", # Added Conta
+            "Conta: ", cta, "<br>",
             "Mês: ", format(current_month_date, "%Y-%m"), "<br>",
-            "Status: ", display_status_name, "<br>", # Use display_status_name
-            "Nº arquivos: ", cell_data$n_paths[1]
+            "Status: ", display_status_name, "<br>",
+            "Nº arquivos: ", cell_data$n_paths[1], "<br>",
+            "Arquivos: ", arquivos_basenames_str, "<br>",
+            "Subtipos: ", subtipo_str
           )
         } else {
           text_matrix[r_idx, c_idx] <- paste0(
             "Tipo: ", tipo, "<br>",
             "Empresa: ", emp, "<br>",
-            "Conta: ", cta, "<br>", # Added Conta
+            "Conta: ", cta, "<br>",
             "Mês: ", format(current_month_date, "%Y-%m"), "<br>",
-            "Status: ", status_translation_map[["empty"]] %||% "Vazio", "<br>", # Explicitly use mapped "empty"
-            "Nº arquivos: 0"
+            "Status: ", status_translation_map[["empty"]] %||% "Vazio", "<br>",
+            "Nº arquivos: 0<br>",
+            "Arquivos: -<br>",
+            "Subtipos: -"
           )
         }
       }
@@ -462,7 +503,11 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
 
   if (is.null(prepared_data) || length(prepared_data$row_keys) == 0 || length(prepared_data$formatted_months) == 0) {
     if (interactive()) message("Insufficient data to generate heatmap. Returning empty plot.")
-    return(plot_ly() %>% layout(title = "No data available to display.", annotations = list(text = "No data to display", showarrow = FALSE)))
+    # Fix: Use layout with a list for annotations
+    return(plot_ly() %>% layout(
+      title = list(text = "No data available to display."),
+      annotations = list(list(text = "No data to display", showarrow = FALSE, xref = "paper", yref = "paper", x = 0.5, y = 0.5, font = list(size = 16)))
+    ))
   }
 
   if (interactive()) {
@@ -489,7 +534,11 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
 
   if (is.null(plot_elements$z)) {
     if (interactive()) message("Failed to create heatmap matrix (z). Returning empty plot.")
-    return(plot_ly() %>% layout(title = "Error in matrix generation.", annotations = list(text = "No data to display", showarrow = FALSE)))
+    # Fix: Use layout with a list for annotations
+    return(plot_ly() %>% layout(
+      title = list(text = "Error in matrix generation."),
+      annotations = list(list(text = "No data to display", showarrow = FALSE, xref = "paper", yref = "paper", x = 0.5, y = 0.5, font = list(size = 16)))
+    ))
   }
 
   if (interactive()) message("--- Heatmap elements created. Generating Plotly figure. ---")
@@ -518,5 +567,7 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
 utils::globalVariables(c(
   ".", "periodo.inicio_parsed", "periodo.fim_parsed", "month_date",
   "month_start", "month_end", "full_month_coverage", "n_paths",
-  "n_full", "n_incomplete", "color_code", "label", "original_date", "conta"
-)) # Added "conta"
+  "n_full", "n_incomplete", "color_code", "label", "original_date", "conta",
+  # Added for tidy evaluation warnings
+  "tipo.extcef", "arquivo.tipo", "empresa", "arquivo", "periodo.inicio", "periodo.fim", "descricao", "month_date", "formatted", "n_paths", "n_full", "n_incomplete", "color_code", "label", "original_date", "subtipos", "cur_data"
+))

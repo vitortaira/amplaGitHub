@@ -5,6 +5,7 @@ e_cobertura.arquivos <- function() {
     e_cef_extcefs() %>%
       select(
         arquivo,
+        arquivo.subtipo,
         empresa,
         conta,
         periodo.inicio,
@@ -18,6 +19,7 @@ e_cobertura.arquivos <- function() {
     e_ita_extitas()$extita_l %>%
       select(
         arquivo,
+        arquivo.subtipo,
         empresa,
         conta,
         periodo.inicio,

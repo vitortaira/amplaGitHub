@@ -116,11 +116,12 @@ e_ita_extita <- function(file_path) {
       periodo.inicio = periodo.inicio_d,
       periodo.fim = periodo.fim_d,
       data.consulta = data.consulta_dhms,
-      arquivo = file_path
+      arquivo = file_path,
+      arquivo.subtipo = "extita"
     ) %>%
     dplyr::select(
       data, valor, descricao, empresa, cnpj, agencia, conta,
-      periodo.inicio, periodo.fim, data.consulta, arquivo
+      periodo.inicio, periodo.fim, data.consulta, arquivo, arquivo.subtipo
     )
 
   # Saldos
