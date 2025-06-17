@@ -61,17 +61,11 @@ caminhos.teste_c <- c(
 )
 
 e_cef_extcef <- function(f_caminho.arquivo_c) {
-  # Read and clean lines
-  paginas_l <- pdftools::pdf_text(f_caminho.arquivo_c) %>%
-    purrr::map(function(page) {
-      lines <- stringr::str_split(page, "\n")[[1]]
-      lines <- stringr::str_squish(lines)
-      purrr::discard(lines, function(line) line == "")
-    })
-  linhas_c <- unlist(paginas_l, use.names = FALSE)
-  tipo_c <- c_cef_extcef(
-    f_caminho.arquivo_c, linhas_c
-  )
+  # Ler PDF
+  paginas_l <- ler_pdf(f_caminho.arquivo_c)$paginas
+  linhas_c <- ler_pdf(f_caminho.arquivo_c)$linhas
+  # Identificar o tipo do extcef
+  tipo_c <- c_cef_extcef(f_caminho.arquivo_c, linhas_c)
   if (tipo_c == "extcef1") {
     message(sprintf("Formato pendente para o arquivo: %s", f_caminho.arquivo_c))
   }
@@ -123,7 +117,10 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
       str_remove("\\s*Conta:.*") %>%
       str_remove(".*produto:\\s*") %>%
       str_trim()
-    indice.comeco_i <- linhas_c %>% str_which("^Extrato") + 1
+    # indice.comeco_i <- linhas_c %>% str_which("^Extrato") + 1
+    indice.comeco_i <- linhas_c %>%
+      str_which("^\\d{2}/\\d{2}/\\d{4}") %>%
+      first()
     indice.fim_i <- linhas_c %>%
       str_which("^\\d{2}/\\d{2}/\\d{4}") %>%
       last()
@@ -159,13 +156,13 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
         conta.interno = basename(f_caminho.arquivo_c) %>%
           str_extract("\\d{4}"),
         arquivo = f_caminho.arquivo_c,
-        tipo.extcef = tipo_c
+        arquivo.subtipo = tipo_c
       ) %>%
-      select(
+      dplyr::select(
         data.lancamento, data.movimentacao, documento, descricao,
         valor, saldo,
         conta.interno, conta, agencia, produto, cnpj, empresa,
-        periodo.inicio, periodo.fim, data.consulta, arquivo, tipo.extcef
+        periodo.inicio, periodo.fim, data.consulta, arquivo, arquivo.subtipo
       )
     return(extrato_t)
   }
@@ -295,12 +292,13 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
         data.consulta = data.consulta_h,
         conta.interno = basename(f_caminho.arquivo_c) %>%
           str_extract("\\d{4}"),
-        arquivo = f_caminho.arquivo_c
+        arquivo = f_caminho.arquivo_c,
+        arquivo.subtipo = tipo_c
       ) %>%
       select(
-        data.lancamento, data.movimentacao, documento, descricao, valor, Saldo,
+        data.lancamento, data.movimentacao, documento, descricao, valor, saldo,
         conta.interno, conta, agencia, produto, cnpj, empresa,
-        periodo.inicio, periodo.fim, data.consulta, arquivo
+        periodo.inicio, periodo.fim, data.consulta, arquivo, arquivo.subtipo
       )
     return(extrato_t)
   } else {

@@ -111,7 +111,7 @@ e_cef_extcefs <-
         data.lancamento, data.movimentacao, documento, descricao, valor, saldo,
         repasse, pj, conta.interno, conta, agencia, produto, cnpj, empresa,
         periodo.inicio, periodo.fim, data.consulta, contrato.6, arquivo,
-        tipo.extcef, arquivo.tabela.tipo, arquivo.tipo, arquivo.fonte
+        arquivo.subtipo, arquivo.tabela.tipo, arquivo.tipo, arquivo.fonte
       )
     return(extratos_t)
   }

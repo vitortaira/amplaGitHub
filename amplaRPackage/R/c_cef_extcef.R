@@ -59,9 +59,10 @@ c_cef_extcef <- function(f_caminho.arquivo_c, linhas_c) {
     stringr::str_detect(f_caminho.arquivo_c, "(?i)\\.pdf$") &
       # Cabeçalho "Data de lançamento", "Data de movimento", "Documento",
       # "Histórico", "Valor(R$)", "Saldo(R$)"
+      any(stringr::str_detect(linhas_c, "(?i)lan[cç]amento|movimento")) &
       any(stringr::str_detect(
         linhas_c,
-        "(?i)data\\s?de\\s?lan[cç]amento\\s?data\\s?de\\s?movimento\\s?documento\\s?hist[oó]rico\\s?valor\\s?\\(R\\$\\)\\s?saldo\\s?\\(R\\$\\)"
+        "(?i)documento\\s?hist[oó]rico\\s?valor\\s?\\(R\\$\\)\\s?saldo\\s?\\(R\\$\\)"
       )) &
       # A variável "empresa" deve existir
       str_detect(linhas_c[1], "^([\\w\\s]+)") &
@@ -99,7 +100,7 @@ c_cef_extcef <- function(f_caminho.arquivo_c, linhas_c) {
       # As variáveis "agencia", "produto" e "conta" devem existir
       any(str_starts(
         linhas_c,
-        "(?i)conta\\:\\s?\\d{4}\\s?\\|\\s?\\d{4}\\s?\\|\\s?\\d{12}-\\d{1}"
+        "(?i)conta\\:\\s?\\d+\\s?\\|\\s?\\d+\\s?\\|\\s?\\d+-\\d{1}"
       )) &
       # A variável "data.consulta" deve existir
       any(str_starts(
@@ -129,7 +130,7 @@ c_cef_extcef <- function(f_caminho.arquivo_c, linhas_c) {
       # As variáveis "agencia", "produto" e "conta" devem existir
       any(str_starts(
         linhas_c,
-        "(?i)conta\\:\\s?\\d{4}\\s?\\|\\s?\\d{4}\\s?\\|\\s?\\d{12}-\\d{1}"
+        "(?i)conta\\:\\s?\\d+\\s?\\|\\s?\\d+\\s?\\|\\s?\\d+-\\d{1}"
       )) &
       # A variável "data.consulta" deve existir
       any(str_starts(
@@ -154,7 +155,7 @@ c_cef_extcef <- function(f_caminho.arquivo_c, linhas_c) {
       # As variáveis "agencia", "produto" e "conta" devem existir
       any(str_starts(
         linhas_c,
-        "(?i)conta\\:\\s?\\d+\\s?\\|\\s?\\d+\\s?\\|\\s?\\d{12}-\\d{1}"
+        "(?i)conta\\:\\s?\\d+\\s?\\|\\s?\\d+\\s?\\|\\s?\\d+-\\d{1}"
       )) &
       # A variável "data.consulta" não deve existir
       any(!str_starts(linhas_c, "(?i)data\\:")) &
