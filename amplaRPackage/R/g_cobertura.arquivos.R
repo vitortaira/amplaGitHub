@@ -56,8 +56,8 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
         if (length(months_seq) == 0) {
           tibble()
         } else {
-          # Always propagate tipo.extcef if present, else NA
-          tipo_extcef_val <- if ("tipo.extcef" %in% names(row_df)) row_df$tipo.extcef else if ("arquivo.subtipo" %in% names(row_df)) row_df$arquivo.subtipo else NA_character_
+          # Always propagate tipo.xcef if present, else NA
+          tipo_xcef_val <- if ("tipo.xcef" %in% names(row_df)) row_df$tipo.xcef else if ("arquivo.subtipo" %in% names(row_df)) row_df$arquivo.subtipo else NA_character_
           tibble(
             arquivo = row_df$arquivo,
             empresa = row_df$empresa,
@@ -66,7 +66,7 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
             month_date = months_seq,
             periodo.inicio = row_df$periodo.inicio,
             periodo.fim = row_df$periodo.fim,
-            tipo.extcef = tipo_extcef_val
+            tipo.xcef = tipo_xcef_val
           )
         }
       }) %>%
@@ -91,7 +91,7 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
         arquivos = list(arquivo),
         # Ensure subtipos is always a character vector with no NAs or empty strings
         subtipos = list({
-          st <- as.character(tipo.extcef)
+          st <- as.character(tipo.xcef)
           st <- st[!is.na(st) & st != ""]
           if (length(st) == 0 && "arquivo.subtipo" %in% names(cur_data())) {
             st2 <- as.character(cur_data()$arquivo.subtipo)
@@ -569,5 +569,5 @@ utils::globalVariables(c(
   "month_start", "month_end", "full_month_coverage", "n_paths",
   "n_full", "n_incomplete", "color_code", "label", "original_date", "conta",
   # Added for tidy evaluation warnings
-  "tipo.extcef", "arquivo.tipo", "empresa", "arquivo", "periodo.inicio", "periodo.fim", "descricao", "month_date", "formatted", "n_paths", "n_full", "n_incomplete", "color_code", "label", "original_date", "subtipos", "cur_data"
+  "tipo.xcef", "arquivo.tipo", "empresa", "arquivo", "periodo.inicio", "periodo.fim", "descricao", "month_date", "formatted", "n_paths", "n_full", "n_incomplete", "color_code", "label", "original_date", "subtipos", "cur_data"
 ))

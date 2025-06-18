@@ -1,8 +1,8 @@
 e_cobertura.arquivos <- function() {
-  extcef_t <- left_join(
-    e_metadados("extcef") %>%
+  xcef_t <- left_join(
+    e_metadados("xcef") %>%
       rename(arquivo = "caminho"),
-    e_cef_extcefs() %>%
+    e_cef_xcefs() %>%
       select(
         arquivo,
         arquivo.subtipo,
@@ -16,7 +16,7 @@ e_cobertura.arquivos <- function() {
   extita_t <- left_join(
     e_metadados("extita") %>%
       rename(arquivo = "caminho"),
-    e_ita_extitas()$extita_l %>%
+    e_ita_xitas()$extita_l %>%
       select(
         arquivo,
         arquivo.subtipo,
@@ -28,7 +28,7 @@ e_cobertura.arquivos <- function() {
     by = "arquivo"
   )
   cobertura_t <- bind_rows(
-    extcef_t,
+    xcef_t,
     extita_t
   ) %>%
     distinct() %>%

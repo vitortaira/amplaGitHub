@@ -139,8 +139,8 @@ m_nodes <- function() {
     icon.color = "black",
     font = list(list(color = "black", size = 25, face = "arial"))
   )
-  extcef_n <- tibble(
-    id = "extcef",
+  xcef_n <- tibble(
+    id = "xcef",
     label = "Extratos",
     group = "arquivo",
     level = 2,
@@ -335,8 +335,8 @@ m_nodes <- function() {
     icon.color = "black",
     font = list(list(color = "black", size = 25, face = "arial"))
   )
-  extcef_t_n <- tibble(
-    id = "extcef_t",
+  xcef_t_n <- tibble(
+    id = "xcef_t",
     label = "Extratos",
     group = "tabela",
     level = 3,
@@ -651,11 +651,11 @@ m_nodes <- function() {
     # Origens
     ana_n, cef_n, ifk_n, ita_n,
     # arquivos
-    com_n, cmfcn_n, dcd_n, ecn_n, epr_n, extcef_n, fre_n, cntr_n, desp_n,
+    com_n, cmfcn_n, dcd_n, ecn_n, epr_n, xcef_n, fre_n, cntr_n, desp_n,
     inad_n, rec_n, extita_n,
     # Tabelas
     com_t_n, cmfcn_t_n, dcd_t_n, ecn_c_n, ecn_i_n, ecn_pj_n, ecn_u_n, epr_t_n,
-    extcef_t_n, fre_t_n,
+    xcef_t_n, fre_t_n,
     cntr_t_n, desp_t_n, inad_t_n, rec_t_n, extita_t_n,
     # Base de dados
     dados_n, dash_n,

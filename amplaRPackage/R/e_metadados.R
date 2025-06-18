@@ -1,5 +1,5 @@
 e_metadados <- function(f_arquivo.tipo_c = NULL) {
-  arquivo.tipos.permitidos_c <- c("extcef", "extita")
+  arquivo.tipos.permitidos_c <- c("xcef", "xita")
   if (
     !is.null(f_arquivo.tipo_c) &&
       !f_arquivo.tipo_c %in% arquivo.tipos.permitidos_c
@@ -10,8 +10,8 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
   # Extratos (extabc)
   # Anapro
   # CEF
-  # Extratos (extcef)
-  extcef_t <-
+  # Extratos (xcef)
+  xcef_t <-
     dir_ls(caminhos_pastas("financeiro"), recurse = TRUE, type = "file") %>%
     keep(
       ~ str_ends(.x, ".pdf") &
@@ -40,14 +40,14 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
     ) %>%
     as_tibble_col("caminho") %>%
     mutate(
-      arquivo.tabela.tipo = "extcef",
-      arquivo.tipo = "extcef",
+      arquivo.tabela.tipo = "xcef",
+      arquivo.tipo = "xcef",
       arquivo.fonte = "cef"
     )
   # Informakon
   # Itaú
-  # Extratos (extita)
-  extita_t <-
+  # Extratos (xita)
+  xita_t <-
     dir_ls(caminhos_pastas("extratos"), recurse = TRUE, type = "file") %>%
     keep(
       ~ str_ends(.x, ".pdf") &
@@ -57,14 +57,14 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
     ) %>%
     as_tibble_col("caminho") %>%
     mutate(
-      arquivo.tabela.tipo = "extita",
-      arquivo.tipo = "extita",
+      arquivo.tabela.tipo = "xita",
+      arquivo.tipo = "xita",
       arquivo.fonte = "ita"
     )
   # Consolidando tabelas de metadados
   metadados_t <- bind_rows(
-    extcef_t,
-    extita_t
+    xcef_t,
+    xita_t
   )
   if (f_arquivo.tipo_c %>% is.null() || f_arquivo.tipo_c %>% length() == 0) {
     return(metadados_t)

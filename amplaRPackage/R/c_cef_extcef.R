@@ -7,7 +7,7 @@
 #' @param linhas_c Character vector. Lines of text extracted from the PDF.
 #'
 #' @return Character string. The classified type of the CEF bank statement
-#'   (e.g., "extcef1", "extcef2", "extcef3", "extcef4", "extcef5", "extcef6", or "desconhecido").
+#'   (e.g., "xcef1", "xcef2", "xcef3", "xcef4", "xcef5", "xcef6", or "desconhecido").
 #' @export
 #' @examples
 #' # This is an internal function, but an example would look like:
@@ -21,8 +21,8 @@
 #' #   "01/01/2023 001 PGTO FORNECEDOR 100,00 D 900,00 C",
 #' #   "SAC CAIXA: 0800 726 0101"
 #' # )
-#' # c_cef_extcef("caminho/para/arquivo.pdf", fake_lines)
-c_cef_extcef <- function(f_caminho.arquivo_c, linhas_c) {
+#' # c_cef_xcef("caminho/para/arquivo.pdf", fake_lines)
+c_cef_xcef <- function(f_caminho.arquivo_c, linhas_c) {
   case_when(
     # Extensão do arquivo deve ser ".pdf"
     stringr::str_detect(f_caminho.arquivo_c, "(?i)\\.pdf$") &
@@ -54,7 +54,7 @@ c_cef_extcef <- function(f_caminho.arquivo_c, linhas_c) {
       )) &
       # Deve haver uma linha que começa com "SAC CAIXA"
       any(str_detect(linhas_c, "^(?i)sac\\s?caixa"))
-    ~ "extcef1",
+    ~ "xcef1",
     # Extensão do arquivo deve ser ".pdf"
     stringr::str_detect(f_caminho.arquivo_c, "(?i)\\.pdf$") &
       # Cabeçalho "Data de lançamento", "Data de movimento", "Documento",
@@ -87,7 +87,7 @@ c_cef_extcef <- function(f_caminho.arquivo_c, linhas_c) {
       )) &
       # Deve haver uma linha que começa com "SAC CAIXA"
       any(str_starts(linhas_c, "(?i)sac\\s?caixa"))
-    ~ "extcef2",
+    ~ "xcef2",
     # Extensão do arquivo deve ser ".pdf"
     stringr::str_detect(f_caminho.arquivo_c, "(?i)\\.pdf$") &
       # Cabeçalho "Data Mov.", "Nr. Doc.", "Histórico", "Valor", "Saldo"
@@ -117,7 +117,7 @@ c_cef_extcef <- function(f_caminho.arquivo_c, linhas_c) {
         linhas_c,
         "^(?i)\\d{2}/\\d{2}/\\d{4}\\,\\s?\\d{2}\\:\\d{2}|^https|^file\\:|(?i)caixa$"
       ))
-    ~ "extcef4",
+    ~ "xcef4",
     # Extensão do arquivo deve ser ".pdf"
     stringr::str_detect(f_caminho.arquivo_c, "(?i)\\.pdf$") &
       # Cabeçalho "Data Mov.", "Nr. Doc.", "Histórico", "Valor", "Saldo"
@@ -142,7 +142,7 @@ c_cef_extcef <- function(f_caminho.arquivo_c, linhas_c) {
       any(str_detect(linhas_c, "(?i)per[ií]odo\\:\\s?\\d+\\s?-\\s?\\d+")) &
       # Deve haver uma linha que começa com "SAC CAIXA"
       any(str_starts(linhas_c, "(?i)sac\\s?caixa"))
-    ~ "extcef3",
+    ~ "xcef3",
     # Extensão do arquivo deve ser ".pdf"
     stringr::str_detect(f_caminho.arquivo_c, "(?i)\\.pdf$") &
       # Cabeçalho "Data Mov.", "Nr. Doc.", "Histórico", "Valor", "Saldo"
@@ -164,7 +164,7 @@ c_cef_extcef <- function(f_caminho.arquivo_c, linhas_c) {
       any(str_detect(linhas_c, "(?i)per[ií]odo\\:\\s?\\d+\\s?-\\s?\\d+")) &
       # Deve haver uma linha que começa com "SAC CAIXA"
       any(str_starts(linhas_c, "(?i)sac\\s?caixa"))
-    ~ "extcef5",
+    ~ "xcef5",
     # Extensão do arquivo deve ser ".pdf"
     str_detect(f_caminho.arquivo_c, "(?i)\\.pdf$") &
       # Cabeçalho "Movimentação de dados", "Doutor.", "Histórico", "Valor",
@@ -187,7 +187,7 @@ c_cef_extcef <- function(f_caminho.arquivo_c, linhas_c) {
       any(str_detect(linhas_c, "(?i)per[ií]odo\\:\\s?\\d+\\s?-\\s?\\d+")) &
       # Deve haver uma linha que começa com "SAC CAIXA"
       any(str_starts(linhas_c, "(?i)sac\\s?caixa"))
-    ~ "extcef6",
+    ~ "xcef6",
     TRUE ~ "desconhecido"
   )
 }

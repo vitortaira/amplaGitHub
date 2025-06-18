@@ -13,7 +13,7 @@
 #' A função percorre a pasta especificada buscando arquivos PDF que
 #' contenham os códigos 2429, 2419 ou 2245, ignorando aqueles que contenham
 #' a palavra "fundo". Para cada arquivo encontrado, chama a função
-#' \code{e_cef_extcef} para realizar a extração dos dados e, posteriormente,
+#' \code{e_cef_xcef} para realizar a extração dos dados e, posteriormente,
 #' consolida os resultados em um único tibble.
 #'
 #' @return
@@ -36,7 +36,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' extratos <- e_cef_extcefs(
+#' extratos <- e_cef_xcef
 #'   f_caminho.pasta.extratos_c = "caminho/para/a/pasta/dos/extratos"
 #' )
 #' print(extratos)
@@ -44,7 +44,7 @@
 #'
 #' @export
 
-e_cef_extcefs <-
+e_cef_xcef<-
   function(f_caminho.pasta.extratos_c = caminhos_pastas("extratos")) {
     # Mensagem informando o número de extratos identificados
     # n_extratos <- length(caminhos.extratos.cef_c)
@@ -56,10 +56,10 @@ e_cef_extcefs <-
     extratos_l <- list()
     extratos_t <- data.frame()
     for (
-      i_caminho.extrato.cef_c in e_metadados("extcef")$caminho
+      i_caminho.extrato.cef_c in e_metadados("xcef")$caminho
     ) {
       extrato <- tryCatch(
-        e_cef_extcef(i_caminho.extrato.cef_c),
+        e_cef_xcef(i_caminho.extrato.cef_c),
         error = function(e) {
           message(sprintf("Falha ao extrair: %s", basename(i_caminho.extrato.cef_c)))
           return(NULL)
@@ -102,8 +102,8 @@ e_cef_extcefs <-
         ),
         contrato.6 =
           documento %>% str_pad(width = 6, side = "left", pad = "0"),
-        arquivo.tabela.tipo = "extcef",
-        arquivo.tipo = "extcef",
+        arquivo.tabela.tipo = "xcef",
+        arquivo.tipo = "xcef",
         arquivo.fonte = "cef"
       ) %>%
       as_tibble() %>%

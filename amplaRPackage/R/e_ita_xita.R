@@ -5,7 +5,7 @@
 #' Retorna uma lista com dois data.frames: lançamentos e saldos.
 #'
 #' @param file_path Caminho para o arquivo PDF do extrato ITAÚ.
-#' @return Uma lista com dois data.frames: `extita_l` (lançamentos) e `extita_c` (saldos).
+#' @return Uma lista com dois data.frames: `xita_l` (lançamentos) e `xita_c` (saldos).
 #' @importFrom pdftools pdf_text
 #' @importFrom stringr str_split str_squish str_starts str_detect str_remove str_extract str_replace_all str_which word
 #' @importFrom purrr map discard keep
@@ -15,7 +15,7 @@
 #' @importFrom dplyr select bind_rows mutate if_else
 #' @export
 #'
-e_ita_extita <- function(file_path) {
+e_ita_xita <- function(file_path) {
   # Validação de entrada
   stopifnot(is.character(file_path), length(file_path) == 1, file.exists(file_path))
 
@@ -87,7 +87,7 @@ e_ita_extita <- function(file_path) {
   limite.conta.disponivel_n <- extrai_valores(linhas_c, 4)
 
   # Lançamentos
-  extita_t <- linhas_c %>%
+  xita_t <- linhas_c %>%
     purrr::keep(~ stringr::str_starts(.x, "\\d{2}\\s?/\\s?[A-Za-z]{3}")) %>%
     tibble::as_tibble_col(column_name = "Linhas") %>%
     dplyr::mutate(
@@ -117,7 +117,7 @@ e_ita_extita <- function(file_path) {
       periodo.fim = periodo.fim_d,
       data.consulta = data.consulta_dhms,
       arquivo = file_path,
-      arquivo.subtipo = "extita"
+      arquivo.subtipo = "xita"
     ) %>%
     dplyr::select(
       data, valor, descricao, empresa, cnpj, agencia, conta,
@@ -125,16 +125,16 @@ e_ita_extita <- function(file_path) {
     )
 
   # Saldos
-  indice.extita.saldo.inicio_i <- linhas_c %>%
+  indice.xita.saldo.inicio_i <- linhas_c %>%
     stringr::str_which("(?i)^descri[cç][aã]o\\s?valor") + 1
-  indice.extita.saldo.fim_i <- linhas_c %>%
+  indice.xita.saldo.fim_i <- linhas_c %>%
     stringr::str_which("(?i)^aviso:")
   # Handle cases where saldo indices are not found
-  if (length(indice.extita.saldo.inicio_i) == 0 || length(indice.extita.saldo.fim_i) == 0) {
+  if (length(indice.xita.saldo.inicio_i) == 0 || length(indice.xita.saldo.fim_i) == 0) {
     stop("Saldo indices not found in the provided PDF.")
   }
-  extita.saldo_t <- linhas_c[
-    indice.extita.saldo.inicio_i:indice.extita.saldo.fim_i
+  xita.saldo_t <- linhas_c[
+    indice.xita.saldo.inicio_i:indice.xita.saldo.fim_i
   ] %>%
     tibble::as_tibble_col(column_name = "linhas") %>%
     dplyr::mutate(
@@ -167,7 +167,7 @@ e_ita_extita <- function(file_path) {
 
   # Retorno
   list(
-    extita_l = extita_t,
-    extita_c = extita.saldo_t
+    xita_l = xita_t,
+    xita_c = xita.saldo_t
   )
 }

@@ -32,19 +32,19 @@
 #'
 #' @examples
 #' \dontrun{
-#' extrato <- e_cef_extcef(
+#' extrato <- e_cef_xcef(
 #'   f_caminho.arquivo_c = "caminho/para/o/extrato.pdf"
 #' )
 #' print(extrato)
 #'
 #' library(dplyr)
-#' extrato_filtrado <- e_cef_extcef("caminho/para/o/extrato.pdf") %>%
+#' extrato_filtrado <- e_cef_xcef("caminho/para/o/extrato.pdf") %>%
 #'   filter(valor > 0)
 #' summary(extrato_filtrado)
 #' }
 #'
 #' @seealso
-#' Consulte \code{\link{e_cef_extcefs}}.
+#' Consulte \code{\link{e_cef_xcefs}}.
 #'
 #' @references
 #' Consulte \code{\link{pdf_text}} para extracao de texto de arquivos PDF.
@@ -52,26 +52,26 @@
 #' @export
 
 caminhos.teste_c <- c(
-  str_c(caminhos_pastas("testthat"), "/data/extcef1.pdf"),
-  str_c(caminhos_pastas("testthat"), "/data/extcef2.pdf"),
-  str_c(caminhos_pastas("testthat"), "/data/extcef3.pdf"),
-  str_c(caminhos_pastas("testthat"), "/data/extcef4.pdf"),
-  str_c(caminhos_pastas("testthat"), "/data/extcef5.pdf"),
-  str_c(caminhos_pastas("testthat"), "/data/extcef6.pdf")
+  str_c(caminhos_pastas("testthat"), "/data/xcef1.pdf"),
+  str_c(caminhos_pastas("testthat"), "/data/xcef2.pdf"),
+  str_c(caminhos_pastas("testthat"), "/data/xcef3.pdf"),
+  str_c(caminhos_pastas("testthat"), "/data/xcef4.pdf"),
+  str_c(caminhos_pastas("testthat"), "/data/xcef5.pdf"),
+  str_c(caminhos_pastas("testthat"), "/data/xcef6.pdf")
 )
 
-e_cef_extcef <- function(f_caminho.arquivo_c) {
+e_cef_xcef <- function(f_caminho.arquivo_c) {
   # Ler PDF
   paginas_l <- ler_pdf(f_caminho.arquivo_c)$paginas
   linhas_c <- ler_pdf(f_caminho.arquivo_c)$linhas
-  # Identificar o tipo do extcef
-  tipo_c <- c_cef_extcef(f_caminho.arquivo_c, linhas_c)
-  if (tipo_c == "extcef1") {
+  # Identificar o tipo do xcef
+  tipo_c <- c_cef_xcef(f_caminho.arquivo_c, linhas_c)
+  if (tipo_c == "xcef1") {
     message(sprintf("Formato pendente para o arquivo: %s", f_caminho.arquivo_c))
-    paginas_l <-
-      pdf_data(f_caminho.arquivo_c)
     palavras_t <-
-      map_dfr(seq_along(paginas_l), ~ paginas_l[[.x]] %>% mutate(pagina = .x))
+      pdf_data(f_caminho.arquivo_c) %>%
+      seq_along() %>%
+      map_dfr(~ paginas_l[[.x]] %>% mutate(pagina = .x))
     linhas_c <-
       palavras_t %>%
       arrange(pagina, y, x) %>%
@@ -110,8 +110,7 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
         "about\\:|\\d{2}/\\d{2}/\\d{4}\\,\\s?\\d{2}\\:\\d{2}|\\d{2}/\\d{2}/\\d{4}$"
       ))
   }
-  if (tipo_c == "extcef2") {
-    # Se o extrato da CEF for do tipo sem o título "Extrato por período"
+  if (tipo_c == "xcef2") {
     linhas_c %<>% keep(function(x) {
       !str_starts(x, "Data de lançamento")
     })
@@ -225,7 +224,7 @@ e_cef_extcef <- function(f_caminho.arquivo_c) {
       )
     return(extrato_t)
   }
-  if (tipo_c %in% c("extcef3", "extcef4", "extcef5", "extcef6")) {
+  if (tipo_c %in% c("xcef3", "xcef4", "xcef5", "xcef6")) {
     # Metadados
     cliente_c <- linhas_c %>%
       keep(function(x) {

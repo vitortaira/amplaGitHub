@@ -17,13 +17,13 @@ m_edges <- function() {
         rep("ana", 1), rep("cef", 6), rep("ifk", 4), rep("ita", 1),
         # arquivos ->
         "com",
-        "cmfcn", "dcd", "ecn", "ecn", "ecn", "ecn", "epr", "extcef", "fre",
+        "cmfcn", "dcd", "ecn", "ecn", "ecn", "ecn", "epr", "xcef", "fre",
         "cntr", "desp", "inad", "rec",
         "extita",
         # Tabelas ->
         "com_t",
         "cmfcn_t", "dcd_t", "ecn_c", "ecn_i", "ecn_pj", "ecn_u", "epr_t",
-        "extcef_t", "fre_t",
+        "xcef_t", "fre_t",
         "cntr_t", "desp_t", "inad_t", "rec_t",
         "extita_t",
         # Base de dados ->
@@ -35,13 +35,13 @@ m_edges <- function() {
       c(
         # -> arquivos
         "com",
-        "cmfcn", "dcd", "ecn", "epr", "extcef", "fre",
+        "cmfcn", "dcd", "ecn", "epr", "xcef", "fre",
         "cntr", "desp", "inad", "rec",
         "extita",
         # -> Tabelas
         "com_t",
         "cmfcn_t", "dcd_t", "ecn_c", "ecn_i", "ecn_pj", "ecn_u", "epr_t",
-        "extcef_t", "fre_t",
+        "xcef_t", "fre_t",
         "cntr_t", "desp_t", "inad_t", "rec_t",
         "extita_t",
         # -> Base de dados
@@ -61,7 +61,7 @@ m_edges <- function() {
             "ana", "cef", "ifk", "ita",
             # arquivos
             "com",
-            "cmfcn", "dcd", "ecn", "epr", "extcef", "fre",
+            "cmfcn", "dcd", "ecn", "epr", "xcef", "fre",
             "cntr", "desp", "inad", "rec",
             "extita"
           ) ~ "black",

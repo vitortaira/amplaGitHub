@@ -1,7 +1,7 @@
 #' @title Cruzamento de dados dos extratos da CEF e relatórios CMF_CN
 #'
 #' @description
-#' A função **r_extcef** realiza o cruzamento dos dados dos
+#' A função **r_xcef** realiza o cruzamento dos dados dos
 #' extratos da CEF e dos relatórios CMF_CN, gerando um arquivo consolidado
 #' em formato `.xlsx`.
 #'
@@ -22,7 +22,7 @@
 #' \dontrun{
 #' f_caminho.pasta.extratos_c <- "caminho/para/a/pasta/Relatorios - Extratos"
 #' f_caminho.pasta.ciweb_c <- "caminho/para/a/pasta/Relatorios - CIWEB"
-#' resultado <- r_extcef(f_caminho.pasta.extratos_c, f_caminho.pasta.ciweb_c)
+#' resultado <- r_xcef(f_caminho.pasta.extratos_c, f_caminho.pasta.ciweb_c)
 #' print(resultado)
 #' }
 #'
@@ -37,10 +37,10 @@
 #'
 #' @export
 
-r_extcef <-
+r_xcef <-
   function(f_caminho.pasta.extratos_c, f_caminho.pasta.ciweb_c) {
     # Consolida os dados dos extratos da CEF na pasta "Relatorios - Extratos"
-    extratos_t <- e_cef_extcefs()
+    extratos_t <- e_cef_xcefs()
     # Consolida os dados dos relatórios CMF_CN na pasta "Relatorios - CIWEB"
     cmfcns_t <- e_cef_cmfcns()
     # Cruza os dados consolidados
@@ -63,7 +63,7 @@ r_extcef <-
         SITUACAO, `MOT.`
       ) %>%
       mutate(
-        id_extcef = paste0(
+        id_xcef = paste0(
           # Interseção
           Contrato_6, `Data de movimento`, Valor,
           # Extratos
@@ -85,7 +85,7 @@ r_extcef <-
           Contrato_6, `Data de movimento`, Valor,
           # Extratos
           "Data de lan\u00e7amento", Documento, "Hist\u00f3rico", Saldo
-        ) %in% extratos.cruzados_t$id_extcef,
+        ) %in% extratos.cruzados_t$id_xcef,
         "sim",
         "não"
       )
@@ -103,7 +103,7 @@ r_extcef <-
         "não"
       )
     )
-    extratos.cruzados_t %<>% select(-id_extcef, -id_cmfcn)
+    extratos.cruzados_t %<>% select(-id_xcef, -id_cmfcn)
 
     # Salvando num xlsx -------------------------------------------------------
 
@@ -601,7 +601,7 @@ r_extcef <-
 
 # Teste -------------------------------------------------------------------
 
-# r_extcef()
+# r_xcef()
 # f_caminho.arquivo.extrato_cef_c <-
 #   here::here(
 #     "..", "..", "Relatórios - Documentos", "Relatorios - Extratos",

@@ -49,7 +49,7 @@ a_dados_rds_xlsx <- function(
       # Metadados
       "metadados",
       # Abas da CEF
-      c("cmfcn", "dcd", "ecn_c", "ecn_e", "ecn_pj", "ecn_u", "epr", "extcef"),
+      c("cmfcn", "dcd", "ecn_c", "ecn_e", "ecn_pj", "ecn_u", "epr", "xcef"),
       # Abas do Informakon
       c("contr", "desp", "inad", "rec"),
       # Abas do Itaú

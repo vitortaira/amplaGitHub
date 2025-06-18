@@ -46,9 +46,9 @@ g_barras.empilhadas.mes_server <- function(
     # Map each ID to its matching Plotly source string:
     plotly_source <- reactive({
       switch(id,
-        "g_barras.empilhadas.mes.desp"   = "g_barras.empilhadas.mes.click.desp",
-        "g_barras.empilhadas.mes.extcef" = "g_barras.empilhadas.mes.click.extcef",
-        "g_barras.empilhadas.mes.rec"    = "g_barras.empilhadas.mes.click.rec"
+        "g_barras.empilhadas.mes.desp" = "g_barras.empilhadas.mes.click.desp",
+        "g_barras.empilhadas.mes.xcef" = "g_barras.empilhadas.mes.click.xcef",
+        "g_barras.empilhadas.mes.rec" = "g_barras.empilhadas.mes.click.rec"
       )
     })
 

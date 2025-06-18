@@ -340,7 +340,7 @@ server <- function(input, output, session) {
                     ),
                     h2("Extratos"),
                     gs_barras.empilhadas.mes_ui(
-                      "gs_barras.empilhadas.mes.extcef"
+                      "gs_barras.empilhadas.mes.xcef"
                     ),
                     h2("Receitas"),
                     # Gráfico de trajetória de receitas com todas as dimensões disponíveis
@@ -445,8 +445,8 @@ server <- function(input, output, session) {
 
   # Inicializa o módulo de visualização dos extratos
   g_barras.empilhadas.mes_server(
-    "g_barras.empilhadas.mes.extcef",
-    dados          = dados_l[["cef"]][["extcef"]],
+    "g_barras.empilhadas.mes.xcef",
+    dados          = dados_l[["cef"]][["xcef"]],
     filtro_periodo = filtroVals$filtro_periodo,
     data_inicial   = filtroVals$data_inicial,
     data_final     = filtroVals$data_final,
@@ -456,16 +456,16 @@ server <- function(input, output, session) {
     comeco.titulo  = "Entradas e saídas empilhadas por"
   )
 
-  # Prepara dados para gs_barras.empilhadas.mes.extcef: separa valores positivos e negativos
-  extcef_mod <- dados_l[["cef"]][["extcef"]] %>%
+  # Prepara dados para gs_barras.empilhadas.mes.xcef: separa valores positivos e negativos
+  xcef_mod <- dados_l[["cef"]][["xcef"]] %>%
     mutate(
       Valor_positivo = ifelse(valor > 0, valor, 0),
       Valor_negativo = ifelse(valor < 0, abs(valor), 0)
     )
 
   gs_barras.empilhadas.mes_server(
-    "gs_barras.empilhadas.mes.extcef",
-    dados = extcef_mod,
+    "gs_barras.empilhadas.mes.xcef",
+    dados = xcef_mod,
     filtro_periodo = filtroVals$filtro_periodo,
     data_inicial = filtroVals$data_inicial,
     data_final = filtroVals$data_final,
