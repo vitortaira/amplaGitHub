@@ -29,7 +29,6 @@
 #' @import readxl
 #' @import stringr
 #' @import lubridate
-#' @import magrittr
 #'
 #' @export
 #'
