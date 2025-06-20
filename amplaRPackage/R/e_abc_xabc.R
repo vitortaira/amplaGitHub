@@ -53,7 +53,7 @@ e_abc_xabc <- function(f_caminho.arquivo_c) {
   xabc.original_t <- suppressMessages(readxl::read_excel(
     f_caminho.arquivo_c
   )) %>%
-    dplyr::set_names("_1", "_2", "_3", "_4", "_5", "_6") %>%
+    set_names(str_c("_", 1:ncol(.))) %>%
     mutate(across(everything(), ~ str_squish(as.character(.))))
   # Metadados
   cnpj_c <- xabc.original_t %>%
