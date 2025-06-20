@@ -16,23 +16,58 @@
 #' }
 #'
 #' @importFrom stringi stri_c
+#' @importFrom fs path
 #'
 #' @export
 caminhos_pastas <- function(alias) {
+  # Define a base path to reduce repetition and improve readability
+  caminho.base_c <- fs::path("C:", "Users", "Ampla", "AMPLA INCORPORADORA LTDA")
+
   caminhos_c <- list(
-    ciweb = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - CIWEB",
-    cobranca = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - Cobrança",
-    dados = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Dados/Originais",
-    extratos = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - Extratos",
-    financeiro = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Financeiro - Documentos",
-    github = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub",
-    informakon = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Financeiro - Documentos/Informakon",
-    rpackage = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaRPackage",
-    shiny = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaShiny",
-    shinydata = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaShiny/dados",
-    temp = "C:/Users/Ampla/OneDrive - AMPLA INCORPORADORA LTDA/Documentos/temp",
-    templates = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/templates",
-    testthat = "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaRPackage/tests/testthat"
+    ciweb = fs::path(
+      caminho.base_c, "Relatórios - Documentos", "Relatorios - CIWEB"
+    ),
+    cobranca = fs::path(
+      caminho.base_c, "Relatórios - Documentos", "Relatorios - Cobrança"
+    ),
+    dados = fs::path(
+      caminho.base_c, "Relatórios - Documentos", "Dados", "Originais"
+    ),
+    extratos = fs::path(
+      caminho.base_c, "Relatórios - Documentos", "Relatorios - Extratos"
+    ),
+    financeiro = fs::path(
+      caminho.base_c, "Financeiro - Documentos"
+    ),
+    github = fs::path(
+      caminho.base_c, "Controladoria - Documentos", "amplaGitHub"
+    ),
+    informakon = fs::path(
+      caminho.base_c, "Financeiro - Documentos", "Informakon"
+    ),
+    rpackage = fs::path(
+      caminho.base_c,
+      "Controladoria - Documentos", "amplaGitHub", "amplaRPackage"
+    ),
+    shiny = fs::path(
+      caminho.base_c, "Controladoria - Documentos", "amplaGitHub", "amplaShiny"
+    ),
+    shinydata = fs::path(
+      caminho.base_c,
+      "Controladoria - Documentos", "amplaGitHub", "amplaShiny", "dados"
+    ),
+    temp = fs::path(
+      "C:", "Users", "Ampla", "OneDrive - AMPLA INCORPORADORA LTDA",
+      "Documentos", "temp"
+    ),
+    templates = fs::path(
+      caminho.base_c, "Controladoria - Documentos", "amplaGitHub", "templates"
+    ),
+    testthat = fs::path(
+      caminho.base_c,
+      "Controladoria - Documentos", "amplaGitHub", "amplaRPackage", "tests",
+      "testthat"
+    )
   )
 
   if (!alias %in% names(caminhos_c)) {

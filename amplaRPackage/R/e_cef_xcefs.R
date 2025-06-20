@@ -44,7 +44,7 @@
 #'
 #' @export
 
-e_cef_xcef<-
+e_cef_xcefs<-
   function(f_caminho.pasta.extratos_c = caminhos_pastas("extratos")) {
     # Mensagem informando o número de extratos identificados
     # n_extratos <- length(caminhos.extratos.cef_c)
