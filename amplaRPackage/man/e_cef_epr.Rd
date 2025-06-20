@@ -13,20 +13,20 @@ relatorio EPR da CEF.}
 \value{
 Retorna uma tibble com as seguintes colunas:
 \itemize{
-\item CONTRATO       : Character
+\item contrato       : Character
 \item NOME MUTUARIO  : Character
-\item UNO            : Character
+\item uno            : Character
 \item ORR            : Character
-\item TO             : Integer
-\item COD            : Character
+\item to             : Integer
+\item cod            : Character
 \item DT. ASSIN      : Date
 \item TIPO UND       : Character
 \item GAR. AUT       : Integer
 \item DT. INC. CTR   : Date
 \item DT. INC. REG   : Date
 \item VR RETIDO      : Numeric
-\item VR AMORTIZ     : Numeric
-\item AMO            : Character
+\item VR amoRTIZ     : Numeric
+\item amo            : Character
 }
 }
 \description{
@@ -44,7 +44,7 @@ print(epr)
 
 # Exemplo 2: Integrando com outras funcoes de tratamento de dados
 epr_filtrado <- e_cef_epr("caminho/para/o/relatorio_epr.pdf") \%>\%
-  filter(`VR RETIDO` > 1000)
+  filter(valor.retido > 1000)
 summary(epr_filtrado)
 }
 

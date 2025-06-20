@@ -13,10 +13,10 @@ Por padrão, utiliza o caminho relativo baseado na estrutura do projeto.}
 \value{
 Retorna uma lista com os seguintes elementos:
 \itemize{
-\item empreendimento: Tibble com os dados dos empreendimentos.
-\item Emprestimo: Tibble com os dados dos empréstimos.
-\item Consolidado: Tibble com os dados consolidados.
-\item Unidades: Tibble com os dados das unidades.
+\item ecn_e: Tibble com os dados dos empreendimentos.
+\item ecn_pj: Tibble com os dados dos empréstimos.
+\item ecn_c: Tibble com os dados consolidados.
+\item ecn_u: Tibble com os dados das unidades.
 }
 }
 \description{
@@ -28,7 +28,7 @@ A função percorre a pasta especificada buscando arquivos PDF que
 contenham "empreendimento_construcao" no nome. Para cada arquivo encontrado,
 chama a função \code{e_cef_ecn} para realizar a extração dos dados e,
 posteriormente, consolida os resultados em uma lista com quatro elementos:
-empreendimento, Empréstimo, Consolidados e Unidades.
+ecn_e, Empréstimo, ecn_cs e ecn_u.
 }
 \examples{
 \dontrun{

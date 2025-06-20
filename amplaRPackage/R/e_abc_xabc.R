@@ -35,27 +35,26 @@
 #'
 #' @examples
 #' \dontrun{
-#'   # Define the path to your ABC bank statement file
-#'   file_path <- "path/to/your/extrato_abc.xlsx"
+#' # Define the path to your ABC bank statement file
+#' file_path <- "path/to/your/extrato_abc.xlsx"
 #'
-#'   # Extract and process the data
-#'   abc_statement_data <- e_abc_xabc(file_path)
+#' # Extract and process the data
+#' abc_statement_data <- e_abc_xabc(file_path)
 #'
-#'   # View the first few rows of the tidy data
-#'   print(head(abc_statement_data))
+#' # View the first few rows of the tidy data
+#' print(head(abc_statement_data))
 #'
-#'   # Perform further analysis, for example, summarizing transactions by day
-#'   daily_summary <- abc_statement_data %>%
-#'     group_by(data) %>%
-#'     summarise(total_valor = sum(valor, na.rm = TRUE))
-#'   print(daily_summary)
+#' # Perform further analysis, for example, summarizing transactions by day
+#' daily_summary <- abc_statement_data %>%
+#'   group_by(data) %>%
+#'   summarise(total_valor = sum(valor, na.rm = TRUE))
+#' print(daily_summary)
 #' }
-
 e_abc_xabc <- function(f_caminho.arquivo_c) {
   xabc.original_t <- suppressMessages(readxl::read_excel(
     f_caminho.arquivo_c
   )) %>%
-    set_names("_1", "_2", "_3", "_4", "_5", "_6") %>%
+    dplyr::set_names("_1", "_2", "_3", "_4", "_5", "_6") %>%
     mutate(across(everything(), ~ str_squish(as.character(.))))
   # Metadados
   cnpj_c <- xabc.original_t %>%
@@ -103,7 +102,7 @@ e_abc_xabc <- function(f_caminho.arquivo_c) {
     last()
   xabc_t <- xabc.original_t %>%
     slice(indice.dados.comeco_i:indice.dados.fim_i) %>%
-    set_names(c(
+    dplyr::set_names(c(
       "data", "documento", "descricao", "operacao", "valor", "saldo"
     )) %>%
     mutate(
@@ -117,10 +116,16 @@ e_abc_xabc <- function(f_caminho.arquivo_c) {
       periodo.fim = periodo.fim_d,
       periodo.inicio = periodo.inicio_d
     ) %>%
+    tidyr::extract(
+      col = "descricao",
+      into = c("tipo.valor", "complemento"),
+      regex = "([A-Z]+) (.+)",
+      remove = FALSE
+    ) %>%
     select(
       data, valor, saldo, descricao, empresa, cnpj, agencia, conta,
       periodo.inicio, periodo.fim, data.consulta, arquivo, banco, documento,
-      operacao
+      operacao, tipo.valor, complemento
     )
   return(xabc_t)
 }

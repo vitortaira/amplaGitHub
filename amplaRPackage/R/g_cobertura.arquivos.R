@@ -2,7 +2,11 @@
 #'
 #' @param cobertura_t Tibble with columns: arquivo, empresa, periodo.inicio, periodo.fim, arquivo.tipo
 #' @return Plotly heatmap object
-#' @import dplyr, tidyr, lubridate, plotly, purrr
+#' @import dplyr
+#' @import tidyr
+#' @import lubridate
+#' @import plotly
+#' @import purrr
 #' @export
 
 g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
