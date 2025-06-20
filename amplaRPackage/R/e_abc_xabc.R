@@ -1,3 +1,56 @@
+#' Extract and Tidy Data from ABC Bank Statement Excel Files
+#'
+#' @description This function reads a standardized bank statement from Banco ABC,
+#'   which is provided as an Excel file (.xlsx). It extracts both the transaction
+#'   data and key metadata from the header, tidies it, and returns a single,
+#'   well-structured tibble.
+#'
+#' @param f_caminho.arquivo_c The full path to the `.xlsx` file containing the
+#'   ABC bank statement.
+#'
+#' @return A `tibble` with the following columns:
+#'   - `data`: Date of the transaction.
+#'   - `valor`: The transaction amount.
+#'   - `saldo`: The balance after the transaction.
+#'   - `descricao`: A description of the transaction.
+#'   - `empresa`: The client's name.
+#'   - `cnpj`: The client's CNPJ.
+#'   - `agencia`: The bank branch number.
+#'   - `conta`: The bank account number.
+#'   - `periodo.inicio`: The start date of the statement period.
+#'   - `periodo.fim`: The end date of the statement period.
+#'   - `data.consulta`: The date and time the statement was generated.
+#'   - `arquivo`: The original file path.
+#'   - `banco`: The name of the bank (extracted from the file).
+#'   - `documento`: The transaction document number.
+#'   - `operacao`: The operation code or type.
+#'
+#' @import dplyr
+#' @import readxl
+#' @import stringr
+#' @import lubridate
+#' @import magrittr
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#'   # Define the path to your ABC bank statement file
+#'   file_path <- "path/to/your/extrato_abc.xlsx"
+#'
+#'   # Extract and process the data
+#'   abc_statement_data <- e_abc_xabc(file_path)
+#'
+#'   # View the first few rows of the tidy data
+#'   print(head(abc_statement_data))
+#'
+#'   # Perform further analysis, for example, summarizing transactions by day
+#'   daily_summary <- abc_statement_data %>%
+#'     group_by(data) %>%
+#'     summarise(total_valor = sum(valor, na.rm = TRUE))
+#'   print(daily_summary)
+#' }
+
 e_abc_xabc <- function(f_caminho.arquivo_c) {
   xabc.original_t <- suppressMessages(readxl::read_excel(
     f_caminho.arquivo_c
