@@ -61,25 +61,19 @@ e_cef_ecns <-
         arquivo.tipo = "ecn",
         arquivo.fonte = "cef",
       )
-    # Identifica o arquivo mais recente de cada empreendimento
-    contratos.empreendimentos.12.primeiros_c <-
-      caminhos.ecn_c %>%
-      str_extract("\\d{12}") %>%
-      unique()
-    caminhos.ecn.recentes_c <- map(
-      contratos.empreendimentos.12.primeiros_c,
-      ~ {
-        i <- caminhos.ecn_c %>%
-          str_subset(.x) %>%
-          path_file() %>%
-          str_extract("^\\d{8}") %>%
-          ymd() %>%
-          which.max()
-        caminhos.ecn_c[i]
-      }
-    ) %>%
-      flatten_chr() %>%
-      unname()
+    # Identifica o arquivo mais recente de cada empreendimento.
+    caminhos.ecn.recentes_c <- tibble::tibble(caminho = caminhos.ecn_c) %>%
+      mutate(
+        contrato = stringr::str_extract(caminho, "\\d{12}"),
+        data_arquivo = lubridate::ymd(stringr::str_extract(fs::path_file(caminho), "^\\d{8}"))
+      ) %>%
+      # Remove arquivos onde o contrato ou a data não puderam ser extraídos
+      dplyr::filter(!is.na(contrato) & !is.na(data_arquivo)) %>%
+      # Para cada contrato, encontra o arquivo mais recente
+      dplyr::group_by(contrato) %>%
+      dplyr::slice_max(order_by = data_arquivo, n = 1, with_ties = FALSE) %>%
+      dplyr::ungroup() %>%
+      dplyr::pull(caminho)
     # Tabelas cumulativas
     ecns.consolidado_t <-
       caminhos.ecn.recentes_c %>%

@@ -3,7 +3,7 @@ e_cobertura.arquivos <- function() {
     e_metadados("xcef") %>%
       rename(arquivo = "caminho"),
     e_cef_xcefs() %>%
-      select(
+      dplyr::select(
         arquivo,
         arquivo.subtipo,
         empresa,
@@ -14,10 +14,10 @@ e_cobertura.arquivos <- function() {
     by = "arquivo"
   )
   extita_t <- left_join(
-    e_metadados("extita") %>%
+    e_metadados("xita") %>%
       rename(arquivo = "caminho"),
-    e_ita_xitas()$extita_l %>%
-      select(
+    e_ita_xitas()$xita_l %>%
+      dplyr::select(
         arquivo,
         arquivo.subtipo,
         empresa,
