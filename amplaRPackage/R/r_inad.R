@@ -31,8 +31,8 @@ r_inad <-
   function() {
     # Consolida os dados dos inadimplentes da pasta "inadimplentes"
     inads_t <-
-      e_ik_inads(xlsx = FALSE) %>%
-      rename(arquivo.fonte = "contrato")
+      e_ik_inads(xlsx = FALSE)
+    # rename(arquivo.fonte = "contrato")
     caminho.inads_c <-
       dir_ls(caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
       keep(
@@ -89,27 +89,27 @@ r_inad <-
       dplyr::filter(arquivo %in% caminhos.inads.recentes_c) %>%
       left_join(
         contrs_t %>%
-          filter(arquivo %in% caminhos.contrs.recentes_c) %>%
+          dplyr::filter(arquivo %in% caminhos.contrs.recentes_c) %>%
           select(-c(
-            "arquivo.tabela.tipo", "arquivo.tipo", "arquivo.fonte", "Cliente",
+            "arquivo.tabela.tipo", "arquivo.tipo", "arquivo.fonte", "cliente",
             "esp"
           )),
-        by = c("arquivo.fonte", "empreendimento")
+        by = c("contrato.ampla", "empreendimento")
       ) %>%
       mutate(
         repassado = if_else(repassado == "repassado", "Sim", "Não")
       ) %>%
-      select(
-        empreendimento, arquivo.fonte, repassado, contrato.cef,
-        Unidade, Cliente, Telefone, everything()
+      dplyr::select(
+        empreendimento, cliente, repassado, contrato.cef,
+        unidade, empreendimento, telefone, everything()
       ) %>%
       distinct()
     r_inad.clientes_t <-
       r_inad.parcelas_t %>%
-      group_by(Cliente) %>%
+      group_by(cliente) %>%
       summarise(
-        Total = sum(Total, na.rm = TRUE),
-        Atraso_meses = max(Atraso, na.rm = TRUE) / 30,
+        total = sum(total, na.rm = TRUE),
+        atraso.meses = max(atraso, na.rm = TRUE) / 30,
         empreendimento = first(empreendimento),
         repassado = first(repassado)
       ) %>%
@@ -301,24 +301,22 @@ r_inad <-
       cols = 1:ncol(r_inad.clientes_t),
       name = "clientes"
     )
-    # Salvar a planilha localmente
-    saveWorkbook(
-      xlsx,
-      str_c(caminhos_pastas("temp"), "/", nome.xlsx_c),
-      overwrite = TRUE
-    )
-    # Caminho da planilha na pasta local
-    caminho.xlsx_c <-
-      str_c(caminhos_pastas("temp"), "/", nome.xlsx_c) %>%
-      normalizePath(winslash = "/", mustWork = FALSE)
+    caminho_temporario_c <- withr::local_tempfile(fileext = ".xlsx")
+
+    # Salvar a planilha no arquivo temporário
+    saveWorkbook(xlsx, caminho_temporario_c, overwrite = TRUE)
+
+    # Normalizar o caminho para o PowerShell
+    caminho_temporario_norm_c <- normalizePath(caminho_temporario_c, winslash = "/", mustWork = FALSE)
+
     # Comando no PowerShell para clicar em "Atualizar tudo" na planilha
     ps_cmd <-
       paste0(
         "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8;",
         "$excel = New-Object -ComObject Excel.Application;",
         "Start-Sleep -Seconds 2;",
-        # Repare que o caminho está entre aspas simples
-        "$wb = $excel.Workbooks.Open('", caminho.xlsx_c, "');",
+        # O caminho do arquivo é passado entre aspas simples
+        "$wb = $excel.Workbooks.Open('", caminho_temporario_norm_c, "');",
         "$wb.RefreshAll();",
         "Start-Sleep -Seconds 3;",
         "$wb.Save();",
@@ -327,13 +325,14 @@ r_inad <-
         "[System.Runtime.Interopservices.Marshal]::ReleaseComObject($wb) | Out-Null;",
         "[System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel) | Out-Null;"
       )
+
     # Executar o comando do PowerShell pelo R
     system2("powershell", args = c("-Command", ps_cmd))
-    # Movendo a planilha da pasta local para o OneDrive
-    file.rename(
-      caminho.xlsx_c,
-      str_c(caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c)
-    )
+
+    # Copiando a planilha da pasta temporária para o destino final no OneDrive
+    caminho_final_c <- str_c(caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c)
+    file.copy(caminho_temporario_c, caminho_final_c, overwrite = TRUE)
+
     if (nrow(caminhos.inads_t) > 0) {
       meses <- format(caminhos.inads_t$data, "%Y-%m")
       if (length(unique(meses)) == 1) {

@@ -202,13 +202,13 @@ e_ik_inad <-
           as.POSIXct(data.impressao_p, format = "%Y-%m-%d %H:%M:%S"),
         atraso = as.integer(atraso),
         empreendimento = empreendimento_c,
-        contrato = as.character(parcelas.contratos_vc),
+        contrato.ampla = as.character(parcelas.contratos_vc),
         unidade = as.character(parcelas.unidades_vc),
         telefone = as.character(parcelas.telefones_vc),
         arquivo = caminho_arquivo_inadimplentes.c
       ) %>%
       select(
-        empreendimento, contrato, unidade, cliente, telefone, esp, parcela,
+        empreendimento, contrato.ampla, unidade, cliente, telefone, esp, parcela,
         quantidade.parcelas, ele, vencimento, atraso, `r/f`, principal, juros,
         encargos, juros.mora, multa, seguro, total, data.consulta,
         arquivo
