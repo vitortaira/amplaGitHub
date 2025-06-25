@@ -4,7 +4,7 @@ e_ik_contrs <- function(caminhos.pasta.cobranca_c = caminhos_pastas("cobranca"))
     stop("O caminho fornecido não é um diretório: ", caminhos.pasta.cobranca_c)
   }
 
-  caminhos.contrs_c <- e_metadados("contr")
+  caminhos.contrs_c <- e_metadados("contr")$caminho
 
   # Mensagem para depuração: quantidade de arquivos de contratos encontrados
   message(length(caminhos.contrs_c), " arquivos do tipo contr")

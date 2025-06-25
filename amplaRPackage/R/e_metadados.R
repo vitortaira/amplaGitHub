@@ -8,8 +8,24 @@
 #' @export
 e_metadados <- function(f_arquivo.tipo_c = NULL) {
   c_contr <- function() {
-    dir_ls(caminhos.pasta.cobranca_c, recurse = TRUE, type = "file") %>%
-      keep(~ str_detect(.x, "(?i)contratos-.*\\.xlsx"))
+    dir_ls(caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
+      keep(~ str_detect(.x, "(?i)contratos-.*\\.xlsx")) %>%
+      as_tibble_col("caminho") %>%
+      mutate(
+        arquivo.tabela.tipo = "contr",
+        arquivo.tipo = "contr",
+        arquivo.fonte = "ik",
+        empresa = str_extract(.data$caminho, "-\\s?\\w{3}\\s?-") %>%
+          str_extract("\\w{3}"),
+        data = as.Date(
+          paste0(
+            str_extract(.data$caminho, "-\\s?\\d{4}_\\d{2}") %>%
+              str_extract("\\d{4}_\\d{2}"),
+            "_01"
+          ),
+          format = "%Y_%m_%d"
+        )
+      )
   }
 
   c_inad <- function() {

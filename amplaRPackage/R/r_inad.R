@@ -15,30 +15,10 @@ r_inad <- function() {
   # Consolida os dados dos arquivos do tipo contr
   contrs_t <- e_ik_contrs()
   # Filtrar contrs_t para apenas o arquivo mais recente por empreendimento
-  caminhos.contrs_t <-
-    dir_ls(caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
-    keep(
-      ~ str_detect(.x, "(?i)contratos-.*\\.xlsx") &
-        !str_detect(.x, "(?i)consolidado")
-    ) %>%
-    map_dfr(~ {
-      data_str <- str_extract(.x, "-\\s?\\d{4}_\\d{2}") %>%
-        str_extract("\\d{4}_\\d{2}")
-      data <- suppressWarnings(as.Date(
-        paste0(data_str, "_01"),
-        format = "%Y_%m_%d"
-      ))
-      empreendimento_c <- str_extract(.x, "-\\s?\\w{3}\\s?-") %>%
-        str_extract("\\w{3}")
-      tibble(
-        caminho = .x,
-        data = data,
-        empresa = empreendimento_c
-      )
-    }) %>%
+  caminhos.contrs_t <- e_metadados("contr")
+  caminhos.contrs.recentes_t <- caminhos.contrs_t %>%
     arrange(desc(data)) %>%
     distinct(empresa, .keep_all = TRUE)
-  caminhos.contrs.recentes_c <- caminhos.contrs_t$caminho
 
   # join --------------------------------------------------------------------
 
@@ -48,7 +28,7 @@ r_inad <- function() {
     dplyr::filter(arquivo %in% caminhos.inads.recentes_t$caminho) %>%
     left_join(
       contrs_t %>%
-        dplyr::filter(arquivo %in% caminhos.contrs.recentes_c) %>%
+        dplyr::filter(arquivo %in% caminhos.contrs.recentes_t$caminho) %>%
         select(-c(
           "arquivo.tabela.tipo", "arquivo.tipo", "arquivo.fonte", "cliente",
           "esp"
@@ -308,14 +288,14 @@ r_inad <- function() {
     }
   }
   # Mensagem de verificação para contratos
-  if (nrow(caminhos.contrs_t) > 0) {
-    meses_contrs <- format(caminhos.contrs_t$data, "%Y-%m")
+  if (nrow(caminhos.contrs.recentes_t) > 0) {
+    meses_contrs <- format(caminhos.contrs.recentes_t$data, "%Y-%m")
     if (length(unique(meses_contrs)) == 1) {
       message("\u2705 Os contratos mais recentes de todos os empreendimentos são do mês ", unique(meses_contrs))
     } else {
       msg_contrs <- paste0(
         "\u274C Os contratos mais recentes são de meses diferentes entre os empreendimentos:\n",
-        capture.output(print(caminhos.contrs_t[, c("caminho", "data")], row.names = FALSE)) %>%
+        capture.output(print(caminhos.contrs.recentes_t[, c("caminho", "data")], row.names = FALSE)) %>%
           paste(collapse = "\n")
       )
       message(msg_contrs)
