@@ -4,6 +4,29 @@ r_inad <-
     # Consolida os dados dos inadimplentes da pasta "inadimplentes"
     inads_t <-
       e_ik_inads(xlsx = FALSE)
+    # Tabela com todos os caminhos dos arquivos de inadimplência
+    caminhos.inads_t <-
+      dir_ls(caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
+      keep(
+        ~ str_detect(.x, "(?i)/inadimpl.ncia\\s?-.*\\.xlsx") &
+          !str_detect(.x, "(?i)consolidado")
+      ) %>%
+      map_dfr(~ {
+        # Extrai a data do nome do arquivo no formato %Y_%m (ex: 2025_04)
+        data_str <- str_extract(.x, "-\\s?\\d{4}_\\d{2}") %>%
+          str_extract("\\d{4}_\\d{2}")
+        data <- suppressWarnings(
+          as.Date(paste0(data_str, "_01"), format = "%Y_%m_%d")
+        )
+        # Extrai o empreendimento do nome do arquivo (ex: AVS)
+        empreendimentos_c <- str_extract(.x, "-\\s?\\w{3}\\s?-") %>%
+          str_extract("\\w{3}")
+        tibble(
+          caminho = .x,
+          data = data,
+          empreendimento = empreendimentos_c
+        )
+      })
     caminhos.inads.recentes_c <- caminhos.inads_t %>%
       arrange(desc(data)) %>%
       distinct(empreendimento, .keep_all = TRUE) %>%
