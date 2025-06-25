@@ -7,6 +7,11 @@
 #' @return Um tibble consolidado com os metadados dos arquivos solicitados.
 #' @export
 e_metadados <- function(f_arquivo.tipo_c = NULL) {
+  c_contr <- function() {
+    dir_ls(caminhos.pasta.cobranca_c, recurse = TRUE, type = "file") %>%
+      keep(~ str_detect(.x, "(?i)contratos-.*\\.xlsx"))
+  }
+
   c_inad <- function() {
     dir_ls(caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
       keep(
@@ -126,7 +131,7 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
       )
   }
 
-  arquivo.tipos.permitidos_c <- c("inad", "viab", "xcef", "xita")
+  arquivo.tipos.permitidos_c <- c("contr", "inad", "viab", "xcef", "xita")
 
   if (!is.null(f_arquivo.tipo_c)) {
     if (!f_arquivo.tipo_c %in% arquivo.tipos.permitidos_c) {
@@ -141,6 +146,7 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
     # Busca apenas o tipo especificado
     return(
       switch(f_arquivo.tipo_c,
+        "contr" = c_contr(),
         "inad" = c_inad(),
         "viab" = c_viab(),
         "xcef" = c_xcef(),
@@ -151,6 +157,7 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
 
   # Se nenhum tipo for especificado, busca e combina todos
   bind_rows(
+    c_contr(),
     c_inad(),
     c_viab(),
     c_xcef(),
