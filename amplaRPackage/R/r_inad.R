@@ -1,70 +1,22 @@
-# Descrição ---------------------------------------------------------------
-
-### RESUMO ###
-
-# cruzar_inadimplentes_ecn():
-# (1) Consolida os dados dos inadimplentes
-# (2) Consolida os dados dos relatórios ECN mais recentes
-# (3) Cruza esses dados consolidados
-# (4) Gera um xlsx com os dados cruzados na pasta "inadimplentes/formatados"
-
-### UTILIZAÇÃO ###
-
-# cruzar_inadimplentes_ecn(
-#   f_caminho.pasta.inadimplentes_c,
-#   f_caminho.pasta.ciweb_c
-# )
-
-### ARGUMENTOS ###
-
-# f_caminho.pasta.inadimplentes_c: Caminho da pasta "inadimplentes/formatados"
-# f_caminho.pasta.ciweb_c: Caminho da pasta "Relatorios - CIWEB"
-
-# source(
-#  here::here(
-#    "R",
-#    "extrair_dados_pasta_inadimplentes.R"
-#  )
-# )
-
 r_inad <-
   function() {
+    # inad ---------------------------------------------------------------------
     # Consolida os dados dos inadimplentes da pasta "inadimplentes"
     inads_t <-
       e_ik_inads(xlsx = FALSE)
-    # rename(arquivo.fonte = "contrato")
-    caminho.inads_c <-
-      dir_ls(caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
-      keep(
-        ~ str_detect(.x, "(?i)/inadimpl.ncia\\s?-.*\\.xlsx") &
-          !str_detect(.x, "(?i)consolidado")
-      )
-    caminhos.inads_t <- caminho.inads_c %>%
-      map_dfr(~ {
-        # Extrair a data do nome do arquivo no formato %Y_%m (ex: 2025_04)
-        data_str <- str_extract(.x, "-\\s?\\d{4}_\\d{2}") %>%
-          str_extract("\\d{4}_\\d{2}")
-        data <- suppressWarnings(as.Date(paste0(data_str, "_01"), format = "%Y_%m_%d"))
-        empreendimentos_c <- str_extract(.x, "-\\s?\\w{3}\\s?-") %>%
-          str_extract("\\w{3}")
-        tibble(
-          caminho = .x,
-          data = data,
-          empreendimento = empreendimentos_c
-        )
-      }) %>%
+    caminhos.inads.recentes_c <- caminhos.inads_t %>%
       arrange(desc(data)) %>%
-      distinct(empreendimento, .keep_all = TRUE)
-    caminhos.inads.recentes_c <- caminhos.inads_t$caminho
+      distinct(empreendimento, .keep_all = TRUE) %>%
+      pull(caminho)
+    # contr --------------------------------------------------------------------
     contrs_t <- e_ik_contrs()
     # Filtrar contrs_t para apenas o arquivo mais recente por empreendimento
-    caminho.contrs_c <-
+    caminhos.contrs_t <-
       dir_ls(caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
       keep(
         ~ str_detect(.x, "(?i)contratos-.*\\.xlsx") &
           !str_detect(.x, "(?i)consolidado")
-      )
-    caminhos.contrs_t <- caminho.contrs_c %>%
+      ) %>%
       map_dfr(~ {
         data_str <- str_extract(.x, "-\\s?\\d{4}_\\d{2}") %>%
           str_extract("\\d{4}_\\d{2}")
@@ -192,6 +144,23 @@ r_inad <-
       cols = 1:ncol(r_inad.parcelas_t),
       widths = 18
     )
+    # Formatar largura das colunas "cliente" e "unidade"
+    setColWidths(
+      xlsx,
+      sheet = "Parcelas",
+      cols = which(colnames(r_inad.parcelas_t) %in% c("cliente", "unidade")),
+      widths = "auto"
+    )
+    # Formatar largura de colunas específicas
+    setColWidths(
+      xlsx,
+      sheet = "Parcelas",
+      cols = which(colnames(r_inad.parcelas_t) %in% c(
+        "repassado", "contrato.cef", "contrato.ampla", "esp", "parcela",
+        "quantidade.parcelas", "ele", "vencimento", "atraso", "r/f"
+      )),
+      widths = c(12, 15, 15, 9, 15, 20, 9, 12, 9, 9)
+    )
     # Adicionar filtro à tabela
     addFilter(
       xlsx,
@@ -206,7 +175,7 @@ r_inad <-
       style =
         createStyle(
           border = "TopBottomLeftRight",
-          fontSize = 12,
+          fontSize = 11,
           halign = "center",
           valign = "center",
           textDecoration = "bold",
@@ -217,7 +186,7 @@ r_inad <-
       cols = 1:ncol(r_inad.parcelas_t),
       gridExpand = T
     )
-    # Formatar as colunas "Cliente" e "Unidade"
+    # Formatar as colunas "cliente" e "unidade"
     addStyle(
       xlsx,
       sheet = "Parcelas",
@@ -226,13 +195,13 @@ r_inad <-
           border = "TopBottomLeftRight",
           halign = "left",
           valign = "center",
-          wrapText = T
+          wrapText = FALSE
         ),
       rows = 2:(nrow(r_inad.parcelas_t) + 1),
-      cols = which(colnames(r_inad.parcelas_t) %in% c("Cliente", "Unidade")),
+      cols = which(colnames(r_inad.parcelas_t) %in% c("cliente", "unidade")),
       gridExpand = T
     )
-    # Formatar a coluna "Vencto" como data
+    # Formatar a coluna "vencimento" como data
     addStyle(
       xlsx,
       sheet = "Parcelas",
@@ -244,10 +213,10 @@ r_inad <-
           numFmt = "DD/MM/YYYY"
         ),
       rows = 2:(nrow(r_inad.parcelas_t) + 1),
-      cols = which(colnames(r_inad.parcelas_t) == "Vencto"),
+      cols = which(colnames(r_inad.parcelas_t) == "vencimento"),
       gridExpand = T
     )
-    # Formatar a coluna "Data da consulta" como uma data com horário
+    # Formatar a coluna "data.consulta" como uma data com horário
     addStyle(
       xlsx,
       sheet = "Parcelas",
@@ -259,7 +228,7 @@ r_inad <-
           numFmt = "YYYY-MM-DD HH:MM:SS"
         ),
       rows = 2:(nrow(r_inad.parcelas_t) + 1),
-      cols = which(colnames(r_inad.parcelas_t) == "Data da consulta"),
+      cols = which(colnames(r_inad.parcelas_t) == "data.consulta"),
       gridExpand = T
     )
     # Formatar colunas com valores monetários
@@ -278,8 +247,8 @@ r_inad <-
         which(
           colnames(r_inad.parcelas_t) %in%
             c(
-              "Principal", "Juros", "Encargos", "Juros de Mora", "Multa",
-              "Seguro", "Total"
+              "principal", "juros", "encargos", "juros.mora", "multa",
+              "seguro", "total"
             )
         ),
       gridExpand = T
