@@ -1,358 +1,327 @@
-r_inad <-
-  function() {
-    # inad ---------------------------------------------------------------------
-    # Consolida os dados dos inadimplentes da pasta "inadimplentes"
-    inads_t <-
-      e_ik_inads(xlsx = FALSE)
-    # Tabela com todos os caminhos dos arquivos de inadimplência
-    caminhos.inads_t <-
-      dir_ls(caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
-      keep(
-        ~ str_detect(.x, "(?i)/inadimpl.ncia\\s?-.*\\.xlsx") &
-          !str_detect(.x, "(?i)consolidado")
-      ) %>%
-      map_dfr(~ {
-        # Extrai a data do nome do arquivo no formato %Y_%m (ex: 2025_04)
-        data_str <- str_extract(.x, "-\\s?\\d{4}_\\d{2}") %>%
-          str_extract("\\d{4}_\\d{2}")
-        data <- suppressWarnings(
-          as.Date(paste0(data_str, "_01"), format = "%Y_%m_%d")
-        )
-        # Extrai o empreendimento do nome do arquivo (ex: AVS)
-        empreendimentos_c <- str_extract(.x, "-\\s?\\w{3}\\s?-") %>%
-          str_extract("\\w{3}")
-        tibble(
-          caminho = .x,
-          data = data,
-          empreendimento = empreendimentos_c
-        )
-      })
-    caminhos.inads.recentes_c <- caminhos.inads_t %>%
-      arrange(desc(data)) %>%
-      distinct(empreendimento, .keep_all = TRUE) %>%
-      pull(caminho)
-    # contr --------------------------------------------------------------------
-    contrs_t <- e_ik_contrs()
-    # Filtrar contrs_t para apenas o arquivo mais recente por empreendimento
-    caminhos.contrs_t <-
-      dir_ls(caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
-      keep(
-        ~ str_detect(.x, "(?i)contratos-.*\\.xlsx") &
-          !str_detect(.x, "(?i)consolidado")
-      ) %>%
-      map_dfr(~ {
-        data_str <- str_extract(.x, "-\\s?\\d{4}_\\d{2}") %>%
-          str_extract("\\d{4}_\\d{2}")
-        data <- suppressWarnings(as.Date(
-          paste0(data_str, "_01"),
-          format = "%Y_%m_%d"
-        ))
-        empreendimento_c <- str_extract(.x, "-\\s?\\w{3}\\s?-") %>%
-          str_extract("\\w{3}")
-        tibble(
-          caminho = .x,
-          data = data,
-          empreendimento = empreendimento_c
-        )
-      }) %>%
-      arrange(desc(data)) %>%
-      distinct(empreendimento, .keep_all = TRUE)
-    caminhos.contrs.recentes_c <- caminhos.contrs_t$caminho
-    # Cruza inads_t e contrs_t
-    r_inad.parcelas_t <-
-      inads_t %>%
-      dplyr::filter(arquivo %in% caminhos.inads.recentes_c) %>%
-      left_join(
-        contrs_t %>%
-          dplyr::filter(arquivo %in% caminhos.contrs.recentes_c) %>%
-          select(-c(
-            "arquivo.tabela.tipo", "arquivo.tipo", "arquivo.fonte", "cliente",
-            "esp"
-          )),
-        by = c("contrato.ampla", "empreendimento")
-      ) %>%
-      mutate(
-        repassado = if_else(repassado == "repassado", "Sim", "Não")
-      ) %>%
-      dplyr::select(
-        empreendimento, cliente, repassado, contrato.cef,
-        unidade, empreendimento, telefone, everything()
-      ) %>%
-      distinct()
-    r_inad.clientes_t <-
-      r_inad.parcelas_t %>%
-      group_by(cliente) %>%
-      summarise(
-        total = sum(total, na.rm = TRUE),
-        atraso.meses = max(atraso, na.rm = TRUE) / 30,
-        empreendimento = first(empreendimento),
-        repassado = first(repassado)
-      ) %>%
-      ungroup()
-    r_inad_l <- list(
-      r_inad.parcelas_t = r_inad.parcelas_t,
-      r_inad.clientes_t = r_inad.clientes_t
-    )
-    # ecns_t <-
-    #   e_cef_ecns()$Unidades %>%
-    #   mutate(CONTRATO_12 = contrato %>% str_sub(1, -3))
-    # eprs_t <-
-    #   e_cef_eprs() %>%
-    #   rename(
-    #     CONTRATO_12 = "CONTRATO",
-    #     `Data de Assinatura` = "DT. ASSIN",
-    #     `Data de Inclusão` = "DT. INC. CTR",
-    #     `Data de Registro` = "DT. INC. REG"
-    #   )
-    # ecn.epr_t <-
-    #   full_join(
-    #     ecns_t,
-    #     eprs_t,
-    #     by = c("CONTRATO_12", "Data de Assinatura", "Data de Inclusão")
-    #   ) %>%
-    #   rename(Cliente = "NOME MUTARIO")
+r_inad <- function() {
+  # inad -----------------------------------------------------------------------
 
-    # Salvando num xlsx -------------------------------------------------------
+  # Consolida os dados dos arquivos do tipo inad
+  inads_t <- e_ik_inads(xlsx = FALSE)
+  # Tabela com todos os caminhos dos arquivos do tipo inad
+  caminhos.inads_t <- e_metadados("inad")
+  # Tabela com os caminhos dos arquivos mais recentes do tipo inad
+  caminhos.inads.recentes_t <- caminhos.inads_t %>%
+    arrange(desc(data)) %>%
+    distinct(empresa, .keep_all = TRUE)
 
-    # Definindo o nome do arquivo dinamicamente
-    nome.xlsx_c <-
-      str_c(
-        "Inadimplencia-",
-        format(Sys.time(), "%Y_%m_%d-%H_%M_%S"),
-        ".xlsx"
+  # contr ----------------------------------------------------------------------
+
+  # Consolida os dados dos arquivos do tipo contr
+  contrs_t <- e_ik_contrs()
+  # Filtrar contrs_t para apenas o arquivo mais recente por empreendimento
+  caminhos.contrs_t <-
+    dir_ls(caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
+    keep(
+      ~ str_detect(.x, "(?i)contratos-.*\\.xlsx") &
+        !str_detect(.x, "(?i)consolidado")
+    ) %>%
+    map_dfr(~ {
+      data_str <- str_extract(.x, "-\\s?\\d{4}_\\d{2}") %>%
+        str_extract("\\d{4}_\\d{2}")
+      data <- suppressWarnings(as.Date(
+        paste0(data_str, "_01"),
+        format = "%Y_%m_%d"
+      ))
+      empreendimento_c <- str_extract(.x, "-\\s?\\w{3}\\s?-") %>%
+        str_extract("\\w{3}")
+      tibble(
+        caminho = .x,
+        data = data,
+        empresa = empreendimento_c
       )
-    # Criando uma cópia de "Template.xlsx"
-    file.copy(
-      str_c(caminhos_pastas("github"), "/templates/Template-Inadimplencia.xlsx"),
-      str_c(caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c)
+    }) %>%
+    arrange(desc(data)) %>%
+    distinct(empresa, .keep_all = TRUE)
+  caminhos.contrs.recentes_c <- caminhos.contrs_t$caminho
+
+  # join --------------------------------------------------------------------
+
+  # Cruza inads_t e contrs_t
+  r_inad.parcelas_t <-
+    inads_t %>%
+    dplyr::filter(arquivo %in% caminhos.inads.recentes_t$caminho) %>%
+    left_join(
+      contrs_t %>%
+        dplyr::filter(arquivo %in% caminhos.contrs.recentes_c) %>%
+        select(-c(
+          "arquivo.tabela.tipo", "arquivo.tipo", "arquivo.fonte", "cliente",
+          "esp"
+        )),
+      by = c("contrato.ampla", "empreendimento")
+    ) %>%
+    mutate(
+      repassado = if_else(repassado == "repassado", "Sim", "Não")
+    ) %>%
+    dplyr::select(
+      empreendimento, cliente, repassado, contrato.cef,
+      unidade, empreendimento, telefone, everything()
+    ) %>%
+    distinct()
+  r_inad.clientes_t <-
+    r_inad.parcelas_t %>%
+    group_by(cliente) %>%
+    summarise(
+      total = sum(total, na.rm = TRUE),
+      atraso.meses = round(max(atraso, na.rm = TRUE) / 30, 1),
+      empreendimento = first(empreendimento),
+      repassado = first(repassado)
+    ) %>%
+    ungroup()
+  r_inad_l <- list(
+    r_inad.parcelas_t = r_inad.parcelas_t,
+    r_inad.clientes_t = r_inad.clientes_t
+  )
+
+  # xlsx -----------------------------------------------------------------------
+
+  # Definindo o nome do arquivo dinamicamente
+  nome.xlsx_c <-
+    str_c(
+      "Inadimplencia-",
+      format(Sys.time(), "%Y_%m_%d-%H_%M_%S"),
+      ".xlsx"
     )
-    # Definir a cópia criada como o workbook ativo
-    xlsx <-
-      loadWorkbook(
-        str_c(caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c),
+  # Criando uma cópia de "Template.xlsx"
+  file.copy(
+    str_c(caminhos_pastas("github"), "/templates/Template-Inadimplencia.xlsx"),
+    str_c(caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c)
+  )
+  # Definir a cópia criada como o workbook ativo
+  xlsx <-
+    loadWorkbook(
+      str_c(caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c),
+    )
+  deleteNamedRegion(xlsx, name = "parcelas")
+  # Preenchendo os dados da aba "Parcelas"
+  writeData(
+    xlsx,
+    sheet = "Parcelas",
+    r_inad.parcelas_t
+  )
+  # Nomear os dados na aba "Parcelas"
+  createNamedRegion(
+    xlsx,
+    sheet = "Parcelas",
+    rows = 1:(nrow(r_inad.parcelas_t) + 1),
+    cols = 1:ncol(r_inad.parcelas_t),
+    name = "parcelas"
+  )
+  # Formatação geral da tabela
+  addStyle(
+    xlsx,
+    sheet = "Parcelas",
+    style =
+      createStyle(
+        border = "TopBottomLeftRight",
+        halign = "center",
+        valign = "center"
+      ),
+    rows = 1:(nrow(r_inad.parcelas_t) + 1),
+    cols = 1:ncol(r_inad.parcelas_t),
+    gridExpand = T
+  )
+  # Formatar largura das colunas da tabela
+  setColWidths(
+    xlsx,
+    sheet = "Parcelas",
+    cols = 1:ncol(r_inad.parcelas_t),
+    widths = 18
+  )
+  # Formatar largura das colunas "cliente" e "unidade"
+  setColWidths(
+    xlsx,
+    sheet = "Parcelas",
+    cols = which(colnames(r_inad.parcelas_t) %in% c("cliente", "unidade")),
+    widths = "auto"
+  )
+  # Formatar largura de colunas específicas
+  setColWidths(
+    xlsx,
+    sheet = "Parcelas",
+    cols = which(colnames(r_inad.parcelas_t) %in% c(
+      "repassado", "contrato.cef", "contrato.ampla", "esp", "parcela",
+      "quantidade.parcelas", "ele", "vencimento", "atraso", "r/f"
+    )),
+    widths = c(12, 15, 15, 9, 15, 20, 9, 12, 9, 9)
+  )
+  # Adicionar filtro à tabela
+  addFilter(
+    xlsx,
+    sheet = "Parcelas",
+    rows = 1,
+    cols = 1:ncol(r_inad.parcelas_t)
+  )
+  # Formatar cabeçalho
+  addStyle(
+    xlsx,
+    sheet = "Parcelas",
+    style =
+      createStyle(
+        border = "TopBottomLeftRight",
+        fontSize = 11,
+        halign = "center",
+        valign = "center",
+        textDecoration = "bold",
+        fgFill = "darkgray",
+        wrapText = T
+      ),
+    rows = 1,
+    cols = 1:ncol(r_inad.parcelas_t),
+    gridExpand = T
+  )
+  # Formatar as colunas "cliente" e "unidade"
+  addStyle(
+    xlsx,
+    sheet = "Parcelas",
+    style =
+      createStyle(
+        border = "TopBottomLeftRight",
+        halign = "left",
+        valign = "center",
+        wrapText = FALSE
+      ),
+    rows = 2:(nrow(r_inad.parcelas_t) + 1),
+    cols = which(colnames(r_inad.parcelas_t) %in% c("cliente", "unidade")),
+    gridExpand = T
+  )
+  # Formatar a coluna "vencimento" como data
+  addStyle(
+    xlsx,
+    sheet = "Parcelas",
+    style =
+      createStyle(
+        border = "TopBottomLeftRight",
+        halign = "center",
+        valign = "center",
+        numFmt = "DD/MM/YYYY"
+      ),
+    rows = 2:(nrow(r_inad.parcelas_t) + 1),
+    cols = which(colnames(r_inad.parcelas_t) == "vencimento"),
+    gridExpand = T
+  )
+  # Formatar a coluna "data.consulta" como uma data com horário
+  addStyle(
+    xlsx,
+    sheet = "Parcelas",
+    style =
+      createStyle(
+        border = "TopBottomLeftRight",
+        halign = "center",
+        valign = "center",
+        numFmt = "YYYY-MM-DD HH:MM:SS"
+      ),
+    rows = 2:(nrow(r_inad.parcelas_t) + 1),
+    cols = which(colnames(r_inad.parcelas_t) == "data.consulta"),
+    gridExpand = T
+  )
+  # Formatar colunas com valores monetários
+  addStyle(
+    xlsx,
+    sheet = "Parcelas",
+    style =
+      createStyle(
+        border = "TopBottomLeftRight",
+        halign = "center",
+        valign = "center",
+        numFmt = "#,##0.00"
+      ),
+    rows = 1:nrow(r_inad.parcelas_t) + 1,
+    cols =
+      which(
+        colnames(r_inad.parcelas_t) %in%
+          c(
+            "principal", "juros", "encargos", "juros.mora", "multa",
+            "seguro", "total"
+          )
+      ),
+    gridExpand = T
+  )
+  # Congelar a primeira linha
+  freezePane(xlsx, sheet = "Parcelas", firstRow = T, firstActiveRow = 2)
+  deleteNamedRegion(xlsx, name = "clientes")
+  # Preenchendo os dados da aba "Clientes"
+  writeData(
+    xlsx,
+    sheet = "Clientes",
+    r_inad.clientes_t
+  )
+  # Nomear os dados na aba "Clientes"
+  createNamedRegion(
+    xlsx,
+    sheet = "Clientes",
+    rows = 1:(nrow(r_inad.clientes_t) + 1),
+    cols = 1:ncol(r_inad.clientes_t),
+    name = "clientes"
+  )
+
+  # salvar ---------------------------------------------------------------------
+
+  caminho_temporario_c <- withr::local_tempfile(fileext = ".xlsx")
+
+  # Salvar a planilha no arquivo temporário
+  saveWorkbook(xlsx, caminho_temporario_c, overwrite = TRUE)
+
+  # Normalizar o caminho para o PowerShell
+  caminho_temporario_norm_c <- normalizePath(caminho_temporario_c, winslash = "/", mustWork = FALSE)
+
+  # Comando no PowerShell para clicar em "Atualizar tudo" na planilha
+  ps_cmd <-
+    paste0(
+      "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8;",
+      "$excel = New-Object -ComObject Excel.Application;",
+      "Start-Sleep -Seconds 2;",
+      # O caminho do arquivo é passado entre aspas simples
+      "$wb = $excel.Workbooks.Open('", caminho_temporario_norm_c, "');",
+      "$wb.RefreshAll();",
+      "Start-Sleep -Seconds 3;",
+      "$wb.Save();",
+      "$wb.Close();",
+      "$excel.Quit();",
+      "[System.Runtime.Interopservices.Marshal]::ReleaseComObject($wb) | Out-Null;",
+      "[System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel) | Out-Null;"
+    )
+
+  # Executar o comando do PowerShell pelo R
+  system2("powershell", args = c("-Command", ps_cmd))
+
+  # Copiando a planilha da pasta temporária para o destino final no OneDrive
+  caminho_final_c <- str_c(caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c)
+  file.copy(caminho_temporario_c, caminho_final_c, overwrite = TRUE)
+
+  if (nrow(caminhos.inads.recentes_t) > 0) {
+    meses <- format(caminhos.inads.recentes_t$data, "%Y-%m")
+    if (length(unique(meses)) == 1) {
+      message("\u2705 Os relatórios mais recentes de inadimplência de todos os empreendimentos são do mês ", unique(meses))
+    } else {
+      msg <- paste0(
+        "\u274C Os relatórios mais recentes de inadimplência são de meses diferentes entre os empreendimentos:\n",
+        capture.output(print(caminhos.inads.recentes_t[, c("caminho", "data")], row.names = FALSE)) %>%
+          paste(collapse = "\n")
       )
-    deleteNamedRegion(xlsx, name = "parcelas")
-    # Preenchendo os dados da aba "Parcelas"
-    writeData(
-      xlsx,
-      sheet = "Parcelas",
-      r_inad.parcelas_t
-    )
-    # Nomear os dados na aba "Parcelas"
-    createNamedRegion(
-      xlsx,
-      sheet = "Parcelas",
-      rows = 1:(nrow(r_inad.parcelas_t) + 1),
-      cols = 1:ncol(r_inad.parcelas_t),
-      name = "parcelas"
-    )
-    # Formatação geral da tabela
-    addStyle(
-      xlsx,
-      sheet = "Parcelas",
-      style =
-        createStyle(
-          border = "TopBottomLeftRight",
-          halign = "center",
-          valign = "center"
-        ),
-      rows = 1:(nrow(r_inad.parcelas_t) + 1),
-      cols = 1:ncol(r_inad.parcelas_t),
-      gridExpand = T
-    )
-    # Formatar largura das colunas da tabela
-    setColWidths(
-      xlsx,
-      sheet = "Parcelas",
-      cols = 1:ncol(r_inad.parcelas_t),
-      widths = 18
-    )
-    # Formatar largura das colunas "cliente" e "unidade"
-    setColWidths(
-      xlsx,
-      sheet = "Parcelas",
-      cols = which(colnames(r_inad.parcelas_t) %in% c("cliente", "unidade")),
-      widths = "auto"
-    )
-    # Formatar largura de colunas específicas
-    setColWidths(
-      xlsx,
-      sheet = "Parcelas",
-      cols = which(colnames(r_inad.parcelas_t) %in% c(
-        "repassado", "contrato.cef", "contrato.ampla", "esp", "parcela",
-        "quantidade.parcelas", "ele", "vencimento", "atraso", "r/f"
-      )),
-      widths = c(12, 15, 15, 9, 15, 20, 9, 12, 9, 9)
-    )
-    # Adicionar filtro à tabela
-    addFilter(
-      xlsx,
-      sheet = "Parcelas",
-      rows = 1,
-      cols = 1:ncol(r_inad.parcelas_t)
-    )
-    # Formatar cabeçalho
-    addStyle(
-      xlsx,
-      sheet = "Parcelas",
-      style =
-        createStyle(
-          border = "TopBottomLeftRight",
-          fontSize = 11,
-          halign = "center",
-          valign = "center",
-          textDecoration = "bold",
-          fgFill = "darkgray",
-          wrapText = T
-        ),
-      rows = 1,
-      cols = 1:ncol(r_inad.parcelas_t),
-      gridExpand = T
-    )
-    # Formatar as colunas "cliente" e "unidade"
-    addStyle(
-      xlsx,
-      sheet = "Parcelas",
-      style =
-        createStyle(
-          border = "TopBottomLeftRight",
-          halign = "left",
-          valign = "center",
-          wrapText = FALSE
-        ),
-      rows = 2:(nrow(r_inad.parcelas_t) + 1),
-      cols = which(colnames(r_inad.parcelas_t) %in% c("cliente", "unidade")),
-      gridExpand = T
-    )
-    # Formatar a coluna "vencimento" como data
-    addStyle(
-      xlsx,
-      sheet = "Parcelas",
-      style =
-        createStyle(
-          border = "TopBottomLeftRight",
-          halign = "center",
-          valign = "center",
-          numFmt = "DD/MM/YYYY"
-        ),
-      rows = 2:(nrow(r_inad.parcelas_t) + 1),
-      cols = which(colnames(r_inad.parcelas_t) == "vencimento"),
-      gridExpand = T
-    )
-    # Formatar a coluna "data.consulta" como uma data com horário
-    addStyle(
-      xlsx,
-      sheet = "Parcelas",
-      style =
-        createStyle(
-          border = "TopBottomLeftRight",
-          halign = "center",
-          valign = "center",
-          numFmt = "YYYY-MM-DD HH:MM:SS"
-        ),
-      rows = 2:(nrow(r_inad.parcelas_t) + 1),
-      cols = which(colnames(r_inad.parcelas_t) == "data.consulta"),
-      gridExpand = T
-    )
-    # Formatar colunas com valores monetários
-    addStyle(
-      xlsx,
-      sheet = "Parcelas",
-      style =
-        createStyle(
-          border = "TopBottomLeftRight",
-          halign = "center",
-          valign = "center",
-          numFmt = "#,##0.00"
-        ),
-      rows = 1:nrow(r_inad.parcelas_t) + 1,
-      cols =
-        which(
-          colnames(r_inad.parcelas_t) %in%
-            c(
-              "principal", "juros", "encargos", "juros.mora", "multa",
-              "seguro", "total"
-            )
-        ),
-      gridExpand = T
-    )
-    # Congelar a primeira linha
-    freezePane(xlsx, sheet = "Parcelas", firstRow = T, firstActiveRow = 2)
-    deleteNamedRegion(xlsx, name = "clientes")
-    # Preenchendo os dados da aba "Clientes"
-    writeData(
-      xlsx,
-      sheet = "Clientes",
-      r_inad.clientes_t
-    )
-    # Nomear os dados na aba "Clientes"
-    createNamedRegion(
-      xlsx,
-      sheet = "Clientes",
-      rows = 1:(nrow(r_inad.clientes_t) + 1),
-      cols = 1:ncol(r_inad.clientes_t),
-      name = "clientes"
-    )
-    caminho_temporario_c <- withr::local_tempfile(fileext = ".xlsx")
-
-    # Salvar a planilha no arquivo temporário
-    saveWorkbook(xlsx, caminho_temporario_c, overwrite = TRUE)
-
-    # Normalizar o caminho para o PowerShell
-    caminho_temporario_norm_c <- normalizePath(caminho_temporario_c, winslash = "/", mustWork = FALSE)
-
-    # Comando no PowerShell para clicar em "Atualizar tudo" na planilha
-    ps_cmd <-
-      paste0(
-        "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8;",
-        "$excel = New-Object -ComObject Excel.Application;",
-        "Start-Sleep -Seconds 2;",
-        # O caminho do arquivo é passado entre aspas simples
-        "$wb = $excel.Workbooks.Open('", caminho_temporario_norm_c, "');",
-        "$wb.RefreshAll();",
-        "Start-Sleep -Seconds 3;",
-        "$wb.Save();",
-        "$wb.Close();",
-        "$excel.Quit();",
-        "[System.Runtime.Interopservices.Marshal]::ReleaseComObject($wb) | Out-Null;",
-        "[System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel) | Out-Null;"
-      )
-
-    # Executar o comando do PowerShell pelo R
-    system2("powershell", args = c("-Command", ps_cmd))
-
-    # Copiando a planilha da pasta temporária para o destino final no OneDrive
-    caminho_final_c <- str_c(caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c)
-    file.copy(caminho_temporario_c, caminho_final_c, overwrite = TRUE)
-
-    if (nrow(caminhos.inads_t) > 0) {
-      meses <- format(caminhos.inads_t$data, "%Y-%m")
-      if (length(unique(meses)) == 1) {
-        message("\u2705 Os relatórios mais recentes de inadimplência de todos os empreendimentos são do mês ", unique(meses))
-      } else {
-        msg <- paste0(
-          "\u274C Os relatórios mais recentes de inadimplência são de meses diferentes entre os empreendimentos:\n",
-          capture.output(print(caminhos.inads_t[, c("caminho", "data")], row.names = FALSE)) %>%
-            paste(collapse = "\n")
-        )
-        message(msg)
-      }
+      message(msg)
     }
-    # Mensagem de verificação para contratos
-    if (nrow(caminhos.contrs_t) > 0) {
-      meses_contrs <- format(caminhos.contrs_t$data, "%Y-%m")
-      if (length(unique(meses_contrs)) == 1) {
-        message("\u2705 Os contratos mais recentes de todos os empreendimentos são do mês ", unique(meses_contrs))
-      } else {
-        msg_contrs <- paste0(
-          "\u274C Os contratos mais recentes são de meses diferentes entre os empreendimentos:\n",
-          capture.output(print(caminhos.contrs_t[, c("caminho", "data")], row.names = FALSE)) %>%
-            paste(collapse = "\n")
-        )
-        message(msg_contrs)
-      }
-    }
-    return(r_inad_l)
   }
+  # Mensagem de verificação para contratos
+  if (nrow(caminhos.contrs_t) > 0) {
+    meses_contrs <- format(caminhos.contrs_t$data, "%Y-%m")
+    if (length(unique(meses_contrs)) == 1) {
+      message("\u2705 Os contratos mais recentes de todos os empreendimentos são do mês ", unique(meses_contrs))
+    } else {
+      msg_contrs <- paste0(
+        "\u274C Os contratos mais recentes são de meses diferentes entre os empreendimentos:\n",
+        capture.output(print(caminhos.contrs_t[, c("caminho", "data")], row.names = FALSE)) %>%
+          paste(collapse = "\n")
+      )
+      message(msg_contrs)
+    }
+  }
+  return(r_inad_l)
+}
 
 # Teste -------------------------------------------------------------------
