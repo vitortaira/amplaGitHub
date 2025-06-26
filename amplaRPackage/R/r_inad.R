@@ -29,11 +29,11 @@ r_inad <- function() {
     dplyr::filter(arquivo %in% caminhos.inads.recentes_t$caminho) %>%
     left_join(
       contrs_t %>%
-        dplyr::filter(arquivo %in% caminhos.contrs.recentes_t$caminho) %>%
-        select(
-          -"arquivo.tabela.tipo", -"arquivo.tipo", -"arquivo.fonte",
-          -"cliente", -"esp"
-        ),
+        dplyr::filter(arquivo %in% caminhos.contrs.recentes_c) %>%
+        select(-c(
+          "arquivo.tabela.tipo", "arquivo.tipo", "arquivo.fonte", "cliente",
+          "esp"
+        )),
       by = c("contrato.ampla", "empreendimento")
     ) %>%
     mutate(
@@ -49,7 +49,7 @@ r_inad <- function() {
     group_by(cliente) %>%
     summarise(
       total = sum(total, na.rm = TRUE),
-      atraso.meses = round(max(atraso, na.rm = TRUE) / 30, 1),
+      atraso.meses = round(max(atraso, na.rm = TRUE) / 30, 0),
       empreendimento = first(empreendimento),
       repassado = first(repassado)
     ) %>%
