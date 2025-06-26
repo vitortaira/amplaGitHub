@@ -49,7 +49,7 @@ e_ik_contr <-
       )), as.factor)) %>%
       mutate(
         repassado = if_else(
-          is.na(contrato.cef), "Não repassado", "repassado"
+          is.na(contrato.cef), "Não", "Sim"
         ) %>% as.factor(),
         empreendimento = as.factor(empreendimento_c),
         arquivo = caminho.contr_c

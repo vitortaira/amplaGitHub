@@ -30,18 +30,17 @@ r_inad <- function() {
     left_join(
       contrs_t %>%
         dplyr::filter(arquivo %in% caminhos.contrs.recentes_t$caminho) %>%
-        select(-c(
-          "arquivo.tabela.tipo", "arquivo.tipo", "arquivo.fonte", "cliente",
-          "esp"
-        )),
-      by = c("contrato.ampla", "empreendimento")
+        select(-"cliente"),
+      by = c("contrato.ampla", "empreendimento"),
+      suffix = c(".inad", ".contr")
     ) %>%
     mutate(
-      repassado = if_else(repassado == "repassado", "Sim", "Não")
+      repassado = if_else(repassado %in% c(NA, "Não"), "Não", "Sim")
     ) %>%
     dplyr::select(
-      empreendimento, cliente, repassado, contrato.cef,
-      unidade, empreendimento, telefone, everything()
+      empreendimento, cliente, total, repassado, contrato.ampla, contrato.cef,
+      unidade, quantidade.parcelas, parcela, atraso, vencimento, ele,
+      principal, juros, encargos, juros.mora, multa, seguro, everything()
     ) %>%
     distinct()
   r_inad.clientes_t <-
