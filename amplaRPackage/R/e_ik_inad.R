@@ -129,7 +129,7 @@ e_ik_inad <-
                 .x,
                 locale = locale(decimal_mark = ",", grouping_mark = ".")
               ),
-              TRUE ~ as.numeric(.x)
+              TRUE ~ parse_number(.x, locale = locale(decimal_mark = "."))
             )
           }
         ),
