@@ -14,28 +14,10 @@ r_inad <- function() {
 
   # Consolida os dados dos arquivos do tipo contr
   contrs_t <- e_ik_contrs()
-  # Filtrar contrs_t para apenas o arquivo mais recente por empreendimento
-  caminhos.contrs_t <-
-    dir_ls(caminhos_pastas("cobranca"), recurse = TRUE, type = "file") %>%
-    keep(
-      ~ str_detect(.x, "(?i)contratos-.*\\.xlsx") &
-        !str_detect(.x, "(?i)consolidado")
-    ) %>%
-    map_dfr(~ {
-      data_str <- str_extract(.x, "-\\s?\\d{4}_\\d{2}") %>%
-        str_extract("\\d{4}_\\d{2}")
-      data <- suppressWarnings(as.Date(
-        paste0(data_str, "_01"),
-        format = "%Y_%m_%d"
-      ))
-      empreendimento_c <- str_extract(.x, "-\\s?\\w{3}\\s?-") %>%
-        str_extract("\\w{3}")
-      tibble(
-        caminho = .x,
-        data = data,
-        empresa = empreendimento_c
-      )
-    }) %>%
+  # Tabela com todos os caminhos dos arquivos do tipo contr
+  caminhos.contrs_t <- e_metadados("contr")
+  # Tabela com os caminhos dos arquivos mais recentes do tipo contr
+  caminhos.contrs.recentes_t <- caminhos.contrs_t %>%
     arrange(desc(data)) %>%
     distinct(empresa, .keep_all = TRUE)
   caminhos.contrs.recentes_c <- caminhos.contrs_t$caminho
@@ -73,9 +55,11 @@ r_inad <- function() {
       repassado = first(repassado)
     ) %>%
     ungroup()
-  r_inad_l <- list(
-    r_inad.parcelas_t = r_inad.parcelas_t,
-    r_inad.clientes_t = r_inad.clientes_t
+
+  # Lista nomeada com os dataframes e os nomes das abas correspondentes
+  dfs_para_escrever_l <- list(
+    "Parcelas" = r_inad.parcelas_t,
+    "Clientes" = r_inad.clientes_t
   )
 
   # xlsx -----------------------------------------------------------------------
@@ -97,167 +81,131 @@ r_inad <- function() {
     loadWorkbook(
       str_c(caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c),
     )
-  deleteNamedRegion(xlsx, name = "parcelas")
-  # Preenchendo os dados da aba "Parcelas"
-  writeData(
-    xlsx,
-    sheet = "Parcelas",
-    r_inad.parcelas_t
-  )
-  # Nomear os dados na aba "Parcelas"
-  createNamedRegion(
-    xlsx,
-    sheet = "Parcelas",
-    rows = 1:(nrow(r_inad.parcelas_t) + 1),
-    cols = 1:ncol(r_inad.parcelas_t),
-    name = "parcelas"
-  )
-  # Formatação geral da tabela
-  addStyle(
-    xlsx,
-    sheet = "Parcelas",
-    style =
-      createStyle(
-        border = "TopBottomLeftRight",
-        halign = "center",
-        valign = "center"
-      ),
-    rows = 1:(nrow(r_inad.parcelas_t) + 1),
-    cols = 1:ncol(r_inad.parcelas_t),
-    gridExpand = T
-  )
-  # Formatar largura das colunas da tabela
-  setColWidths(
-    xlsx,
-    sheet = "Parcelas",
-    cols = 1:ncol(r_inad.parcelas_t),
-    widths = 18
-  )
-  # Formatar largura das colunas "cliente" e "unidade"
-  setColWidths(
-    xlsx,
-    sheet = "Parcelas",
-    cols = which(colnames(r_inad.parcelas_t) %in% c("cliente", "unidade")),
-    widths = "auto"
-  )
-  # Formatar largura de colunas específicas
-  setColWidths(
-    xlsx,
-    sheet = "Parcelas",
-    cols = which(colnames(r_inad.parcelas_t) %in% c(
-      "repassado", "contrato.cef", "contrato.ampla", "esp", "parcela",
-      "quantidade.parcelas", "ele", "vencimento", "atraso", "r/f"
-    )),
-    widths = c(12, 15, 15, 9, 15, 20, 9, 12, 9, 9)
-  )
-  # Adicionar filtro à tabela
-  addFilter(
-    xlsx,
-    sheet = "Parcelas",
-    rows = 1,
-    cols = 1:ncol(r_inad.parcelas_t)
-  )
-  # Formatar cabeçalho
-  addStyle(
-    xlsx,
-    sheet = "Parcelas",
-    style =
-      createStyle(
-        border = "TopBottomLeftRight",
-        fontSize = 11,
-        halign = "center",
-        valign = "center",
-        textDecoration = "bold",
-        fgFill = "darkgray",
-        wrapText = T
-      ),
-    rows = 1,
-    cols = 1:ncol(r_inad.parcelas_t),
-    gridExpand = T
-  )
-  # Formatar as colunas "cliente" e "unidade"
-  addStyle(
-    xlsx,
-    sheet = "Parcelas",
-    style =
-      createStyle(
-        border = "TopBottomLeftRight",
-        halign = "left",
-        valign = "center",
-        wrapText = FALSE
-      ),
-    rows = 2:(nrow(r_inad.parcelas_t) + 1),
-    cols = which(colnames(r_inad.parcelas_t) %in% c("cliente", "unidade")),
-    gridExpand = T
-  )
-  # Formatar a coluna "vencimento" como data
-  addStyle(
-    xlsx,
-    sheet = "Parcelas",
-    style =
-      createStyle(
-        border = "TopBottomLeftRight",
-        halign = "center",
-        valign = "center",
-        numFmt = "DD/MM/YYYY"
-      ),
-    rows = 2:(nrow(r_inad.parcelas_t) + 1),
-    cols = which(colnames(r_inad.parcelas_t) == "vencimento"),
-    gridExpand = T
-  )
-  # Formatar a coluna "data.consulta" como uma data com horário
-  addStyle(
-    xlsx,
-    sheet = "Parcelas",
-    style =
-      createStyle(
-        border = "TopBottomLeftRight",
-        halign = "center",
-        valign = "center",
-        numFmt = "YYYY-MM-DD HH:MM:SS"
-      ),
-    rows = 2:(nrow(r_inad.parcelas_t) + 1),
-    cols = which(colnames(r_inad.parcelas_t) == "data.consulta"),
-    gridExpand = T
-  )
-  # Formatar colunas com valores monetários
-  addStyle(
-    xlsx,
-    sheet = "Parcelas",
-    style =
-      createStyle(
-        border = "TopBottomLeftRight",
-        halign = "center",
-        valign = "center",
-        numFmt = "#,##0.00"
-      ),
-    rows = 1:nrow(r_inad.parcelas_t) + 1,
-    cols =
-      which(
-        colnames(r_inad.parcelas_t) %in%
-          c(
-            "principal", "juros", "encargos", "juros.mora", "multa",
-            "seguro", "total"
-          )
-      ),
-    gridExpand = T
-  )
-  # Congelar a primeira linha
-  freezePane(xlsx, sheet = "Parcelas", firstRow = T, firstActiveRow = 2)
-  deleteNamedRegion(xlsx, name = "clientes")
-  # Preenchendo os dados da aba "Clientes"
-  writeData(
-    xlsx,
-    sheet = "Clientes",
-    r_inad.clientes_t
-  )
-  # Nomear os dados na aba "Clientes"
-  createNamedRegion(
-    xlsx,
-    sheet = "Clientes",
-    rows = 1:(nrow(r_inad.clientes_t) + 1),
-    cols = 1:ncol(r_inad.clientes_t),
-    name = "clientes"
+
+  # Usando purrr::walk2 para aplicar formatação a múltiplas abas
+  purrr::walk2(
+    .x = dfs_para_escrever_l,
+    .y = names(dfs_para_escrever_l),
+    .f = function(df, nome_aba) {
+      # Deletar a região nomeada antiga, se existir
+      nome_regiao <- tolower(nome_aba)
+      if (nome_regiao %in% getNamedRegions(xlsx)) {
+        deleteNamedRegion(xlsx, name = nome_regiao)
+      }
+
+      # Escrever os dados
+      writeData(xlsx, sheet = nome_aba, x = df)
+
+      # Criar nova região nomeada
+      createNamedRegion(
+        xlsx,
+        sheet = nome_aba,
+        name = nome_regiao,
+        rows = 1:(nrow(df) + 1),
+        cols = 1:ncol(df)
+      )
+
+      # Estilo geral (bordas e alinhamento)
+      addStyle(
+        xlsx,
+        sheet = nome_aba,
+        style = createStyle(border = "TopBottomLeftRight", halign = "center", valign = "center"),
+        rows = 1:(nrow(df) + 1),
+        cols = 1:ncol(df),
+        gridExpand = TRUE
+      )
+
+      # Estilo do cabeçalho
+      addStyle(
+        xlsx,
+        sheet = nome_aba,
+        style = createStyle(
+          border = "TopBottomLeftRight",
+          fontSize = 11,
+          halign = "center",
+          valign = "center",
+          textDecoration = "bold",
+          fgFill = "darkgray",
+          wrapText = TRUE
+        ),
+        rows = 1,
+        cols = 1:ncol(df),
+        gridExpand = TRUE
+      )
+
+      # Adicionar filtro e congelar painel
+      addFilter(xlsx, sheet = nome_aba, rows = 1, cols = 1:ncol(df))
+      freezePane(xlsx, sheet = nome_aba, firstRow = TRUE, firstActiveRow = 2)
+
+      # Formatações de largura de coluna (geral e auto)
+      setColWidths(xlsx, sheet = nome_aba, cols = 1:ncol(df), widths = 18)
+      setColWidths(
+        xlsx,
+        sheet = nome_aba,
+        cols = which(colnames(df) %in% c("cliente", "unidade")),
+        widths = "auto"
+      )
+
+      # --- Formatações específicas da aba "Parcelas" ---
+      if (nome_aba == "Parcelas") {
+        # Larguras específicas
+        setColWidths(
+          xlsx,
+          sheet = nome_aba,
+          cols = which(colnames(df) %in% c(
+            "repassado", "contrato.cef", "contrato.ampla", "esp", "parcela",
+            "quantidade.parcelas", "ele", "vencimento", "atraso", "r/f"
+          )),
+          widths = c(12, 15, 15, 9, 15, 20, 9, 12, 9, 9)
+        )
+
+        # Estilo para colunas de texto (alinhamento à esquerda)
+        addStyle(
+          xlsx,
+          sheet = nome_aba,
+          style = createStyle(halign = "left", wrapText = FALSE),
+          rows = 2:(nrow(df) + 1),
+          cols = which(colnames(df) %in% c("cliente", "unidade")),
+          gridExpand = TRUE,
+          stack = TRUE
+        )
+
+        # Estilo para data
+        addStyle(
+          xlsx,
+          sheet = nome_aba,
+          style = createStyle(numFmt = "DD/MM/YYYY"),
+          rows = 2:(nrow(df) + 1),
+          cols = which(colnames(df) == "vencimento"),
+          gridExpand = TRUE,
+          stack = TRUE
+        )
+
+        # Estilo para data e hora
+        addStyle(
+          xlsx,
+          sheet = nome_aba,
+          style = createStyle(numFmt = "YYYY-MM-DD HH:MM:SS"),
+          rows = 2:(nrow(df) + 1),
+          cols = which(colnames(df) == "data.consulta"),
+          gridExpand = TRUE,
+          stack = TRUE
+        )
+
+        # Estilo para valores monetários
+        addStyle(
+          xlsx,
+          sheet = nome_aba,
+          style = createStyle(numFmt = "#,##0.00"),
+          rows = 2:(nrow(df) + 1),
+          cols = which(colnames(df) %in% c(
+            "principal", "juros", "encargos", "juros.mora", "multa", "seguro", "total"
+          )),
+          gridExpand = TRUE,
+          stack = TRUE
+        )
+      }
+    }
   )
 
   # salvar ---------------------------------------------------------------------
@@ -323,5 +271,3 @@ r_inad <- function() {
   }
   return(r_inad_l)
 }
-
-# Teste -------------------------------------------------------------------
