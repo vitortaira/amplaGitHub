@@ -20,9 +20,8 @@ r_inad <- function() {
   caminhos.contrs.recentes_t <- caminhos.contrs_t %>%
     arrange(desc(data)) %>%
     distinct(empresa, .keep_all = TRUE)
-  caminhos.contrs.recentes_c <- caminhos.contrs_t$caminho
 
-  # join --------------------------------------------------------------------
+  # join -----------------------------------------------------------------------
 
   # Cruza inads_t e contrs_t
   r_inad.parcelas_t <-
@@ -30,11 +29,11 @@ r_inad <- function() {
     dplyr::filter(arquivo %in% caminhos.inads.recentes_t$caminho) %>%
     left_join(
       contrs_t %>%
-        dplyr::filter(arquivo %in% caminhos.contrs.recentes_c) %>%
-        select(-c(
-          "arquivo.tabela.tipo", "arquivo.tipo", "arquivo.fonte", "cliente",
-          "esp"
-        )),
+        dplyr::filter(arquivo %in% caminhos.contrs.recentes_t$caminho) %>%
+        select(
+          -"arquivo.tabela.tipo", -"arquivo.tipo", -"arquivo.fonte",
+          -"cliente", -"esp"
+        ),
       by = c("contrato.ampla", "empreendimento")
     ) %>%
     mutate(
@@ -57,7 +56,7 @@ r_inad <- function() {
     ungroup()
 
   # Lista nomeada com os dataframes e os nomes das abas correspondentes
-  dfs_para_escrever_l <- list(
+  dfs_l <- list(
     "Parcelas" = r_inad.parcelas_t,
     "Clientes" = r_inad.clientes_t
   )
@@ -79,14 +78,14 @@ r_inad <- function() {
   # Definir a cópia criada como o workbook ativo
   xlsx <-
     loadWorkbook(
-      str_c(caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c),
+      str_c(caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c)
     )
 
-  # Usando purrr::walk2 para aplicar formatação a múltiplas abas
+  # Edições comuns a todas as abas
   purrr::walk2(
-    .x = dfs_para_escrever_l,
-    .y = names(dfs_para_escrever_l),
-    .f = function(df, nome_aba) {
+    .x = dfs_l,
+    .y = names(dfs_l),
+    .f = function(f_df_t, nome_aba) {
       # Deletar a região nomeada antiga, se existir
       nome_regiao <- tolower(nome_aba)
       if (nome_regiao %in% getNamedRegions(xlsx)) {
@@ -94,24 +93,28 @@ r_inad <- function() {
       }
 
       # Escrever os dados
-      writeData(xlsx, sheet = nome_aba, x = df)
+      writeData(xlsx, sheet = nome_aba, x = f_df_t)
 
       # Criar nova região nomeada
       createNamedRegion(
         xlsx,
         sheet = nome_aba,
         name = nome_regiao,
-        rows = 1:(nrow(df) + 1),
-        cols = 1:ncol(df)
+        rows = 1:(nrow(f_df_t) + 1),
+        cols = 1:ncol(f_df_t)
       )
 
       # Estilo geral (bordas e alinhamento)
       addStyle(
         xlsx,
         sheet = nome_aba,
-        style = createStyle(border = "TopBottomLeftRight", halign = "center", valign = "center"),
-        rows = 1:(nrow(df) + 1),
-        cols = 1:ncol(df),
+        style = createStyle(
+          border = "TopBottomLeftRight",
+          halign = "center",
+          valign = "center"
+        ),
+        rows = 1:(nrow(f_df_t) + 1),
+        cols = 1:ncol(f_df_t),
         gridExpand = TRUE
       )
 
@@ -129,20 +132,20 @@ r_inad <- function() {
           wrapText = TRUE
         ),
         rows = 1,
-        cols = 1:ncol(df),
+        cols = 1:ncol(f_df_t),
         gridExpand = TRUE
       )
 
       # Adicionar filtro e congelar painel
-      addFilter(xlsx, sheet = nome_aba, rows = 1, cols = 1:ncol(df))
+      addFilter(xlsx, sheet = nome_aba, rows = 1, cols = 1:ncol(f_df_t))
       freezePane(xlsx, sheet = nome_aba, firstRow = TRUE, firstActiveRow = 2)
 
       # Formatações de largura de coluna (geral e auto)
-      setColWidths(xlsx, sheet = nome_aba, cols = 1:ncol(df), widths = 18)
+      setColWidths(xlsx, sheet = nome_aba, cols = 1:ncol(f_df_t), widths = 18)
       setColWidths(
         xlsx,
         sheet = nome_aba,
-        cols = which(colnames(df) %in% c("cliente", "unidade")),
+        cols = which(colnames(f_df_t) %in% c("cliente", "unidade")),
         widths = "auto"
       )
 
@@ -152,9 +155,10 @@ r_inad <- function() {
         setColWidths(
           xlsx,
           sheet = nome_aba,
-          cols = which(colnames(df) %in% c(
-            "repassado", "contrato.cef", "contrato.ampla", "esp", "parcela",
-            "quantidade.parcelas", "ele", "vencimento", "atraso", "r/f"
+          cols = which(colnames(f_df_t) %in% c(
+            "repassado", "contrato.cef", "contrato.ampla", "esp",
+            "parcela", "quantidade.parcelas", "ele", "vencimento",
+            "atraso", "r/f"
           )),
           widths = c(12, 15, 15, 9, 15, 20, 9, 12, 9, 9)
         )
@@ -164,8 +168,8 @@ r_inad <- function() {
           xlsx,
           sheet = nome_aba,
           style = createStyle(halign = "left", wrapText = FALSE),
-          rows = 2:(nrow(df) + 1),
-          cols = which(colnames(df) %in% c("cliente", "unidade")),
+          rows = 2:(nrow(f_df_t) + 1),
+          cols = which(colnames(f_df_t) %in% c("cliente", "unidade")),
           gridExpand = TRUE,
           stack = TRUE
         )
@@ -175,8 +179,8 @@ r_inad <- function() {
           xlsx,
           sheet = nome_aba,
           style = createStyle(numFmt = "DD/MM/YYYY"),
-          rows = 2:(nrow(df) + 1),
-          cols = which(colnames(df) == "vencimento"),
+          rows = 2:(nrow(f_df_t) + 1),
+          cols = which(colnames(f_df_t) == "vencimento"),
           gridExpand = TRUE,
           stack = TRUE
         )
@@ -186,8 +190,8 @@ r_inad <- function() {
           xlsx,
           sheet = nome_aba,
           style = createStyle(numFmt = "YYYY-MM-DD HH:MM:SS"),
-          rows = 2:(nrow(df) + 1),
-          cols = which(colnames(df) == "data.consulta"),
+          rows = 2:(nrow(f_df_t) + 1),
+          cols = which(colnames(f_df_t) == "data.consulta"),
           gridExpand = TRUE,
           stack = TRUE
         )
@@ -197,9 +201,10 @@ r_inad <- function() {
           xlsx,
           sheet = nome_aba,
           style = createStyle(numFmt = "#,##0.00"),
-          rows = 2:(nrow(df) + 1),
-          cols = which(colnames(df) %in% c(
-            "principal", "juros", "encargos", "juros.mora", "multa", "seguro", "total"
+          rows = 2:(nrow(f_df_t) + 1),
+          cols = which(colnames(f_df_t) %in% c(
+            "principal", "juros", "encargos", "juros.mora",
+            "multa", "seguro", "total"
           )),
           gridExpand = TRUE,
           stack = TRUE
@@ -216,7 +221,11 @@ r_inad <- function() {
   saveWorkbook(xlsx, caminho_temporario_c, overwrite = TRUE)
 
   # Normalizar o caminho para o PowerShell
-  caminho_temporario_norm_c <- normalizePath(caminho_temporario_c, winslash = "/", mustWork = FALSE)
+  caminho_temporario_norm_c <- normalizePath(
+    caminho_temporario_c,
+    winslash = "/",
+    mustWork = FALSE
+  )
 
   # Comando no PowerShell para clicar em "Atualizar tudo" na planilha
   ps_cmd <-
@@ -231,43 +240,61 @@ r_inad <- function() {
       "$wb.Save();",
       "$wb.Close();",
       "$excel.Quit();",
-      "[System.Runtime.Interopservices.Marshal]::ReleaseComObject($wb) | Out-Null;",
-      "[System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel) | Out-Null;"
+      "[System.Runtime.Interopservices.Marshal]::",
+      "ReleaseComObject($wb) | Out-Null;",
+      "[System.Runtime.Interopservices.Marshal]::",
+      "ReleaseComObject($excel) | Out-Null;"
     )
 
   # Executar o comando do PowerShell pelo R
   system2("powershell", args = c("-Command", ps_cmd))
 
   # Copiando a planilha da pasta temporária para o destino final no OneDrive
-  caminho_final_c <- str_c(caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c)
+  caminho_final_c <- str_c(
+    caminhos_pastas("cobranca"), "/Consolidados/", nome.xlsx_c
+  )
   file.copy(caminho_temporario_c, caminho_final_c, overwrite = TRUE)
 
   if (nrow(caminhos.inads.recentes_t) > 0) {
     meses <- format(caminhos.inads.recentes_t$data, "%Y-%m")
     if (length(unique(meses)) == 1) {
-      message("\u2705 Os relatórios mais recentes de inadimplência de todos os empreendimentos são do mês ", unique(meses))
+      message(
+        "\u2705 Os relatórios mais recentes de inadimplência de todos ",
+        "os empreendimentos são do mês ", unique(meses)
+      )
     } else {
       msg <- paste0(
-        "\u274C Os relatórios mais recentes de inadimplência são de meses diferentes entre os empreendimentos:\n",
-        capture.output(print(caminhos.inads.recentes_t[, c("caminho", "data")], row.names = FALSE)) %>%
+        "\u274C Os relatórios mais recentes de inadimplência são de ",
+        "meses diferentes entre os empreendimentos:\n",
+        capture.output(print(
+          caminhos.inads.recentes_t[, c("caminho", "data")],
+          row.names = FALSE
+        )) %>%
           paste(collapse = "\n")
       )
       message(msg)
     }
   }
   # Mensagem de verificação para contratos
-  if (nrow(caminhos.contrs_t) > 0) {
-    meses_contrs <- format(caminhos.contrs_t$data, "%Y-%m")
+  if (nrow(caminhos.contrs.recentes_t) > 0) {
+    meses_contrs <- format(caminhos.contrs.recentes_t$data, "%Y-%m")
     if (length(unique(meses_contrs)) == 1) {
-      message("\u2705 Os contratos mais recentes de todos os empreendimentos são do mês ", unique(meses_contrs))
+      message(
+        "\u2705 Os contratos mais recentes de todos os empreendimentos ",
+        "são do mês ", unique(meses_contrs)
+      )
     } else {
       msg_contrs <- paste0(
-        "\u274C Os contratos mais recentes são de meses diferentes entre os empreendimentos:\n",
-        capture.output(print(caminhos.contrs_t[, c("caminho", "data")], row.names = FALSE)) %>%
+        "\u274C Os contratos mais recentes são de meses diferentes ",
+        "entre os empreendimentos:\n",
+        capture.output(print(
+          caminhos.contrs.recentes_t[, c("caminho", "data")],
+          row.names = FALSE
+        )) %>%
           paste(collapse = "\n")
       )
       message(msg_contrs)
     }
   }
-  return(r_inad_l)
+  return(dfs_l)
 }
