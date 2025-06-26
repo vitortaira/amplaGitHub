@@ -29,7 +29,7 @@ r_inad <- function() {
     dplyr::filter(arquivo %in% caminhos.inads.recentes_t$caminho) %>%
     left_join(
       contrs_t %>%
-        dplyr::filter(arquivo %in% caminhos.contrs.recentes_c) %>%
+        dplyr::filter(arquivo %in% caminhos.contrs.recentes_t$caminho) %>%
         select(-c(
           "arquivo.tabela.tipo", "arquivo.tipo", "arquivo.fonte", "cliente",
           "esp"
