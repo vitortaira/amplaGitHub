@@ -38,10 +38,13 @@ r_inad <- function() {
       repassado = if_else(repassado %in% c(NA, "Não"), "Não", "Sim")
     ) %>%
     dplyr::select(
-      empreendimento, cliente, total, repassado, contrato.ampla, contrato.cef,
-      unidade, quantidade.parcelas, parcela, atraso, vencimento, ele,
-      principal, juros, encargos, juros.mora, multa, seguro, everything()
+      empreendimento, cliente, total, repassado,
+      contrato.ampla, contrato.cef, unidade, quantidade.parcelas,
+      parcela, atraso, vencimento, ele,
+      principal, juros, encargos, juros.mora, multa, seguro,
+      everything()                # now grab all the other cols (incl. arquivo.*)
     ) %>%
+    relocate(starts_with("arquivo"), .after = last_col()) %>%
     distinct()
   r_inad.clientes_t <-
     r_inad.parcelas_t %>%
@@ -150,28 +153,49 @@ r_inad <- function() {
 
       # --- Formatações específicas da aba "Parcelas" ---
       if (nome_aba == "Parcelas") {
-        # Larguras específicas
-        setColWidths(
-          xlsx,
-          sheet = nome_aba,
-          cols = which(colnames(f_df_t) %in% c(
-            "repassado", "contrato.cef", "contrato.ampla", "esp",
-            "parcela", "quantidade.parcelas", "ele", "vencimento",
-            "atraso", "r/f"
-          )),
-          widths = c(12, 15, 15, 9, 15, 20, 9, 12, 9, 9)
+        # Larguras específicas - mapeamento dinâmico de colunas e larguras
+        colunas_larguras <- c(
+          "repassado" = 12, "contrato.cef" = 15, "contrato.ampla" = 15,
+          "esp" = 9, "parcela" = 15, "quantidade.parcelas" = 20,
+          "ele" = 9, "vencimento" = 12, "atraso" = 9, "r/f" = 9
         )
 
-        # Estilo para colunas de texto (alinhamento à esquerda)
-        addStyle(
-          xlsx,
-          sheet = nome_aba,
-          style = createStyle(halign = "left", wrapText = FALSE),
-          rows = 2:(nrow(f_df_t) + 1),
-          cols = which(colnames(f_df_t) %in% c("cliente", "unidade")),
-          gridExpand = TRUE,
-          stack = TRUE
-        )
+        # Encontra quais colunas existem no dataframe
+        colunas_existentes <- names(colunas_larguras)[
+          names(colunas_larguras) %in% colnames(f_df_t)
+        ]
+
+        if (length(colunas_existentes) > 0) {
+          setColWidths(
+            xlsx,
+            sheet = nome_aba,
+            cols = which(colnames(f_df_t) %in% colunas_existentes),
+            widths = colunas_larguras[colunas_existentes]
+          )
+        }
+
+        # Estilo para todas as colunas de texto (alinhamento à esquerda, sem quebra de texto)
+        colunas_texto <- which(sapply(f_df_t, function(x) is.character(x) | is.factor(x)))
+        if (length(colunas_texto) > 0) {
+          addStyle(
+            xlsx,
+            sheet = nome_aba,
+            style = createStyle(halign = "left", wrapText = FALSE),
+            rows = 2:(nrow(f_df_t) + 1),
+            cols = colunas_texto,
+            gridExpand = TRUE,
+            stack = TRUE
+          )
+
+          # Definir larguras fixas para colunas de texto para garantir que o texto seja cortado
+          setColWidths(
+            xlsx,
+            sheet = nome_aba,
+            cols = colunas_texto,
+            widths = 20  # Largura fixa para colunas de texto - texto será cortado se exceder
+          )
+        }
+
 
         # Estilo para data
         addStyle(
@@ -179,7 +203,7 @@ r_inad <- function() {
           sheet = nome_aba,
           style = createStyle(numFmt = "DD/MM/YYYY"),
           rows = 2:(nrow(f_df_t) + 1),
-          cols = which(colnames(f_df_t) == "vencimento"),
+          cols = which(colnames(f_df_t) %in% c("vencimento", "data.contrato")),
           gridExpand = TRUE,
           stack = TRUE
         )
@@ -190,7 +214,8 @@ r_inad <- function() {
           sheet = nome_aba,
           style = createStyle(numFmt = "YYYY-MM-DD HH:MM:SS"),
           rows = 2:(nrow(f_df_t) + 1),
-          cols = which(colnames(f_df_t) == "data.consulta"),
+          cols = which(colnames(f_df_t) %in%
+            c("data.consulta", "criado.em", "alterado.em", "data.autorizacao")),
           gridExpand = TRUE,
           stack = TRUE
         )
