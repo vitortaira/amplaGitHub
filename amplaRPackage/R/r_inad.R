@@ -23,7 +23,7 @@ r_inad <- function() {
 
   # join -----------------------------------------------------------------------
 
-  # Cruza inads_t e contrs_t
+  # Aba "Parcelas"
   r_inad.parcelas_t <-
     inads_t %>%
     dplyr::filter(arquivo %in% caminhos.inads.recentes_t$caminho) %>%
@@ -35,6 +35,7 @@ r_inad <- function() {
       suffix = c(".inad", ".contr")
     ) %>%
     mutate(
+      cliente = stringr::str_to_title(cliente),
       repassado = if_else(repassado %in% c(NA, "Não"), "Não", "Sim")
     ) %>%
     dplyr::select(
@@ -45,7 +46,9 @@ r_inad <- function() {
       everything()                # now grab all the other cols (incl. arquivo.*)
     ) %>%
     relocate(starts_with("arquivo"), .after = last_col()) %>%
-    distinct()
+    distinct() %>%
+    arrange(desc(total))
+  # Aba "Clientes"
   r_inad.clientes_t <-
     r_inad.parcelas_t %>%
     group_by(cliente) %>%
@@ -55,7 +58,15 @@ r_inad <- function() {
       empreendimento = first(empreendimento),
       repassado = first(repassado)
     ) %>%
-    ungroup()
+    ungroup() %>%
+    mutate(
+      status = NA_character_,
+      anotacoes = NA_character_
+    ) %>%
+    select(
+      empreendimento, cliente, total, repassado, atraso.meses, status, anotacoes
+    ) %>%
+    arrange(desc(total))
 
   # Lista nomeada com os dataframes e os nomes das abas correspondentes
   dfs_l <- list(
@@ -87,20 +98,20 @@ r_inad <- function() {
   purrr::walk2(
     .x = dfs_l,
     .y = names(dfs_l),
-    .f = function(f_df_t, nome_aba) {
+    .f = function(f_df_t, f_aba_c) {
       # Deletar a região nomeada antiga, se existir
-      nome_regiao <- tolower(nome_aba)
+      nome_regiao <- tolower(f_aba_c)
       if (nome_regiao %in% getNamedRegions(xlsx)) {
         deleteNamedRegion(xlsx, name = nome_regiao)
       }
 
       # Escrever os dados
-      writeData(xlsx, sheet = nome_aba, x = f_df_t)
+      writeData(xlsx, sheet = f_aba_c, x = f_df_t)
 
       # Criar nova região nomeada
       createNamedRegion(
         xlsx,
-        sheet = nome_aba,
+        sheet = f_aba_c,
         name = nome_regiao,
         rows = 1:(nrow(f_df_t) + 1),
         cols = 1:ncol(f_df_t)
@@ -109,7 +120,7 @@ r_inad <- function() {
       # Estilo geral (bordas e alinhamento)
       addStyle(
         xlsx,
-        sheet = nome_aba,
+        sheet = f_aba_c,
         style = createStyle(
           border = "TopBottomLeftRight",
           halign = "center",
@@ -123,7 +134,7 @@ r_inad <- function() {
       # Estilo do cabeçalho
       addStyle(
         xlsx,
-        sheet = nome_aba,
+        sheet = f_aba_c,
         style = createStyle(
           border = "TopBottomLeftRight",
           fontSize = 11,
@@ -139,68 +150,106 @@ r_inad <- function() {
       )
 
       # Adicionar filtro e congelar painel
-      addFilter(xlsx, sheet = nome_aba, rows = 1, cols = 1:ncol(f_df_t))
-      freezePane(xlsx, sheet = nome_aba, firstRow = TRUE, firstActiveRow = 2)
+      addFilter(xlsx, sheet = f_aba_c, rows = 1, cols = 1:ncol(f_df_t))
+      freezePane(xlsx, sheet = f_aba_c, firstRow = TRUE, firstActiveRow = 2)
 
-      # Formatações de largura de coluna (geral e auto)
-      setColWidths(xlsx, sheet = nome_aba, cols = 1:ncol(f_df_t), widths = 18)
-      setColWidths(
-        xlsx,
-        sheet = nome_aba,
-        cols = which(colnames(f_df_t) %in% c("cliente", "unidade")),
-        widths = "auto"
-      )
+      # Largura das colunas - geral (aplicada primeiro)
+      setColWidths(xlsx, sheet = f_aba_c, cols = 1:ncol(f_df_t), widths = 18)
 
-      # --- Formatações específicas da aba "Parcelas" ---
-      if (nome_aba == "Parcelas") {
-        # Larguras específicas - mapeamento dinâmico de colunas e larguras
-        colunas_larguras <- c(
-          "repassado" = 12, "contrato.cef" = 15, "contrato.ampla" = 15,
-          "esp" = 9, "parcela" = 15, "quantidade.parcelas" = 20,
-          "ele" = 9, "vencimento" = 12, "atraso" = 9, "r/f" = 9
+      # Colunas de texto (alinhamento à esquerda, sem quebra de texto)
+      colunas_texto <- which(sapply(f_df_t, function(x) is.character(x) | is.factor(x)))
+      if (length(colunas_texto) > 0) {
+        addStyle(
+          xlsx,
+          sheet = f_aba_c,
+          style = createStyle(halign = "left", wrapText = FALSE),
+          rows = 2:(nrow(f_df_t) + 1),
+          cols = colunas_texto,
+          gridExpand = TRUE,
+          stack = TRUE
         )
 
-        # Encontra quais colunas existem no dataframe
-        colunas_existentes <- names(colunas_larguras)[
-          names(colunas_larguras) %in% colnames(f_df_t)
-        ]
+        # Largura padrão para colunas de texto (será sobrescrita pelas específicas)
+        setColWidths(
+          xlsx,
+          sheet = f_aba_c,
+          cols = colunas_texto,
+          widths = 16
+        )
+      }
 
-        if (length(colunas_existentes) > 0) {
+      # Estilo para valores monetários
+      colunas_monetarias <- which(colnames(f_df_t) %in% c(
+        "principal", "juros", "encargos", "juros.mora", "multa", "seguro", "total"
+      ))
+      if (length(colunas_monetarias) > 0) {
+        addStyle(
+          xlsx,
+          sheet = f_aba_c,
+          style = createStyle(numFmt = "#,##0.00"),
+          rows = 2:(nrow(f_df_t) + 1),
+          cols = colunas_monetarias,
+          gridExpand = TRUE,
+          stack = TRUE
+        )
+      }
+
+      # Larguras específicas (aplicadas POR ÚLTIMO para garantir precedência)
+      colunas_larguras <- c(
+        "alterado.por" = 18,
+        "anotacoes" = 60,
+        "arquivo.tipo.contr" = 18,
+        "arquivo.tabela.tipo.contr" = 24,
+        "arquivo.fonte.contr" = 20,
+        "arquivo.tipo.inad" = 18,
+        "arquivo.tabela.tipo.inad" = 24,
+        "arquivo.fonte.inad" = 20,
+        "atraso" = 6,
+        "autorizado" = 10,
+        "cliente" = 35,
+        "contrato.alternativo" = 20,
+        "contrato.ampla" = 15,
+        "contrato.cef" = 15,
+        "cotista" = 9,
+        "cpf.cnpj" = 15,
+        "criado.por" = 18,
+        "data.contrato" = 12,
+        "ele" = 6,
+        "empreendimento" = 16,
+        "esp.contr" = 9,
+        "esp.inad" = 9,
+        "id.cartao" = 9,
+        "identificacao.imovel" = 20,
+        "moeda" = 9,
+        "parcela" = 10,
+        "quantidade.parcelas" = 20,
+        "r/f" = 6,
+        "repassado" = 12,
+        "sit" = 6,
+        "status" = 30,
+        "tipo.contrato" = 15,
+        "unidade" = 55,
+        "usuario.autorizacao" = 18,
+        "vencimento" = 12
+      )
+
+      # Aplica larguras específicas uma por uma para garantir que sejam respeitadas
+      for (coluna in names(colunas_larguras)) {
+        if (coluna %in% colnames(f_df_t)) {
+          col_pos <- which(colnames(f_df_t) == coluna)
           setColWidths(
             xlsx,
-            sheet = nome_aba,
-            cols = which(colnames(f_df_t) %in% colunas_existentes),
-            widths = colunas_larguras[colunas_existentes]
+            sheet = f_aba_c,
+            cols = col_pos,
+            widths = colunas_larguras[coluna]
           )
         }
-
-        # Estilo para todas as colunas de texto (alinhamento à esquerda, sem quebra de texto)
-        colunas_texto <- which(sapply(f_df_t, function(x) is.character(x) | is.factor(x)))
-        if (length(colunas_texto) > 0) {
-          addStyle(
-            xlsx,
-            sheet = nome_aba,
-            style = createStyle(halign = "left", wrapText = FALSE),
-            rows = 2:(nrow(f_df_t) + 1),
-            cols = colunas_texto,
-            gridExpand = TRUE,
-            stack = TRUE
-          )
-
-          # Definir larguras fixas para colunas de texto para garantir que o texto seja cortado
-          setColWidths(
-            xlsx,
-            sheet = nome_aba,
-            cols = colunas_texto,
-            widths = 20  # Largura fixa para colunas de texto - texto será cortado se exceder
-          )
-        }
-
+      }
 
         # Estilo para data
         addStyle(
           xlsx,
-          sheet = nome_aba,
+          sheet = f_aba_c,
           style = createStyle(numFmt = "DD/MM/YYYY"),
           rows = 2:(nrow(f_df_t) + 1),
           cols = which(colnames(f_df_t) %in% c("vencimento", "data.contrato")),
@@ -211,7 +260,7 @@ r_inad <- function() {
         # Estilo para data e hora
         addStyle(
           xlsx,
-          sheet = nome_aba,
+          sheet = f_aba_c,
           style = createStyle(numFmt = "YYYY-MM-DD HH:MM:SS"),
           rows = 2:(nrow(f_df_t) + 1),
           cols = which(colnames(f_df_t) %in%
@@ -219,22 +268,8 @@ r_inad <- function() {
           gridExpand = TRUE,
           stack = TRUE
         )
-
-        # Estilo para valores monetários
-        addStyle(
-          xlsx,
-          sheet = nome_aba,
-          style = createStyle(numFmt = "#,##0.00"),
-          rows = 2:(nrow(f_df_t) + 1),
-          cols = which(colnames(f_df_t) %in% c(
-            "principal", "juros", "encargos", "juros.mora",
-            "multa", "seguro", "total"
-          )),
-          gridExpand = TRUE,
-          stack = TRUE
-        )
       }
-    }
+
   )
 
   # salvar ---------------------------------------------------------------------
