@@ -59,7 +59,7 @@ e_ik_inad <-
     telefones_vc <-
       linhas_vc[indice.clientes_vn + 1] %>%
       str_remove("^(?i)telefones: ") %>%
-      str_remove(" (?i)unidade:.*") %>%
+      str_remove("\\s?(?i)unidade:.*") %>%
       str_remove(" ") %>%
       str_remove("0xx") %>%
       str_trim()
