@@ -53,9 +53,13 @@ r_inad <- function() {
     r_inad.parcelas_t %>%
     group_by(cliente) %>%
     summarise(
-      total = sum(total, na.rm = TRUE),
+      total.cliente = sum(total, na.rm = TRUE),
       quantidade.parcelas = first(quantidade.parcelas),
-      meses.atraso.parcela.mais.antiga = round(max(atraso, na.rm = TRUE) / 30, 0),
+      atraso.medio.ponderado = round(
+        sum((atraso / 30) * total, na.rm = TRUE) / sum(total, na.rm = TRUE),
+        0
+      ),
+      atraso.maximo = round(max(atraso, na.rm = TRUE) / 30, 0),
       empreendimento = first(empreendimento),
       repassado = first(repassado)
     ) %>%
@@ -65,10 +69,10 @@ r_inad <- function() {
       anotacoes = NA_character_
     ) %>%
     select(
-      empreendimento, cliente, total, quantidade.parcelas,
-      meses.atraso.parcela.mais.antiga, repassado, status, anotacoes
+      empreendimento, cliente, total.cliente, quantidade.parcelas,
+      atraso.medio.ponderado, atraso.maximo, repassado, status, anotacoes
     ) %>%
-    arrange(desc(total))
+    arrange(desc(total.cliente))
 
   # Lista nomeada com os dataframes e os nomes das abas correspondentes
   dfs_l <- list(
@@ -182,7 +186,7 @@ r_inad <- function() {
 
       # Estilo para valores monetários
       colunas_monetarias <- which(colnames(f_df_t) %in% c(
-        "principal", "juros", "encargos", "juros.mora", "multa", "seguro", "total"
+        "principal", "juros", "encargos", "juros.mora", "multa", "seguro", "total", "total.cliente"
       ))
       if (length(colunas_monetarias) > 0) {
         addStyle(
@@ -207,6 +211,7 @@ r_inad <- function() {
         "arquivo.tabela.tipo.inad" = 24,
         "arquivo.fonte.inad" = 20,
         "atraso" = 6,
+        "atraso.medio.ponderado" = 25,
         "autorizado" = 10,
         "cliente" = 35,
         "contrato.alternativo" = 20,
@@ -222,7 +227,7 @@ r_inad <- function() {
         "esp.inad" = 9,
         "id.cartao" = 9,
         "identificacao.imovel" = 20,
-        "meses.atraso.parcela.mais.antiga" = 35,
+        "atraso.maximo" = 35,
         "moeda" = 9,
         "parcela" = 10,
         "quantidade.parcelas" = 20,
