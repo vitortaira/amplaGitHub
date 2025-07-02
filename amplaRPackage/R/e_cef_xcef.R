@@ -61,142 +61,88 @@ caminhos.teste_c <- c(
 )
 
 e_cef_xcef <- function(f_caminho.arquivo_c) {
-  # Validação de entrada
-  if (is.null(f_caminho.arquivo_c) || !file.exists(f_caminho.arquivo_c)) {
-    # Retorna tibble vazia com estrutura esperada
-    return(tibble::tibble(
-      data = as.Date(character()),
-      agencia = character(),
-      conta = character(),
-      documento = character(),
-      descricao = character(),
-      valor = numeric(),
-      tipo_lancamento = character()
-    ))
-  }
-
-  # Tentar ler PDF com tratamento de erro
-  resultadoLeitura <- tryCatch(
-    {
-      list(
-        paginasLista = ler_pdf(f_caminho.arquivo_c)$paginas,
-        linhasTexto = ler_pdf(f_caminho.arquivo_c)$linhas
-      )
-    },
-    error = function(e) {
-      # Retorna tibble vazia se não conseguir ler o PDF
-      return(tibble::tibble(
-        data = as.Date(character()),
-        agencia = character(),
-        conta = character(),
-        documento = character(),
-        descricao = character(),
-        valor = numeric(),
-        tipo_lancamento = character()
-      ))
-    }
-  )
-
-  # Se retornou erro na leitura, retornar o tibble vazio
-  if (inherits(resultadoLeitura, "tbl_df")) {
-    return(resultadoLeitura)
-  }
-
-  paginasLista_l <- resultadoLeitura$paginasLista
-  linhasTexto_c <- resultadoLeitura$linhasTexto
-
+  # Ler PDF
+  paginas_l <- ler_pdf(f_caminho.arquivo_c)$paginas
+  linhas_c <- ler_pdf(f_caminho.arquivo_c)$linhas
   # Identificar o tipo do xcef
-  tipoXcef_c <- c_cef_xcef(f_caminho.arquivo_c, linhasTexto_c)
-  if (tipoXcef_c == "xcef1") {
+  tipo_c <- c_cef_xcef(f_caminho.arquivo_c, linhas_c)
+  if (tipo_c == "xcef1") {
     message(sprintf("Formato pendente para o arquivo: %s", f_caminho.arquivo_c))
-    # Obter dados estruturados do PDF
-    dadosPdf_l <- pdf_data(f_caminho.arquivo_c)
-    palavrasTabela_t <-
-      dadosPdf_l %>%
+    palavras_t <-
+      pdf_data(f_caminho.arquivo_c) %>%
       seq_along() %>%
-      map_dfr(~ dadosPdf_l[[.x]] %>% mutate(pagina = .x))
-    linhasTexto_c <-
-      palavrasTabela_t %>%
+      map_dfr(~ paginas_l[[.x]] %>% mutate(pagina = .x))
+    linhas_c <-
+      palavras_t %>%
       arrange(pagina, y, x) %>%
       group_by(pagina) %>%
       mutate(
-        diferencaY = abs(y - dplyr::lag(y, default = first(y))),
-        numeroLinha = cumsum(row_number() == 1 | diferencaY > 10)
+        dif.y = abs(y - dplyr::lag(y, default = first(y))),
+        linha = cumsum(row_number() == 1 | dif.y > 10)
       ) %>%
       ungroup() %>%
-      group_by(pagina, numeroLinha) %>%
+      group_by(pagina, linha) %>%
       summarise(
-        textoCompleto =
+        texto =
           str_c(text, collapse = " ") %>%
             str_replace_all("\\s+", " ") %>%
             str_trim(),
-        posicaoY = mean(y),
+        y = mean(y),
         .groups = "drop"
       ) %>%
-      dplyr::select(textoCompleto, everything()) %>%
-      # Concatenar linhas que começam com hh:mm:ss à linha anterior
+      dplyr::select(texto, everything()) %>%
+      # Concatenate lines starting with hh:mm:ss to the previous line
       {
-        indicesHorario_i <- stringr::str_which(.$textoCompleto, "^\\d{2}:\\d{2}:\\d{2}")
-        if (length(indicesHorario_i) > 0) {
-          for (indice in rev(indicesHorario_i)) {
-            if (indice > 1) {
-              .$textoCompleto[indice - 1] <- paste(.$textoCompleto[indice - 1], .$textoCompleto[indice], sep = " ")
+        time_line_idx <- stringr::str_which(.$texto, "^\\d{2}:\\d{2}:\\d{2}")
+        if (length(time_line_idx) > 0) {
+          for (idx in rev(time_line_idx)) {
+            if (idx > 1) {
+              .$texto[idx - 1] <- paste(.$texto[idx - 1], .$texto[idx], sep = " ")
             }
           }
-          . <- .[-indicesHorario_i, ]
+          . <- .[-time_line_idx, ]
         }
         .
       } %>%
-      pull(textoCompleto) %>%
+      pull(texto) %>%
       discard(~ str_starts(
         .x,
         "about\\:|\\d{2}/\\d{2}/\\d{4}\\,\\s?\\d{2}\\:\\d{2}|\\d{2}/\\d{2}/\\d{4}$"
       ))
-
-    # Retornar tibble vazia para formato xcef1 (pendente de implementação)
-    return(tibble::tibble(
-      data = as.Date(character()),
-      agencia = character(),
-      conta = character(),
-      documento = character(),
-      descricao = character(),
-      valor = numeric(),
-      tipo_lancamento = character()
-    ))
   }
-  if (tipoXcef_c == "xcef2") {
-    linhasTexto_c %<>% keep(function(x) {
+  if (tipo_c == "xcef2") {
+    linhas_c %<>% keep(function(x) {
       !str_starts(x, "Data de lançamento")
     })
-    numeroAgencia_c <- linhasTexto_c %>%
+    agencia_c <- linhas_c %>%
       keep(function(x) {
         str_starts(x, "Agência:")
       }) %>%
       str_remove("\\s*produto:.*") %>%
       str_sub(-4, -1)
-    nomeCliente_c <- linhasTexto_c %>%
+    cliente_c <- linhas_c %>%
       nth(1) %>%
       str_trim()
-    numeroCnpj_c <- linhasTexto_c %>%
+    cnpj_c <- linhas_c %>%
       nth(2) %>%
       str_remove("^cnpj:\\s*") %>%
       str_remove_all("[A-Za-z]") %>%
       str_trim()
-    numeroConta_c <- linhasTexto_c %>%
+    conta_c <- linhas_c %>%
       keep(function(x) {
         str_starts(x, "Agência:")
       }) %>%
       str_remove("\\s*\\d{2}/\\d{2}/\\d{4}.*") %>%
       str_remove(".*Conta:\\s*") %>%
       str_trim()
-    dataConsulta_h <- linhasTexto_c %>%
+    data.consulta_h <- linhas_c %>%
       keep(function(x) {
         str_starts(x, "Agência:")
       }) %>%
       str_extract("\\d{2}/\\d{2}/\\d{4}\\s?\\d{2}:\\d{2}") %>%
       str_trim() %>%
       as.POSIXct(format = "%d/%m/%Y %H:%M")
-    periodoConsultado_c <- linhasTexto_c %>%
+    periodo.consultado_c <- linhas_c %>%
       keep(function(x) {
         str_detect(x, "Lançamentos de")
       }) %>%
@@ -204,107 +150,104 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
       str_remove_all(" ") %>%
       str_replace("à", "-") %>%
       str_trim()
-    tipoProduto_c <- linhasTexto_c %>%
+    produto_c <- linhas_c %>%
       keep(function(x) {
         str_starts(x, "Agência:")
       }) %>%
       str_remove("\\s*Conta:.*") %>%
       str_remove(".*produto:\\s*") %>%
       str_trim()
-    indiceComeco_i <- linhasTexto_c %>%
+    indice.comeco_i <- linhas_c %>%
       str_which("^\\d{2}/\\d{2}/\\d{4}") %>%
       first()
-    indiceFim_i <- linhasTexto_c %>%
+    indice.fim_i <- linhas_c %>%
       str_which("^\\d{2}/\\d{2}/\\d{4}") %>%
       last()
-    extratoTabela_t <- linhasTexto_c %>%
-      as_tibble_col(column_name = "linhasTexto") %>%
-      slice(indiceComeco_i:indiceFim_i) %>%
+    extrato_t <- linhas_c %>%
+      as_tibble_col(column_name = "linhas") %>%
+      slice(indice.comeco_i:indice.fim_i) %>%
       mutate(
-        dataLancamento = str_extract(linhasTexto, "\\d{2}/\\d{2}/\\d{4}") %>%
+        data.lancamento = str_extract(linhas, "\\d{2}/\\d{2}/\\d{4}") %>%
           as.Date(format = "%d/%m/%Y"),
-        linhasTexto = str_remove(linhasTexto, "\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
-        dataMovimentacao = str_extract(linhasTexto, "\\d{2}/\\d{2}/\\d{4}") %>%
+        linhas = str_remove(linhas, "\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
+        data.movimentacao = str_extract(linhas, "\\d{2}/\\d{2}/\\d{4}") %>%
           as.Date(format = "%d/%m/%Y"),
-        linhasTexto = str_remove(linhasTexto, "\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
-        numeroDocumento = str_remove(linhasTexto, "[A-Za-z].*") %>% str_trim(),
-        linhasTexto = str_extract(linhasTexto, "(?i)[A-Za-z].*") %>% str_trim(),
-        valorTransacao = str_extract(
-          linhasTexto,
+        linhas = str_remove(linhas, "\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
+        documento = str_remove(linhas, "[A-Za-z].*") %>% str_trim(),
+        linhas = str_extract(linhas, "(?i)[A-Za-z].*") %>% str_trim(),
+        valor = str_extract(
+          linhas,
           "(?:R\\$)?\\s?-?\\s?(?:\\d{1,3}(\\.\\d{3})*)?(\\,\\d{2})"
         ) %>%
           str_remove_all("\\s") %>%
           readr::parse_number(
             locale = readr::locale(decimal_mark = ",", grouping_mark = ".")
           ),
-        linhasTexto = str_remove(
-          linhasTexto,
+        linhas = str_remove(
+          linhas,
           "(?:R\\$)?\\s?-?\\s?(?:\\d{1,3}(\\.\\d{3})*)?(\\,\\d{2})"
         ) %>%
           str_trim(),
-        saldoConta = str_extract(
-          linhasTexto,
+        saldo = str_extract(
+          linhas,
           "(?:R\\$)?\\s?-?\\s?(?:\\d{1,3}(\\.\\d{3})*)?(\\,\\d{2})"
         ) %>%
           str_remove_all("\\s") %>%
           readr::parse_number(
             locale = readr::locale(decimal_mark = ",", grouping_mark = ".")
           ),
-        descricaoTransacao = str_remove(
-          linhasTexto,
+        descricao = str_remove(
+          linhas,
           "(?:R\\$)?\\s?-?\\s?(?:\\d{1,3}(\\.\\d{3})*)?(\\,\\d{2})"
         ) %>%
           str_trim(),
-        numeroAgencia = numeroAgencia_c,
-        nomeEmpresa = nomeCliente_c,
-        cnpjEmpresa = numeroCnpj_c,
-        numeroConta = numeroConta_c,
-        dataConsulta = dataConsulta_h,
-        periodoInicio = str_remove(periodoConsultado_c, "-.*") %>%
+        agencia = agencia_c,
+        empresa = cliente_c,
+        cnpj = cnpj_c,
+        conta = conta_c,
+        data.consulta = data.consulta_h,
+        periodo.inicio = str_remove(periodo.consultado_c, "-.*") %>%
           as.Date(format = "%d/%m/%Y"),
-        periodoFim = str_remove(periodoConsultado_c, ".*-") %>%
+        periodo.fim = str_remove(periodo.consultado_c, ".*-") %>%
           as.Date(format = "%d/%m/%Y"),
-        tipoProduto = tipoProduto_c,
-        contaInterno = basename(f_caminho.arquivo_c) %>%
+        produto = produto_c,
+        conta.interno = basename(f_caminho.arquivo_c) %>%
           str_extract("\\d{4}"),
-        caminhoArquivo = f_caminho.arquivo_c,
-        subtipoArquivo = tipoXcef_c
+        arquivo = f_caminho.arquivo_c,
+        arquivo.subtipo = tipo_c
       ) %>%
       dplyr::select(
-        data = dataLancamento,
-        agencia = numeroAgencia,
-        conta = numeroConta,
-        documento = numeroDocumento,
-        descricao = descricaoTransacao,
-        valor = valorTransacao,
-        tipo_lancamento = subtipoArquivo
+        data.lancamento, data.movimentacao, documento, descricao,
+        valor, saldo,
+        conta.interno, conta, agencia, produto, cnpj, empresa,
+        periodo.inicio, periodo.fim, data.consulta, arquivo, arquivo.subtipo
       )
-    return(extratoTabela_t)
+    return(extrato_t)
   }
-  if (tipoXcef_c %in% c("xcef3", "xcef4", "xcef5", "xcef6")) {
+  if (tipo_c %in% c("xcef3", "xcef4", "xcef5", "xcef6")) {
     # Metadados
-    nomeCliente_c <- linhasTexto_c %>%
+    cliente_c <- linhas_c %>%
       keep(function(x) {
         str_starts(x, "(?i)cliente:")
       }) %>%
       str_remove("^(?i)cliente: ") %>%
       str_trim()
 
-    numeroConta_c <- linhasTexto_c %>%
+    conta_c <- linhas_c %>%
       keep(function(x) {
         str_starts(x, "Conta[A-Za-z]?:")
       }) %>%
       str_remove("^Conta[A-Za-z]?:\\s?") %>%
       str_trim()
 
-    dataConsulta_h <-
+    data.consulta_h <-
       case_when(
-        str_starts(nth(linhasTexto_c, 1), "\\d{2}/\\d{2}/\\d{4}") ~
-          (nth(linhasTexto_c, 1) %>% str_extract("\\d{2}/\\d{2}/\\d{4}\\,\\s?\\d{2}\\:\\d{2}")
+        str_starts(nth(linhas_c, 1), "\\d{2}/\\d{2}/\\d{4}") ~
+          (nth(linhas_c, 1) %>% str_extract("\\d{2}/\\d{2}/\\d{4}\\,\\s?\\d{2}\\:\\d{2}")
             %>% str_replace("\\,\\s?", "-")
             %>% as.POSIXct(format = "%d/%m/%Y-%H:%M")),
-        sum(str_starts(linhasTexto_c, "Data:")) > 0 ~
-          (linhasTexto_c %>%
+        sum(str_starts(linhas_c, "Data:")) > 0 ~
+          (linhas_c %>%
             keep(function(x) {
               str_starts(x, "Data:")
             }) %>%
@@ -313,7 +256,7 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
         TRUE ~ NA
       )
 
-    mesConsultado_d <- linhasTexto_c %>%
+    mes.consultado_d <- linhas_c %>%
       keep(function(x) {
         str_starts(x, "Mês:")
       }) %>%
@@ -328,27 +271,27 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
         )
       )
 
-    periodoConsultado_c <- str_c(
-      (linhasTexto_c %>%
+    periodo.consultado_c <- str_c(
+      (linhas_c %>%
         keep(function(x) {
           str_starts(x, "Período:")
         }) %>%
         str_remove("^Período: ") %>% str_replace_all(" ", "") %>% str_trim() %>%
         str_extract(".*(?=-)") %>% if_else(str_length(.) == 1, str_c("0", .), .)),
       "/",
-      mesConsultado_d,
+      mes.consultado_d,
       "-",
-      (linhasTexto_c %>%
+      (linhas_c %>%
         keep(function(x) {
           str_starts(x, "Período:")
         }) %>%
         str_remove("^Período: ") %>% str_replace_all(" ", "") %>% str_trim() %>%
         str_extract("(?<=-).*") %>% if_else(str_length(.) == 1, str_c("0", .), .)),
       "/",
-      mesConsultado_d
+      mes.consultado_d
     )
 
-    linhasTexto_c <- linhasTexto_c %>%
+    linhas_c <- linhas_c %>%
       keep(function(x) {
         !str_starts(x, "https") &&
           !str_starts(x, "file:") &&
@@ -357,69 +300,65 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
       }) %>%
       str_remove_all("\\°|\\º")
 
-    indiceComeco_i <- linhasTexto_c %>%
+    indice.comeco_i <- linhas_c %>%
       str_which("^\\d{2}") %>%
       nth(1)
-    indiceFim_i <- linhasTexto_c %>%
+    indice.fim_i <- linhas_c %>%
       str_which("^\\d{2}/\\d{2}/\\d{4}") %>%
       last()
 
-    extratoTabela_t <- linhasTexto_c %>%
-      as_tibble_col(column_name = "linhasTexto") %>%
-      slice(indiceComeco_i:indiceFim_i) %>%
+    extrato_t <- linhas_c %>%
+      as_tibble_col(column_name = "linhas") %>%
+      slice(indice.comeco_i:indice.fim_i) %>%
       mutate(
-        dataMovimentacao = if_else(
-          word(linhasTexto) == "000000",
-          str_extract(periodoConsultado_c, ".*(?=-)") %>%
-            as.Date(format = "%d/%m/%Y") %>% rep(length(linhasTexto)),
-          word(linhasTexto) %>% as.Date(format = "%d/%m/%Y")
+        data.movimentacao = if_else(
+          word(linhas) == "000000",
+          str_extract(periodo.consultado_c, ".*(?=-)") %>%
+            as.Date(format = "%d/%m/%Y") %>% rep(length(linhas)),
+          word(linhas) %>% as.Date(format = "%d/%m/%Y")
         ),
-        linhasTexto = str_remove(linhasTexto, "^\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
-        numeroDocumento = word(linhasTexto),
-        linhasTexto = str_remove(linhasTexto, str_c("^", word(linhasTexto))) %>% str_trim(),
-        saldoFinal = str_extract(linhasTexto, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?$") %>%
+        linhas = str_remove(linhas, "^\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
+        documento = word(linhas),
+        linhas = str_remove(linhas, str_c("^", word(linhas))) %>% str_trim(),
+        Saldo = str_extract(linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?$") %>%
           str_remove("\\s?C") %>% str_remove_all("\\.") %>%
           str_replace("\\,", "\\.") %>%
           if_else(str_detect(., "D$"),
             str_c("-", .) %>% str_remove("\\s?D$"),
             .
           ) %>% as.numeric(),
-        linhasTexto = str_remove(linhasTexto, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?$"),
-        valorTransacao = stringr::str_extract(linhasTexto, "-?\\d{1,3}(\\.\\d{3})*(,\\d{2})?") %>%
+        linhas = str_remove(linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?$"),
+        valor = stringr::str_extract(linhas, "-?\\d{1,3}(\\.\\d{3})*(,\\d{2})?") %>%
           readr::parse_number(locale = readr::locale(decimal_mark = ",", grouping_mark = ".")),
-        saldoConta = stringr::str_extract(linhasTexto, "-?\\d{1,3}(\\.\\d{3})*(,\\d{2})?") %>%
+        saldo = stringr::str_extract(linhas, "-?\\d{1,3}(\\.\\d{3})*(,\\d{2})?") %>%
           readr::parse_number(locale = readr::locale(decimal_mark = ",", grouping_mark = ".")),
-        descricaoTransacao = str_remove(
-          linhasTexto, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?"
+        descricao = str_remove(
+          linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?"
         ) %>% str_trim(),
-        dataLancamento = NA,
-        numeroConta = word(numeroConta_c, -1) %>% str_trim(),
-        numeroAgencia = str_sub(numeroConta_c, 1, 4),
-        tipoProduto = str_sub(numeroConta_c, 6, -1) %>%
+        data.lancamento = NA,
+        conta = word(conta_c, -1) %>% str_trim(),
+        agencia = str_sub(conta_c, 1, 4),
+        produto = str_sub(conta_c, 6, -1) %>%
           str_extract("\\s\\d{4}\\s") %>%
           str_trim(),
-        cnpjEmpresa = NA,
-        nomeEmpresa = nomeCliente_c,
-        periodoInicio = str_remove(periodoConsultado_c, "-.*") %>%
+        cnpj = NA,
+        empresa = cliente_c,
+        periodo.inicio = str_remove(periodo.consultado_c, "-.*") %>%
           as.Date(format = "%d/%m/%Y"),
-        periodoFim = str_remove(periodoConsultado_c, ".*-") %>%
+        periodo.fim = str_remove(periodo.consultado_c, ".*-") %>%
           as.Date(format = "%d/%m/%Y"),
-        dataConsulta = dataConsulta_h,
-        contaInterno = basename(f_caminho.arquivo_c) %>%
+        data.consulta = data.consulta_h,
+        conta.interno = basename(f_caminho.arquivo_c) %>%
           str_extract("\\d{4}"),
-        caminhoArquivo = f_caminho.arquivo_c,
-        subtipoArquivo = tipoXcef_c
+        arquivo = f_caminho.arquivo_c,
+        arquivo.subtipo = tipo_c
       ) %>%
       select(
-        data = dataMovimentacao,
-        agencia = numeroAgencia,
-        conta = numeroConta,
-        documento = numeroDocumento,
-        descricao = descricaoTransacao,
-        valor = valorTransacao,
-        tipo_lancamento = subtipoArquivo
+        data.lancamento, data.movimentacao, documento, descricao, valor, saldo,
+        conta.interno, conta, agencia, produto, cnpj, empresa,
+        periodo.inicio, periodo.fim, data.consulta, arquivo, arquivo.subtipo
       )
-    return(extratoTabela_t)
+    return(extrato_t)
   } else {
     message(sprintf("Tipo desconhecido para o arquivo: %s", f_caminho.arquivo_c))
     return(tibble())
