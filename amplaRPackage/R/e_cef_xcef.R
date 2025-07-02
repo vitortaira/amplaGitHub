@@ -61,6 +61,20 @@ caminhos.teste_c <- c(
 )
 
 e_cef_xcef <- function(f_caminho.arquivo_c) {
+  # Input validation
+  if (is.null(f_caminho.arquivo_c) || !file.exists(f_caminho.arquivo_c)) {
+    # Return empty tibble with expected structure
+    return(tibble::tibble(
+      data = as.Date(character()),
+      agencia = character(),
+      conta = character(),
+      documento = character(),
+      descricao = character(),
+      valor = numeric(),
+      tipo_lancamento = character()
+    ))
+  }
+
   # Ler PDF
   paginas_l <- ler_pdf(f_caminho.arquivo_c)$paginas
   linhas_c <- ler_pdf(f_caminho.arquivo_c)$linhas
