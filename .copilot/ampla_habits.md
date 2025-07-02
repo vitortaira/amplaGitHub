@@ -18,6 +18,7 @@ When writing or refactoring R code, you MUST follow these rules.
     *   Use `lubridate` for all date and time manipulation.
     *   Use `options(scipen = 999)` at the start of scripts to prevent
         scientific notation.
+    *   Use `plotly` for creating charts.
 
 3.  **Coding Principles**
     *   Prioritize readability, maintainability, and efficiency.
