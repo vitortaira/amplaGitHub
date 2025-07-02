@@ -1,12 +1,9 @@
 test_that("e_cef_xcef extrai dados corretamente de um arquivo de amostra", {
-  # Usar um arquivo de teste existente
-  caminho_amostra <- test_path("data", "xcef1.pdf")
+  # Criar um arquivo de texto de amostra para o teste
+  caminho_amostra <- test_path("data", "extrato_cef_amostra.txt")
 
-  # Pular teste se o arquivo não existir
-  skip_if_not(file.exists(caminho_amostra))
-
-  # Extrair dados do arquivo
-  resultado <- e_cef_xcef(f_caminho.arquivo_c = caminho_amostra)
+  # Esperado: um tibble com uma linha de dados extraída
+  resultado <- e_cef_xcef(caminho_do_arquivo = caminho_amostra)
 
   # Verificar se o resultado é um tibble
   expect_s3_class(resultado, "tbl_df")
@@ -14,22 +11,22 @@ test_that("e_cef_xcef extrai dados corretamente de um arquivo de amostra", {
   # Verificar se o tibble tem as colunas esperadas
   expect_named(resultado, c("data", "agencia", "conta", "documento", "descricao", "valor", "tipo_lancamento"))
 
-  # Verificar tipos das colunas
-  expect_type(resultado$data, "double")  # Date objects have type "double"
-  expect_type(resultado$agencia, "character")
-  expect_type(resultado$conta, "character")
-  expect_type(resultado$documento, "character")
-  expect_type(resultado$descricao, "character")
-  expect_type(resultado$valor, "double")
-  expect_type(resultado$tipo_lancamento, "character")
+  # Verificar o número de linhas
+  expect_equal(nrow(resultado), 1)
 
-  # Verificar que o resultado não está vazio (para dados reais)
-  expect_gte(nrow(resultado), 0)
+  # Verificar os valores da linha extraída
+  expect_equal(resultado$data, as.Date("2023-10-26"))
+  expect_equal(resultado$agencia, "1234")
+  expect_equal(resultado$conta, "56789-0")
+  expect_equal(resultado$documento, "000001")
+  expect_equal(resultado$descricao, "DEPOSITO EM CHEQUE")
+  expect_equal(resultado$valor, 123.45)
+  expect_equal(resultado$tipo_lancamento, "credito")
 })
 
 test_that("e_cef_xcef retorna um tibble vazio para entrada nula ou vazia", {
   # Testar com caminho de arquivo nulo
-  resultado_nulo <- e_cef_xcef(f_caminho.arquivo_c = NULL)
+  resultado_nulo <- e_cef_xcef(caminho_do_arquivo = NULL)
   expect_s3_class(resultado_nulo, "tbl_df")
   expect_equal(nrow(resultado_nulo), 0)
   expect_named(resultado_nulo, c("data", "agencia", "conta", "documento", "descricao", "valor", "tipo_lancamento"))
@@ -39,7 +36,7 @@ test_that("e_cef_xcef retorna um tibble vazio para entrada nula ou vazia", {
   file.create(caminho_vazio)
 
   # Testar com um arquivo vazio
-  resultado_vazio <- e_cef_xcef(f_caminho.arquivo_c = caminho_vazio)
+  resultado_vazio <- e_cef_xcef(caminho_do_arquivo = caminho_vazio)
   expect_s3_class(resultado_vazio, "tbl_df")
   expect_equal(nrow(resultado_vazio), 0)
   expect_named(resultado_vazio, c("data", "agencia", "conta", "documento", "descricao", "valor", "tipo_lancamento"))
