@@ -1,6 +1,6 @@
-# Test file for e_ita_extita
+# Test file for e_ita_xita
 
-test_that("e_ita_extita returns expected structure", {
+test_that("e_ita_xita returns expected structure", {
   skip_if_not_installed("pdftools")
   skip_if_not_installed("stringr")
   skip_if_not_installed("purrr")
@@ -11,15 +11,15 @@ test_that("e_ita_extita returns expected structure", {
   example_pdf <- tempfile(fileext = ".pdf")
   # Here you would generate or copy a minimal PDF for testing
   # For now, just check that the function returns a list with correct names
-  expect_error(e_ita_extita("nonexistent.pdf"),
+  expect_error(e_ita_xita("nonexistent.pdf"),
     regexp = "file.exists", fixed = TRUE
   )
 })
 
-test_that("e_ita_extita parses extita_example PDF robustly", {
+test_that("e_ita_xita parses extita_example PDF robustly", {
   example_file <- testthat::test_path("data", "extita.pdf")
   expect_true(file.exists(example_file))
-  result <- e_ita_extita(example_file)
+  result <- e_ita_xita(example_file)
   # Structure
   expect_type(result, "list")
   expect_named(result, c("extita_l", "extita_c"))
