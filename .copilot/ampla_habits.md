@@ -19,6 +19,8 @@ When writing or refactoring R code, you MUST follow these rules.
     *   Use `options(scipen = 999)` at the start of scripts to prevent
         scientific notation.
     *   Use `plotly` for creating charts.
+    *   Use `fs` for filibrarle system operations.
+    *   Use `future` for parallel computing.
 
 3.  **Coding Principles**
     *   Prioritize readability, maintainability, and efficiency.
