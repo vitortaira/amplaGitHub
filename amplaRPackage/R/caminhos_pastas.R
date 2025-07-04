@@ -17,13 +17,24 @@
 #'
 #' @importFrom stringi stri_c
 #' @importFrom fs path
+#' @importFrom here here
 #'
 #' @export
 caminhos_pastas <- function(alias) {
   # Define a base path to reduce repetition and improve readability
+  # For paths outside the project, consider using environment variables for portability
   caminho.base_c <- fs::path("C:", "Users", "Ampla", "AMPLA INCORPORADORA LTDA")
 
   caminhos_c <- list(
+    # Paths inside the project, using here() for portability
+    github = here::here(),
+    rpackage = here::here("amplaRPackage"),
+    shiny = here::here("amplaShiny"),
+    shinydata = here::here("amplaShiny", "inst", "dados"),
+    templates = here::here("templates"),
+    testthat = here::here("amplaRPackage", "tests", "testthat"),
+
+    # Paths outside the project. Consider using environment variables for better portability.
     ciweb = fs::path(
       caminho.base_c, "Relatórios - Documentos", "Relatorios - CIWEB"
     ),
@@ -39,34 +50,12 @@ caminhos_pastas <- function(alias) {
     financeiro = fs::path(
       caminho.base_c, "Financeiro - Documentos"
     ),
-    github = fs::path(
-      caminho.base_c, "Controladoria - Documentos", "amplaGitHub"
-    ),
     informakon = fs::path(
       caminho.base_c, "Financeiro - Documentos", "Informakon"
-    ),
-    rpackage = fs::path(
-      caminho.base_c,
-      "Controladoria - Documentos", "amplaGitHub", "amplaRPackage"
-    ),
-    shiny = fs::path(
-      caminho.base_c, "Controladoria - Documentos", "amplaGitHub", "amplaShiny"
-    ),
-    shinydata = fs::path(
-      caminho.base_c,
-      "Controladoria - Documentos", "amplaGitHub", "amplaShiny", "dados"
     ),
     temp = fs::path(
       "C:", "Users", "Ampla", "OneDrive - AMPLA INCORPORADORA LTDA",
       "Documentos", "temp"
-    ),
-    templates = fs::path(
-      caminho.base_c, "Controladoria - Documentos", "amplaGitHub", "templates"
-    ),
-    testthat = fs::path(
-      caminho.base_c,
-      "Controladoria - Documentos", "amplaGitHub", "amplaRPackage", "tests",
-      "testthat"
     )
   )
 
