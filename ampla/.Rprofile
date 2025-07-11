@@ -1,0 +1,1 @@
+# .Rprofile for golem app

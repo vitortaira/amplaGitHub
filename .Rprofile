@@ -22,6 +22,13 @@ packages_c <- c(
 # Load each package quietly
 invisible(lapply(packages_c, load_pkg))
 
+if (interactive() && Sys.getenv("RSTUDIO") == "") {
+  source(file.path(
+    Sys.getenv(if (.Platform$OS.type == "windows") "USERPROFILE" else "HOME"),
+    ".vscode-R", "init.R"
+  ))
+}
+
 # Load the 'amplaRPackage' package quietly
 invisible(suppressMessages(suppressPackageStartupMessages(devtools::load_all(
   "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaRPackage"

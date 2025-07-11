@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "locale": "pt_BR.UTF-8",
+  "metadata": {
+    "appmode": "shiny",
+    "entrypoint": "app.R"
+  },
+  "python": null,
+  "quarto": null,
+  "r": {
+    "version": "4.3.0",
+    "package_manager": {
+      "version": "1.5.0",
+      "package_manager": "packrat"
+    }
+  },
+  "environment": {
+    "LANG": "pt_BR.UTF-8"
+  },
+  "files": {
+    "app.R": {
+      "checksum": "..."
+    },
+    "R/": {
+      "checksum": "..."
+    }
+  }
+}

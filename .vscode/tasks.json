@@ -1,0 +1,35 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Test Automation Profile",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "This command runs in the automation profile (should be CMD)"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Show Current Shell",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "Current shell: %COMSPEC%"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      }
+    }
+  ]
+}
