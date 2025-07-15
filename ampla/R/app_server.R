@@ -9,36 +9,19 @@ app_server <- function(input, output, session) {
   library(plotly)
   library(dplyr)
   library(lubridate)
+  library(fs) # Para manipulação de arquivos e diretórios
+  library(here) # Para gerenciamento de caminhos relativos ao projeto
 
-  # Create demo data
-  dados_l <- list(
-    ik = list(
-      desp = data.frame(
-        data.doc.pagto = seq(Sys.Date() - 365, Sys.Date(), by = "week"),
-        total.pago = runif(53, 1000, 50000),
-        centro.negocio = sample(c("Estacao", "Prudencia", "Vila Sonia"), 53, replace = TRUE),
-        categoria = sample(c("Materiais", "Mao de Obra", "Equipamentos"), 53, replace = TRUE),
-        empresa = sample(c("Ampla", "Construtora XYZ"), 53, replace = TRUE),
-        stringsAsFactors = FALSE
-      ),
-      rec = data.frame(
-        data.recebimento = seq(Sys.Date() - 365, Sys.Date(), by = "week"),
-        total.recebido = runif(53, 5000, 100000),
-        centro.negocio = sample(c("Estacao", "Prudencia", "Vila Sonia"), 53, replace = TRUE),
-        categoria = sample(c("Vendas", "Aluguel", "Servicos"), 53, replace = TRUE),
-        empresa = sample(c("Ampla", "Cliente A"), 53, replace = TRUE),
-        stringsAsFactors = FALSE
-      )
-    )
+  # Load real data from RDS files (same pattern as amplaShiny)
+  # Carrega todos os arquivos RDS do diretório de dados
+  dados_l <- readRDS(
+    dir_ls(here("inst", "dados"), type = "file")
   )
 
   # Initialize modules for all URLs (they'll only render when UI calls them)
   g_barras.empilhadas.mes_server(
     "despesas_chart",
     dados = dados_l$ik$desp,
-    filtro_periodo = reactive("ultimos_12"),
-    data_inicial = reactive(Sys.Date() - 365),
-    data_final = reactive(Sys.Date()),
     total = "total.pago",
     data = "data.doc.pagto",
     comeco.titulo = "Despesas por"
@@ -47,11 +30,8 @@ app_server <- function(input, output, session) {
   g_barras.empilhadas.mes_server(
     "receitas_chart",
     dados = dados_l$ik$rec,
-    filtro_periodo = reactive("ultimos_12"),
-    data_inicial = reactive(Sys.Date() - 365),
-    data_final = reactive(Sys.Date()),
-    total = "total.recebido",
-    data = "data.recebimento",
+    total = "total",
+    data = "data.pagamento",
     comeco.titulo = "Receitas por"
   )
 }

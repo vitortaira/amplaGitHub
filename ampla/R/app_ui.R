@@ -23,7 +23,7 @@ app_ui <- function(request) {
         style = "padding: 20px;",
         g_barras.empilhadas.mes_ui(
           "despesas_chart",
-          choices = list("Empresa" = "empresa", "Centro" = "centro.negocio", "Categoria" = "categoria"),
+          choices = list("Empresa" = "empresa", "Centro" = "centro.negocio", "Credor" = "credor", "Agente Financeiro" = "agente.financeiro"),
           total = "total.pago",
           data = "data.doc.pagto",
           comeco.titulo = "Despesas por"
@@ -43,9 +43,9 @@ app_ui <- function(request) {
         style = "padding: 20px;",
         g_barras.empilhadas.mes_ui(
           "receitas_chart",
-          choices = list("Empresa" = "empresa", "Centro" = "centro.negocio", "Categoria" = "categoria"),
-          total = "total.recebido",
-          data = "data.recebimento",
+          choices = list("Empresa" = "empresa", "Empreendimento" = "empreendimento", "Agente" = "agente", "Elemento" = "elemento"),
+          total = "total",
+          data = "data.pagamento",
           comeco.titulo = "Receitas por"
         )
       ),
@@ -133,19 +133,11 @@ app_ui <- function(request) {
 #' resources inside the Shiny application.
 #'
 #' @import shiny
-#' @importFrom golem add_resource_path activate_js favicon bundle_resources
 #' @noRd
 golem_add_external_resources <- function() {
-  add_resource_path(
-    "www",
-    app_sys("app/www")
-  )
-
   tags$head(
-    favicon(),
-    bundle_resources(
-      path = app_sys("app/www"),
-      app_title = "amplaApp"
-    )
+    tags$title("Ampla - Financial Dashboard"),
+    tags$meta(charset = "utf-8"),
+    tags$meta(name = "viewport", content = "width=device-width, initial-scale=1")
   )
 }

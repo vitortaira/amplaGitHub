@@ -103,11 +103,22 @@ a_dados_rds_xlsx <- function(
   saveWorkbook(wb_x, nome.xlsx_c, overwrite = FALSE)
   # Removendo arquivos da pasta "dados" em amplaShiny
   file_delete(dir_ls(path(here("amplaShiny", "inst", "dados")), recurse = TRUE))
+  # Removendo arquivos da pasta "dados" em ampla
+  file_delete(dir_ls(path(here("ampla", "inst", "dados")), recurse = TRUE))
   # Salvando dados_l como RDS em amplaShiny
   saveRDS(
     dados_l,
     file = str_c(
       caminhos_pastas("shiny"),
+      "/inst/dados/",
+      str_replace(basename(nome.xlsx_c), "\\.xlsx$", ".rds")
+    )
+  )
+  # Salvando dados_l como RDS em ampla
+  saveRDS(
+    dados_l,
+    file = str_c(
+      here("ampla"),
       "/inst/dados/",
       str_replace(basename(nome.xlsx_c), "\\.xlsx$", ".rds")
     )

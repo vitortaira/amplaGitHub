@@ -1,0 +1,9 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^test_.*\.R$
+^final_verification\.R$
+^deploy\.R$
+^README\.md$
+^\.vscode$
+^\.copilot$
+^rsconnect$
