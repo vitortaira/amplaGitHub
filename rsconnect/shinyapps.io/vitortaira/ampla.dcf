@@ -5,6 +5,6 @@ account: vitortaira
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 15047977
-bundleId: 10615200
+bundleId: 10626738
 url: https://vitortaira.shinyapps.io/ampla/
 version: 1

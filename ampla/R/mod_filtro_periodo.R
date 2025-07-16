@@ -25,22 +25,43 @@ filtro_periodo_module_ui <- function(id) {
       condition = paste0("input['", ns("filtro_periodo"), "'] == 'personalizado'"),
       div(
         style = "margin-top: 10px;",
-        dateInput(
-          ns("data_inicial"),
-          "Data inicial:",
-          value = Sys.Date() - 365,
-          format = "yyyy-mm-dd",
-          language = "pt"
-        ),
-        dateInput(
-          ns("data_final"),
-          "Data final:",
-          value = Sys.Date(),
-          format = "yyyy-mm-dd",
-          language = "pt"
+        fluidRow(
+          column(
+            6,
+            dateInput(
+              ns("data_inicial"),
+              "Data inicial:",
+              value = Sys.Date() - 365,
+              format = "yyyy-mm-dd",
+              language = "pt",
+              weekstart = 1,
+              daysofweekdisabled = NULL
+            )
+          ),
+          column(
+            6,
+            dateInput(
+              ns("data_final"),
+              "Data final:",
+              value = Sys.Date(),
+              format = "yyyy-mm-dd",
+              language = "pt",
+              weekstart = 1,
+              daysofweekdisabled = NULL
+            )
+          )
         )
       )
-    )
+    ),
+    # Custom JavaScript to override weekday abbreviations
+    tags$script(HTML("
+      $(document).ready(function() {
+        // Override Bootstrap datepicker Portuguese locale with 3-char weekdays
+        if ($.fn.datepicker && $.fn.datepicker.dates && $.fn.datepicker.dates.pt) {
+          $.fn.datepicker.dates.pt.daysMin = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        }
+      });
+    "))
   )
 }
 

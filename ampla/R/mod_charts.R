@@ -45,7 +45,7 @@ g_barras.empilhadas.mes_ui <- function(
 
       # Period filter section
       div(
-        h5("Período em análise:", style = "margin-top: 0; margin-bottom: 10px; font-weight: bold;"),
+        h5("Período:", style = "margin-top: 0; margin-bottom: 10px; font-weight: bold;"),
         filtro_periodo_module_ui(ns("filtro")),
         style = "margin-bottom: 15px;"
       ),
@@ -130,12 +130,7 @@ g_barras.empilhadas.mes_ui <- function(
         value = "dados",
         div(
           style = "padding: 15px;",
-          # Download button
-          div(
-            style = "margin-bottom: 15px;",
-            downloadButton(ns("download_chart"), "Baixar Dados (XLSX)", class = "btn-primary")
-          ),
-          # Data table
+          # Data table with built-in download buttons
           DT::dataTableOutput(ns("data_table"))
         )
       ),
@@ -195,7 +190,7 @@ g_barras.empilhadas.mes_server <- function(
         },
         "personalizado" = {
           req(filtroVals$data_inicial(), filtroVals$data_final())
-          # Ensure dates are properly converted, handling different formats
+          # Robust date parsing using lubridate as final fallback
           start_date <- tryCatch(
             {
               if (inherits(filtroVals$data_inicial(), "Date")) {
@@ -205,13 +200,19 @@ g_barras.empilhadas.mes_server <- function(
               }
             },
             error = function(e) {
-              # Try parsing with different formats if standard fails
               tryCatch(
                 {
                   as.Date(filtroVals$data_inicial(), format = "%d/%m/%Y")
                 },
                 error = function(e2) {
-                  as.Date(filtroVals$data_inicial(), format = "%Y-%m-%d")
+                  tryCatch(
+                    {
+                      as.Date(filtroVals$data_inicial(), format = "%Y-%m-%d")
+                    },
+                    error = function(e3) {
+                      lubridate::dmy(filtroVals$data_inicial())
+                    }
+                  )
                 }
               )
             }
@@ -226,13 +227,19 @@ g_barras.empilhadas.mes_server <- function(
               }
             },
             error = function(e) {
-              # Try parsing with different formats if standard fails
               tryCatch(
                 {
                   as.Date(filtroVals$data_final(), format = "%d/%m/%Y")
                 },
                 error = function(e2) {
-                  as.Date(filtroVals$data_final(), format = "%Y-%m-%d")
+                  tryCatch(
+                    {
+                      as.Date(filtroVals$data_final(), format = "%Y-%m-%d")
+                    },
+                    error = function(e3) {
+                      lubridate::dmy(filtroVals$data_final())
+                    }
+                  )
                 }
               )
             }
@@ -405,10 +412,8 @@ g_barras.empilhadas.mes_server <- function(
       df <- df_final()
       req(df, nrow(df) > 0)
 
-      # Prepare factor levels and palette
-      var_totals <- aggregate(df$total, by = list(var = df$var), FUN = sum)
-      colnames(var_totals)[2] <- "total_sum"
-      var_levels <- var_totals$var[order(var_totals$total_sum, decreasing = TRUE)]
+      # Prepare factor levels and palette (alphabetical order)
+      var_levels <- sort(unique(df$var))
       df$var <- factor(df$var, levels = var_levels)
       pal8 <- RColorBrewer::brewer.pal(8, "Set2")
       pal <- if (length(var_levels) <= 8) pal8[seq_along(var_levels)] else colorRampPalette(pal8)(length(var_levels))
@@ -442,6 +447,7 @@ g_barras.empilhadas.mes_server <- function(
             show_rangeslider <- !is.null(filtroVals$filtro_periodo()) && filtroVals$filtro_periodo() == "desde_inicio"
 
             xaxis_config <- list(
+              title = "Mês",
               tickformat = "%m-%Y",
               type = "date",
               tickvals = unique(df$mes)
@@ -461,6 +467,7 @@ g_barras.empilhadas.mes_server <- function(
 
             xaxis_config
           },
+          yaxis = list(title = "Valor (R$)"),
           autosize = TRUE
         ) %>%
         plotly::config(
@@ -501,8 +508,11 @@ g_barras.empilhadas.mes_server <- function(
         left_join(line_monthly_totals, by = "mes") %>%
         mutate(percentage = 100 * total_grupo / monthtotal)
 
-      # Get colors for consistency with bar chart
-      unique_vars <- unique(line_data$var)
+      # Get colors for consistency with bar chart (alphabetical order, 'Outros' last)
+      all_vars <- unique(line_data$var)
+      outros_vars <- all_vars[all_vars == "Outros"]
+      non_outros_vars <- sort(all_vars[all_vars != "Outros"])
+      unique_vars <- c(non_outros_vars, outros_vars)
       colors <- RColorBrewer::brewer.pal(min(length(unique_vars), 11), "Spectral")
       if (length(unique_vars) > 11) {
         colors <- rep(colors, length.out = length(unique_vars))
@@ -602,10 +612,14 @@ g_barras.empilhadas.mes_server <- function(
           cumulative = cumsum(percentage)
         )
 
-      # Set factor levels to maintain descending order by total
+      # Calculate total_geral once for all rows
+      total_geral_value <- sum(period_data$total_periodo)
+      period_data$total_geral <- total_geral_value
+
+      # Set factor levels to maintain descending order by total (sorted by totals)
       period_data$var <- factor(period_data$var, levels = period_data$var)
 
-      # Get colors for consistency with other charts
+      # Get colors for consistency with other charts (by total order)
       unique_vars <- levels(period_data$var)
       colors <- RColorBrewer::brewer.pal(min(length(unique_vars), 11), "Spectral")
       if (length(unique_vars) > 11) {
@@ -626,12 +640,11 @@ g_barras.empilhadas.mes_server <- function(
         hovertemplate = paste0(
           "<b>%{fullData.name}</b><br>",
           "Valor da categoria: R$ %{customdata:,.2f}<br>",
-          "Valor total: R$ %{text:,.2f}<br>",
+          "Valor total do período: R$ ", format(total_geral_value, big.mark = ",", decimal.mark = ".", nsmall = 2), "<br>",
           "Percentual da categoria: %{x:.1f}%<br>",
           "<extra></extra>"
         ),
-        customdata = ~total_periodo,
-        text = ~ sum(total_periodo)
+        customdata = ~total_periodo
       ) %>%
         plotly::layout(
           barmode = "stack",
@@ -773,7 +786,6 @@ g_barras.empilhadas.mes_server <- function(
             size = "l",
             easyClose = TRUE,
             footer = tagList(
-              downloadButton(ns("download_detail"), "Baixar XLSX"),
               modalButton("Fechar")
             )
           ))
@@ -819,6 +831,12 @@ g_barras.empilhadas.mes_server <- function(
                 pageLength = 25,
                 scrollX = TRUE,
                 autoWidth = TRUE,
+                dom = "Bfrtip",
+                buttons = list(
+                  list(extend = "copy", text = "Copiar"),
+                  list(extend = "csv", text = "Baixar CSV"),
+                  list(extend = "excel", text = "Baixar Excel")
+                ),
                 language = list(url = "//cdn.datatables.net/plug-ins/1.10.25/i18n/Portuguese-Brasil.json"),
                 columnDefs = list(
                   list(
@@ -827,24 +845,14 @@ g_barras.empilhadas.mes_server <- function(
                   )
                 )
               ),
-              class = "stripe hover cell-border dt-nowrap"
+              extensions = c("Buttons"),
+              class = "stripe hover cell-border dt-nowrap",
+              rownames = FALSE
             )
           })
         }
       }
     })
-
-    # Download for the details
-    output$download_detail <- downloadHandler(
-      filename = function() {
-        paste0("detalhes_", format(Sys.Date(), "%Y%m%d"), "_", input$variavel, ".xlsx")
-      },
-      content = function(file) {
-        data_to_write <- detail_rv()
-        req(data_to_write)
-        writexl::write_xlsx(data_to_write, path = file)
-      }
-    )
 
     # Data table output for the "Dados" tab - shows original data
     output$data_table <- DT::renderDataTable({
@@ -889,27 +897,43 @@ g_barras.empilhadas.mes_server <- function(
 
       DT::datatable(
         data_formatted,
+        filter = "none",
         options = list(
           pageLength = 25,
           scrollX = TRUE,
+          autoWidth = TRUE,
           dom = "Bfrtip",
-          buttons = c("copy", "csv", "excel")
+          buttons = list(
+            list(extend = "copy", text = "Copiar"),
+            list(extend = "csv", text = "Baixar CSV"),
+            list(extend = "excel", text = "Baixar Excel")
+          ),
+          language = list(
+            url = "//cdn.datatables.net/plug-ins/1.10.25/i18n/Portuguese-Brasil.json"
+          ),
+          columnDefs = list(
+            list(
+              targets = "_all",
+              className = "dt-nowrap"
+            )
+          )
         ),
-        class = "cell-border stripe",
+        extensions = c("Buttons"),
+        class = "stripe hover cell-border dt-nowrap",
         rownames = FALSE
       )
     })
 
-    # Download for the original data
-    output$download_chart <- downloadHandler(
-      filename = function() {
-        paste0(id, "_dados_originais_", format(Sys.Date(), "%Y%m%d"), ".xlsx")
-      },
-      content = function(file) {
-        # Use the original data instead of processed chart data
-        req(dados)
-        writexl::write_xlsx(dados, path = file)
-      }
-    )
+    # Download for the original data - now handled by DT buttons
+    # output$download_chart <- downloadHandler(
+    #   filename = function() {
+    #     paste0(id, "_dados_originais_", format(Sys.Date(), "%Y%m%d"), ".xlsx")
+    #   },
+    #   content = function(file) {
+    #     # Use the original data instead of processed chart data
+    #     req(dados)
+    #     writexl::write_xlsx(dados, path = file)
+    #   }
+    # )
   })
 }
