@@ -1,13 +1,14 @@
+# -*- coding: utf-8 -*-
 # =============================================================================
-# MÓDULO: g_barras.empilhadas.mes
-# Gráfico de barras empilhadas por mês para análise de despesas e receitas
+# MODULO: g_barras.empilhadas.mes
+# Grafico de barras empilhadas por mes para analise de despesas e receitas
 # =============================================================================
 
 #' @import shiny
 #' @import plotly
 #' @import dplyr
 #' @import lubridate
-#' @import DT
+#' @importFrom DT datatable renderDataTable dataTableOutput
 #' @importFrom RColorBrewer brewer.pal
 
 # ----------------------------
@@ -21,128 +22,231 @@ g_barras.empilhadas.mes_ui <- function(
     comeco.titulo = "Despesas") {
   ns <- NS(id)
   tagList(
-    # Add CSS for proper sticky behavior
+    # Professional clean CSS design
     tags$style(HTML("
-      body {
-        overflow-y: auto !important;
+      /* Clean, professional design without amateur shadows and borders */
+      .main-content {
+        background-color: #fafafa;
+        min-height: 100vh;
       }
-      .input-controls-container {
-        background-color: #f9f9f9 !important;
-        backdrop-filter: blur(5px);
+
+      /* Fixed tabs at top */
+      .nav-tabs {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1000 !important;
+        background-color: white !important;
+        border-bottom: 1px solid #e5e5e5 !important;
+        margin: 0 !important;
+        padding: 0 20px !important;
+        height: 48px !important;
       }
+
+      .nav-tabs .nav-link {
+        border: none !important;
+        color: #666 !important;
+        font-weight: 500 !important;
+        padding: 12px 20px !important;
+      }
+
+      .nav-tabs .nav-link.active {
+        background-color: white !important;
+        color: #333 !important;
+        border-bottom: 2px solid #007bff !important;
+      }
+
+      /* Fixed parameters section */
+      .parameters-section {
+        background-color: white;
+        padding: 20px;
+        margin: 0;
+        border-bottom: 1px solid #e5e5e5;
+        position: fixed !important;
+        top: 48px !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 999 !important;
+      }
+
+      /* Fixed title with proper padding and readability - NO SHADOW */
+      .chart-title {
+        background-color: white;
+        padding: 15px 20px;
+        margin: 0;
+        border-bottom: 1px solid #e5e5e5;
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        position: fixed !important;
+        top: calc(48px + var(--params-height, 140px)) !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 998 !important;
+        /* Removed box-shadow */
+      }
+
+      /* Add top margin to main content to account for fixed elements */
+      .main-content-wrapper {
+        margin-top: calc(48px + var(--params-height, 140px) + 58px);
+        background-color: #fafafa;
+      }
+
+      /* Chart containers without ugly borders */
+      .chart-container {
+        background-color: white;
+        margin: 0;
+        padding: 20px;
+        border-bottom: 1px solid #f0f0f0;
+      }
+
+      /* Remove all amateur shadows and borders */
+      .form-control, .form-select {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+      }
+
+      .form-control:focus, .form-select:focus {
+        border-color: #007bff !important;
+        box-shadow: 0 0 0 2px rgba(0,123,255,0.25) !important;
+      }
+
+      /* Clean content area */
       .tab-content {
-        overflow: visible !important;
+        background-color: white;
+        margin: 0;
+        padding: 0;
+      }
+
+      .tab-pane {
+        margin: 0;
+        padding: 0;
+        background-color: white;
       }
     ")),
 
-    # All inputs grouped in one box - with sticky positioning
+    # Simple JavaScript to update CSS custom property for params height
+    tags$script(HTML("
+      $(document).ready(function() {
+        function updateParamsHeight() {
+          var paramsHeight = $('.parameters-section').outerHeight() || 140;
+          document.documentElement.style.setProperty('--params-height', paramsHeight + 'px');
+        }
+
+        // Update on load and resize
+        updateParamsHeight();
+        $(window).on('resize', updateParamsHeight);
+
+        // Update after potential content changes
+        setTimeout(updateParamsHeight, 1000);
+      });
+    ")),
+
+    # Professional wrapper
     div(
-      class = "input-controls-container",
-      style = "border: 1px solid #e0e0e0; border-radius: 4px; padding: 15px; margin-bottom: 20px; background-color: #f9f9f9; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.1);",
+      class = "main-content",
 
-      # Main title for the parameters section
-      h3("Parâmetros", style = "margin-top: 0; margin-bottom: 15px; font-weight: bold;"),
+      # Clean tab navigation
+      tabsetPanel(
+        id = ns("chart_tabs"),
+        type = "tabs",
 
-      # Period filter section
-      div(
-        h5("Período:", style = "margin-top: 0; margin-bottom: 10px; font-weight: bold;"),
-        filtro_periodo_module_ui(ns("filtro")),
-        style = "margin-bottom: 15px;"
-      ),
+        # Charts tab
+        tabPanel(
+          title = "Graficos",
+          value = "graficos",
 
-      # Variable selection
-      div(
-        h5("Empilhar barras por:", style = "margin-top: 0; margin-bottom: 10px; font-weight: bold;"),
-        selectInput(
-          inputId = ns("variavel"),
-          label = NULL,
-          choices = choices,
-          selected = names(choices)[1]
-        ),
-        style = "margin-bottom: 10px;"
-      ),
-
-      # Checkbox wrapper
-      uiOutput(ns("checkbox_wrapper"))
-    ),
-
-    # Tab navigation for different views
-    tabsetPanel(
-      id = ns("chart_tabs"),
-      type = "tabs",
-
-      # Charts tab
-      tabPanel(
-        title = "Gráficos",
-        value = "graficos",
-        div(
-          style = "margin-top: 15px;",
-
-          # Single title for all charts - with sticky positioning
+          # Clean parameters section
           div(
-            style = "margin-bottom: 20px; text-align: left; position: sticky; top: 200px; z-index: 999; background-color: white; padding: 10px 0; border-bottom: 1px solid #e0e0e0;",
-            h4(textOutput(ns("charts_title")), style = "margin: 0; font-size: 16px; font-weight: bold;")
+            class = "parameters-section",
+
+            # Main parameters title
+            h4("Parametros", style = "margin: 0 0 20px 0; font-weight: 600; color: #333; font-size: 20px; border-bottom: 1px solid #e5e5e5; padding-bottom: 10px;"),
+
+            # Period filter
+            div(
+              style = "margin-bottom: 20px;",
+              h5("Periodo", style = "margin: 0 0 10px 0; font-weight: 600; color: #333;"),
+              filtro_periodo_module_ui(ns("filtro"))
+            ),
+
+            # Company filter
+            div(
+              style = "margin-bottom: 20px;",
+              h5("Empresa(s)", style = "margin: 0 0 10px 0; font-weight: 600; color: #333;"),
+              uiOutput(ns("empresa_selector"))
+            ),
+
+            # Variable selection - will be dynamically updated based on company selection
+            div(
+              style = "margin-bottom: 20px;",
+              h5("Empilhar barras por", style = "margin: 0 0 10px 0; font-weight: 600; color: #333;"),
+              uiOutput(ns("variavel_selector"))
+            ),
+
+            # Checkbox wrapper
+            uiOutput(ns("checkbox_wrapper"))
           ),
 
-          # Stacked bar chart
+          # Chart title - Fixed approach with proper rendering
           div(
-            style = "border: 1px solid #ddd; border-radius: 4px; padding: 10px; margin-bottom: 20px;",
-            plotlyOutput(
-              ns("plot"),
-              height = "500px"
-            )
+            class = "chart-title",
+            h4(textOutput(ns("charts_title")), style = "margin: 0; font-size: 18px; font-weight: 600; color: #333;")
           ),
 
-          # Line chart
+          # Charts content wrapper with proper spacing
           div(
-            style = "border: 1px solid #ddd; border-radius: 4px; padding: 10px; margin-bottom: 20px;",
-            plotlyOutput(
-              ns("line_plot"),
-              height = "500px"
-            )
-          ),
+            class = "main-content-wrapper",
 
-          # 100% bar chart
-          div(
-            style = "border: 1px solid #ddd; border-radius: 4px; padding: 10px;",
-            plotlyOutput(
-              ns("percent_plot"),
-              height = "500px"
+            # Charts content - clean design
+            div(
+              class = "chart-container",
+              plotlyOutput(ns("plot"), height = "500px")
+            ),
+            div(
+              class = "chart-container",
+              plotlyOutput(ns("line_plot"), height = "500px")
+            ),
+            div(
+              class = "chart-container",
+              plotlyOutput(ns("percent_plot"), height = "500px")
             )
           )
-        )
-      ),
+        ),
 
-      # Statistics tab (placeholder)
-      tabPanel(
-        title = "Estatísticas",
-        value = "estatisticas",
-        div(
-          style = "padding: 20px; text-align: center;",
-          h4("Estatísticas"),
-          p("Em desenvolvimento...")
-        )
-      ),
+        # Statistics tab
+        tabPanel(
+          title = "Estatisticas",
+          value = "estatisticas",
+          div(
+            class = "chart-container",
+            style = "text-align: center;",
+            h4("Estatisticas", style = "color: #333; margin-bottom: 10px;"),
+            p("Em desenvolvimento...", style = "color: #666;")
+          )
+        ),
 
-      # Data tab
-      tabPanel(
-        title = "Dados",
-        value = "dados",
-        div(
-          style = "padding: 15px;",
-          # Data table with built-in download buttons
-          DT::dataTableOutput(ns("data_table"))
-        )
-      ),
+        # Data tab
+        tabPanel(
+          title = "Dados",
+          value = "dados",
+          div(
+            class = "chart-container",
+            DT::dataTableOutput(ns("data_table"))
+          )
+        ),
 
-      # Metadata tab (placeholder)
-      tabPanel(
-        title = "Metadados",
-        value = "metadados",
-        div(
-          style = "padding: 20px; text-align: center;",
-          h4("Metadados"),
-          p("Em desenvolvimento...")
+        # Metadata tab
+        tabPanel(
+          title = "Metadados",
+          value = "metadados",
+          div(
+            class = "chart-container",
+            style = "text-align: center;",
+            h4("Metadados", style = "color: #333; margin-bottom: 10px;"),
+            p("Em desenvolvimento...", style = "color: #666;")
+          )
         )
       )
     )
@@ -166,9 +270,7 @@ g_barras.empilhadas.mes_server <- function(
     filtroVals <- filtro_periodo_module_server("filtro")
 
     # Define source_id for plotly events
-    source_id <- paste0(id, "_click")
-
-    # Reactive values for click handling
+    source_id <- paste0(id, "_click") # Reactive values for click handling
     detail_rv <- reactiveVal(NULL)
     top_vars_rv <- reactiveVal(NULL)
 
@@ -256,19 +358,26 @@ g_barras.empilhadas.mes_server <- function(
       var_name <- paste0("'", input$variavel, "'")
       period_text <- switch(filtroVals$filtro_periodo(),
         "ano_corrente" = "no ano corrente",
-        "ultimos_12" = "nos últimos 12 meses",
-        "desde_inicio" = "desde o início",
+        "ultimos_12" = "nos ultimos 12 meses",
+        "desde_inicio" = "desde o inicio",
         "personalizado" = {
           req(filtroVals$data_inicial(), filtroVals$data_final())
           sprintf(
-            "de %s até %s",
+            "de %s ate %s",
             format(filtroVals$data_inicial(), "%d/%m/%Y"),
             format(filtroVals$data_final(), "%d/%m/%Y")
           )
         }
       )
-      # Combine the static prefix with the variable and date info
-      sprintf("%s %s %s", comeco.titulo, var_name, period_text)
+
+      # Add empresa info if specific empresa is selected
+      empresa_text <- ""
+      if (!is.null(input$empresa) && input$empresa != "todas") {
+        empresa_text <- paste0(" - ", input$empresa)
+      }
+
+      # Combine the static prefix with the variable, date info, and empresa
+      sprintf("%s %s %s%s", comeco.titulo, var_name, period_text, empresa_text)
     })
 
     # Output for the single charts title
@@ -295,12 +404,18 @@ g_barras.empilhadas.mes_server <- function(
       date_mask <- date_col >= pr$start & date_col <= pr$end
       filtered_data <- dados[date_mask, ]
 
+      # Apply empresa filter if selected
+      if (!is.null(input$empresa) && input$empresa != "todas" && "empresa" %in% names(filtered_data)) {
+        empresa_mask <- filtered_data$empresa == input$empresa
+        filtered_data <- filtered_data[empresa_mask & !is.na(empresa_mask), ]
+      }
+
       # Get the group variable values
       group_values <- as.character(filtered_data[[group_var]])
 
       # Calculate month dates using base R instead of lubridate
       # Convert to first day of month
-      month_dates <- as.Date(paste0(format(date_col[date_mask], "%Y-%m"), "-01"))
+      month_dates <- as.Date(paste0(format(as.Date(filtered_data[[dt_var]]), "%Y-%m"), "-01"))
 
       # Create a data frame for aggregation
       agg_data <- data.frame(
@@ -412,8 +527,12 @@ g_barras.empilhadas.mes_server <- function(
       df <- df_final()
       req(df, nrow(df) > 0)
 
-      # Prepare factor levels and palette (alphabetical order)
-      var_levels <- sort(unique(df$var))
+      # Prepare factor levels and palette (sorted by total value)
+      # Calculate totals by variable and sort by value
+      totals_by_var <- aggregate(df$total, by = list(var = df$var), FUN = sum)
+      colnames(totals_by_var)[2] <- "total_var"
+      totals_by_var <- totals_by_var[order(totals_by_var$total_var, decreasing = TRUE), ]
+      var_levels <- totals_by_var$var
       df$var <- factor(df$var, levels = var_levels)
       pal8 <- RColorBrewer::brewer.pal(8, "Set2")
       pal <- if (length(var_levels) <= 8) pal8[seq_along(var_levels)] else colorRampPalette(pal8)(length(var_levels))
@@ -430,10 +549,10 @@ g_barras.empilhadas.mes_server <- function(
         key = ~var,
         hovertemplate = paste0(
           "<b>%{fullData.name}</b><br>",
-          "Mês: %{x|%m-%Y}<br>",
+          "Mes: %{x|%m-%Y}<br>",
           "Total da categoria: R$ %{y:,.2f}<br>",
           "Total mensal: R$ %{text:,.2f}<br>",
-          "% Categoria no mês: %{customdata:.1f}%<br>",
+          "% Categoria no mes: %{customdata:.1f}%<br>",
           "<extra></extra>"
         ),
         text = ~monthtotal,
@@ -443,31 +562,24 @@ g_barras.empilhadas.mes_server <- function(
         plotly::layout(
           barmode = "stack",
           xaxis = {
-            # Check if we should add range slider
+            # Add range slider for "desde_inicio" but keep charts fixed
             show_rangeslider <- !is.null(filtroVals$filtro_periodo()) && filtroVals$filtro_periodo() == "desde_inicio"
 
             xaxis_config <- list(
-              title = "Mês",
+              title = "Mes",
               tickformat = "%m-%Y",
               type = "date",
-              tickvals = unique(df$mes)
+              tickvals = unique(df$mes),
+              fixedrange = TRUE # Always disable zoom/pan
             )
 
             if (show_rangeslider) {
               xaxis_config$rangeslider <- list(visible = TRUE)
-              xaxis_config$rangeselector <- list(
-                buttons = list(
-                  list(count = 6, label = "6m", step = "month", stepmode = "backward"),
-                  list(count = 1, label = "1a", step = "year", stepmode = "backward"),
-                  list(count = 2, label = "2a", step = "year", stepmode = "backward"),
-                  list(step = "all")
-                )
-              )
             }
 
             xaxis_config
           },
-          yaxis = list(title = "Valor (R$)"),
+          yaxis = list(title = "Valor (R$)", fixedrange = TRUE),
           autosize = TRUE
         ) %>%
         plotly::config(
@@ -476,15 +588,6 @@ g_barras.empilhadas.mes_server <- function(
           displaylogo = FALSE
         )
 
-      # Register events and return plot
-      tryCatch(
-        {
-          plotly::event_register(p, "plotly_click")
-        },
-        error = function(e) {
-          # Silently ignore if already registered
-        }
-      )
       p
     })
 
@@ -537,10 +640,10 @@ g_barras.empilhadas.mes_server <- function(
             key = unique_vars[i],
             hovertemplate = paste0(
               "<b>%{fullData.name}</b><br>",
-              "Mês: %{x|%m-%Y}<br>",
+              "Mes: %{x|%m-%Y}<br>",
               "Total da categoria: R$ %{y:,.2f}<br>",
               "Total mensal: R$ %{text:,.2f}<br>",
-              "% Categoria no mês: %{customdata:.1f}%<br>",
+              "% Categoria no mes: %{customdata:.1f}%<br>",
               "<extra></extra>"
             ),
             text = ~monthtotal,
@@ -548,32 +651,24 @@ g_barras.empilhadas.mes_server <- function(
           )
       }
 
-      # Check if we should add range slider (when "desde o inicio" is selected)
+      # Configure x-axis with range slider for "desde_inicio" but always fixed
       show_rangeslider <- !is.null(filtroVals$filtro_periodo()) && filtroVals$filtro_periodo() == "desde_inicio"
 
-      # Configure x-axis based on period selection
       xaxis_config <- list(
-        title = "Mês",
+        title = "Mes",
         tickformat = "%m-%Y",
-        type = "date"
+        type = "date",
+        fixedrange = TRUE # Always disable zoom/pan
       )
 
       if (show_rangeslider) {
         xaxis_config$rangeslider <- list(visible = TRUE)
-        xaxis_config$rangeselector <- list(
-          buttons = list(
-            list(count = 6, label = "6m", step = "month", stepmode = "backward"),
-            list(count = 1, label = "1a", step = "year", stepmode = "backward"),
-            list(count = 2, label = "2a", step = "year", stepmode = "backward"),
-            list(step = "all")
-          )
-        )
       }
 
       p_line <- p_line %>%
         plotly::layout(
           xaxis = xaxis_config,
-          yaxis = list(title = "Valor (R$)"),
+          yaxis = list(title = "Valor (R$)", fixedrange = TRUE),
           hovermode = "closest",
           showlegend = TRUE,
           legend = list(orientation = "h", x = 0, y = -0.2)
@@ -583,16 +678,6 @@ g_barras.empilhadas.mes_server <- function(
           modeBarButtons = list(list("toImage")),
           displaylogo = FALSE
         )
-
-      # Register events for line chart
-      tryCatch(
-        {
-          plotly::event_register(p_line, "plotly_click")
-        },
-        error = function(e) {
-          # Silently ignore if already registered
-        }
-      )
 
       p_line
     })
@@ -630,7 +715,7 @@ g_barras.empilhadas.mes_server <- function(
       p_percent <- plot_ly(
         data = period_data,
         x = ~percentage,
-        y = rep("Distribuição", nrow(period_data)), # Single row
+        y = rep("Distribuicao", nrow(period_data)), # Single row
         color = ~var,
         colors = colors,
         type = "bar",
@@ -640,7 +725,7 @@ g_barras.empilhadas.mes_server <- function(
         hovertemplate = paste0(
           "<b>%{fullData.name}</b><br>",
           "Valor da categoria: R$ %{customdata:,.2f}<br>",
-          "Valor total do período: R$ ", format(total_geral_value, big.mark = ",", decimal.mark = ".", nsmall = 2), "<br>",
+          "Valor total do periodo: R$ ", format(total_geral_value, big.mark = ",", decimal.mark = ".", nsmall = 2), "<br>",
           "Percentual da categoria: %{x:.1f}%<br>",
           "<extra></extra>"
         ),
@@ -651,11 +736,13 @@ g_barras.empilhadas.mes_server <- function(
           xaxis = list(
             title = "Percentual (%)",
             range = c(0, 100),
-            ticksuffix = "%"
+            ticksuffix = "%",
+            fixedrange = TRUE # Always disable zoom/pan for 100% chart
           ),
           yaxis = list(
             title = "",
-            showticklabels = FALSE
+            showticklabels = FALSE,
+            fixedrange = TRUE # Always disable zoom/pan for 100% chart
           ),
           showlegend = TRUE,
           legend = list(orientation = "h", x = 0, y = -0.2),
@@ -667,43 +754,68 @@ g_barras.empilhadas.mes_server <- function(
           displaylogo = FALSE
         )
 
-      # Register events for 100% chart
-      tryCatch(
-        {
-          plotly::event_register(p_percent, "plotly_click")
-        },
-        error = function(e) {
-          # Silently ignore if already registered
-        }
-      )
-
       p_percent
     })
 
     # Handle clicking any bar segment, including "Outros"
-    # Use observe to continuously monitor for click events from all three charts
+    # Simplified approach that relies on proper reactive dependencies
     observe({
-      # Try to get click data from all three charts
-      click_data_bars <- event_data("plotly_click", source = source_id)
-      click_data_line <- event_data("plotly_click", source = paste0(source_id, "_line"))
-      click_data_percent <- event_data("plotly_click", source = paste0(source_id, "_percent"))
+      # Only proceed if we have the basic requirements for plots to exist
+      req(input$variavel, df_data(), nrow(df_data()) > 0)
 
-      # Use whichever chart was clicked
       click_data <- NULL
-      if (!is.null(click_data_bars)) {
-        click_data <- click_data_bars
-      } else if (!is.null(click_data_line)) {
-        click_data <- click_data_line
-      } else if (!is.null(click_data_percent)) {
-        click_data <- click_data_percent
+      source_type <- NULL
+
+      # Try to get click data from each source, with proper error handling
+      # Bar chart
+      tryCatch(
+        {
+          click_data_bars <- event_data("plotly_click", source = source_id)
+          if (!is.null(click_data_bars)) {
+            click_data <- click_data_bars
+            source_type <- "bars"
+          }
+        },
+        error = function(e) NULL,
+        warning = function(w) NULL
+      )
+
+      # Line chart (only if no bar click found)
+      if (is.null(click_data)) {
+        tryCatch(
+          {
+            click_data_line <- event_data("plotly_click", source = paste0(source_id, "_line"))
+            if (!is.null(click_data_line)) {
+              click_data <- click_data_line
+              source_type <- "line"
+            }
+          },
+          error = function(e) NULL,
+          warning = function(w) NULL
+        )
       }
 
-      if (!is.null(click_data)) {
+      # Percent chart (only if no other clicks found)
+      if (is.null(click_data)) {
+        tryCatch(
+          {
+            click_data_percent <- event_data("plotly_click", source = paste0(source_id, "_percent"))
+            if (!is.null(click_data_percent)) {
+              click_data <- click_data_percent
+              source_type <- "percent"
+            }
+          },
+          error = function(e) NULL,
+          warning = function(w) NULL
+        )
+      }
+
+      if (!is.null(click_data) && !is.null(source_type)) {
         clicked_var <- click_data$key
         tv <- top_vars_rv()
 
         # For 100% chart, we need to show all data for that category (no specific month)
-        if (!is.null(click_data_percent)) {
+        if (source_type == "percent") {
           if (!is.null(tv) && clicked_var == "Outros") {
             dt_var <- data
             group_var <- input$variavel
@@ -731,7 +843,7 @@ g_barras.empilhadas.mes_server <- function(
             detail_data <- dados[date_mask & cat_match, ]
           }
 
-          modal_title <- paste("Detalhes:", clicked_var, "- Período completo")
+          modal_title <- paste("Detalhes:", clicked_var, "- Periodo completo")
         } else {
           # For bars and line charts, filter by specific month
           clicked_month <- as.Date(click_data$x, origin = "1970-01-01")
@@ -772,7 +884,7 @@ g_barras.empilhadas.mes_server <- function(
         if (nrow(detail_data) == 0) {
           showModal(modalDialog(
             title = "Sem detalhes",
-            "Não há dados disponíveis para o segmento selecionado.",
+            "Nao ha dados disponiveis para o segmento selecionado.",
             easyClose = TRUE,
             footer = modalButton("Fechar")
           ))
@@ -801,19 +913,19 @@ g_barras.empilhadas.mes_server <- function(
               "data.pagamento" = "Data Pagamento",
               "total.pago" = "Valor Pago",
               "total" = "Valor Total",
-              "descricao" = "Descrição",
+              "descricao" = "Descricao",
               "fornecedor" = "Fornecedor",
               "centro.custo" = "Centro de Custo",
-              "conta.contabil" = "Conta Contábil",
+              "conta.contabil" = "Conta Contabil",
               "natureza" = "Natureza",
               "tipo.documento" = "Tipo Documento",
-              "numero.documento" = "Número Documento",
-              "observacoes" = "Observações",
+              "numero.documento" = "Numero Documento",
+              "observacoes" = "Observacoes",
               "banco" = "Banco",
-              "agencia" = "Agência",
+              "agencia" = "Agencia",
               "conta" = "Conta",
               "empreendimento" = "Empreendimento",
-              "classificacao" = "Classificação"
+              "classificacao" = "Classificacao"
             )
 
             # Apply the mapping
@@ -854,13 +966,29 @@ g_barras.empilhadas.mes_server <- function(
       }
     })
 
-    # Data table output for the "Dados" tab - shows original data
+    # Data table output for the "Dados" tab - shows filtered data
     output$data_table <- DT::renderDataTable({
-      # Use the original data instead of processed chart data
+      # Use the filtered data respecting both period and empresa filters
       req(dados)
 
-      # Create a copy of original data with Portuguese column names
-      data_formatted <- dados
+      # Apply the same filters as in df_data
+      pr <- period()
+      req(pr, pr$start, pr$end)
+
+      # Filter by date
+      dt_var <- data
+      date_col <- as.Date(dados[[dt_var]])
+      date_mask <- date_col >= pr$start & date_col <= pr$end
+      filtered_data <- dados[date_mask, ]
+
+      # Apply empresa filter if selected
+      if (!is.null(input$empresa) && input$empresa != "todas" && "empresa" %in% names(filtered_data)) {
+        empresa_mask <- filtered_data$empresa == input$empresa
+        filtered_data <- filtered_data[empresa_mask & !is.na(empresa_mask), ]
+      }
+
+      # Create a copy with Portuguese column names
+      data_formatted <- filtered_data
 
       # Translate column names to Portuguese for common financial columns
       col_names <- names(data_formatted)
@@ -871,19 +999,20 @@ g_barras.empilhadas.mes_server <- function(
         "data.pagamento" = "Data Pagamento",
         "total.pago" = "Valor Pago",
         "total" = "Valor Total",
-        "descricao" = "Descrição",
+        "descricao" = "Descricao",
         "fornecedor" = "Fornecedor",
         "centro.custo" = "Centro de Custo",
-        "conta.contabil" = "Conta Contábil",
+        "conta.contabil" = "Conta Contabil",
         "natureza" = "Natureza",
         "tipo.documento" = "Tipo Documento",
-        "numero.documento" = "Número Documento",
-        "observacoes" = "Observações",
+        "numero.documento" = "Numero Documento",
+        "observacoes" = "Observacoes",
         "banco" = "Banco",
-        "agencia" = "Agência",
+        "agencia" = "Agencia",
         "conta" = "Conta",
         "empreendimento" = "Empreendimento",
-        "classificacao" = "Classificação"
+        "classificacao" = "Classificacao",
+        "empresa" = "Empresa"
       )
 
       # Apply the mapping
@@ -923,6 +1052,133 @@ g_barras.empilhadas.mes_server <- function(
         rownames = FALSE
       )
     })
+
+    # Dynamic UI outputs for empresa and variavel selectors
+    output$empresa_selector <- renderUI({
+      req(dados)
+
+      # Get unique empresa values (assuming there's an "empresa" column)
+      if ("empresa" %in% names(dados)) {
+        empresas <- sort(unique(dados$empresa))
+        empresas <- empresas[!is.na(empresas)]
+        choices <- c("Todas" = "todas", setNames(empresas, empresas))
+      } else {
+        choices <- c("Todas" = "todas")
+      }
+
+      selectInput(
+        ns("empresa"),
+        label = NULL,
+        choices = choices,
+        selected = "todas",
+        width = "100%"
+      )
+    })
+
+    # Initial variavel selector (will be updated by observeEvent when empresa changes)
+    output$variavel_selector <- renderUI({
+      req(dados)
+
+      # Base variable choices with proper Portuguese names (ASCII-safe)
+      base_choices <- c(
+        "Empresa" = "empresa",
+        "Centro" = "centro.custo",
+        "Credor" = "fornecedor",
+        "Agente Financeiro" = "banco",
+        "Empreendimento" = "empreendimento",
+        "Classificacao" = "classificacao"
+      )
+
+      # Filter choices based on what exists in the data
+      available_choices <- base_choices[base_choices %in% names(dados)]
+
+      # Initial default: "Empresa" if available (since default empresa is "todas")
+      default_selection <- if ("empresa" %in% available_choices) {
+        "empresa"
+      } else if ("centro.custo" %in% available_choices) {
+        "centro.custo"
+      } else if (length(available_choices) > 0) {
+        available_choices[1]
+      } else {
+        NULL
+      }
+
+      selectInput(
+        ns("variavel"),
+        label = NULL,
+        choices = available_choices,
+        selected = default_selection,
+        width = "100%"
+      )
+    })
+
+    # Observer to handle empresa changes and update variavel selection
+    observeEvent(input$empresa,
+      {
+        # When empresa selection changes, update the variavel choices dynamically
+        req(dados, input$empresa)
+
+        # Debug information (remove in production)
+        cat("Empresa changed to:", input$empresa, "\n")
+
+        # Base variable choices with proper Portuguese names (ASCII-safe)
+        base_choices <- c(
+          "Empresa" = "empresa",
+          "Centro" = "centro.custo",
+          "Credor" = "fornecedor",
+          "Agente Financeiro" = "banco",
+          "Empreendimento" = "empreendimento",
+          "Classificacao" = "classificacao"
+        )
+
+        # Filter choices based on what exists in the data
+        available_choices <- base_choices[base_choices %in% names(dados)]
+
+        # Core logic: If a specific empresa is selected, remove "Empresa" from choices
+        if (input$empresa != "todas") {
+          available_choices <- available_choices[available_choices != "empresa"]
+        }
+
+        # Default selection logic:
+        # - "Todas" empresas -> Default to "Empresa" (if available)
+        # - Specific empresa -> Default to "Centro" (exclude "Empresa")
+        default_selection <- if (input$empresa == "todas") {
+          # When "Todas" is selected, prefer "Empresa" if it exists in data and choices
+          if ("empresa" %in% available_choices) {
+            "empresa"
+          } else if ("centro.custo" %in% available_choices) {
+            "centro.custo"
+          } else if (length(available_choices) > 0) {
+            available_choices[1]
+          } else {
+            NULL
+          }
+        } else {
+          # When specific empresa is selected, prefer "Centro" (empresa is excluded from choices)
+          if ("centro.custo" %in% available_choices) {
+            "centro.custo"
+          } else if ("fornecedor" %in% available_choices) {
+            "fornecedor"
+          } else if (length(available_choices) > 0) {
+            available_choices[1]
+          } else {
+            NULL
+          }
+        }
+
+        cat("Available choices:", paste(names(available_choices), collapse = ", "), "\n")
+        cat("Default selection:", default_selection, "\n")
+
+        # Use updateSelectInput for more reliable updates
+        updateSelectInput(
+          session = session,
+          inputId = "variavel",
+          choices = available_choices,
+          selected = default_selection
+        )
+      },
+      ignoreInit = TRUE
+    )
 
     # Download for the original data - now handled by DT buttons
     # output$download_chart <- downloadHandler(

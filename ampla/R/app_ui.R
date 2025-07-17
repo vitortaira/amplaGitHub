@@ -16,9 +16,14 @@ app_ui <- function(request) {
 
   # Determine which page to show based on page parameter
   if (page == "despesas") {
-    # Clean despesas page - no navigation, no header, just the chart
+    # Clean despesas page - no header, tabs on top
     fluidPage(
       title = "Despesas - Ampla",
+      # Add favicon
+      tags$head(
+        tags$link(rel = "icon", type = "image/jpeg", href = "ampla_icon.jpeg"),
+        tags$link(rel = "shortcut icon", type = "image/jpeg", href = "ampla_icon.jpeg")
+      ),
       div(
         style = "padding: 20px;",
         g_barras.empilhadas.mes_ui(
@@ -31,14 +36,19 @@ app_ui <- function(request) {
       ),
       # Minimal CSS for clean embedding
       tags$style(HTML("
-        body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #ffffff; }
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #ffffff; }
         .container-fluid { padding: 0; max-width: 100%; }
       "))
     )
   } else if (page == "receitas") {
-    # Clean receitas page - no navigation, no header, just the chart
+    # Clean receitas page - no header, tabs on top
     fluidPage(
       title = "Receitas - Ampla",
+      # Add favicon
+      tags$head(
+        tags$link(rel = "icon", type = "image/jpeg", href = "ampla_icon.jpeg"),
+        tags$link(rel = "shortcut icon", type = "image/jpeg", href = "ampla_icon.jpeg")
+      ),
       div(
         style = "padding: 20px;",
         g_barras.empilhadas.mes_ui(
@@ -51,77 +61,156 @@ app_ui <- function(request) {
       ),
       # Minimal CSS for clean embedding
       tags$style(HTML("
-        body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #ffffff; }
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #ffffff; }
         .container-fluid { padding: 0; max-width: 100%; }
       "))
     )
   } else {
-    # Home page with navigation (default for root path)
+    # Home page - minimalistic book index style
     fluidPage(
       title = "Ampla Dashboard",
-
-      # Header
-      div(
-        style = "padding: 15px; background-color: #f8f9fa; border-bottom: 2px solid #dee2e6; margin-bottom: 20px;",
-        div(
-          style = "max-width: 1200px; margin: 0 auto;",
-          h2("Ampla Dashboard", style = "color: #495057; margin: 0;")
-        )
+      # Add favicon
+      tags$head(
+        tags$link(rel = "icon", type = "image/jpeg", href = "ampla_icon.jpeg"),
+        tags$link(rel = "shortcut icon", type = "image/jpeg", href = "ampla_icon.jpeg")
       ),
 
-      # Main content area
+      # Main container with book-like styling
       div(
-        style = "max-width: 1200px; margin: 0 auto; padding: 0 15px;",
+        style = "max-width: 800px; margin: 60px auto; padding: 40px; background-color: #ffffff; min-height: 80vh;",
+
+        # Header with company branding
         div(
-          style = "text-align: center; padding: 50px;",
-          h1("Ampla Dashboard", style = "color: #495057;"),
-          h3("Selecione uma seção:", style = "color: #6c757d; margin-bottom: 30px;"),
+          style = "text-align: center; margin-bottom: 60px; padding-bottom: 30px; border-bottom: 1px solid #e9ecef;",
+          img(src = "ampla_header.jpg", alt = "Ampla Incorporadora", style = "max-width: 60%; height: auto; margin-bottom: 20px;"),
+          h1("Dashboard", style = "color: #2c3e50; font-weight: 300; font-size: 36px; margin: 20px 0 10px 0; letter-spacing: 1px;")
+        ), # Index/Table of Contents
+        div(
+          style = "margin: 40px 0;",
+
+          # Main sections
           div(
-            style = "display: inline-block; margin: 20px;",
-            tags$a("📊 Análise de Despesas",
-              href = "?page=despesas",
-              class = "btn btn-primary btn-lg",
-              style = "margin: 10px; padding: 15px 30px; text-decoration: none;"
-            )
-          ),
-          div(
-            style = "display: inline-block; margin: 20px;",
-            tags$a("💰 Análise de Receitas",
-              href = "?page=receitas",
-              class = "btn btn-success btn-lg",
-              style = "margin: 10px; padding: 15px 30px; text-decoration: none;"
-            )
-          ),
-          hr(style = "margin: 40px 0;"),
-          div(
-            style = "color: #6c757d; font-size: 14px;",
-            p("Esta aplicação fornece análises interativas para embedding no Notion."),
-            p("URLs diretas para embedding:"),
+            style = "margin-left: 20px;",
+
+            # Setores section
             div(
-              style = "margin: 10px 0;",
-              tags$code("https://vitortaira.shinyapps.io/ampla-dashboard/?page=despesas",
-                style = "background-color: #f8f9fa; padding: 5px; border-radius: 3px; display: block; margin: 5px 0;"
+              style = "margin-bottom: 35px;",
+              h3("Setores", style = "color: #2c3e50; font-weight: 500; font-size: 20px; margin-bottom: 20px;"),
+              div(
+                style = "margin-left: 30px;",
+                # Financeiro subsection
+                div(
+                  style = "margin-bottom: 20px;",
+                  h4("Financeiro", style = "color: #34495e; font-weight: 400; font-size: 18px; margin-bottom: 15px;"),
+                  div(
+                    style = "margin-left: 25px;",
+                    div(
+                      style = "margin-bottom: 8px;",
+                      tags$a(
+                        "Despesas",
+                        href = "?page=despesas",
+                        style = "color: #3498db; text-decoration: none; font-size: 16px; line-height: 1.6; display: block; padding: 8px 0; border-left: 3px solid transparent; padding-left: 15px; transition: all 0.3s ease;"
+                      )
+                    ),
+                    div(
+                      style = "margin-bottom: 8px;",
+                      tags$a(
+                        "Receitas",
+                        href = "?page=receitas",
+                        style = "color: #27ae60; text-decoration: none; font-size: 16px; line-height: 1.6; display: block; padding: 8px 0; border-left: 3px solid transparent; padding-left: 15px; transition: all 0.3s ease;"
+                      )
+                    )
+                  )
+                )
               )
             ),
+
+            # Future sections (placeholder)
             div(
-              style = "margin: 10px 0;",
-              tags$code("https://vitortaira.shinyapps.io/ampla-dashboard/?page=receitas",
-                style = "background-color: #f8f9fa; padding: 5px; border-radius: 3px; display: block; margin: 5px 0;"
+              style = "margin-bottom: 25px; opacity: 0.5;",
+              h3("Base de dados", style = "color: #2c3e50; font-weight: 500; font-size: 20px; margin-bottom: 20px;"),
+              div(
+                style = "margin-left: 30px;",
+                div(
+                  style = "margin-bottom: 8px;",
+                  span("Buscar", style = "color: #95a5a6; font-size: 16px; line-height: 1.6; display: block; padding: 8px 0; padding-left: 15px; font-style: italic;"),
+                  span(" (em desenvolvimento)", style = "font-size: 12px; color: #bdc3c7;")
+                ),
+                div(
+                  style = "margin-bottom: 8px;",
+                  span("Cobertura temporal dos arquivos", style = "color: #95a5a6; font-size: 16px; line-height: 1.6; display: block; padding: 8px 0; padding-left: 15px; font-style: italic;"),
+                  span(" (em desenvolvimento)", style = "font-size: 12px; color: #bdc3c7;")
+                ),
+                div(
+                  style = "margin-bottom: 8px;",
+                  span("Mapa dos dados", style = "color: #95a5a6; font-size: 16px; line-height: 1.6; display: block; padding: 8px 0; padding-left: 15px; font-style: italic;"),
+                  span(" (em desenvolvimento)", style = "font-size: 12px; color: #bdc3c7;")
+                )
               )
             )
           )
         )
       ),
 
-      # CSS styling
+      # Enhanced CSS styling for book-like appearance
       tags$style(HTML("
+        body {
+          margin: 0;
+          font-family: 'Georgia', 'Times New Roman', serif;
+          background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+          min-height: 100vh;
+        }
         .container-fluid { padding: 0; max-width: 100%; }
-        body { margin: 0; font-family: Arial, sans-serif; background-color: #ffffff; }
-        .btn { border-radius: 20px; padding: 8px 16px; font-weight: 500; text-decoration: none; }
-        .btn-primary:hover { background-color: #0056b3; }
-        .btn-success:hover { background-color: #1e7e34; }
-        a.btn:hover { text-decoration: none; }
-        code { background-color: #f8f9fa; padding: 2px 4px; border-radius: 3px; font-size: 12px; }
+
+        /* Hover effects for links */
+        a[href*='page=']:hover {
+          border-left: 3px solid #3498db !important;
+          background-color: #f8f9fa !important;
+          color: #2c3e50 !important;
+          transform: translateX(5px);
+        }
+
+        a[href*='receitas']:hover {
+          border-left: 3px solid #27ae60 !important;
+        }
+
+        /* Smooth transitions */
+        * {
+          transition: all 0.3s ease;
+        }
+
+        /* Typography enhancements */
+        h1, h2, h3 {
+          font-family: 'Georgia', 'Times New Roman', serif;
+        }
+
+        /* Code styling */
+        code {
+          font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+          word-break: break-all;
+          display: inline-block;
+          max-width: 100%;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+          .container-fluid > div {
+            margin: 20px auto !important;
+            padding: 20px !important;
+          }
+
+          h1 {
+            font-size: 24px !important;
+          }
+
+          h2 {
+            font-size: 20px !important;
+          }
+
+          h3 {
+            font-size: 16px !important;
+          }
+        }
       "))
     )
   }
@@ -138,6 +227,8 @@ golem_add_external_resources <- function() {
   tags$head(
     tags$title("Ampla - Financial Dashboard"),
     tags$meta(charset = "utf-8"),
-    tags$meta(name = "viewport", content = "width=device-width, initial-scale=1")
+    tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
+    tags$link(rel = "icon", type = "image/jpeg", href = "ampla_icon.jpeg"),
+    tags$link(rel = "shortcut icon", type = "image/jpeg", href = "ampla_icon.jpeg")
   )
 }
