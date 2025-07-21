@@ -1,5 +1,5 @@
 # =============================================================================
-# MÓDULO: filtro_periodo
+# MÓDULO: filtroPeriodo
 # Filtro de período para análise temporal de dados
 # =============================================================================
 
@@ -53,10 +53,10 @@ filtro_periodo_module_ui <- function(id) {
         )
       )
     ),
-    # Custom JavaScript to override weekday abbreviations
+    # JavaScript personalizado para sobrescrever abreviações de dias da semana
     tags$script(HTML("
       $(document).ready(function() {
-        // Override Bootstrap datepicker Portuguese locale with 3-char weekdays
+        // Sobrescrever locale português do Bootstrap datepicker com dias de 3 caracteres
         if ($.fn.datepicker && $.fn.datepicker.dates && $.fn.datepicker.dates.pt) {
           $.fn.datepicker.dates.pt.daysMin = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
         }
@@ -68,7 +68,7 @@ filtro_periodo_module_ui <- function(id) {
 #' @export
 filtro_periodo_module_server <- function(id) {
   moduleServer(id, function(input, output, session) {
-    # Return ALL filter values as reactive with validation
+    # Retornar TODOS os valores de filtro como reativo com validação
     return(list(
       filtro_periodo = reactive({
         input$filtro_periodo
@@ -77,7 +77,7 @@ filtro_periodo_module_server <- function(id) {
         if (is.null(input$data_inicial)) {
           return(Sys.Date() - 365)
         }
-        # Ensure it's a proper Date object
+        # Garantir que é um objeto Date adequado
         if (inherits(input$data_inicial, "Date")) {
           input$data_inicial
         } else {
@@ -88,7 +88,7 @@ filtro_periodo_module_server <- function(id) {
         if (is.null(input$data_final)) {
           return(Sys.Date())
         }
-        # Ensure it's a proper Date object
+        # Garantir que é um objeto Date adequado
         if (inherits(input$data_final, "Date")) {
           input$data_final
         } else {

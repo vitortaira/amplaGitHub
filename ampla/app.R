@@ -1,15 +1,30 @@
-# Launch the ShinyApp (Do not remove this comment)
-# To deploy, run: rsconnect::deployApp()
-# Or use the blue button on top of this file
+# Deployment app.R for shinyapps.io
+# This file loads the package and runs the Shiny application
 
-# Custom warning handler for expected warnings during package loading
+# Configurações iniciais do aplicativo
+options(scipen = 999) # Prevenir notação científica
+
+# Carregar pacotes necessários
 suppressMessages({
-  # Load the package quietly
-  pkgload::load_all(export_all = FALSE, helpers = FALSE, attach_testthat = FALSE)
+  library(shiny)
+  library(dplyr)
+  library(plotly)
+  library(here)
+  library(fs)
+  library(lubridate)
+  library(DT)
+  library(RColorBrewer)
+  library(pkgload)
 })
 
-# Set app options
-options(scipen = 999) # Prevent scientific notation
+# Carregar o pacote local em modo desenvolvimento
+# Para deployment, carrega todas as funções necessárias
+pkgload::load_all(".", export_all = FALSE, helpers = FALSE, attach_testthat = FALSE)
 
-# Run the application directly
-shiny::shinyApp(ui = app_ui, server = app_server)
+# Verificar se as funções estão disponíveis
+if (!exists("app_ui") || !exists("app_server")) {
+  stop("Funções app_ui e app_server não encontradas. Verifique o carregamento do pacote.")
+}
+
+# Executar a aplicação diretamente
+shinyApp(ui = app_ui, server = app_server)

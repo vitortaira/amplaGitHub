@@ -1,37 +1,39 @@
-#' The application server-side
+#' Lado servidor da aplicação
 #'
-#' @param input,output,session Internal parameters for {shiny}.
-#'     DO NOT REMOVE.
+#' @param input,output,session Parâmetros internos para {shiny}.
+#'     NÃO REMOVA.
 #' @import shiny
-#' @noRd
+#' @export
 app_server <- function(input, output, session) {
-  # Load required libraries
+  # Carregar bibliotecas necessárias
   library(plotly)
   library(dplyr)
   library(lubridate)
   library(fs) # Para manipulação de arquivos e diretórios
   library(here) # Para gerenciamento de caminhos relativos ao projeto
 
-  # Load real data from RDS files (same pattern as amplaShiny)
+  # Carregar dados reais dos arquivos RDS (mesmo padrão do amplaShiny)
   # Carrega todos os arquivos RDS do diretório de dados
-  dados_l <- readRDS(
-    dir_ls(here("inst", "dados"), type = "file")
+  dadosLista <- readRDS(
+    dir_ls("inst/dados", type = "file")
   )
 
-  # Initialize modules for all URLs (they'll only render when UI calls them)
+  # Inicializar módulos para todas as URLs (eles só renderizarão quando a UI os chamar)
   g_barras.empilhadas.mes_server(
-    "despesas_chart",
-    dados = dados_l$ik$desp,
+    "grafico_despesas",
+    dados = dadosLista$ik$desp,
+    choices = list("Empresa" = "empresa", "Centro" = "centro.negocio", "Credor" = "credor", "Agente Financeiro" = "agente.financeiro"),
     total = "total.pago",
     data = "data.doc.pagto",
-    comeco.titulo = "Despesas por"
+    comecoTitulo = "Despesas por"
   )
 
   g_barras.empilhadas.mes_server(
-    "receitas_chart",
-    dados = dados_l$ik$rec,
+    "grafico_receitas",
+    dados = dadosLista$ik$rec,
+    choices = list("Empresa" = "empresa", "Empreendimento" = "empreendimento", "Agente" = "agente", "Elemento" = "elemento"),
     total = "total",
     data = "data.pagamento",
-    comeco.titulo = "Receitas por"
+    comecoTitulo = "Receitas por"
   )
 }

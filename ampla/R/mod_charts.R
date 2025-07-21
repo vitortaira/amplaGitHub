@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# MODULO: g_barras.empilhadas.mes
+# MODULO: graficoBarrasEmpilhadasMes
 # Grafico de barras empilhadas por mes para analise de despesas e receitas
 # =============================================================================
 
@@ -8,96 +8,96 @@
 #' @import plotly
 #' @import dplyr
 #' @import lubridate
-#' @importFrom DT datatable renderDataTable dataTableOutput
+#' @importFrom DT datatable
 #' @importFrom RColorBrewer brewer.pal
 
 # ----------------------------
-#        UI MODULE
+#        MODULO UI
 # ----------------------------
 g_barras.empilhadas.mes_ui <- function(
     id,
     choices,
     total = "total.pago",
     data = "data.doc.pagto",
-    comeco.titulo = "Despesas") {
+    comecoTitulo = "Despesas") {
   ns <- NS(id)
   tagList(
-    # Professional clean CSS design
+    # Design CSS profissional e limpo
     tags$style(HTML("
-      /* Clean, professional design without amateur shadows and borders */
-      .main-content {
-        background-color: #fafafa;
-        min-height: 100vh;
-      }
+        /* Design profissional e limpo sem sombras e bordas amadoras */
+        .main-content {
+          background-color: #fafafa;
+          min-height: 100vh;
+        }
 
-      /* Fixed tabs at top */
-      .nav-tabs {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        z-index: 1000 !important;
-        background-color: white !important;
-        border-bottom: 1px solid #e5e5e5 !important;
-        margin: 0 !important;
-        padding: 0 20px !important;
-        height: 48px !important;
-      }
+        /* Abas fixas no topo */
+        .nav-tabs {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          z-index: 1000 !important;
+          background-color: white !important;
+          border-bottom: 1px solid #e5e5e5 !important;
+          margin: 0 !important;
+          padding: 0 20px !important;
+          height: 48px !important;
+        }
 
-      .nav-tabs .nav-link {
-        border: none !important;
-        color: #666 !important;
-        font-weight: 500 !important;
-        padding: 12px 20px !important;
-      }
+        .nav-tabs .nav-link {
+          border: none !important;
+          color: #666 !important;
+          font-weight: 500 !important;
+          padding: 12px 20px !important;
+        }
 
-      .nav-tabs .nav-link.active {
-        background-color: white !important;
-        color: #333 !important;
-        border-bottom: 2px solid #007bff !important;
-      }
+        .nav-tabs .nav-link.active {
+          background-color: white !important;
+          color: #333 !important;
+          border-bottom: 2px solid #007bff !important;
+        }
 
-      /* Fixed parameters section */
-      .parameters-section {
-        background-color: white;
-        padding: 20px;
-        margin: 0;
-        border-bottom: 1px solid #e5e5e5;
-        position: fixed !important;
-        top: 48px !important;
-        left: 0 !important;
-        right: 0 !important;
-        z-index: 999 !important;
-      }
+        /* Seção de parâmetros fixa */
+        .parameters-section {
+          background-color: white;
+          padding: 20px;
+          margin: 0;
+          border-bottom: 1px solid #e5e5e5;
+          position: fixed !important;
+          top: 48px !important;
+          left: 0 !important;
+          right: 0 !important;
+          z-index: 999 !important;
+        }
 
-      /* Fixed title with proper padding and readability - NO SHADOW */
-      .chart-title {
-        background-color: white;
-        padding: 15px 20px;
-        margin: 0;
-        border-bottom: 1px solid #e5e5e5;
-        font-size: 18px;
-        font-weight: 600;
-        color: #333;
-        position: fixed !important;
-        top: calc(48px + var(--params-height, 140px)) !important;
-        left: 0 !important;
-        right: 0 !important;
-        z-index: 998 !important;
-        /* Removed box-shadow */
-      }
+        /* Título fixo com padding adequado e legibilidade - SEM SOMBRA */
+        .chart-title {
+          background-color: white;
+          padding: 15px 20px;
+          margin: 0;
+          border-bottom: 1px solid #e5e5e5;
+          font-size: 18px;
+          font-weight: 600;
+          color: #333;
+          position: fixed !important;
+          top: calc(48px + var(--params-height, 140px)) !important;
+          left: 0 !important;
+          right: 0 !important;
+          z-index: 998 !important;
+          /* Removida box-shadow */
+        }
 
-      /* Add top margin to main content to account for fixed elements */
-      .main-content-wrapper {
-        margin-top: calc(48px + var(--params-height, 140px) + 58px);
-        background-color: #fafafa;
-      }
+        /* Adicionar margem superior ao conteúdo principal para considerar elementos fixos */
+        .main-content-wrapper {
+          margin-top: calc(48px + var(--params-height, 140px) + 58px);
+          background-color: #fafafa;
+        }
 
-      /* Chart containers without ugly borders */
-      .chart-container {
-        background-color: white;
-        margin: 0;
-        padding: 20px;
+        /* Containers de gráfico sem bordas feias */
+        .chart-container {
+          background-color: white;
+          margin: 0;
+          padding: 20px;
         border-bottom: 1px solid #f0f0f0;
       }
 
@@ -254,19 +254,20 @@ g_barras.empilhadas.mes_ui <- function(
 }
 
 # ----------------------------
-#       SERVER MODULE
+#       MODULO SERVIDOR
 # ----------------------------
 g_barras.empilhadas.mes_server <- function(
     id,
     dados,
-    max_unicos_i = 20,
+    choices,
+    maxUnicosI = 20,
     total = "total.pago",
     data = "data.doc.pagto",
-    comeco.titulo = "Despesas") {
+    comecoTitulo = "Despesas") {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # Initialize the filtro_periodo module
+    # Inicializar o módulo filtro_periodo
     filtroVals <- filtro_periodo_module_server("filtro")
 
     # Define source_id for plotly events
@@ -279,21 +280,21 @@ g_barras.empilhadas.mes_server <- function(
       paste0(id, "_click")
     })
 
-    # 1) Reactive for date range
-    period <- reactive({
+    # 1) Reativo para intervalo de datas
+    periodo <- reactive({
       req(filtroVals$filtro_periodo())
-      today <- Sys.Date()
+      hoje <- Sys.Date()
       switch(filtroVals$filtro_periodo(),
-        "ano_corrente" = list(start = as.Date(paste0(format(today, "%Y"), "-01-01")), end = today),
-        "ultimos_12" = list(start = as.Date(format(today - 365, "%Y-%m-%d")), end = today),
+        "ano_corrente" = list(start = as.Date(paste0(format(hoje, "%Y"), "-01-01")), end = hoje),
+        "ultimos_12" = list(start = as.Date(format(hoje - 365, "%Y-%m-%d")), end = hoje),
         "desde_inicio" = {
           dt <- as.Date(dados[[data]], origin = "1970-01-01")
-          list(start = min(dt, na.rm = TRUE), end = today)
+          list(start = min(dt, na.rm = TRUE), end = hoje)
         },
         "personalizado" = {
           req(filtroVals$data_inicial(), filtroVals$data_final())
-          # Robust date parsing using lubridate as final fallback
-          start_date <- tryCatch(
+          # Análise robusta de data usando lubridate como fallback final
+          dataInicial <- tryCatch(
             {
               if (inherits(filtroVals$data_inicial(), "Date")) {
                 filtroVals$data_inicial()
@@ -320,7 +321,7 @@ g_barras.empilhadas.mes_server <- function(
             }
           )
 
-          end_date <- tryCatch(
+          dataFinal <- tryCatch(
             {
               if (inherits(filtroVals$data_final(), "Date")) {
                 filtroVals$data_final()
@@ -347,48 +348,60 @@ g_barras.empilhadas.mes_server <- function(
             }
           )
 
-          list(start = start_date, end = end_date)
+          list(start = dataInicial, end = dataFinal)
         }
       )
     })
 
-    # 2) Chart title, using comeco.titulo
-    chart_title <- reactive({
+    # 2) Título do gráfico, usando comecoTitulo
+    titulo <- reactive({
       req(input$variavel, filtroVals$filtro_periodo())
-      var_name <- paste0("'", input$variavel, "'")
-      period_text <- switch(filtroVals$filtro_periodo(),
+
+      # Obter nome da variável para exibição
+      nomeVar <- if (!is.null(input$variavel)) {
+        # Usar os choices definidos na UI para obter o nome de exibição
+        if (input$variavel %in% names(choices)) {
+          choices[[input$variavel]]
+        } else {
+          input$variavel
+        }
+      } else {
+        "Variável"
+      }
+
+      textoperiodo <- switch(filtroVals$filtro_periodo(),
         "ano_corrente" = "no ano corrente",
-        "ultimos_12" = "nos ultimos 12 meses",
-        "desde_inicio" = "desde o inicio",
+        "ultimos_12" = "nos últimos 12 meses",
+        "desde_inicio" = "desde o início",
         "personalizado" = {
           req(filtroVals$data_inicial(), filtroVals$data_final())
           sprintf(
-            "de %s ate %s",
+            "de %s até %s",
             format(filtroVals$data_inicial(), "%d/%m/%Y"),
             format(filtroVals$data_final(), "%d/%m/%Y")
           )
         }
       )
 
-      # Add empresa info if specific empresa is selected
-      empresa_text <- ""
+      # Adicionar informação da empresa se empresa específica estiver selecionada
+      textoEmpresa <- ""
       if (!is.null(input$empresa) && input$empresa != "todas") {
-        empresa_text <- paste0(" - ", input$empresa)
+        textoEmpresa <- paste0(" - ", input$empresa)
       }
 
-      # Combine the static prefix with the variable, date info, and empresa
-      sprintf("%s %s %s%s", comeco.titulo, var_name, period_text, empresa_text)
+      # Combinar o prefixo estático com a variável, informação de data e empresa
+      sprintf("%s %s %s%s", comecoTitulo, nomeVar, textoperiodo, textoEmpresa)
     })
 
     # Output for the single charts title
     output$charts_title <- renderText({
-      chart_title()
+      titulo()
     })
 
     # 3) Reactive data: group by month + stacking variable
     df_data <- reactive({
       # Make sure we have all required inputs
-      pr <- period()
+      pr <- periodo()
       req(dados, pr, pr$start, pr$end, input$variavel)
 
       # Use non-standard evaluation instead of .data pronoun
@@ -441,7 +454,7 @@ g_barras.empilhadas.mes_server <- function(
       d <- df_data()
       req(d)
       distinct_vars <- length(unique(d$var))
-      if (distinct_vars <= max_unicos_i) {
+      if (distinct_vars <= maxUnicosI) {
         return(NULL) # hide checkbox completely
       }
       checkboxInput(
@@ -461,12 +474,12 @@ g_barras.empilhadas.mes_server <- function(
 
       # If user wants all or not many categories => do nothing
       distinct_vars <- length(unique(d$var))
-      if (distinct_vars <= max_unicos_i || isTRUE(input$show_all_cats)) {
+      if (distinct_vars <= maxUnicosI || isTRUE(input$show_all_cats)) {
         top_vars_rv(NULL)
         return(d)
       }
 
-      # Identify top (max_unicos_i - 1) categories
+      # Identify top (maxUnicosI - 1) categories
       # Use aggregate instead of dplyr
       totals_by_var <- aggregate(
         d$total,
@@ -476,7 +489,7 @@ g_barras.empilhadas.mes_server <- function(
       colnames(totals_by_var)[2] <- "totalvar"
       totals_by_var <- totals_by_var[order(totals_by_var$totalvar, decreasing = TRUE), ]
 
-      top_vars <- totals_by_var$var[seq_len(max_unicos_i - 1)]
+      top_vars <- totals_by_var$var[seq_len(maxUnicosI - 1)]
       top_vars_rv(top_vars)
 
       # Lump the rest into "Outros"
