@@ -1,12 +1,17 @@
 # =============================================================================
-# MÓDULO: filtroPeriodo
+# SUBMÓDULO: filtroPeriodo
 # Filtro de período para análise temporal de dados
+# Componente reutilizável para diferentes módulos
 # =============================================================================
 
 #' @import shiny
 
+#' Interface do usuário do submódulo de filtro de período
+#'
+#' @param id Identificador único do módulo
+#' @return Lista de elementos da interface
 #' @export
-filtro_periodo_module_ui <- function(id) {
+sm_filtro_periodo_ui <- function(id) {
   ns <- NS(id)
   tagList(
     radioButtons(
@@ -65,8 +70,12 @@ filtro_periodo_module_ui <- function(id) {
   )
 }
 
+#' Servidor do submódulo de filtro de período
+#'
+#' @param id Identificador único do módulo
+#' @return Lista com elementos reativos para filtro de período
 #' @export
-filtro_periodo_module_server <- function(id) {
+sm_filtro_periodo_server <- function(id) {
   moduleServer(id, function(input, output, session) {
     # Retornar TODOS os valores de filtro como reativo com validação
     return(list(

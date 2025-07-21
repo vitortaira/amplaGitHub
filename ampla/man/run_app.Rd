@@ -2,39 +2,35 @@
 % Please edit documentation in R/run_app.R
 \name{run_app}
 \alias{run_app}
-\title{Run the Shiny Application}
+\title{Executar aplicação Shiny}
 \usage{
-run_app(
-  onStart = NULL,
-  options = list(),
-  enableBookmarking = NULL,
-  uiPattern = "/",
-  ...
-)
+run_app(host = "127.0.0.1", port = 3838, launch.browser = TRUE, ...)
 }
 \arguments{
-\item{onStart}{A function that will be called before the app is actually run.
-This is only needed for \code{shinyAppObj}, since in the \code{shinyAppDir}
-case, a \code{global.R} file can be used for this purpose.}
+\item{host}{Endereço IP do host (padrão: '127.0.0.1')}
 
-\item{options}{Named options that should be passed to the \code{runApp} call
-(these can be any of the following: "port", "launch.browser", "host", "quiet",
-"display.mode" and "test.mode"). You can also specify \code{width} and
-\code{height} parameters which provide a hint to the embedding environment
-about the ideal height/width for the app.}
+\item{port}{Porta inicial para tentar (padrão: 3838)}
 
-\item{enableBookmarking}{Can be one of \code{"url"}, \code{"server"}, or
-\code{"disable"}. The default value, \code{NULL}, will respect the setting from
-any previous calls to  \code{\link[shiny:enableBookmarking]{enableBookmarking()}}. See \code{\link[shiny:enableBookmarking]{enableBookmarking()}}
-for more information on bookmarking your app.}
+\item{launch.browser}{Se deve abrir o navegador automaticamente (padrão: TRUE)}
 
-\item{uiPattern}{A regular expression that will be applied to each \code{GET}
-request to determine whether the \code{ui} should be used to handle the
-request. Note that the entire request path must match the regular
-expression in order for the match to be considered successful.}
-
-\item{...}{arguments to pass to shinyApp.}
+\item{...}{Argumentos adicionais passados para shiny::runApp()}
+}
+\value{
+Não retorna valor (executa a aplicação Shiny)
 }
 \description{
-Run the Shiny Application
+Esta função inicia a aplicação Shiny do pacote amplaApp.
+Ela automaticamente encontra uma porta disponível se a porta padrão estiver ocupada.
+}
+\examples{
+\dontrun{
+# Executar aplicação localmente (tenta porta 3838, depois 3839, etc.)
+run_app()
+
+# Executar começando em porta específica
+run_app(port = 4000)
+
+# Executar sem abrir navegador
+run_app(launch.browser = FALSE)
+}
 }

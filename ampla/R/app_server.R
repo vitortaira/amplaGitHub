@@ -18,22 +18,16 @@ app_server <- function(input, output, session) {
     dir_ls("inst/dados", type = "file")
   )
 
-  # Inicializar módulos para todas as URLs (eles só renderizarão quando a UI os chamar)
-  g_barras.empilhadas.mes_server(
-    "grafico_despesas",
-    dados = dadosLista$ik$desp,
-    choices = list("Empresa" = "empresa", "Centro" = "centro.negocio", "Credor" = "credor", "Agente Financeiro" = "agente.financeiro"),
-    total = "total.pago",
-    data = "data.doc.pagto",
-    comecoTitulo = "Despesas por"
+  # Inicializar módulos principais
+  m_inicio_server("modulo_inicio")
+
+  m_despesas_server(
+    "modulo_despesas",
+    dados_despesas = dadosLista$ik$desp
   )
 
-  g_barras.empilhadas.mes_server(
-    "grafico_receitas",
-    dados = dadosLista$ik$rec,
-    choices = list("Empresa" = "empresa", "Empreendimento" = "empreendimento", "Agente" = "agente", "Elemento" = "elemento"),
-    total = "total",
-    data = "data.pagamento",
-    comecoTitulo = "Receitas por"
+  m_receitas_server(
+    "modulo_receitas",
+    dados_receitas = dadosLista$ik$rec
   )
 }
