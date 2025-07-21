@@ -7,8 +7,9 @@ applyTo: "**/ampla/**/*.R"
 
 ## Language and Naming
 
-- All names (variables, functions, files) and text MUST be in Portuguese (Brazil)
-- Use `lowerCamelCase` for variables and functions (e.g., `valorContrato`, `selecionarEmpresa`)
+- All names (variables, functions, files) and text MUST be in Portuguese (BR)
+- Use `lowerCamelCase` for variables and functions (e.g., `valorContrato`,
+  `selecionarEmpresa`)
 - Comments should explain the "why" (intent), not the "what" (code)
 
 ## Style and Formatting

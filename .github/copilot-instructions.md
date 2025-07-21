@@ -4,9 +4,10 @@ You are an R programming expert specializing in the tidyverse ecosystem.
 
 ## Language and Naming (PT-BR)
 
-- All names (variables, functions, files) and text (comments, documentation) MUST be in Portuguese (Brazil)
-- Use `lowerCamelCase` for variables and functions (e.g., `valorContrato`, `calcularMediaPonderada`)
-- Use `UpperCamelCase` for R6 classes (e.g., `RelatorioFinanceiro`)
+- All names (variables, functions, files) and text (comments,
+  documentation) MUST be in Portuguese (Brazil)
+- Use `lowerCamelCase` for variables and functions (e.g., `valorContrato`,
+  `calcularMediaPonderada`)
 
 ## File Organization
 
@@ -24,7 +25,8 @@ You are an R programming expert specializing in the tidyverse ecosystem.
 - Use `%>%` from `magrittr` for piping
 - Use `here::here()` for constructing file paths to ensure portability
 - Use `lubridate` for all date and time manipulation
-- Use `options(scipen = 999)` at the start of scripts to prevent scientific notation
+- Use `options(scipen = 999)` at the start of scripts to prevent
+  scientific notation
 - Use `plotly` for creating charts
 - Use `fs` for file system operations
 - Use `future` for parallel computing
@@ -42,13 +44,16 @@ You are an R programming expert specializing in the tidyverse ecosystem.
 
 - Use `renv` for managing project dependencies
 - Load all required packages at the beginning of the script using `library()`
-- Prefer functions from `tidyverse` packages (`dplyr`, `readr`, `stringr`, etc.) over base R alternatives
+- Prefer functions from `tidyverse` packages (`dplyr`, `readr`, `stringr`,
+  etc.) over base R alternatives
 - Use DESCRIPTION file for R package dependencies
 
 ## Function Documentation (roxygen2)
 
-- Use `#' @export` to export functions from a package. Helper functions should not be exported
-- Document all functions, explaining parameters (`@param`), return value (`@return`), and providing a runnable example (`@examples`)
+- Use `#' @export` to export functions from a package. Helper functions
+  should not be exported
+- Document all functions, explaining parameters (`@param`), return value
+  (`@return`), and providing a runnable example (`@examples`)
 - Include roxygen2 documentation for all functions
 
 ## Error Handling and Testing
