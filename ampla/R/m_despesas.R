@@ -18,7 +18,7 @@ m_despesas_ui <- function(id) {
   ns <- NS(id)
 
   fluidPage(
-    title = "Análise de Despesas - Ampla",
+    title = "Ampla - Despesas",
     # Adicionar favicon
     tags$head(
       tags$link(rel = "icon", type = "image/jpeg", href = "ampla_icon.jpeg"),
