@@ -1,0 +1,588 @@
+# -*- coding: utf-8 -*-# =============================================================================# SUBMODULO: graficosBarrasEmpilhadas# Grafico de barras empilhadas por mes baseado no modulo original completo# Preserva TODAS as funcionalidades: cliques, modais, downloads, multiplos graficos, etc.# =============================================================================#' @import shiny#' @import plotly#' @import dplyr#' @import lubridate#' @importFrom DT datatable renderDataTable dataTableOutput#' @importFrom RColorBrewer brewer.pal#' Interface do usuario do submodulo de graficos de barras empilhadas#'#' @param id Identificador unico do modulo#' @param choices Lista de opcoes para agrupamento dos dados#' @param total Nome da coluna com valores totais#' @param data Nome da coluna com datas#' @param comecoTitulo Inicio do titulo do grafico#' @return Lista de elementos da interface#' @exportsm_grafico_barras_empilhadas_ui <- function(    id,    choices,    total = "total.pago",    data = "data.doc.pagto",    comecoTitulo = "Analise") {  ns <- NS(id)    tagList(    # Professional clean CSS design    tags$style(HTML("      .main-content {        background-color: #fafafa;        min-height: 100vh;      }      .nav-tabs {        position: fixed !important;        top: 0 !important;        left: 0 !important;        right: 0 !important;        z-index: 1000 !important;        background-color: white !important;        border-bottom: 1px solid #e5e5e5 !important;        margin: 0 !important;        padding: 0 20px !important;        height: 48px !important;      }      .nav-tabs .nav-link {        border: none !important;        color: #666 !important;        font-weight: 500 !important;        padding: 12px 20px !important;      }      .nav-tabs .nav-link.active {        background-color: white !important;        color: #333 !important;        border-bottom: 2px solid #007bff !important;      }      .parameters-section {        background-color: white;        padding: 20px;        margin: 0;        border-bottom: 1px solid #e5e5e5;        position: fixed !important;        top: 48px !important;        left: 0 !important;        right: 0 !important;        z-index: 999 !important;      }      .chart-title {        background-color: white;        padding: 15px 20px;        margin: 0;        border-bottom: 1px solid #e5e5e5;        font-size: 18px;        font-weight: 600;        color: #333;        position: fixed !important;        top: calc(48px + var(--params-height, 140px)) !important;        left: 0 !important;        right: 0 !important;        z-index: 998 !important;      }      .main-content-wrapper {        margin-top: calc(48px + var(--params-height, 140px) + 58px);        background-color: #fafafa;      }      .chart-container {        background-color: white;        margin: 0;        padding: 20px;        border-bottom: 1px solid #f0f0f0;      }      .form-control, .form-select {        border: 1px solid #ddd !important;        box-shadow: none !important;      }      .form-control:focus, .form-select:focus {        border-color: #007bff !important;        box-shadow: 0 0 0 2px rgba(0,123,255,0.25) !important;      }      .tab-content {        background-color: white;        margin: 0;        padding: 0;      }      .tab-pane {        margin: 0;        padding: 0;        background-color: white;      }    ")),    # JavaScript for dynamic height    tags$script(HTML("      $(document).ready(function() {        function updateParamsHeight() {          var paramsHeight = $('.parameters-section').outerHeight() || 140;          document.documentElement.style.setProperty('--params-height', paramsHeight + 'px');        }        updateParamsHeight();        $(window).on('resize', updateParamsHeight);        setTimeout(updateParamsHeight, 1000);      });    ")),    # Professional wrapper    div(      class = "main-content",            # Clean tab navigation      tabsetPanel(        id = ns("chart_tabs"),        type = "tabs",        # Charts tab        tabPanel(          title = "Graficos",          value = "graficos",          # Clean parameters section          div(            class = "parameters-section",            h4("Parametros", style = "margin: 0 0 20px 0; font-weight: 600; color: #333; font-size: 20px; border-bottom: 1px solid #e5e5e5; padding-bottom: 10px;"),                        # Period filter            div(              style = "margin-bottom: 20px;",              h5("Periodo", style = "margin: 0 0 10px 0; font-weight: 600; color: #333;"),              sm_filtro_periodo_ui(ns("filtro"))            ),            # Company filter            div(              style = "margin-bottom: 20px;",              h5("Empresa(s)", style = "margin: 0 0 10px 0; font-weight: 600; color: #333;"),              uiOutput(ns("empresa_selector"))            ),            # Variable selection            div(              style = "margin-bottom: 20px;",              h5("Empilhar barras por", style = "margin: 0 0 10px 0; font-weight: 600; color: #333;"),              uiOutput(ns("variavel_selector"))            ),            # Checkbox wrapper            uiOutput(ns("checkbox_wrapper"))          ),          # Chart title          div(            class = "chart-title",            h4(textOutput(ns("charts_title")), style = "margin: 0; font-size: 18px; font-weight: 600; color: #333;")          ),          # Charts content wrapper          div(            class = "main-content-wrapper",            div(              class = "chart-container",              plotlyOutput(ns("plot"), height = "500px")            ),            div(              class = "chart-container",              plotlyOutput(ns("line_plot"), height = "500px")            ),            div(              class = "chart-container",              plotlyOutput(ns("percent_plot"), height = "500px")            )          )        ),        # Statistics tab        tabPanel(          title = "Estatisticas",          value = "estatisticas",          div(            class = "chart-container",            style = "text-align: center;",            h4("Estatisticas", style = "color: #333; margin-bottom: 10px;"),            p("Em desenvolvimento...", style = "color: #666;")          )        ),        # Data tab        tabPanel(          title = "Dados",          value = "dados",          div(            class = "chart-container",            DT::dataTableOutput(ns("data_table"))          )        ),        # Metadata tab        tabPanel(          title = "Metadados",          value = "metadados",          div(            class = "chart-container",            style = "text-align: center;",            h4("Metadados", style = "color: #333; margin-bottom: 10px;"),            p("Em desenvolvimento...", style = "color: #666;")          )        )      )    )  )}#' Servidor do submodulo de graficos de barras empilhadas#'#' @param id Identificador unico do modulo#' @param dados Dados para analise#' @param filtro_periodo Reativo com tipo de filtro de periodo#' @param data_inicial Reativo com data inicial (para filtro personalizado)#' @param data_final Reativo com data final (para filtro personalizado)#' @param choices Lista de opcoes para agrupamento#' @param max_unicos_i Maximo de categorias unicas antes de agrupar em "Outros"#' @param total Nome da coluna com valores totais#' @param data Nome da coluna com datas#' @param comecoTitulo Inicio do titulo do grafico#' @return Funcao do servidor do modulo#' @exportsm_grafico_barras_empilhadas_server <- function(    id,    dados,    filtro_periodo,    data_inicial,    data_final,    choices,    max_unicos_i = 20,    total = "total.pago",    data = "data.doc.pagto",    comecoTitulo = "Analise") {    moduleServer(id, function(input, output, session) {    ns <- session$ns    # Verificar se dados e reativo ou estatico    dados_final <- reactive({      if (shiny::is.reactive(dados)) {        dados()      } else {        dados      }    })    # Initialize the filtro_periodo module      filtroVals <- sm_filtro_periodo_server("filtro")    # Define source_id for plotly events    source_id <- paste0(id, "_click")    detail_rv <- reactiveVal(NULL)    top_vars_rv <- reactiveVal(NULL)    # 1) Reactive for date range    period <- reactive({      if (!is.null(filtroVals) && !is.null(filtroVals$filtro_periodo)) {        req(filtroVals$filtro_periodo())        today <- Sys.Date()        switch(filtroVals$filtro_periodo(),          "ano_corrente" = list(start = as.Date(paste0(format(today, "%Y"), "-01-01")), end = today),          "ultimos_12" = list(start = as.Date(format(today - 365, "%Y-%m-%d")), end = today),          "desde_inicio" = {            df <- dados_final()            req(df)            dt <- as.Date(df[[data]], origin = "1970-01-01")            list(start = min(dt, na.rm = TRUE), end = today)          },          "personalizado" = {            req(filtroVals$data_inicial(), filtroVals$data_final())            start_date <- tryCatch({              if (inherits(filtroVals$data_inicial(), "Date")) {                filtroVals$data_inicial()              } else {                as.Date(filtroVals$data_inicial())              }            }, error = function(e) {              tryCatch({                as.Date(filtroVals$data_inicial(), format = "%d/%m/%Y")              }, error = function(e2) {                lubridate::dmy(filtroVals$data_inicial())              })            })                        end_date <- tryCatch({              if (inherits(filtroVals$data_final(), "Date")) {                filtroVals$data_final()              } else {                as.Date(filtroVals$data_final())              }            }, error = function(e) {              tryCatch({                as.Date(filtroVals$data_final(), format = "%d/%m/%Y")              }, error = function(e2) {                lubridate::dmy(filtroVals$data_final())              })            })                        list(start = start_date, end = end_date)          }        )      } else {        req(filtro_periodo())        today <- Sys.Date()        switch(filtro_periodo(),          "ano_corrente" = list(start = floor_date(today, "year"), end = today),          "ultimos_12" = list(start = today %m-% months(12), end = today),          "desde_inicio" = {            df <- dados_final()            req(df)            dt <- as.Date(df[[data]], origin = "1970-01-01")            list(start = min(dt, na.rm = TRUE), end = today)          },          "personalizado" = {            req(data_inicial(), data_final())            list(start = data_inicial(), end = data_final())          }        )      }    })    # 2) Chart title    chart_title <- reactive({      req(input$variavel)            period_text <- if (!is.null(filtroVals) && !is.null(filtroVals$filtro_periodo)) {        req(filtroVals$filtro_periodo())        switch(filtroVals$filtro_periodo(),          "ano_corrente" = "no ano corrente",          "ultimos_12" = "nos ultimos 12 meses",          "desde_inicio" = "desde o inicio",          "personalizado" = {            req(filtroVals$data_inicial(), filtroVals$data_final())            sprintf("de %s ate %s",              format(filtroVals$data_inicial(), "%d/%m/%Y"),              format(filtroVals$data_final(), "%d/%m/%Y"))          }        )      } else {        req(filtro_periodo())        switch(filtro_periodo(),          "ano_corrente" = "no ano corrente",          "ultimos_12" = "nos ultimos 12 meses",          "desde_inicio" = "desde o inicio",          "personalizado" = {            req(data_inicial(), data_final())            sprintf("de %s ate %s",              format(data_inicial(), "%d/%m/%Y"),              format(data_final(), "%d/%m/%Y"))          }        )      }            var_name <- paste0("'", input$variavel, "'")      empresa_text <- ""      if (!is.null(input$empresa) && input$empresa != "todas") {        empresa_text <- paste0(" - ", input$empresa)      }      sprintf("%s %s %s%s", comecoTitulo, var_name, period_text, empresa_text)    })    output$charts_title <- renderText({      chart_title()    })    # 3) Reactive data: group by month + stacking variable    df_data <- reactive({      pr <- period()      df <- dados_final()      req(df, pr, pr$start, pr$end, input$variavel)      dt_var <- data      total_var <- total      group_var <- input$variavel      date_col <- as.Date(df[[dt_var]])      date_mask <- date_col >= pr$start & date_col <= pr$end      filtered_data <- df[date_mask, ]      if (!is.null(input$empresa) && input$empresa != "todas" && "empresa" %in% names(filtered_data)) {        empresa_mask <- filtered_data$empresa == input$empresa        filtered_data <- filtered_data[empresa_mask & !is.na(empresa_mask), ]      }      group_values <- as.character(filtered_data[[group_var]])      month_dates <- as.Date(paste0(format(as.Date(filtered_data[[dt_var]]), "%Y-%m"), "-01"))      agg_data <- data.frame(        mes = month_dates,        var = group_values,        value = filtered_data[[total_var]]      )      result <- aggregate(        agg_data$value,        by = list(mes = agg_data$mes, var = agg_data$var),        FUN = sum,        na.rm = TRUE      )      colnames(result)[3] <- "total"      result    })    # 4) Checkbox for showing all categories    output$checkbox_wrapper <- renderUI({      d <- df_data()      req(d)      distinct_vars <- length(unique(d$var))      if (distinct_vars <= max_unicos_i) {        return(NULL)      }      checkboxInput(        inputId = ns("show_all_cats"),        label = div(          style = "white-space: normal; word-wrap: break-word; max-width: 300px; font-weight: bold;",          sprintf("Mostrar todas as categorias de '%s'", input$variavel)        ),        value = FALSE      )    })    # 5) Group categories into "Outros"
+    df_reduced <- reactive({
+      d <- df_data()
+      req(d)
+
+      distinct_vars <- length(unique(d$var))
+      if (distinct_vars <= max_unicos_i || isTRUE(input$show_all_cats)) {
+        top_vars_rv(NULL)
+        return(d)
+      }
+
+      totals_by_var <- aggregate(d$total, by = list(var = d$var), FUN = sum)
+      colnames(totals_by_var)[2] <- "totalvar"
+      totals_by_var <- totals_by_var[order(totals_by_var$totalvar, decreasing = TRUE), ]
+
+      top_vars <- totals_by_var$var[seq_len(max_unicos_i - 1)]
+      top_vars_rv(top_vars)
+
+      d$var <- ifelse(d$var %in% top_vars, d$var, "Outros")
+
+      result <- aggregate(d$total, by = list(mes = d$mes, var = d$var), FUN = sum)
+      colnames(result)[3] <- "total"
+      result
+    })
+
+    # Monthly totals
+    monthly_totals <- reactive({
+      reduced <- df_reduced()
+      result <- aggregate(reduced$total, by = list(mes = reduced$mes), FUN = sum, na.rm = TRUE)
+      colnames(result)[2] <- "monthtotal"
+      result
+    })
+
+    df_final <- reactive({
+      reduced <- df_reduced()
+      monthlies <- monthly_totals()
+      result <- merge(reduced, monthlies, by = "mes", all.x = TRUE)
+      result$monthtotal <- ifelse(result$monthtotal == 0, NA, result$monthtotal)
+      result$percentage <- 100 * result$total / result$monthtotal
+      result
+    })
+
+    # 6) Render the stacked bar chart
+    output$plot <- renderPlotly({
+      df <- df_final()
+      req(df, nrow(df) > 0)
+
+      totals_by_var <- aggregate(df$total, by = list(var = df$var), FUN = sum)
+      colnames(totals_by_var)[2] <- "total_var"
+      totals_by_var <- totals_by_var[order(totals_by_var$total_var, decreasing = TRUE), ]
+      var_levels <- totals_by_var$var
+      df$var <- factor(df$var, levels = var_levels)
+
+      pal8 <- RColorBrewer::brewer.pal(8, "Set2")
+      pal <- if (length(var_levels) <= 8) pal8[seq_along(var_levels)] else colorRampPalette(pal8)(length(var_levels))
+
+      p <- plot_ly(
+        data = df,
+        x = ~mes,
+        y = ~total,
+        color = ~var,
+        colors = pal,
+        type = "bar",
+        source = source_id,
+        key = ~var,
+        hovertemplate = paste0(
+          "<b>%{fullData.name}</b><br>",
+          "Mes: %{x|%m-%Y}<br>",
+          "Total da categoria: R$ %{y:,.2f}<br>",
+          "Total mensal: R$ %{text:,.2f}<br>",
+          "% Categoria no mes: %{customdata:.1f}%<br>",
+          "<extra></extra>"
+        ),
+        text = ~monthtotal,
+        textposition = "none",
+        customdata = ~percentage
+      ) %>%
+        plotly::layout(
+          barmode = "stack",
+          xaxis = list(
+            title = "Mes",
+            tickformat = "%m-%Y",
+            type = "date",
+            tickvals = unique(df$mes),
+            fixedrange = TRUE
+          ),
+          yaxis = list(title = "Valor (R$)", fixedrange = TRUE),
+          autosize = TRUE
+        ) %>%
+        plotly::config(
+          displayModeBar = TRUE,
+          modeBarButtons = list(list("toImage")),
+          displaylogo = FALSE
+        )
+
+      p
+    })
+
+    # Line chart output
+    output$line_plot <- renderPlotly({
+      df <- df_final()
+      req(df, input$variavel)
+
+      line_data <- df %>%
+        group_by(mes, var) %>%
+        summarise(total_grupo = sum(total), .groups = "drop") %>%
+        arrange(mes, var)
+
+      line_monthly_totals <- df %>%
+        group_by(mes) %>%
+        summarise(monthtotal = sum(total), .groups = "drop")
+
+      line_data <- line_data %>%
+        left_join(line_monthly_totals, by = "mes") %>%
+        mutate(percentage = 100 * total_grupo / monthtotal)
+
+      all_vars <- unique(line_data$var)
+      outros_vars <- all_vars[all_vars == "Outros"]
+      non_outros_vars <- sort(all_vars[all_vars != "Outros"])
+      unique_vars <- c(non_outros_vars, outros_vars)
+      colors <- RColorBrewer::brewer.pal(min(length(unique_vars), 11), "Spectral")
+      if (length(unique_vars) > 11) {
+        colors <- rep(colors, length.out = length(unique_vars))
+      }
+
+      p_line <- plot_ly(source = paste0(source_id, "_line"))
+
+      for (i in seq_along(unique_vars)) {
+        var_data <- line_data[line_data$var == unique_vars[i], ]
+        p_line <- p_line %>%
+          add_trace(
+            data = var_data,
+            x = ~mes,
+            y = ~total_grupo,
+            type = "scatter",
+            mode = "lines+markers",
+            line = list(color = colors[i], width = 2),
+            marker = list(color = colors[i], size = 6),
+            name = unique_vars[i],
+            key = unique_vars[i],
+            hovertemplate = paste0(
+              "<b>%{fullData.name}</b><br>",
+              "Mes: %{x|%m-%Y}<br>",
+              "Total da categoria: R$ %{y:,.2f}<br>",
+              "Total mensal: R$ %{text:,.2f}<br>",
+              "% Categoria no mes: %{customdata:.1f}%<br>",
+              "<extra></extra>"
+            ),
+            text = ~monthtotal,
+            customdata = ~percentage
+          )
+      }
+
+      p_line <- p_line %>%
+        plotly::layout(
+          xaxis = list(
+            title = "Mes",
+            tickformat = "%m-%Y",
+            type = "date",
+            fixedrange = TRUE
+          ),
+          yaxis = list(title = "Valor (R$)", fixedrange = TRUE),
+          hovermode = "closest",
+          showlegend = TRUE,
+          legend = list(orientation = "h", x = 0, y = -0.2)
+        ) %>%
+        plotly::config(
+          displayModeBar = TRUE,
+          modeBarButtons = list(list("toImage")),
+          displaylogo = FALSE
+        )
+
+      p_line
+    })
+
+    # 100% bar chart output
+    output$percent_plot <- renderPlotly({
+      df <- df_reduced()
+      req(df, input$variavel)
+
+      period_data <- df %>%
+        group_by(var) %>%
+        summarise(total_periodo = sum(total), .groups = "drop") %>%
+        arrange(desc(total_periodo)) %>%
+        mutate(
+          percentage = 100 * total_periodo / sum(total_periodo),
+          cumulative = cumsum(percentage)
+        )
+
+      total_geral_value <- sum(period_data$total_periodo)
+      period_data$total_geral <- total_geral_value
+      period_data$var <- factor(period_data$var, levels = period_data$var)
+
+      unique_vars <- levels(period_data$var)
+      colors <- RColorBrewer::brewer.pal(min(length(unique_vars), 11), "Spectral")
+      if (length(unique_vars) > 11) {
+        colors <- rep(colors, length.out = length(unique_vars))
+      }
+
+      p_percent <- plot_ly(
+        data = period_data,
+        x = ~percentage,
+        y = rep("Distribuicao", nrow(period_data)),
+        color = ~var,
+        colors = colors,
+        type = "bar",
+        orientation = "h",
+        source = paste0(source_id, "_percent"),
+        key = ~var,
+        hovertemplate = paste0(
+          "<b>%{fullData.name}</b><br>",
+          "Valor da categoria: R$ %{customdata:,.2f}<br>",
+          "Valor total do periodo: R$ ", format(total_geral_value, big.mark = ",", decimal.mark = ".", nsmall = 2), "<br>",
+          "Percentual da categoria: %{x:.1f}%<br>",
+          "<extra></extra>"
+        ),
+        customdata = ~total_periodo
+      ) %>%
+        plotly::layout(
+          barmode = "stack",
+          xaxis = list(
+            title = "Percentual (%)",
+            range = c(0, 100),
+            ticksuffix = "%",
+            fixedrange = TRUE
+          ),
+          yaxis = list(
+            title = "",
+            showticklabels = FALSE,
+            fixedrange = TRUE
+          ),
+          showlegend = TRUE,
+          legend = list(orientation = "h", x = 0, y = -0.2),
+          margin = list(l = 50, r = 50, t = 30, b = 100)
+        ) %>%
+        plotly::config(
+          displayModeBar = TRUE,
+          modeBarButtons = list(list("toImage")),
+          displaylogo = FALSE
+        )
+
+      p_percent
+    })
+
+    # Handle clicking any bar segment
+    observe({
+      req(input$variavel, df_data(), nrow(df_data()) > 0)
+
+      click_data <- NULL
+      source_type <- NULL
+
+      # Try to get click data from each source
+      tryCatch({
+        click_data_bars <- event_data("plotly_click", source = source_id)
+        if (!is.null(click_data_bars)) {
+          click_data <- click_data_bars
+          source_type <- "bars"
+        }
+      }, error = function(e) NULL)
+
+      if (is.null(click_data)) {
+        tryCatch({
+          click_data_line <- event_data("plotly_click", source = paste0(source_id, "_line"))
+          if (!is.null(click_data_line)) {
+            click_data <- click_data_line
+            source_type <- "line"
+          }
+        }, error = function(e) NULL)
+      }
+
+      if (is.null(click_data)) {
+        tryCatch({
+          click_data_percent <- event_data("plotly_click", source = paste0(source_id, "_percent"))
+          if (!is.null(click_data_percent)) {
+            click_data <- click_data_percent
+            source_type <- "percent"
+          }
+        }, error = function(e) NULL)
+      }
+
+      if (!is.null(click_data) && !is.null(source_type)) {
+        clicked_var <- click_data$key
+        tv <- top_vars_rv()
+        df <- dados_final()
+
+        if (source_type == "percent") {
+          if (!is.null(tv) && clicked_var == "Outros") {
+            dt_var <- data
+            group_var <- input$variavel
+            pr <- period()
+            date_col <- as.Date(df[[dt_var]])
+            date_mask <- date_col >= pr$start & date_col <= pr$end
+            cat_values <- df[[group_var]]
+            cat_match <- !(cat_values %in% tv)
+            detail_data <- df[date_mask & cat_match, ]
+          } else {
+            dt_var <- data
+            group_var <- input$variavel
+            pr <- period()
+            date_col <- as.Date(df[[dt_var]])
+            date_mask <- date_col >= pr$start & date_col <= pr$end
+            cat_match <- df[[group_var]] == clicked_var
+            detail_data <- df[date_mask & cat_match, ]
+          }
+          modal_title <- paste("Detalhes:", clicked_var, "- Periodo completo")
+        } else {
+          clicked_month <- as.Date(click_data$x, origin = "1970-01-01")
+
+          if (!is.null(tv) && clicked_var == "Outros") {
+            dt_var <- data
+            group_var <- input$variavel
+            date_col <- as.Date(df[[dt_var]])
+            month_match <- as.Date(paste0(format(date_col, "%Y-%m"), "-01")) == as.Date(paste0(format(clicked_month, "%Y-%m"), "-01"))
+            cat_values <- df[[group_var]]
+            cat_match <- !(cat_values %in% tv)
+            detail_data <- df[month_match & cat_match, ]
+          } else {
+            dt_var <- data
+            group_var <- input$variavel
+            date_col <- as.Date(df[[dt_var]])
+            month_match <- as.Date(paste0(format(date_col, "%Y-%m"), "-01")) == as.Date(paste0(format(clicked_month, "%Y-%m"), "-01"))
+            cat_match <- df[[group_var]] == clicked_var
+            detail_data <- df[month_match & cat_match, ]
+          }
+          modal_title <- paste("Detalhes:", clicked_var, "-", format(clicked_month, "%b %Y"))
+        }
+
+        detail_rv(detail_data)
+
+        if (nrow(detail_data) == 0) {
+          showModal(modalDialog(
+            title = "Sem detalhes",
+            "Nao ha dados disponiveis para o segmento selecionado.",
+            easyClose = TRUE,
+            footer = modalButton("Fechar")
+          ))
+        } else {
+          showModal(modalDialog(
+            title = modal_title,
+            div(
+              DT::dataTableOutput(ns("detail_table")),
+              style = "width: 100%; overflow-x: auto;"
+            ),
+            size = "l",
+            easyClose = TRUE,
+            footer = tagList(
+              modalButton("Fechar")
+            )
+          ))
+
+          output$detail_table <- DT::renderDataTable({
+            detail_formatted <- detail_data
+            col_names <- names(detail_formatted)
+            name_mapping <- c(
+              "data.doc.pagto" = "Data Pagamento",
+              "data.pagamento" = "Data Pagamento",
+              "total.pago" = "Valor Pago",
+              "total" = "Valor Total",
+              "descricao" = "Descricao",
+              "fornecedor" = "Fornecedor",
+              "centro.custo" = "Centro de Custo",
+              "conta.contabil" = "Conta Contabil",
+              "natureza" = "Natureza",
+              "tipo.documento" = "Tipo Documento",
+              "numero.documento" = "Numero Documento",
+              "observacoes" = "Observacoes",
+              "banco" = "Banco",
+              "agencia" = "Agencia",
+              "conta" = "Conta",
+              "empreendimento" = "Empreendimento",
+              "classificacao" = "Classificacao"
+            )
+
+            for (i in seq_along(col_names)) {
+              if (col_names[i] %in% names(name_mapping)) {
+                col_names[i] <- name_mapping[col_names[i]]
+              }
+            }
+            names(detail_formatted) <- col_names
+
+            DT::datatable(
+              detail_formatted,
+              filter = "none",
+              options = list(
+                pageLength = 25,
+                scrollX = TRUE,
+                autoWidth = TRUE,
+                dom = "Bfrtip",
+                buttons = list(
+                  list(extend = "copy", text = "Copiar"),
+                  list(extend = "csv", text = "Baixar CSV"),
+                  list(extend = "excel", text = "Baixar Excel")
+                ),
+                language = list(url = "//cdn.datatables.net/plug-ins/1.10.25/i18n/Portuguese-Brasil.json"),
+                columnDefs = list(
+                  list(targets = "_all", className = "dt-nowrap")
+                )
+              ),
+              extensions = c("Buttons"),
+              class = "stripe hover cell-border dt-nowrap",
+              rownames = FALSE
+            )
+          })
+        }
+      }
+    })
+
+    # Data table output for the "Dados" tab
+    output$data_table <- DT::renderDataTable({
+      df <- dados_final()
+      req(df)
+
+      pr <- period()
+      req(pr, pr$start, pr$end)
+
+      dt_var <- data
+      date_col <- as.Date(df[[dt_var]])
+      date_mask <- date_col >= pr$start & date_col <= pr$end
+      filtered_data <- df[date_mask, ]
+
+      if (!is.null(input$empresa) && input$empresa != "todas" && "empresa" %in% names(filtered_data)) {
+        empresa_mask <- filtered_data$empresa == input$empresa
+        filtered_data <- filtered_data[empresa_mask & !is.na(empresa_mask), ]
+      }
+
+      data_formatted <- filtered_data
+      col_names <- names(data_formatted)
+
+      name_mapping <- c(
+        "data.doc.pagto" = "Data Pagamento",
+        "data.pagamento" = "Data Pagamento",
+        "total.pago" = "Valor Pago",
+        "total" = "Valor Total",
+        "descricao" = "Descricao",
+        "fornecedor" = "Fornecedor",
+        "centro.custo" = "Centro de Custo",
+        "conta.contabil" = "Conta Contabil",
+        "natureza" = "Natureza",
+        "tipo.documento" = "Tipo Documento",
+        "numero.documento" = "Numero Documento",
+        "observacoes" = "Observacoes",
+        "banco" = "Banco",
+        "agencia" = "Agencia",
+        "conta" = "Conta",
+        "empreendimento" = "Empreendimento",
+        "classificacao" = "Classificacao",
+        "empresa" = "Empresa"
+      )
+
+      for (i in seq_along(col_names)) {
+        if (col_names[i] %in% names(name_mapping)) {
+          col_names[i] <- name_mapping[col_names[i]]
+        }
+      }
+      names(data_formatted) <- col_names
+
+      DT::datatable(
+        data_formatted,
+        filter = "none",
+        options = list(
+          pageLength = 25,
+          scrollX = TRUE,
+          autoWidth = TRUE,
+          dom = "Bfrtip",
+          buttons = list(
+            list(extend = "copy", text = "Copiar"),
+            list(extend = "csv", text = "Baixar CSV"),
+            list(extend = "excel", text = "Baixar Excel")
+          ),
+          language = list(url = "//cdn.datatables.net/plug-ins/1.10.25/i18n/Portuguese-Brasil.json"),
+          columnDefs = list(
+            list(targets = "_all", className = "dt-nowrap")
+          )
+        ),
+        extensions = c("Buttons"),
+        class = "stripe hover cell-border dt-nowrap",
+        rownames = FALSE
+      )
+    })
+
+    # Dynamic UI outputs for empresa and variavel selectors
+    output$empresa_selector <- renderUI({
+      df <- dados_final()
+      req(df)
+
+      if ("empresa" %in% names(df)) {
+        empresas <- sort(unique(df$empresa))
+        empresas <- empresas[!is.na(empresas)]
+        choices <- c("Todas" = "todas", setNames(empresas, empresas))
+      } else {
+        choices <- c("Todas" = "todas")
+      }
+
+      selectInput(
+        ns("empresa"),
+        label = NULL,
+        choices = choices,
+        selected = "todas",
+        width = "100%"
+      )
+    })
+
+    output$variavel_selector <- renderUI({
+      df <- dados_final()
+      req(df)
+
+      base_choices <- c(
+        "Empresa" = "empresa",
+        "Centro" = "centro.custo",
+        "Credor" = "fornecedor",
+        "Agente Financeiro" = "banco",
+        "Empreendimento" = "empreendimento",
+        "Classificacao" = "classificacao"
+      )
+
+      available_choices <- base_choices[base_choices %in% names(df)]
+
+      default_selection <- if ("empresa" %in% available_choices) {
+        "empresa"
+      } else if ("centro.custo" %in% available_choices) {
+        "centro.custo"
+      } else if (length(available_choices) > 0) {
+        available_choices[1]
+      } else {
+        NULL
+      }
+
+      selectInput(
+        ns("variavel"),
+        label = NULL,
+        choices = available_choices,
+        selected = default_selection,
+        width = "100%"
+      )
+    })
+
+    # Observer to handle empresa changes and update variavel selection
+    observeEvent(input$empresa, {
+      df <- dados_final()
+      req(df, input$empresa)
+
+      base_choices <- c(
+        "Empresa" = "empresa",
+        "Centro" = "centro.custo",
+        "Credor" = "fornecedor",
+        "Agente Financeiro" = "banco",
+        "Empreendimento" = "empreendimento",
+        "Classificacao" = "classificacao"
+      )
+
+      available_choices <- base_choices[base_choices %in% names(df)]
+
+      if (input$empresa != "todas") {
+        available_choices <- available_choices[available_choices != "empresa"]
+      }
+
+      default_selection <- if (input$empresa == "todas") {
+        if ("empresa" %in% available_choices) {
+          "empresa"
+        } else if ("centro.custo" %in% available_choices) {
+          "centro.custo"
+        } else if (length(available_choices) > 0) {
+          available_choices[1]
+        } else {
+          NULL
+        }
+      } else {
+        if ("centro.custo" %in% available_choices) {
+          "centro.custo"
+        } else if ("fornecedor" %in% available_choices) {
+          "fornecedor"
+        } else if (length(available_choices) > 0) {
+          available_choices[1]
+        } else {
+          NULL
+        }
+      }
+
+      updateSelectInput(
+        session = session,
+        inputId = "variavel",
+        choices = available_choices,
+        selected = default_selection
+      )
+    }, ignoreInit = TRUE)
+
+  })
+}

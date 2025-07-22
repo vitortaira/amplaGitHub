@@ -7,7 +7,11 @@
 sm_grafico_barras_empilhadas_server(
   id,
   dados,
+  filtro_periodo,
+  data_inicial,
+  data_final,
   choices,
+  max_unicos_i = 20,
   total = "total.pago",
   data = "data.doc.pagto",
   comecoTitulo = "Análise"
@@ -18,7 +22,15 @@ sm_grafico_barras_empilhadas_server(
 
 \item{dados}{Dados para análise}
 
+\item{filtro_periodo}{Reativo com tipo de filtro de período}
+
+\item{data_inicial}{Reativo com data inicial (para filtro personalizado)}
+
+\item{data_final}{Reativo com data final (para filtro personalizado)}
+
 \item{choices}{Lista de opções para agrupamento}
+
+\item{max_unicos_i}{Máximo de categorias únicas antes de agrupar em "Outros"}
 
 \item{total}{Nome da coluna com valores totais}
 
