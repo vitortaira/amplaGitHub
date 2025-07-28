@@ -53,30 +53,21 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
   }
 
   c_xcef <- function() {
-    dir_ls(caminhos_pastas("financeiro"), recurse = TRUE, type = "file") %>%
+    dir_ls(caminhos_pastas("extratos"), recurse = TRUE, type = "file") %>%
       keep(
-        ~ str_ends(.x, ".pdf") &
-          str_detect(.x, "(?i)cont[aá]bil") &
-          !str_detect(.x, "(?i)aplica[cç][aã]o|cdb|fundo|parcela|pix|simples") &
-          !str_detect(.x, "(?i)6\\s?meses|comprovante|inativas|nota|nf\\s") &
-          !str_detect(.x, "(?i)facil|investimento|recebiveis|sihex|topazio") &
-          (str_detect(.x, "600|2362|2429") | # AMP
-            str_detect(.x, "2245|2399") | # AVS
-            str_detect(.x, "2480") | # GRA
-            str_detect(.x, "2412|3455|129123") | # INC
-            str_detect(.x, "80827") | # LUC
-            str_detect(.x, "2278") | # POM
-            str_detect(.x, "80924") | # SAU
-            str_detect(.x, "2419") | # SN2
-            str_detect(.x, "81031")) # SN4
+        ~ str_detect(.x, "(?i)cef")
       ) %>%
       as_tibble_col("caminho") %>%
       mutate(
         arquivo.tabela.tipo = "xcef",
         arquivo.tipo = "xcef",
         arquivo.fonte = "cef",
-        empresa = NA,
-        data = NA
+        empresa = str_extract(caminho, "/([A-Z]{3})/") %>%
+          str_extract("[A-Z]{3}"),
+        data = caminho %>%
+          str_extract("\\d{4}_\\d{2}") %>%
+          str_c("_01") %>%
+          as.Date(format = "%Y_%m_%d")
       )
   }
 
@@ -93,8 +84,8 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
         arquivo.tabela.tipo = "xita",
         arquivo.tipo = "xita",
         arquivo.fonte = "ita",
-        empresa = NA,
-        data = NA
+        empresa = NA_character_,
+        data = as.Date(NA)
       )
   }
 
@@ -141,9 +132,9 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
           str_detect(
             .data$caminho, "(?i)esta[cç][aã]o\\s?vila\\s?s[oô]nia"
           ) ~ "SN2",
-          TRUE ~ NA
+          TRUE ~ NA_character_
         ),
-        data = NA
+        data = as.Date(NA)
       )
   }
 

@@ -45,7 +45,8 @@ caminhos_pastas <- function(alias) {
       caminho.base_c, "Relatórios - Documentos", "Dados", "Originais"
     ),
     extratos = fs::path(
-      caminho.base_c, "Relatórios - Documentos", "Relatorios - Extratos"
+      caminho.base_c, "Controladoria - Documentos",
+      "Extratos Originais - Grupo Ampla"
     ),
     financeiro = fs::path(
       caminho.base_c, "Financeiro - Documentos"
