@@ -1,13 +1,17 @@
 Package: amplaRPackage
 Type: Package
-Title: What the Package Does (One Line, Title Case)
+Title: Pacote de Análise Financeira da Ampla Incorporadora
 Version: 0.0.0.9000
+Author: Vitor Taira Yi <vitor@amplaincorporadora.com.br>
+Maintainer: Vitor Taira Yi <vitor@amplaincorporadora.com.br>
 Authors@R:
     person(
       "Vitor Taira Yi",
       email = "vitor@amplaincorporadora.com.br",
       role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+Description: Pacote para análise financeira e processamento de dados da Ampla 
+    Incorporadora, incluindo funções para extração de dados de relatórios CEF, 
+    análise de inadimplência e geração de relatórios.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -15,17 +19,24 @@ RoxygenNote: 7.3.2
 Imports:
   dplyr,
   fs,
+  future,
   here,
+  htmlwidgets,
   lubridate,
   magrittr,
   openxlsx,
   pdftools,
+  plotly,
   purrr,
+  readr,
   readxl,
+  reticulate,
+  rlang,
+  shiny,
   stringi,
   stringr,
   tibble,
   tidyr,
-  htmlwidgets,
-  shiny,
   visNetwork
+Suggests:
+  testthat (>= 3.0.0)

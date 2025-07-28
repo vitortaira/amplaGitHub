@@ -6,15 +6,12 @@
 #' @return A shiny app representing the data flow
 #'
 #' @importFrom visNetwork visNetworkOutput
-#' @importFrom shiny shinyApp fluidPage inputPanel selectInput
+#' @importFrom shiny shinyApp fluidPage inputPanel selectInput div reactive reactiveVal renderUI observeEvent
 #' @importFrom htmlwidgets onRender
 #' @importFrom visNetwork visNetwork visNodes visEdges visHierarchicalLayout visPhysics visOptions visInteraction visLegend
 #' @importFrom magrittr %>%
 #' @export
 m_gnw <- function() {
-  library(shiny)
-  library(visNetwork)
-
   nodes_data <- m_nodes()
   nodes_df <- nodes_data$nodes
   nodes.legends_df <- nodes_data$nodes.legends
