@@ -95,7 +95,7 @@ c_cef_xcef <- function(f_caminho.arquivo_c, linhas_c) {
         linhas_c,
         "(?i)data\\s?mov\\.\\s?nr\\.\\s?doc\\.\\s?hist[oó]rico\\s?valor\\s?saldo"
       )) &
-      # A variável "empresa" deve existir
+      # A variável "cliente" deve existir
       any(str_starts(linhas_c, "(?i)cliente\\:\\s?([\\w\\s]+)")) &
       # As variáveis "agencia", "produto" e "conta" devem existir
       any(str_starts(

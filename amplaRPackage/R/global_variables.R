@@ -20,7 +20,19 @@ datas.b_pt.en <- c(
 )
 
 # Contratos de empréstimos PJ
-contratos.pj.6.ultimos_c <- unique(
-  e_cef_ecns()$ecn_pj$numero
-) %>%
-  str_sub(-6, -1)
+# Função para obter contratos PJ atualizada dinamicamente
+get_contratos_pj_6_ultimos <- function() {
+  tryCatch(
+    {
+      unique(e_cef_ecns()$ecn_pj$numero) %>%
+        str_sub(-6, -1)
+    },
+    error = function(e) {
+      # Se houver erro, retorna lista vazia
+      character(0)
+    }
+  )
+}
+
+# Lista padrão de contratos PJ (pode ser atualizada conforme necessário)
+contratos.pj.6.ultimos_c <- character(0)

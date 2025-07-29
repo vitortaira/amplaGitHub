@@ -12,10 +12,43 @@
 g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
   # --- Helper Function: Prepare and Clean Data ---
   .prepare_heatmap_data <- function(raw_data) {
-    required_cols <- c("arquivo.tipo", "empresa", "conta", "periodo.inicio", "periodo.fim", "arquivo") # Added "conta"
+    # Verificar se os dados estão vazios
+    if (is.null(raw_data) || nrow(raw_data) == 0) {
+      message("No data provided to .prepare_heatmap_data")
+      return(NULL)
+    }
+
+    required_cols <- c("arquivo.tipo", "periodo.inicio", "periodo.fim", "arquivo")
+    optional_cols <- c("empresa", "conta")
+
+    # Adicionar colunas faltantes com valores padrão
+    for (col in c(required_cols, optional_cols)) {
+      if (!col %in% names(raw_data)) {
+        if (col %in% c("periodo.inicio", "periodo.fim")) {
+          raw_data[[col]] <- as.Date(NA)
+        } else {
+          raw_data[[col]] <- NA_character_
+        }
+        message(paste("Added missing column:", col))
+      }
+    }
+
+    # Verificar apenas colunas essenciais
     if (!all(required_cols %in% names(raw_data))) {
       missing_cols <- required_cols[!required_cols %in% names(raw_data)]
       stop(paste("Input \\'cobertura_t\\' is missing required columns:", paste(missing_cols, collapse = ", ")))
+    }
+
+    # Se não há empresa válida, usar arquivo.tipo como empresa
+    if (!"empresa" %in% names(raw_data) || all(is.na(raw_data$empresa) | raw_data$empresa == "")) {
+      message("Using arquivo.tipo as empresa since empresa column is not available or empty")
+      raw_data$empresa <- raw_data$arquivo.tipo
+    }
+
+    # Se não há conta válida, usar arquivo.tipo como conta
+    if (!"conta" %in% names(raw_data) || all(is.na(raw_data$conta) | raw_data$conta == "")) {
+      message("Using arquivo.tipo as conta since conta column is not available or empty")
+      raw_data$conta <- raw_data$arquivo.tipo
     }
 
     # Initial cleaning and type conversion

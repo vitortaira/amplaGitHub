@@ -243,9 +243,11 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
     data.consulta_h <-
       case_when(
         str_starts(nth(linhas_c, 1), "\\d{2}/\\d{2}/\\d{4}") ~
-          (nth(linhas_c, 1) %>% str_extract("\\d{2}/\\d{2}/\\d{4}\\,\\s?\\d{2}\\:\\d{2}")
-            %>% str_replace("\\,\\s?", "-")
-            %>% as.POSIXct(format = "%d/%m/%Y-%H:%M")),
+          (nth(linhas_c, 1) %>%
+            str_extract("\\d{2}/\\d{2}/\\d{4}\\,?\\s?\\d{2}\\:\\d{2}") %>%
+            str_replace("\\,\\s?", "-") %>%
+            str_replace("\\s", "-") %>%
+            as.POSIXct(format = "%d/%m/%Y-%H:%M")),
         sum(str_starts(linhas_c, "Data:")) > 0 ~
           (linhas_c %>%
             keep(function(x) {
@@ -293,19 +295,26 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
 
     linhas_c <- linhas_c %>%
       keep(function(x) {
-        !str_starts(x, "https") &&
-          !str_starts(x, "file:") &&
-          !str_ends(x, "CaIXA") &&
-          !str_starts(x, "\\d{2}/\\d{2}/\\d{4}\\,")
+        !str_starts(x, "https") &
+          !str_starts(x, "file:") &
+          !str_ends(x, "CaIXA") &
+          !str_starts(x, "\\d{2}/\\d{2}/\\d{4}\\,") &
+          !str_starts(x, "\\d{2}/\\d{2}/\\d{4}\\s?\\d{2}:\\d{2}")
       }) %>%
       str_remove_all("\\°|\\º")
 
     indice.comeco_i <- linhas_c %>%
-      str_which("^\\d{2}") %>%
-      nth(1)
-    indice.fim_i <- linhas_c %>%
-      str_which("^\\d{2}/\\d{2}/\\d{4}") %>%
-      last()
+      str_which(
+        "^(?i)data\\s?mov\\.\\s?nr\\.\\s?doc\\.\\s?hist[oó]rico\\s?valor\\s?saldo"
+      ) %>%
+      first() + 1
+    indice.fim_i <- if_else(
+      any(str_detect(linhas_c, "^(?i)lan[cç]amentos\\s?do\\s?dia")),
+      str_which(linhas_c, "^(?i)lan[cç]amentos\\s?do\\s?dia")[1] - 1,
+      linhas_c %>%
+        str_which("^\\d{2}/\\d{2}/\\d{4}") %>%
+        last()
+    )
 
     extrato_t <- linhas_c %>%
       as_tibble_col(column_name = "linhas") %>%

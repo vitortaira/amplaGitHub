@@ -33,7 +33,27 @@
 #' #   unlink(dummy_pdf_path) # Clean up the dummy file
 #' # }, silent = TRUE)
 ler_pdf <- function(arquivo.caminho) {
-  paginas_l <- pdf_text(arquivo.caminho) %>%
+  # Verificar se o arquivo existe
+  if (!file.exists(arquivo.caminho)) {
+    stop("Arquivo não encontrado: ", arquivo.caminho)
+  }
+
+  # Tentar extrair texto do PDF com tratamento de erro
+  texto_pdf <- tryCatch(
+    {
+      pdf_text(arquivo.caminho)
+    },
+    error = function(e) {
+      stop("Erro ao ler PDF: ", e$message, "\nArquivo: ", arquivo.caminho)
+    }
+  )
+
+  # Verificar se o PDF contém texto extraível
+  if (length(texto_pdf) == 0 || all(is.na(texto_pdf)) || all(nchar(str_squish(texto_pdf)) == 0)) {
+    stop("O arquivo PDF não contém texto extraível (pode ser um PDF escaneado): ", basename(arquivo.caminho))
+  }
+
+  paginas_l <- texto_pdf %>%
     map(function(pagina) {
       linhas <- str_split(pagina, "\n")[[1]] %>%
         str_squish()
@@ -41,6 +61,13 @@ ler_pdf <- function(arquivo.caminho) {
         linha == ""
       })
     })
+
   linhas_c <- unlist(paginas_l, use.names = FALSE)
+
+  # Verificar se há linhas extraídas
+  if (length(linhas_c) == 0) {
+    stop("Nenhuma linha de texto foi extraída do PDF: ", basename(arquivo.caminho))
+  }
+
   return(list(paginas = paginas_l, linhas = linhas_c))
 }

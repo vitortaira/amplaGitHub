@@ -99,7 +99,7 @@ e_ita_xita <- function(file_path) {
         lubridate::year(periodo.inicio_d),
         69
       ),
-      data = lubridate::dmy(paste0(data, ano)),
+      data = lubridate::dmy(paste0(data, "/", ano)),
       Linhas = stringr::str_remove(Linhas, "^\\d{2}\\s?/\\s?[A-Za*z]{3}\\s?"),
       valor = stringr::str_extract(Linhas, "-?\\d{1,3}(\\.\\d{3})*(,\\d{2})") %>%
         readr::parse_number(locale = readr::locale(decimal_mark = ",", grouping_mark = ".")),

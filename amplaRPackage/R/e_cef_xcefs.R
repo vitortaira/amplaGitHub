@@ -46,6 +46,9 @@
 
 e_cef_xcefs<-
   function(f_caminho.pasta.extratos_c = caminhos_pastas("extratos")) {
+    # Obter lista atualizada de contratos PJ
+    contratos_pj_6_ultimos <- get_contratos_pj_6_ultimos()
+
     # Mensagem informando o número de extratos identificados
     # n_extratos <- length(caminhos.extratos.cef_c)
     # message(sprintf(
@@ -73,30 +76,37 @@ e_cef_xcefs<-
         message(sprintf("Arquivo vazio ou não extraído: %s", basename(i_caminho.extrato.cef_c)))
       }
     }
+
+    # Verificar se há dados antes de processar
+    if (nrow(extratos_t) == 0) {
+      message("Nenhum extrato foi extraído com sucesso.")
+      return(tibble())
+    }
+
     extratos_t %<>%
       mutate(
         empresa = case_when(
-          str_detect(empresa, "(?i)ampla\\s?incorporadora") ~ "AMP",
-          str_detect(empresa, "(?i)metro\\s?vila\\s?sonia") ~ "AVS",
-          str_detect(empresa, "(?i)grauca") ~ "GRA",
-          str_detect(empresa, "(?i)incorflora") ~ "INC",
-          str_detect(empresa, "(?i)sao\\s?l") ~ "LUC",
-          str_detect(empresa, "(?i)pompeia") ~ "POM",
-          str_detect(empresa, "(?i)up\\s?s\\.") ~ "SAU",
-          str_detect(empresa, "(?i)sonia\\s?ii") ~ "SN2",
-          str_detect(empresa, "(?i)sonia\\s?iv") ~ "SN4",
+          !is.na(empresa) & str_detect(empresa, "(?i)ampla\\s?incorporadora") ~ "AMP",
+          !is.na(empresa) & str_detect(empresa, "(?i)metro\\s?vila\\s?sonia") ~ "AVS",
+          !is.na(empresa) & str_detect(empresa, "(?i)grauca") ~ "GRA",
+          !is.na(empresa) & str_detect(empresa, "(?i)incorflora") ~ "INC",
+          !is.na(empresa) & str_detect(empresa, "(?i)sao\\s?l") ~ "LUC",
+          !is.na(empresa) & str_detect(empresa, "(?i)pompeia") ~ "POM",
+          !is.na(empresa) & str_detect(empresa, "(?i)up\\s?s\\.") ~ "SAU",
+          !is.na(empresa) & str_detect(empresa, "(?i)sonia\\s?ii") ~ "SN2",
+          !is.na(empresa) & str_detect(empresa, "(?i)sonia\\s?iv") ~ "SN4",
           TRUE ~ empresa
           # TRUE ~ NA_character_
         ),
         repasse = if_else(
           (descricao == "CR DESBLOQ") &
-            !(documento %in% contratos.pj.6.ultimos_c),
+            !(documento %in% contratos_pj_6_ultimos),
           TRUE,
           FALSE
         ),
         pj = if_else(
           (descricao == "CR DESBLOQ") &
-            (documento %in% contratos.pj.6.ultimos_c),
+            (documento %in% contratos_pj_6_ultimos),
           TRUE,
           FALSE
         ),

@@ -55,16 +55,16 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
   c_xcef <- function() {
     dir_ls(caminhos_pastas("extratos"), recurse = TRUE, type = "file") %>%
       keep(
-        ~ str_detect(.x, "(?i)cef")
+        ~ str_detect(.x, "(?i)cef") & str_ends(.x, "\\.pdf")
       ) %>%
       as_tibble_col("caminho") %>%
       mutate(
         arquivo.tabela.tipo = "xcef",
         arquivo.tipo = "xcef",
         arquivo.fonte = "cef",
-        empresa = str_extract(caminho, "/([A-Z]{3})/") %>%
+        empresa = str_extract(.data$caminho, "/([A-Z]{3})/") %>%
           str_extract("[A-Z]{3}"),
-        data = caminho %>%
+        data = .data$caminho %>%
           str_extract("\\d{4}_\\d{2}") %>%
           str_c("_01") %>%
           as.Date(format = "%Y_%m_%d")
@@ -74,18 +74,19 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
   c_xita <- function() {
     dir_ls(caminhos_pastas("extratos"), recurse = TRUE, type = "file") %>%
       keep(
-        ~ str_ends(.x, ".pdf") &
-          str_detect(.x, "(?i)extrato") &
-          !str_detect(.x, "(?i)pix") &
-          str_detect(.x, "0186|2633|5441|9756")
+        ~ str_detect(.x, "(?i)ita[uú]") & str_ends(.x, ".pdf")
       ) %>%
       as_tibble_col("caminho") %>%
       mutate(
         arquivo.tabela.tipo = "xita",
         arquivo.tipo = "xita",
         arquivo.fonte = "ita",
-        empresa = NA_character_,
-        data = as.Date(NA)
+        empresa = str_extract(.data$caminho, "/([A-Z]{3})/") %>%
+          str_extract("[A-Z]{3}"),
+        data = .data$caminho %>%
+          str_extract("\\d{4}_\\d{2}") %>%
+          str_c("_01") %>%
+          as.Date(format = "%Y_%m_%d")
       )
   }
 
