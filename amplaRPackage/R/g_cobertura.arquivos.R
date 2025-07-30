@@ -1,6 +1,6 @@
 #' Plot temporal coverage heatmap for arquivos
 #'
-#' @param cobertura_t Tibble with columns: arquivo, empresa, periodo.inicio, periodo.fim, arquivo.tipo
+#' @param cobertura_t Tibble with columns: arquivo, empresa, periodo.inicio, periodo.fim, arquivo.tipo, id
 #' @return Plotly heatmap object
 #' @import dplyr
 #' @import tidyr
@@ -18,7 +18,7 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
     }
 
     required_cols <- c("arquivo.tipo", "periodo.inicio", "periodo.fim", "arquivo")
-    optional_cols <- c("empresa", "conta", "banco")
+    optional_cols <- c("empresa", "conta", "banco", "id")
 
     # Adicionar colunas faltantes com valores padrão
     for (col in c(required_cols, optional_cols)) {
@@ -81,12 +81,15 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
         } else {
           # Always propagate tipo.xcef if present, else NA
           tipo_xcef_val <- if ("tipo.xcef" %in% names(row_df)) row_df$tipo.xcef else if ("arquivo.subtipo" %in% names(row_df)) row_df$arquivo.subtipo else NA_character_
+          # Always propagate id if present, else NA
+          id_val <- if ("id" %in% names(row_df)) row_df$id else NA_character_
           tibble(
             arquivo = row_df$arquivo,
             empresa = row_df$empresa,
             arquivo.tipo = row_df$arquivo.tipo,
             conta = row_df$conta,
             banco = row_df$banco, # Add banco column
+            id = id_val, # Add id column
             month_date = months_seq,
             periodo.inicio = row_df$periodo.inicio,
             periodo.fim = row_df$periodo.fim,
@@ -108,7 +111,7 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
         month_end = ceiling_date(month_date, "month") - days(1),
         full_month_coverage = (periodo.inicio <= month_start & periodo.fim >= month_end)
       ) %>%
-      group_by(empresa, conta, banco, month_date) %>%
+      group_by(empresa, conta, banco, id, month_date) %>%
       summarise(
         n_paths = n(),
         n_full = sum(full_month_coverage),
@@ -173,21 +176,21 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
     }
 
     valid_row_pairs <- agg_data %>%
-      distinct(empresa, conta, banco) %>% # Removed arquivo.tipo, keep only empresa, conta, banco
+      distinct(empresa, conta, banco, id) %>% # Added id to distinct columns
       filter(!empresa %in% c("", "0", "0-", NA) &
         !conta %in% c("", "0", "0-", NA) &
         !banco %in% c("", "0", "0-", NA)) # Only check empresa, conta, banco
 
     if (nrow(valid_row_pairs) == 0) {
-      if (interactive()) message("No valid (empresa, conta, banco) pairs after filtering agg_data.") # Updated message
+      if (interactive()) message("No valid (empresa, conta, banco, id) pairs after filtering agg_data.")
       return(NULL)
     }
 
     row_keys <- valid_row_pairs %>%
       mutate(label = paste0(empresa, " | ", banco, " | ", conta)) %>% # Use banco instead of arquivo.tipo
+      arrange(id, label) %>% # Sort first by id, then by label (alphabetically)
       pull(label) %>%
-      unique() %>%
-      sort() # Reverted to ascending sort
+      unique() # Remove duplicates while preserving order
 
     if (length(row_keys) == 0) {
       if (interactive()) message("No row keys generated.")
@@ -582,7 +585,7 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
 utils::globalVariables(c(
   ".", "periodo.inicio_parsed", "periodo.fim_parsed", "month_date",
   "month_start", "month_end", "full_month_coverage", "n_paths",
-  "n_full", "n_incomplete", "color_code", "label", "original_date", "conta", "banco",
+  "n_full", "n_incomplete", "color_code", "label", "original_date", "conta", "banco", "id",
   # Added for tidy evaluation warnings
   "tipo.xcef", "arquivo.tipo", "empresa", "arquivo", "periodo.inicio", "periodo.fim", "descricao", "month_date", "formatted", "n_paths", "n_full", "n_incomplete", "color_code", "label", "original_date", "subtipos", "cur_data"
 ))

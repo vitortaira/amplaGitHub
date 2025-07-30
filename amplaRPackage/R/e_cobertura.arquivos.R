@@ -100,17 +100,31 @@ e_cobertura.arquivos <- function() {
         stringr::str_remove_all(conta, "-") %>%
           stringr::str_sub(-4, -1)
       ),
-      id = dplyr::case_when(
-        id.corrente %in% contasBancarias$id.antigo
-          ~ contasBancarias$id.continuo[
-            match(id.corrente, contasBancarias$id.antigo)
-          ],
-        id.corrente %in% contasBancarias$id.atual
-          ~ contasBancarias$id.continuo[
-            match(id.corrente, contasBancarias$id.atual)
-          ],
-        TRUE ~ NA
-      )
+      id = {
+        # Safe ID assignment with proper error handling
+        if (is.null(contasBancarias) || nrow(contasBancarias) == 0) {
+          message("contasBancarias não está disponível. IDs serão definidos como NA.")
+          rep(NA_character_, length(id.corrente))
+        } else if (!all(c("id.antigo", "id.atual", "id.continuo") %in% names(contasBancarias))) {
+          message("contasBancarias não possui as colunas necessárias. IDs serão definidos como NA.")
+          rep(NA_character_, length(id.corrente))
+        } else {
+          message(sprintf("contasBancarias carregado com %d registros.", nrow(contasBancarias)))
+          
+          # Safe case_when with available data
+          dplyr::case_when(
+            id.corrente %in% contasBancarias$id.antigo
+              ~ contasBancarias$id.continuo[
+                match(id.corrente, contasBancarias$id.antigo)
+              ],
+            id.corrente %in% contasBancarias$id.atual
+              ~ contasBancarias$id.continuo[
+                match(id.corrente, contasBancarias$id.atual)
+              ],
+            TRUE ~ NA_character_
+          )
+        }
+      }
     )
 
   message(sprintf("Total de registros antes da filtragem: %d", nrow(coberturaCompleta)))
