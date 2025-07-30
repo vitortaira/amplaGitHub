@@ -14,7 +14,6 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
   .prepare_heatmap_data <- function(raw_data) {
     # Verificar se os dados estão vazios
     if (is.null(raw_data) || nrow(raw_data) == 0) {
-      message("No data provided to .prepare_heatmap_data")
       return(NULL)
     }
 
@@ -29,7 +28,6 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
         } else {
           raw_data[[col]] <- NA_character_
         }
-        message(paste("Added missing column:", col))
       }
     }
 
@@ -37,18 +35,6 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
     if (!all(required_cols %in% names(raw_data))) {
       missing_cols <- required_cols[!required_cols %in% names(raw_data)]
       stop(paste("Input \\'cobertura_t\\' is missing required columns:", paste(missing_cols, collapse = ", ")))
-    }
-
-    # Se não há empresa válida, usar arquivo.tipo como empresa
-    if (!"empresa" %in% names(raw_data) || all(is.na(raw_data$empresa) | raw_data$empresa == "")) {
-      message("Using arquivo.tipo as empresa since empresa column is not available or empty")
-      raw_data$empresa <- raw_data$arquivo.tipo
-    }
-
-    # Se não há conta válida, usar arquivo.tipo como conta
-    if (!"conta" %in% names(raw_data) || all(is.na(raw_data$conta) | raw_data$conta == "")) {
-      message("Using arquivo.tipo as conta since conta column is not available or empty")
-      raw_data$conta <- raw_data$arquivo.tipo
     }
 
     # Initial cleaning and type conversion
@@ -231,13 +217,6 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
     if (length(final_formatted_months) == 0) {
       if (interactive()) message("No formatted month keys generated.")
       return(NULL)
-    }
-
-    if (interactive()) {
-      message("--- POST-PREPARE DIAGNOSTICS ---")
-      message(paste("Number of row_keys:", length(row_keys)))
-      message(paste("Number of final_formatted_months:", length(final_formatted_months)))
-      message(paste("Number of final_month_dates:", length(final_month_dates)))
     }
 
     return(list(
@@ -535,11 +514,9 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
   }
 
   # --- Main Workflow ---
-  if (interactive()) message("Starting heatmap generation...")
   prepared_data <- .prepare_heatmap_data(cobertura_t)
 
   if (is.null(prepared_data) || length(prepared_data$row_keys) == 0 || length(prepared_data$formatted_months) == 0) {
-    if (interactive()) message("Insufficient data to generate heatmap. Returning empty plot.")
     # Fix: Use layout with a list for annotations
     return(plot_ly() %>% layout(
       title = list(text = "No data available to display."),

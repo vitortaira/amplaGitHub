@@ -62,7 +62,7 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
         arquivo.tabela.tipo = "xcef",
         arquivo.tipo = "xcef",
         arquivo.fonte = "cef",
-        empresa = str_extract(.data$caminho, "/([A-Z]{3})/") %>%
+        empresa = str_extract(.data$caminho, "(?<=/)[A-Z0-9]{3}(?=/)") %>%
           str_extract("[A-Z]{3}"),
         data = .data$caminho %>%
           str_extract("\\d{4}_\\d{2}") %>%
@@ -81,8 +81,8 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
         arquivo.tabela.tipo = "xita",
         arquivo.tipo = "xita",
         arquivo.fonte = "ita",
-        empresa = str_extract(.data$caminho, "/([A-Z]{3})/") %>%
-          str_extract("[A-Z]{3}"),
+        empresa = .data$caminho %>%
+          stringr::str_extract("(?<=/)[A-Z0-9]{3}(?=/)"),
         data = .data$caminho %>%
           str_extract("\\d{4}_\\d{2}") %>%
           str_c("_01") %>%

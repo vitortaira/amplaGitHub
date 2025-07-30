@@ -1,116 +1,135 @@
+#' Extrai cobertura de arquivos CEF e ITAÚ
+#'
+#' @description
+#' Função para extrair e consolidar informações de cobertura temporal de arquivos
+#' CEF (extratos bancários) e ITAÚ, retornando um tibble com dados combinados.
+#'
+#' @return Um tibble com colunas: arquivo, arquivo.subtipo, empresa, conta,
+#'   periodo.inicio, periodo.fim, arquivo.tipo
+#' @importFrom dplyr left_join bind_rows distinct filter mutate select rename
+#' @importFrom stringr str_remove str_sub
+#' @importFrom tibble tibble
+#' @export
+#'
 e_cobertura.arquivos <- function() {
   # Obter dados CEF
-  cef_dados <- tryCatch(
+  dadosCef <- tryCatch(
     {
       e_cef_xcefs()
     },
     error = function(e) {
       message("Erro ao extrair dados CEF: ", e$message)
-      return(tibble(
+      return(tibble::tibble(
         arquivo = character(), arquivo.subtipo = character(),
-        empresa = character(), conta = character(),
+        conta = character(),
         periodo.inicio = as.Date(character()), periodo.fim = as.Date(character())
       ))
     }
   )
 
   # Obter dados ITAÚ
-  ita_dados <- tryCatch(
+  dadosIta <- tryCatch(
     {
       e_ita_xitas()$xita_l
     },
     error = function(e) {
       message("Erro ao extrair dados ITAÚ: ", e$message)
-      return(tibble(
+      return(tibble::tibble(
         arquivo = character(), arquivo.subtipo = character(),
-        empresa = character(), conta = character(),
+        conta = character(),
         periodo.inicio = as.Date(character()), periodo.fim = as.Date(character())
       ))
     }
   )
 
-  # Garantir que as colunas necessárias existam
-  required_cols <- c("arquivo", "arquivo.subtipo", "empresa", "conta", "periodo.inicio", "periodo.fim")
+  # Garantir que as colunas necessárias existam (excluindo empresa que vem dos metadados)
+  colunasNecessarias <- c("arquivo", "arquivo.subtipo", "conta", "periodo.inicio", "periodo.fim")
 
-  for (col in required_cols) {
-    if (!col %in% names(cef_dados)) {
+  for (col in colunasNecessarias) {
+    if (!col %in% names(dadosCef)) {
       if (col %in% c("periodo.inicio", "periodo.fim")) {
-        cef_dados[[col]] <- as.Date(NA)
+        dadosCef[[col]] <- as.Date(NA)
       } else {
-        cef_dados[[col]] <- NA_character_
+        dadosCef[[col]] <- NA_character_
       }
     }
-    if (!col %in% names(ita_dados)) {
+    if (!col %in% names(dadosIta)) {
       if (col %in% c("periodo.inicio", "periodo.fim")) {
-        ita_dados[[col]] <- as.Date(NA)
+        dadosIta[[col]] <- as.Date(NA)
       } else {
-        ita_dados[[col]] <- NA_character_
+        dadosIta[[col]] <- NA_character_
       }
     }
   }
 
-  xcef_t <- left_join(
+  # Selecionar apenas colunas necessárias dos dados extraídos, excluindo empresa para evitar duplicatas
+  dadosCefLimpos <- dadosCef %>%
+    dplyr::select(arquivo, arquivo.subtipo, conta, periodo.inicio, periodo.fim)
+
+  dadosItaLimpos <- dadosIta %>%
+    dplyr::select(arquivo, arquivo.subtipo, conta, periodo.inicio, periodo.fim)
+
+  xcef_t <- dplyr::left_join(
     e_metadados("xcef") %>%
-      rename(arquivo = "caminho"),
-    cef_dados %>%
-      dplyr::select(all_of(required_cols)),
+      dplyr::rename(arquivo = "caminho"),
+    dadosCefLimpos,
     by = "arquivo"
   )
 
-  extita_t <- left_join(
+  extita_t <- dplyr::left_join(
     e_metadados("xita") %>%
-      rename(arquivo = "caminho"),
-    ita_dados %>%
-      dplyr::select(all_of(required_cols)),
+      dplyr::rename(arquivo = "caminho"),
+    dadosItaLimpos,
     by = "arquivo"
   )
 
-  cobertura_t <- bind_rows(
+  coberturaCompleta <- dplyr::bind_rows(
     xcef_t,
     extita_t
   ) %>%
-    distinct()
+    dplyr::distinct() %>%
+    dplyr::mutate(banco = stringr::str_extract(arquivo, "-.*_"))
 
-  message(sprintf("Total de registros antes da filtragem: %d", nrow(cobertura_t)))
+  message(sprintf("Total de registros antes da filtragem: %d", nrow(coberturaCompleta)))
 
   # Garantir que as colunas necessárias existam após o join
-  if (!"empresa" %in% names(cobertura_t)) {
-    cobertura_t$empresa <- NA_character_
+  if (!"empresa" %in% names(coberturaCompleta)) {
+    coberturaCompleta$empresa <- NA_character_
     message("Coluna 'empresa' criada com valores NA")
   }
-  if (!"arquivo.tipo" %in% names(cobertura_t)) {
-    cobertura_t$arquivo.tipo <- NA_character_
+  if (!"arquivo.tipo" %in% names(coberturaCompleta)) {
+    coberturaCompleta$arquivo.tipo <- NA_character_
     message("Coluna 'arquivo.tipo' criada com valores NA")
   }
-  if (!"conta" %in% names(cobertura_t)) {
-    cobertura_t$conta <- NA_character_
+  if (!"conta" %in% names(coberturaCompleta)) {
+    coberturaCompleta$conta <- NA_character_
     message("Coluna 'conta' criada com valores NA")
   }
 
   # Verificar quantos registros têm empresa não-NA
-  registros_com_empresa <- sum(!is.na(cobertura_t$empresa) & cobertura_t$empresa != "", na.rm = TRUE)
-  message(sprintf("Registros com empresa válida: %d", registros_com_empresa))
+  registrosComEmpresa <- sum(!is.na(coberturaCompleta$empresa) & coberturaCompleta$empresa != "", na.rm = TRUE)
+  message(sprintf("Registros com empresa válida: %d", registrosComEmpresa))
 
   # Se não há empresas válidas, vamos manter todos os dados e usar arquivo.tipo
-  if (registros_com_empresa == 0) {
+  if (registrosComEmpresa == 0) {
     message("Nenhum registro com empresa válida encontrado. Mantendo todos os dados.")
     # Não filtrar por empresa, apenas garantir que arquivo.tipo existe
   } else {
     # Filtrar apenas registros com empresa não-NA
-    cobertura_t <- cobertura_t %>%
-      filter(!is.na(empresa) & empresa != "")
+    coberturaCompleta <- coberturaCompleta %>%
+      dplyr::filter(!is.na(empresa) & empresa != "")
   }
 
   # Verificar se a coluna conta existe antes de modificá-la
-  if ("conta" %in% names(cobertura_t)) {
-    cobertura_t <- cobertura_t %>%
-      mutate(conta = str_remove(conta, "-") %>% str_sub(-4, -1))
+  if ("conta" %in% names(coberturaCompleta)) {
+    coberturaCompleta <- coberturaCompleta %>%
+      dplyr::mutate(conta = stringr::str_remove(conta, "-") %>% stringr::str_sub(-4, -1))
   }
 
-  message(sprintf("Total de registros retornados: %d", nrow(cobertura_t)))
-  if (nrow(cobertura_t) > 0) {
-    message(sprintf("Colunas disponíveis: %s", paste(names(cobertura_t), collapse = ", ")))
+  message(sprintf("Total de registros retornados: %d", nrow(coberturaCompleta)))
+  if (nrow(coberturaCompleta) > 0) {
+    message(sprintf("Colunas disponíveis: %s", paste(names(coberturaCompleta), collapse = ", ")))
   }
 
-  return(cobertura_t)
+  return(coberturaCompleta)
 }
