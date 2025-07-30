@@ -91,7 +91,26 @@ e_cobertura.arquivos <- function() {
     dplyr::distinct() %>%
     dplyr::mutate(
       banco = stringr::str_remove(path_file(arquivo), "^[^-]*-") %>%
-        stringr::str_remove("_.*")
+        stringr::str_remove("_.*"),
+      id.corrente = stringr::str_c(
+        empresa,
+        "-",
+        banco,
+        "_",
+        stringr::str_remove_all(conta, "-") %>%
+          stringr::str_sub(-4, -1)
+      ),
+      id = dplyr::case_when(
+        id.corrente %in% contasBancarias$id.antigo
+          ~ contasBancarias$id.continuo[
+            match(id.corrente, contasBancarias$id.antigo)
+          ],
+        id.corrente %in% contasBancarias$id.atual
+          ~ contasBancarias$id.continuo[
+            match(id.corrente, contasBancarias$id.atual)
+          ],
+        TRUE ~ NA
+      )
     )
 
   message(sprintf("Total de registros antes da filtragem: %d", nrow(coberturaCompleta)))
