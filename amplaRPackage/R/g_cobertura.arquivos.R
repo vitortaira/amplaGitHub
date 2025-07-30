@@ -18,7 +18,7 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
     }
 
     required_cols <- c("arquivo.tipo", "periodo.inicio", "periodo.fim", "arquivo")
-    optional_cols <- c("empresa", "conta")
+    optional_cols <- c("empresa", "conta", "banco")
 
     # Adicionar colunas faltantes com valores padrão
     for (col in c(required_cols, optional_cols)) {
@@ -50,9 +50,9 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
       ) %>%
       select(-periodo.inicio_parsed, -periodo.fim_parsed) %>%
       filter(
-        !is.na(arquivo.tipo) & !arquivo.tipo %in% c("", "0", "0-"),
         !is.na(empresa) & !empresa %in% c("", "0", "0-"),
-        !is.na(conta) & !conta %in% c("", "0", "0-"), # Added conta filter
+        !is.na(conta) & !conta %in% c("", "0", "0-"),
+        !is.na(banco) & !banco %in% c("", "0", "0-"), # Added banco filter
         !is.na(periodo.inicio), !is.na(periodo.fim),
         periodo.inicio <= periodo.fim,
         periodo.inicio >= as.Date("2000-01-01"), # Filter out very old/invalid dates
@@ -86,6 +86,7 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
             empresa = row_df$empresa,
             arquivo.tipo = row_df$arquivo.tipo,
             conta = row_df$conta,
+            banco = row_df$banco, # Add banco column
             month_date = months_seq,
             periodo.inicio = row_df$periodo.inicio,
             periodo.fim = row_df$periodo.fim,
@@ -107,7 +108,7 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
         month_end = ceiling_date(month_date, "month") - days(1),
         full_month_coverage = (periodo.inicio <= month_start & periodo.fim >= month_end)
       ) %>%
-      group_by(arquivo.tipo, empresa, conta, month_date) %>%
+      group_by(empresa, conta, banco, month_date) %>%
       summarise(
         n_paths = n(),
         n_full = sum(full_month_coverage),
@@ -138,9 +139,9 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
         )
       ) %>%
       filter(
-        !is.na(arquivo.tipo) & !arquivo.tipo %in% c("", "0", "0-"),
         !is.na(empresa) & !empresa %in% c("", "0", "0-"),
         !is.na(conta) & !conta %in% c("", "0", "0-"),
+        !is.na(banco) & !banco %in% c("", "0", "0-"), # Added banco filter
         !is.na(month_date) & month_date >= as.Date("2000-01-01")
       )
 
@@ -172,18 +173,18 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
     }
 
     valid_row_pairs <- agg_data %>%
-      distinct(arquivo.tipo, empresa, conta) %>% # Added conta
-      filter(!arquivo.tipo %in% c("", "0", "0-", NA) &
-        !empresa %in% c("", "0", "0-", NA) &
-        !conta %in% c("", "0", "0-", NA)) # Added conta
+      distinct(empresa, conta, banco) %>% # Removed arquivo.tipo, keep only empresa, conta, banco
+      filter(!empresa %in% c("", "0", "0-", NA) &
+        !conta %in% c("", "0", "0-", NA) &
+        !banco %in% c("", "0", "0-", NA)) # Only check empresa, conta, banco
 
     if (nrow(valid_row_pairs) == 0) {
-      if (interactive()) message("No valid (arquivo.tipo, empresa, conta) pairs after filtering agg_data.") # Updated message
+      if (interactive()) message("No valid (empresa, conta, banco) pairs after filtering agg_data.") # Updated message
       return(NULL)
     }
 
     row_keys <- valid_row_pairs %>%
-      mutate(label = paste0(arquivo.tipo, " | ", empresa, " | ", conta)) %>% # Added conta to label
+      mutate(label = paste0(empresa, " | ", banco, " | ", conta)) %>% # Use banco instead of arquivo.tipo
       pull(label) %>%
       unique() %>%
       sort() # Reverted to ascending sort
@@ -243,15 +244,15 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
     for (r_idx in seq_along(row_keys)) {
       current_row_key <- row_keys[r_idx]
       key_parts <- strsplit(current_row_key, " | ", fixed = TRUE)[[1]]
-      tipo <- key_parts[1]
-      emp <- key_parts[2]
-      cta <- key_parts[3] # Added cta
+      emp <- key_parts[1]  # empresa first
+      banco <- key_parts[2] # banco second (was tipo)
+      cta <- key_parts[3]  # conta third
 
       for (c_idx in seq_along(formatted_months)) {
         current_month_date <- month_dates[c_idx]
 
         cell_data <- agg %>%
-          filter(arquivo.tipo == tipo, empresa == emp, conta == cta, month_date == current_month_date) # Added conta == cta
+          filter(empresa == emp, banco == banco, conta == cta, month_date == current_month_date) # Updated filter
 
         if (nrow(cell_data) == 0 || is.na(cell_data$color_code[1])) {
           mat[r_idx, c_idx] <- "empty"
@@ -271,7 +272,7 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
 
     full_coverage_details <- agg %>%
       filter(color_code == "full" & n_paths > 0 & !is.na(n_paths)) %>%
-      select(arquivo.tipo, empresa, conta, month_date, n_paths) # Added conta
+      select(empresa, conta, banco, month_date, n_paths) # Removed arquivo.tipo, keep only empresa, conta, banco
 
     if (nrow(full_coverage_details) > 0) {
       max_val <- max(full_coverage_details$n_paths, na.rm = TRUE)
@@ -280,7 +281,7 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
 
         for (i in 1:nrow(full_coverage_details)) {
           detail <- full_coverage_details[i, ]
-          row_label <- paste0(detail$arquivo.tipo, " | ", detail$empresa, " | ", detail$conta) # Added conta
+          row_label <- paste0(detail$empresa, " | ", detail$banco, " | ", detail$conta) # Use banco instead of arquivo.tipo
           month_label <- format(detail$month_date, "%Y-%m")
 
           r_idx <- which(row_keys == row_label)
@@ -318,14 +319,14 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
     for (r_idx in seq_along(row_keys)) {
       current_row_key <- row_keys[r_idx]
       key_parts <- strsplit(current_row_key, " | ", fixed = TRUE)[[1]]
-      tipo <- key_parts[1]
-      emp <- key_parts[2]
-      cta <- key_parts[3] # Added cta
+      emp <- key_parts[1]  # empresa first
+      banco <- key_parts[2] # banco second
+      cta <- key_parts[3]  # conta third
 
       for (c_idx in seq_along(formatted_months)) {
         current_month_date <- month_dates[c_idx]
         cell_data <- agg %>%
-          filter(arquivo.tipo == tipo, empresa == emp, conta == cta, month_date == current_month_date) # Added conta == cta
+          filter(empresa == emp, banco == banco, conta == cta, month_date == current_month_date) # Updated filter
 
         raw_status_code <- mat[r_idx, c_idx]
         base_status_code <- if (startsWith(raw_status_code, "full_")) "full" else raw_status_code
@@ -358,8 +359,8 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
           }
 
           text_matrix[r_idx, c_idx] <- paste0(
-            "Tipo: ", tipo, "<br>",
             "Empresa: ", emp, "<br>",
+            "Banco: ", banco, "<br>", # Use banco variable instead of tipo
             "Conta: ", cta, "<br>",
             "Mês: ", format(current_month_date, "%Y-%m"), "<br>",
             "Status: ", display_status_name, "<br>",
@@ -369,8 +370,8 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
           )
         } else {
           text_matrix[r_idx, c_idx] <- paste0(
-            "Tipo: ", tipo, "<br>",
             "Empresa: ", emp, "<br>",
+            "Banco: ", banco, "<br>", # Use banco variable instead of tipo
             "Conta: ", cta, "<br>",
             "Mês: ", format(current_month_date, "%Y-%m"), "<br>",
             "Status: ", status_translation_map[["empty"]] %||% "Vazio", "<br>",
@@ -481,7 +482,7 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
         rangeslider = list(visible = FALSE) # Ensure horizontal range slider is removed
       ),
       yaxis = list(
-        title = list(text = "Tipo de arquivo | Empresa | Conta", standoff = 15), # Added standoff for y-axis title
+        title = list(text = "Empresa | Banco | Conta", standoff = 15), # Updated order and changed "Tipo de arquivo" to "Banco"
         type = "category",
         categoryorder = "array", # Use the order from categoryarray
         categoryarray = levels(y_axis_labels), # Sorted row keys (A-Z)
@@ -581,7 +582,7 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
 utils::globalVariables(c(
   ".", "periodo.inicio_parsed", "periodo.fim_parsed", "month_date",
   "month_start", "month_end", "full_month_coverage", "n_paths",
-  "n_full", "n_incomplete", "color_code", "label", "original_date", "conta",
+  "n_full", "n_incomplete", "color_code", "label", "original_date", "conta", "banco",
   # Added for tidy evaluation warnings
   "tipo.xcef", "arquivo.tipo", "empresa", "arquivo", "periodo.inicio", "periodo.fim", "descricao", "month_date", "formatted", "n_paths", "n_full", "n_incomplete", "color_code", "label", "original_date", "subtipos", "cur_data"
 ))

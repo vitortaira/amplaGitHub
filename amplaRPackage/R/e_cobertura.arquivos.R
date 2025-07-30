@@ -9,6 +9,7 @@
 #' @importFrom dplyr left_join bind_rows distinct filter mutate select rename
 #' @importFrom stringr str_remove str_sub
 #' @importFrom tibble tibble
+#' @importFrom fs path_file
 #' @export
 #'
 e_cobertura.arquivos <- function() {
@@ -88,7 +89,10 @@ e_cobertura.arquivos <- function() {
     extita_t
   ) %>%
     dplyr::distinct() %>%
-    dplyr::mutate(banco = stringr::str_extract(arquivo, "-.*_"))
+    dplyr::mutate(
+      banco = stringr::str_remove(path_file(arquivo), "^[^-]*-") %>%
+        stringr::str_remove("_.*")
+    )
 
   message(sprintf("Total de registros antes da filtragem: %d", nrow(coberturaCompleta)))
 
