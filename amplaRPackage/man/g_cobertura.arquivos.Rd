@@ -7,7 +7,7 @@
 g_cobertura.arquivos(cobertura_t = e_cobertura.arquivos())
 }
 \arguments{
-\item{cobertura_t}{Tibble with columns: arquivo, empresa, periodo.inicio, periodo.fim, arquivo.tipo}
+\item{cobertura_t}{Tibble with columns: arquivo, empresa, periodo.inicio, periodo.fim, arquivo.tipo, id}
 }
 \value{
 Plotly heatmap object

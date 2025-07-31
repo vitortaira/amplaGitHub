@@ -472,6 +472,59 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
       showlegend = FALSE # The heatmap itself does not add to the discrete legend
     )
 
+    # --- Add curved arches for rows with same ID ---
+    arch_shapes <- list()
+    if (exists("prepared_data") && !is.null(prepared_data$agg_data)) {
+      # Get ID information for each row
+      row_id_map <- prepared_data$agg_data %>%
+        distinct(empresa, conta, banco, id) %>%
+        mutate(label = paste0(empresa, " | ", banco, " | ", conta)) %>%
+        filter(!is.na(id) & id != "" & label %in% row_keys)
+      
+      # Group rows by ID to find connections
+      id_groups <- row_id_map %>%
+        group_by(id) %>%
+        summarise(labels = list(label), .groups = 'drop') %>%
+        filter(lengths(labels) > 1) # Only IDs with multiple rows
+      
+      # Create curved arches for each ID group using shapes
+      for (i in seq_len(nrow(id_groups))) {
+        id_labels <- id_groups$labels[[i]]
+        
+        # Create curved arches between consecutive pairs
+        for (j in 1:(length(id_labels) - 1)) {
+          label1 <- id_labels[j]
+          label2 <- id_labels[j + 1]
+          
+          # Get row positions in the factor levels
+          y1_pos <- which(levels(y_axis_labels) == label1) - 1 # 0-based for plotly
+          y2_pos <- which(levels(y_axis_labels) == label2) - 1 # 0-based for plotly
+          
+          if (length(y1_pos) == 1 && length(y2_pos) == 1) {
+            # Create SVG path for curved arch
+            y_mid <- (y1_pos + y2_pos) / 2
+            arch_control_x <- -0.8 # Control point for curve
+            
+            # SVG path for quadratic Bezier curve (arch)
+            path_string <- sprintf("M -0.2,%d Q %f,%f -0.2,%d", 
+                                  y1_pos, arch_control_x, y_mid, y2_pos)
+            
+            arch_shapes[[length(arch_shapes) + 1]] <- list(
+              type = "path",
+              path = path_string,
+              line = list(
+                color = "rgba(0, 0, 0, 0.6)", # Black semi-transparent
+                width = 2
+              ),
+              fillcolor = "rgba(0, 0, 0, 0)", # No fill
+              xref = "x",
+              yref = "y"
+            )
+          }
+        }
+      }
+    }
+
     # Apply layout
     p <- plotly::layout(p, # Explicitly call plotly::layout
       title = list(text = "Cobertura temporal dos arquivos", pad = list(t = 20)),
@@ -493,6 +546,7 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
         showgrid = FALSE,
         rangeslider = list(visible = FALSE) # Ensure vertical range slider is removed
       ),
+      shapes = arch_shapes, # Add the curved arch shapes
       legend = list(
         title = list(text = "<b>Status</b>"),
         orientation = "v",
@@ -585,7 +639,7 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
 utils::globalVariables(c(
   ".", "periodo.inicio_parsed", "periodo.fim_parsed", "month_date",
   "month_start", "month_end", "full_month_coverage", "n_paths",
-  "n_full", "n_incomplete", "color_code", "label", "original_date", "conta", "banco", "id",
+  "n_full", "n_incomplete", "color_code", "label", "original_date", "conta", "banco", "id", "labels",
   # Added for tidy evaluation warnings
   "tipo.xcef", "arquivo.tipo", "empresa", "arquivo", "periodo.inicio", "periodo.fim", "descricao", "month_date", "formatted", "n_paths", "n_full", "n_incomplete", "color_code", "label", "original_date", "subtipos", "cur_data"
 ))

@@ -90,7 +90,7 @@ e_cobertura.arquivos <- function() {
   ) %>%
     dplyr::distinct() %>%
     dplyr::mutate(
-      banco = stringr::str_remove(path_file(arquivo), "^[^-]*-") %>%
+      banco = stringr::str_remove(fs::path_file(arquivo), "^[^-]*-") %>%
         stringr::str_remove("_.*"),
       id.corrente = stringr::str_c(
         empresa,
@@ -110,7 +110,7 @@ e_cobertura.arquivos <- function() {
           rep(NA_character_, length(id.corrente))
         } else {
           message(sprintf("contasBancarias carregado com %d registros.", nrow(contasBancarias)))
-          
+
           # Safe case_when with available data
           dplyr::case_when(
             id.corrente %in% contasBancarias$id.antigo
