@@ -28,6 +28,7 @@ caminhos_pastas <- function(alias) {
   caminhos_c <- list(
     # Paths inside the project, using here() for portability
     github = here::here(),
+    informakon = here::here("dados", "Informakon"),
     rpackage = here::here("amplaRPackage"),
     shiny = here::here("amplaShiny"),
     shinydata = here::here("amplaShiny", "inst", "dados"),
@@ -50,9 +51,6 @@ caminhos_pastas <- function(alias) {
     ),
     financeiro = fs::path(
       caminho.base_c, "Financeiro - Documentos"
-    ),
-    informakon = fs::path(
-      caminho.base_c, "Financeiro - Documentos", "Informakon"
     ),
     temp = fs::path(
       "C:", "Users", "Ampla", "OneDrive - AMPLA INCORPORADORA LTDA",

@@ -53,7 +53,7 @@ a_dados_rds_xlsx <- function(
       # Abas do Informakon
       c("contr", "desp", "inad", "rec"),
       # Abas do Itaú
-      c("extita_l")
+      c("xita_l")
     ),
     Fonte = c(
       # Metadados

@@ -114,11 +114,11 @@ e_cobertura.arquivos <- function() {
           # Safe case_when with available data
           dplyr::case_when(
             id.corrente %in% contasBancarias$id.antigo
-              ~ contasBancarias$id.continuo[
+            ~ contasBancarias$id.continuo[
                 match(id.corrente, contasBancarias$id.antigo)
               ],
             id.corrente %in% contasBancarias$id.atual
-              ~ contasBancarias$id.continuo[
+            ~ contasBancarias$id.continuo[
                 match(id.corrente, contasBancarias$id.atual)
               ],
             TRUE ~ NA_character_

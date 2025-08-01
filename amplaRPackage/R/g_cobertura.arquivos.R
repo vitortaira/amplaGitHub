@@ -247,9 +247,9 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
     for (r_idx in seq_along(row_keys)) {
       current_row_key <- row_keys[r_idx]
       key_parts <- strsplit(current_row_key, " | ", fixed = TRUE)[[1]]
-      emp <- key_parts[1]  # empresa first
+      emp <- key_parts[1] # empresa first
       banco <- key_parts[2] # banco second (was tipo)
-      cta <- key_parts[3]  # conta third
+      cta <- key_parts[3] # conta third
 
       for (c_idx in seq_along(formatted_months)) {
         current_month_date <- month_dates[c_idx]
@@ -322,9 +322,9 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
     for (r_idx in seq_along(row_keys)) {
       current_row_key <- row_keys[r_idx]
       key_parts <- strsplit(current_row_key, " | ", fixed = TRUE)[[1]]
-      emp <- key_parts[1]  # empresa first
+      emp <- key_parts[1] # empresa first
       banco <- key_parts[2] # banco second
-      cta <- key_parts[3]  # conta third
+      cta <- key_parts[3] # conta third
 
       for (c_idx in seq_along(formatted_months)) {
         current_month_date <- month_dates[c_idx]
@@ -480,35 +480,37 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
         distinct(empresa, conta, banco, id) %>%
         mutate(label = paste0(empresa, " | ", banco, " | ", conta)) %>%
         filter(!is.na(id) & id != "" & label %in% row_keys)
-      
+
       # Group rows by ID to find connections
       id_groups <- row_id_map %>%
         group_by(id) %>%
-        summarise(labels = list(label), .groups = 'drop') %>%
+        summarise(labels = list(label), .groups = "drop") %>%
         filter(lengths(labels) > 1) # Only IDs with multiple rows
-      
+
       # Create curved arches for each ID group using shapes
       for (i in seq_len(nrow(id_groups))) {
         id_labels <- id_groups$labels[[i]]
-        
+
         # Create curved arches between consecutive pairs
         for (j in 1:(length(id_labels) - 1)) {
           label1 <- id_labels[j]
           label2 <- id_labels[j + 1]
-          
+
           # Get row positions in the factor levels
           y1_pos <- which(levels(y_axis_labels) == label1) - 1 # 0-based for plotly
           y2_pos <- which(levels(y_axis_labels) == label2) - 1 # 0-based for plotly
-          
+
           if (length(y1_pos) == 1 && length(y2_pos) == 1) {
             # Create SVG path for curved arch
             y_mid <- (y1_pos + y2_pos) / 2
             arch_control_x <- -0.8 # Control point for curve
-            
+
             # SVG path for quadratic Bezier curve (arch)
-            path_string <- sprintf("M -0.2,%d Q %f,%f -0.2,%d", 
-                                  y1_pos, arch_control_x, y_mid, y2_pos)
-            
+            path_string <- sprintf(
+              "M -0.2,%d Q %f,%f -0.2,%d",
+              y1_pos, arch_control_x, y_mid, y2_pos
+            )
+
             arch_shapes[[length(arch_shapes) + 1]] <- list(
               type = "path",
               path = path_string,
