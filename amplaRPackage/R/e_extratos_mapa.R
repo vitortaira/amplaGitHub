@@ -8,8 +8,6 @@
 #' @return Caminho do arquivo Excel criado
 #' @importFrom dplyr distinct select arrange filter group_by summarise n
 #' @importFrom stringr str_c
-#' @importFrom openxlsx createWorkbook addWorksheet writeData addStyle createStyle
-#' @importFrom openxlsx saveWorkbook setColWidths addFilter freezePane
 #' @export
 #'
 e_extratos_mapa <- function() {
@@ -46,62 +44,7 @@ e_extratos_mapa <- function() {
     ".xlsx"
   )
 
-  # Definir caminho do arquivo
-  caminhoArquivo <- stringr::str_c(
-    caminhos_pastas("extratos"),
-    "/Consolidados/",
-    nomeArquivo
-  )
-
-  # Criar diretório se não existir
-  dir.create(
-    dirname(caminhoArquivo),
-    showWarnings = FALSE,
-    recursive = TRUE
-  )
-
-  # Criar workbook
-  wb <- openxlsx::createWorkbook()
-
-  # Adicionar worksheet
-  openxlsx::addWorksheet(wb, "MapaExtratos")
-
-  # Escrever os dados
-  openxlsx::writeData(wb, sheet = "MapaExtratos", x = mapaExtratos)
-
-  # Estilo do cabeçalho
-  openxlsx::addStyle(
-    wb,
-    sheet = "MapaExtratos",
-    style = openxlsx::createStyle(
-      border = "TopBottomLeftRight",
-      fontSize = 11,
-      halign = "center",
-      valign = "center",
-      textDecoration = "bold",
-      fgFill = "darkgray",
-      wrapText = TRUE
-    ),
-    rows = 1,
-    cols = seq_len(ncol(mapaExtratos)),
-    gridExpand = TRUE
-  )
-
-  # Estilo geral (bordas e alinhamento)
-  openxlsx::addStyle(
-    wb,
-    sheet = "MapaExtratos",
-    style = openxlsx::createStyle(
-      border = "TopBottomLeftRight",
-      halign = "left",
-      valign = "center"
-    ),
-    rows = 2:(nrow(mapaExtratos) + 1),
-    cols = seq_len(ncol(mapaExtratos)),
-    gridExpand = TRUE
-  )
-
-  # Definir larguras das colunas
+  # Definir larguras específicas das colunas
   largurasColunas <- c(
     "empresa" = 20,
     "banco" = 12,
@@ -114,56 +57,14 @@ e_extratos_mapa <- function() {
     "arquivo(s)" = 80
   )
 
-  for (i in seq_along(largurasColunas)) {
-    openxlsx::setColWidths(
-      wb,
-      sheet = "MapaExtratos",
-      cols = i,
-      widths = largurasColunas[i]
-    )
-  }
-
-  # Adicionar filtro e congelar painel
-  openxlsx::addFilter(wb, sheet = "MapaExtratos", rows = 1, cols = seq_len(ncol(mapaExtratos)))
-  openxlsx::freezePane(wb, sheet = "MapaExtratos", firstRow = TRUE, firstActiveRow = 2)
-
-  # Estilo específico para a coluna arquivo(s) - texto quebrado
-  colunaArquivos <- which(colnames(mapaExtratos) == "arquivo(s)")
-  if (length(colunaArquivos) > 0) {
-    openxlsx::addStyle(
-      wb,
-      sheet = "MapaExtratos",
-      style = openxlsx::createStyle(
-        border = "TopBottomLeftRight",
-        halign = "left",
-        valign = "top",
-        wrapText = TRUE
-      ),
-      rows = 2:(nrow(mapaExtratos) + 1),
-      cols = colunaArquivos,
-      gridExpand = TRUE,
-      stack = TRUE
-    )
-  }
-
-  # Estilo para valores monetários
-  colunasMonetarias <- which(colnames(mapaExtratos) %in% c("soma.valor", "soma.valor.abs"))
-  if (length(colunasMonetarias) > 0) {
-    openxlsx::addStyle(
-      wb,
-      sheet = "MapaExtratos",
-      style = openxlsx::createStyle(numFmt = "#,##0.00"),
-      rows = 2:(nrow(mapaExtratos) + 1),
-      cols = colunasMonetarias,
-      gridExpand = TRUE,
-      stack = TRUE
-    )
-  }
-
-  # Salvar planilha
-  openxlsx::saveWorkbook(wb, caminhoArquivo, overwrite = TRUE)
-
-  message(sprintf("Mapa de extratos salvo em: %s", caminhoArquivo))
+  # Usar gerar_xlsx() para criar a planilha
+  caminhoArquivo <- gerar_xlsx(
+    data = mapaExtratos,
+    tab_names = "MapaExtratos",
+    col_width_def = 18,
+    col_width_spec = largurasColunas,
+    save = list(nomeArquivo, stringr::str_c(caminhos_pastas("extratos"), "/Consolidados"))
+  )
 
   # Mostrar estatísticas
   if (nrow(mapaExtratos) > 0) {
