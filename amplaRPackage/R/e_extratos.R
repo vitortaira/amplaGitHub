@@ -15,6 +15,8 @@
 #' @importFrom dplyr distinct group_by summarise n filter
 #' @importFrom stringr str_detect str_pad str_sub str_c
 #' @importFrom tibble tibble as_tibble
+#' @importFrom openxlsx loadWorkbook writeData saveWorkbook addWorksheet addStyle createStyle
+#' @importFrom openxlsx setColWidths addFilter freezePane
 #' @export
 #'
 e_extratos <- function(xlsx = FALSE) {
@@ -232,14 +234,11 @@ e_extratos <- function(xlsx = FALSE) {
       ".xlsx"
     )
 
-    # Preparar dados para múltiplas abas
-    dadosExcel <- list(
-      "ExtratosConsolidados" = extratosConsolidados,
-      "MapaExtratos" = mapaExtratos
-    )
+    # Caminho do template
+    caminhoTemplate <- "C:\\Users\\Ampla\\AMPLA INCORPORADORA LTDA\\Controladoria - Documentos\\amplaGitHub\\templates\\Template-DFC.xlsx"
 
-    # Definir larguras específicas das colunas para o mapa
-    largurasColunasMapa <- c(
+    # Definir larguras específicas das colunas para o resumo
+    largurasColunas <- c(
       "empresa" = 20,
       "banco" = 12,
       "conta" = 18,
@@ -251,20 +250,172 @@ e_extratos <- function(xlsx = FALSE) {
       "arquivo(s)" = 80
     )
 
-    # Usar gerar_xlsx() para criar a planilha com múltiplas abas
-    caminhoArquivo <- gerar_xlsx(
-      data = dadosExcel,
-      tab_names = c("ExtratosConsolidados", "MapaExtratos"),
-      col_width_def = 18,
-      col_width_spec = largurasColunasMapa,  # Aplicar apenas ao mapa
-      col_monetary = c("valor", "saldo", "soma.valor", "soma.valor.abs"),
-      col_clip = c("descricao", "arquivo(s)"),
-      save = list(nomeArquivo, stringr::str_c(caminhos_pastas("extratos"), "/Consolidados"))
+    # Criar caminho de destino completo
+    caminhoDestino <- stringr::str_c(caminhos_pastas("extratos"), "/Consolidados")
+    caminhoArquivo <- file.path(caminhoDestino, nomeArquivo)
+
+    # Criar diretório se não existir
+    dir.create(caminhoDestino, showWarnings = FALSE, recursive = TRUE)
+
+    # Copiar template para destino
+    file.copy(caminhoTemplate, caminhoArquivo, overwrite = TRUE)
+
+    # Carregar o workbook copiado
+    wb <- openxlsx::loadWorkbook(caminhoArquivo)
+
+    # Adicionar aba "Extratos"
+    openxlsx::addWorksheet(wb, "Extratos")
+    openxlsx::writeData(wb, sheet = "Extratos", x = extratosConsolidados)
+
+    # Formatação da aba Extratos
+    openxlsx::addStyle(
+      wb,
+      sheet = "Extratos",
+      style = openxlsx::createStyle(
+        border = "TopBottomLeftRight",
+        halign = "center",
+        valign = "center"
+      ),
+      rows = 1:(nrow(extratosConsolidados) + 1),
+      cols = seq_len(ncol(extratosConsolidados)),
+      gridExpand = TRUE
     )
 
-    message(sprintf("Arquivo Excel criado com 2 abas: %s", caminhoArquivo))
-    message("  - Aba 'ExtratosConsolidados': Dados consolidados de extratos CEF e ITAÚ")
-    message("  - Aba 'MapaExtratos': Mapa de combinações únicas")
+    # Cabeçalho da aba Extratos
+    openxlsx::addStyle(
+      wb,
+      sheet = "Extratos",
+      style = openxlsx::createStyle(
+        border = "TopBottomLeftRight",
+        fontSize = 11,
+        halign = "center",
+        valign = "center",
+        textDecoration = "bold",
+        fgFill = "darkgray",
+        wrapText = TRUE
+      ),
+      rows = 1,
+      cols = seq_len(ncol(extratosConsolidados)),
+      gridExpand = TRUE
+    )
+
+    # Adicionar filtro e congelar painel na aba Extratos
+    openxlsx::addFilter(wb, sheet = "Extratos", rows = 1, cols = seq_len(ncol(extratosConsolidados)))
+    openxlsx::freezePane(wb, sheet = "Extratos", firstRow = TRUE, firstActiveRow = 2)
+
+    # Largura das colunas na aba Extratos
+    openxlsx::setColWidths(wb, sheet = "Extratos", cols = seq_len(ncol(extratosConsolidados)), widths = 18)
+
+    # Adicionar aba "Resumo"
+    openxlsx::addWorksheet(wb, "Resumo")
+    openxlsx::writeData(wb, sheet = "Resumo", x = mapaExtratos)
+
+    # Formatação da aba Resumo
+    openxlsx::addStyle(
+      wb,
+      sheet = "Resumo",
+      style = openxlsx::createStyle(
+        border = "TopBottomLeftRight",
+        halign = "center",
+        valign = "center"
+      ),
+      rows = 1:(nrow(mapaExtratos) + 1),
+      cols = seq_len(ncol(mapaExtratos)),
+      gridExpand = TRUE
+    )
+
+    # Cabeçalho da aba Resumo
+    openxlsx::addStyle(
+      wb,
+      sheet = "Resumo",
+      style = openxlsx::createStyle(
+        border = "TopBottomLeftRight",
+        fontSize = 11,
+        halign = "center",
+        valign = "center",
+        textDecoration = "bold",
+        fgFill = "darkgray",
+        wrapText = TRUE
+      ),
+      rows = 1,
+      cols = seq_len(ncol(mapaExtratos)),
+      gridExpand = TRUE
+    )
+
+    # Adicionar filtro e congelar painel na aba Resumo
+    openxlsx::addFilter(wb, sheet = "Resumo", rows = 1, cols = seq_len(ncol(mapaExtratos)))
+    openxlsx::freezePane(wb, sheet = "Resumo", firstRow = TRUE, firstActiveRow = 2)
+
+    # Larguras específicas das colunas na aba Resumo
+    for (nome_coluna in names(largurasColunas)) {
+      if (nome_coluna %in% colnames(mapaExtratos)) {
+        col_pos <- which(colnames(mapaExtratos) == nome_coluna)
+        openxlsx::setColWidths(wb, sheet = "Resumo", cols = col_pos, widths = largurasColunas[nome_coluna])
+      }
+    }
+
+    # Formatação monetária na aba Resumo
+    colunas_monetarias_resumo <- which(colnames(mapaExtratos) %in% c("soma.valor", "soma.valor.abs"))
+    if (length(colunas_monetarias_resumo) > 0) {
+      openxlsx::addStyle(
+        wb,
+        sheet = "Resumo",
+        style = openxlsx::createStyle(numFmt = "#,##0.00"),
+        rows = 2:(nrow(mapaExtratos) + 1),
+        cols = colunas_monetarias_resumo,
+        gridExpand = TRUE,
+        stack = TRUE
+      )
+    }
+
+    # Formatação de texto com quebra na aba Resumo
+    colunas_texto_resumo <- which(colnames(mapaExtratos) %in% c("arquivo(s)"))
+    if (length(colunas_texto_resumo) > 0) {
+      openxlsx::addStyle(
+        wb,
+        sheet = "Resumo",
+        style = openxlsx::createStyle(
+          border = "TopBottomLeftRight",
+          halign = "left",
+          valign = "top",
+          wrapText = TRUE
+        ),
+        rows = 2:(nrow(mapaExtratos) + 1),
+        cols = colunas_texto_resumo,
+        gridExpand = TRUE,
+        stack = TRUE
+      )
+    }
+
+    # Obter descrições únicas em ordem alfabética
+    descricoesUnicas <- sort(unique(extratosConsolidados$descricao[!is.na(extratosConsolidados$descricao)]))
+
+    # Verificar se a aba "Mapeamento" existe
+    if ("Mapeamento" %in% names(wb)) {
+      # Escrever as descrições na coluna D a partir da linha 3
+      if (length(descricoesUnicas) > 0) {
+        openxlsx::writeData(
+          wb,
+          sheet = "Mapeamento",
+          x = descricoesUnicas, # Escrever diretamente o vetor
+          startCol = 4, # Coluna D
+          startRow = 3,
+          colNames = FALSE
+        )
+
+        message(sprintf("Adicionadas %d descrições únicas na aba 'Mapeamento'", length(descricoesUnicas)))
+      }
+    } else {
+      message("Aba 'Mapeamento' não encontrada no template")
+    }
+
+    # Salvar as alterações
+    openxlsx::saveWorkbook(wb, caminhoArquivo, overwrite = TRUE)
+
+    message(sprintf("Arquivo Excel criado com template: %s", caminhoArquivo))
+    message("  - Aba 'Extratos': Dados consolidados de extratos CEF e ITAÚ")
+    message("  - Aba 'Resumo': Mapa de combinações únicas")
+    message("  - Aba 'Mapeamento': Descrições únicas populadas")
 
     # Mostrar estatísticas
     if (nrow(mapaExtratos) > 0) {
