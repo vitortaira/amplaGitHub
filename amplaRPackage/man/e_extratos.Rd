@@ -4,13 +4,21 @@
 \alias{e_extratos}
 \title{Extrai e consolida dados de extratos CEF e ITAÚ}
 \usage{
-e_extratos()
+e_extratos(xlsx = FALSE)
+}
+\arguments{
+\item{xlsx}{Lógico. Se TRUE, cria um arquivo Excel com o mapa de extratos.
+Padrão: FALSE.}
 }
 \value{
-Um tibble com dados consolidados de extratos CEF e ITAÚ, contendo
-colunas padronizadas para análise temporal e financeira.
+Uma lista contendo:
+\itemize{
+\item extratosConsolidados: tibble com dados consolidados de extratos
+\item mapaExtratos: tibble com combinações únicas de (empresa, banco, conta, descricao)
+}
 }
 \description{
 Função para extrair e consolidar dados de extratos bancários CEF e ITAÚ,
-combinando-os em um único tibble padronizado.
+combinando-os em um único tibble padronizado. Opcionalmente pode gerar
+um mapa de combinações únicas e criar uma planilha Excel.
 }
