@@ -61,7 +61,7 @@ e_ik_emps <- function(
   # Verifica se as colunas esperadas existem e faz o mapeamento
   # Ajuste os nomes das colunas conforme a estrutura real do arquivo
   colunas_mapeamento <- list(
-    "codigo.empresa" = c("Filial", "Código", "codigo", "cod", "Code", "Id"),
+    "codigo.filial" = c("Filial", "Código", "codigo", "cod", "Code", "Id"),
     "nome.filial" = c("Nome da Filial", "Nome", "Razão Social", "razao_social", "empresa", "Name"),
     "cnpj" = c("CNPJ", "cnpj", "documento", "Document"),
     "cidade" = c("Cidade", "cidade", "City"),
@@ -89,8 +89,8 @@ e_ik_emps <- function(
   empresas_df <- empresas_raw %>%
     dplyr::mutate(
       # Cria colunas padronizadas usando as encontradas ou NA
-      codigo.empresa = if (!is.na(colunas_encontradas$codigo.empresa)) {
-        as.character(.data[[colunas_encontradas$codigo.empresa]])
+      codigo.filial = if (!is.na(colunas_encontradas$codigo.filial)) {
+        as.character(.data[[colunas_encontradas$codigo.filial]])
       } else {
         rep(NA_character_, dplyr::n())
       },
@@ -140,10 +140,10 @@ e_ik_emps <- function(
       arquivo.tipo = "emps",
       arquivo.fonte = "ik"
     ) %>%
-    # Remove row if codigo.empresa is exactly "Filial" (header row)
-    dplyr::filter(.data$codigo.empresa != "Filial" | is.na(.data$codigo.empresa)) %>%
+    # Remove row if codigo.filial is exactly "Filial" (header row)
+    dplyr::filter(.data$codigo.filial != "Filial" | is.na(.data$codigo.filial)) %>%
     dplyr::select(
-      "codigo.empresa", "nome.filial", "cnpj", "cidade", "pais", "uf",
+      "codigo.filial", "nome.filial", "cnpj", "cidade", "pais", "uf",
       "municipio", "empresa", "razao.social.empresa",
       "arquivo", "arquivo.tabela.tipo", "arquivo.tipo", "arquivo.fonte"
     )

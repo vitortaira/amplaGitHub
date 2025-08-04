@@ -121,7 +121,11 @@ e_ik_cnts <- function(f_caminho.pasta.ik_c = caminhos_pastas("informakon")) {
     dplyr::mutate(
       # Padronizar dados
       limite.credito = as.numeric(limite.credito),
-      inativo = as.logical(inativo),
+      inativo = case_when(
+        toupper(as.character(inativo)) == "S" ~ TRUE,
+        toupper(as.character(inativo)) == "N" ~ FALSE,
+        TRUE ~ NA
+      ),
       praca = as.logical(praca),
       cartao.credito = as.logical(cartao.credito),
       # Adicionar colunas para saldos (não disponíveis neste tipo de arquivo)

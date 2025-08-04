@@ -72,8 +72,8 @@ e_ik_empr <- function(
   )
 
   # Remover colunas vazias ou sem nome útil
-  colunas_validas <- !stringr::str_detect(names(empreendimentos_raw), "^\\.\\.\\.\\d+$") & 
-                     !names(empreendimentos_raw) %in% c("", NA)
+  colunas_validas <- !stringr::str_detect(names(empreendimentos_raw), "^\\.\\.\\.\\d+$") &
+    !names(empreendimentos_raw) %in% c("", NA)
   empreendimentos_raw <- empreendimentos_raw[, colunas_validas, drop = FALSE]
 
   # Mostra as colunas disponíveis no arquivo para debug
