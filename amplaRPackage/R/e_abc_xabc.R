@@ -53,7 +53,7 @@ e_abc_xabc <- function(f_caminho.arquivo_c) {
   xabc.original_t <- suppressMessages(readxl::read_excel(
     f_caminho.arquivo_c
   )) %>%
-    set_names(str_c("_", 1:ncol(.))) %>%
+    magrittr::set_names(str_c("_", seq_len(ncol(.)))) %>%
     mutate(across(everything(), ~ str_squish(as.character(.))))
   # Metadados
   cnpj_c <- xabc.original_t %>%
@@ -101,7 +101,7 @@ e_abc_xabc <- function(f_caminho.arquivo_c) {
     last()
   xabc_t <- xabc.original_t %>%
     slice(indice.dados.comeco_i:indice.dados.fim_i) %>%
-    dplyr::set_names(c(
+    magrittr::set_names(c(
       "data", "documento", "descricao", "operacao", "valor", "saldo"
     )) %>%
     mutate(
