@@ -133,14 +133,14 @@ r_empresas <- function(f_caminho.pasta.ik_c = caminhos_pastas("informakon")) {
   message(sprintf("Consolidação concluída:"))
   message(sprintf("  Total de registros: %d", total_registros))
   message(sprintf("  Com dados de ambas as fontes: %d", registros_ambos))
-  message(sprintf("  Apenas dados de empresa: %d", registros_apenas_empresa))
+  message(sprintf("  Apenas dados da filial: %d", registros_apenas_empresa))
   message(sprintf("  Apenas dados de empreendimento: %d", registros_apenas_empr)) # Alerta sobre registros órfãos
   if (registros_apenas_empresa > 0) {
-    message(sprintf("⚠️  %d empresas sem empreendimentos associados", registros_apenas_empresa))
+    message(sprintf("⚠️  %d filiais sem empreendimentos associados", registros_apenas_empresa))
   }
 
   if (registros_apenas_empr > 0) {
-    message(sprintf("⚠️  %d empreendimentos sem dados da empresa", registros_apenas_empr))
+    message(sprintf("⚠️  %d empreendimentos sem dados da filial", registros_apenas_empr))
   }
 
   return(dados_consolidados)
