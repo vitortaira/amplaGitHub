@@ -4,7 +4,7 @@ e_viab <- function() {
       e_metadados("viab")$caminho[1],
       sheet = "Demonstrativo Eco-Finc"
     ) %>%
-      set_names(str_c("_", 1:ncol(.))) %>%
+      magrittr::set_names(str_c("_", seq_len(ncol(.)))) %>%
       mutate(across(everything(), ~ str_squish(as.character(.))))
   ))
   vgv_n <- viab.def.original_t %>%

@@ -52,6 +52,25 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
       )
   }
 
+  c_xabc <- function() {
+    dir_ls(caminhos_pastas("extratos"), recurse = TRUE, type = "file") %>%
+      keep(
+        ~ str_detect(.x, "(?i)abc") & str_ends(.x, "\\.xlsx")
+      ) %>%
+      as_tibble_col("caminho") %>%
+      mutate(
+        arquivo.tabela.tipo = "xabc",
+        arquivo.tipo = "xabc",
+        arquivo.fonte = "abc",
+        empresa = str_extract(.data$caminho, "(?<=/)[A-Z0-9]{3}(?=/)") %>%
+          str_extract("[A-Z]{3}"),
+        data = .data$caminho %>%
+          str_extract("\\d{4}_\\d{2}") %>%
+          str_c("_01") %>%
+          as.Date(format = "%Y_%m_%d")
+      )
+  }
+
   c_xcef <- function() {
     dir_ls(caminhos_pastas("extratos"), recurse = TRUE, type = "file") %>%
       keep(
@@ -139,7 +158,9 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
       )
   }
 
-  arquivo.tipos.permitidos_c <- c("contr", "inad", "viab", "xcef", "xita")
+  arquivo.tipos.permitidos_c <- c(
+    "contr", "inad", "viab", "xabc", "xcef", "xita"
+  )
 
   if (!is.null(f_arquivo.tipo_c)) {
     if (!f_arquivo.tipo_c %in% arquivo.tipos.permitidos_c) {
@@ -157,6 +178,7 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
         "contr" = c_contr(),
         "inad" = c_inad(),
         "viab" = c_viab(),
+        "xabc" = c_xabc(),
         "xcef" = c_xcef(),
         "xita" = c_xita()
       )
@@ -168,6 +190,7 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
     c_contr(),
     c_inad(),
     c_viab(),
+    c_xabc(),
     c_xcef(),
     c_xita()
   )
