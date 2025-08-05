@@ -65,7 +65,7 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
   paginas_l <- ler_pdf(f_caminho.arquivo_c)$paginas
   linhas_c <- ler_pdf(f_caminho.arquivo_c)$linhas
   # Identificar o tipo do xcef
-  tipo_c <- c_cef_xcef(f_caminho.arquivo_c, linhas_c)
+  tipo_c <- c_cef_xcef(f_caminho.arquivo_c)
   if (tipo_c == "xcef1") {
     message(sprintf("Formato pendente para o arquivo: %s", f_caminho.arquivo_c))
     palavras_t <-

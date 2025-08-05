@@ -4,25 +4,16 @@
 #' based on its content.
 #'
 #' @param f_caminho.arquivo_c Character string. The file path of the PDF.
-#' @param linhas_c Character vector. Lines of text extracted from the PDF.
 #'
 #' @return Character string. The classified type of the CEF bank statement
 #'   (e.g., "xcef1", "xcef2", "xcef3", "xcef4", "xcef5", "xcef6", or "desconhecido").
 #' @export
 #' @examples
 #' # This is an internal function, but an example would look like:
-#' # fake_lines <- c(
-#' #   "Cliente: EMPRESA XYZ",
-#' #   "Conta: 1234 | 001 | 00001234-5",
-#' #   "Data: 01/01/2023 - 10:00",
-#' #   "Mês: Janeiro/2023",
-#' #   "Período: 1 - 31",
-#' #   "Data Mov. Nr. Doc. Histórico Valor Saldo",
-#' #   "01/01/2023 001 PGTO FORNECEDOR 100,00 D 900,00 C",
-#' #   "SAC CAIXA: 0800 726 0101"
-#' # )
-#' # c_cef_xcef("caminho/para/arquivo.pdf", fake_lines)
-c_cef_xcef <- function(f_caminho.arquivo_c, linhas_c) {
+#' # c_cef_xcef("caminho/para/arquivo.pdf")
+c_cef_xcef <- function(f_caminho.arquivo_c) {
+  # Extract lines from PDF
+  linhas_c <- ler_pdf(f_caminho.arquivo_c)$linhas
   case_when(
     # Extensão do arquivo deve ser ".pdf"
     stringr::str_detect(f_caminho.arquivo_c, "(?i)\\.pdf$") &
