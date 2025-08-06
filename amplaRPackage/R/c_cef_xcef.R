@@ -6,179 +6,197 @@
 #' @param f_caminho.arquivo_c Character string. The file path of the PDF.
 #'
 #' @return Character string. The classified type of the CEF bank statement
-#'   (e.g., "xcef1", "xcef2", "xcef3", "xcef4", "xcef5", "xcef6", or "desconhecido").
+#'   (e.g., "xcef1", "xcef3", "xcef4", "xcef5", "xcef6", "xcef7", or "desconhecido").
 #' @export
 #' @examples
 #' # This is an internal function, but an example would look like:
 #' # c_cef_xcef("caminho/para/arquivo.pdf")
 c_cef_xcef <- function(f_caminho.arquivo_c) {
-  # Extract lines from PDF
-  linhas_c <- ler_pdf(f_caminho.arquivo_c)$linhas
-  case_when(
-    # Extensão do arquivo deve ser ".pdf"
-    stringr::str_detect(f_caminho.arquivo_c, "(?i)\\.pdf$") &
+  # Se o arquivo for em PDF
+  if (fs::file_ext(f_caminho.arquivo_c) == "pdf") {
+    linhas_c <- ler_pdf(f_caminho.arquivo_c)$linhas
+    case_when(
       # Cabeçalho "Data processamento", "Valor (R$)", "Saldo (R$)"
       any(stringr::str_detect(
         linhas_c,
         "(?i)data\\s?processamento\\s?valor\\s?\\(R\\$\\)\\s?saldo\\s?\\(R\\$\\)"
       )) &
-      # A variável "empresa" deve existir
-      str_detect(linhas_c[1], "^([\\w\\s]+)") &
-      # A variável "data.consulta" deve existir
-      str_detect(
-        linhas_c[1],
-        "\\d{2}/\\d{2}/\\d{4}\\s?\\d{2}\\:\\d{2}\\:\\d{2}$"
-      ) &
-      # A variável "cnpj" deve existir
-      any(str_detect(
-        linhas_c,
-        "^(?i)cnpj\\:\\s?\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}"
-      )) &
-      # A variável "agencia" deve existir
-      any(str_detect(linhas_c, "^(?i)ag[eê]ncia\\:\\s?\\d{5}")) &
-      # A variável "conta" deve existir
-      any(str_detect(linhas_c, "(?i)conta\\:\\s?\\d{12}-\\d{1}")) &
-      # As variáveis "periodo.inicio" e "periodo.fim" devem existir
-      any(str_detect(
-        linhas_c,
-        "^(?i)extrato\\s?no\\s?per[ií]odo\\s?de\\s?\\d{2}/\\d{2}/\\d{4}\\s?[aà]\\s?\\d{2}/\\d{2}/\\d{4}$"
-      )) &
-      # Deve haver uma linha que começa com "SAC CAIXA"
-      any(str_detect(linhas_c, "^(?i)sac\\s?caixa"))
-    ~ "xcef1",
-    # Extensão do arquivo deve ser ".pdf"
-    stringr::str_detect(f_caminho.arquivo_c, "(?i)\\.pdf$") &
+        # A variável "empresa" deve existir
+        str_detect(linhas_c[1], "^([\\w\\s]+)") &
+        # A variável "data.consulta" deve existir
+        str_detect(
+          linhas_c[1],
+          "\\d{2}/\\d{2}/\\d{4}\\s?\\d{2}\\:\\d{2}\\:\\d{2}$"
+        ) &
+        # A variável "cnpj" deve existir
+        any(str_detect(
+          linhas_c,
+          "^(?i)cnpj\\:\\s?\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}"
+        )) &
+        # A variável "agencia" deve existir
+        any(str_detect(linhas_c, "^(?i)ag[eê]ncia\\:\\s?\\d{5}")) &
+        # A variável "conta" deve existir
+        any(str_detect(linhas_c, "(?i)conta\\:\\s?\\d{12}-\\d{1}")) &
+        # As variáveis "periodo.inicio" e "periodo.fim" devem existir
+        any(str_detect(
+          linhas_c,
+          "^(?i)extrato\\s?no\\s?per[ií]odo\\s?de\\s?\\d{2}/\\d{2}/\\d{4}\\s?[aà]\\s?\\d{2}/\\d{2}/\\d{4}$"
+        )) &
+        # Deve haver uma linha que começa com "SAC CAIXA"
+        any(str_detect(linhas_c, "^(?i)sac\\s?caixa"))
+      ~ "xcef1",
       # Cabeçalho "Data de lançamento", "Data de movimento", "Documento",
       # "Histórico", "Valor(R$)", "Saldo(R$)"
       any(stringr::str_detect(linhas_c, "(?i)lan[cç]amento|movimento")) &
-      any(stringr::str_detect(
-        linhas_c,
-        "(?i)documento\\s?hist[oó]rico\\s?valor\\s?\\(R\\$\\)\\s?saldo\\s?\\(R\\$\\)"
-      )) &
-      # A variável "empresa" deve existir
-      str_detect(linhas_c[1], "^([\\w\\s]+)") &
-      # A variável "data.consulta" deve existir
-      any(str_ends(
-        linhas_c,
-        "\\d{2}/\\d{2}/\\d{4}\\s?\\d{2}\\:\\d{2}\\:\\d{2}"
-      )) &
-      # A variável "cnpj" deve existir
-      any(str_detect(
-        linhas_c,
-        "^(?i)cnpj\\:\\s?\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}"
-      )) &
-      # A variável "agencia" deve existir
-      any(str_detect(linhas_c, "^(?i)ag[eê]ncia\\:\\s?\\d{5}")) &
-      # A variável "conta" deve existir
-      any(str_detect(linhas_c, "(?i)conta\\:\\s?\\d{12}-\\d{1}")) &
-      # As variáveis "periodo.inicio" e "periodo.fim" devem existir
-      any(str_ends(
-        linhas_c,
-        "(?i)lan[cç]amentos\\s?de\\s?\\d{2}/\\d{2}/\\d{4}\\s?[aà]\\s?\\d{2}/\\d{2}/\\d{4}"
-      )) &
-      # Deve haver uma linha que começa com "SAC CAIXA"
-      any(str_starts(linhas_c, "(?i)sac\\s?caixa"))
-    ~ "xcef2",
-    # Extensão do arquivo deve ser ".pdf"
-    stringr::str_detect(f_caminho.arquivo_c, "(?i)\\.pdf$") &
+        any(stringr::str_detect(
+          linhas_c,
+          "(?i)documento\\s?hist[oó]rico\\s?valor\\s?\\(R\\$\\)\\s?saldo\\s?\\(R\\$\\)"
+        )) &
+        # A variável "empresa" deve existir
+        str_detect(linhas_c[1], "^([\\w\\s]+)") &
+        # A variável "data.consulta" deve existir
+        any(str_ends(
+          linhas_c,
+          "\\d{2}/\\d{2}/\\d{4}\\s?\\d{2}\\:\\d{2}\\:\\d{2}"
+        )) &
+        # A variável "cnpj" deve existir
+        any(str_detect(
+          linhas_c,
+          "^(?i)cnpj\\:\\s?\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}"
+        )) &
+        # A variável "agencia" deve existir
+        any(str_detect(linhas_c, "^(?i)ag[eê]ncia\\:\\s?\\d{5}")) &
+        # A variável "conta" deve existir
+        any(str_detect(linhas_c, "(?i)conta\\:\\s?\\d{12}-\\d{1}")) &
+        # As variáveis "periodo.inicio" e "periodo.fim" devem existir
+        any(str_ends(
+          linhas_c,
+          "(?i)lan[cç]amentos\\s?de\\s?\\d{2}/\\d{2}/\\d{4}\\s?[aà]\\s?\\d{2}/\\d{2}/\\d{4}"
+        )) &
+        # Deve haver uma linha que começa com "SAC CAIXA"
+        any(str_starts(linhas_c, "(?i)sac\\s?caixa"))
+      ~ "xcef3",
       # Cabeçalho "Data Mov.", "Nr. Doc.", "Histórico", "Valor", "Saldo"
       any(stringr::str_detect(
         linhas_c,
         "(?i)data\\s?mov\\.\\s?nr\\.\\s?doc\\.\\s?hist[oó]rico\\s?valor\\s?saldo"
       )) &
-      # A variável "cliente" deve existir
-      any(str_starts(linhas_c, "(?i)cliente\\:\\s?([\\w\\s]+)")) &
-      # As variáveis "agencia", "produto" e "conta" devem existir
-      any(str_starts(
-        linhas_c,
-        "(?i)conta\\:\\s?\\d+\\s?\\|\\s?\\d+\\s?\\|\\s?\\d+-\\d{1}"
-      )) &
-      # A variável "data.consulta" deve existir
-      any(str_starts(
-        linhas_c,
-        "(?i)data\\:\\s?\\d{2}/\\d{2}/\\d{4}\\s?-\\s?\\d{2}\\:\\d{2}"
-      )) &
-      # As variáveis "periodo.inicio" e "periodo.fim" devem existir
-      any(str_detect(linhas_c, "(?i)m[eê]s\\:\\s?\\w+/\\s?\\d{4}")) &
-      any(str_detect(linhas_c, "(?i)per[ií]odo\\:\\s?\\d+\\s?-\\s?\\d+")) &
-      # Deve haver uma linha que começa com "SAC CAIXA"
-      any(str_starts(linhas_c, "(?i)sac\\s?caixa")) &
-      # Deve haver headers e footers
-      any(str_detect(
-        linhas_c,
-        "^(?i)\\d{2}/\\d{2}/\\d{4}\\,\\s?\\d{2}\\:\\d{2}|^https|^file\\:|(?i)caixa$"
-      ))
-    ~ "xcef4",
-    # Extensão do arquivo deve ser ".pdf"
-    stringr::str_detect(f_caminho.arquivo_c, "(?i)\\.pdf$") &
+        # A variável "cliente" deve existir
+        any(str_starts(linhas_c, "(?i)cliente\\:\\s?([\\w\\s]+)")) &
+        # As variáveis "agencia", "produto" e "conta" devem existir
+        any(str_starts(
+          linhas_c,
+          "(?i)conta\\:\\s?\\d+\\s?\\|\\s?\\d+\\s?\\|\\s?\\d+-\\d{1}"
+        )) &
+        # A variável "data.consulta" deve existir
+        any(str_starts(
+          linhas_c,
+          "(?i)data\\:\\s?\\d{2}/\\d{2}/\\d{4}\\s?-\\s?\\d{2}\\:\\d{2}"
+        )) &
+        # As variáveis "periodo.inicio" e "periodo.fim" devem existir
+        any(str_detect(linhas_c, "(?i)m[eê]s\\:\\s?\\w+/\\s?\\d{4}")) &
+        any(str_detect(linhas_c, "(?i)per[ií]odo\\:\\s?\\d+\\s?-\\s?\\d+")) &
+        # Deve haver uma linha que começa com "SAC CAIXA"
+        any(str_starts(linhas_c, "(?i)sac\\s?caixa")) &
+        # Deve haver headers e footers
+        any(str_detect(
+          linhas_c,
+          "^(?i)\\d{2}/\\d{2}/\\d{4}\\,\\s?\\d{2}\\:\\d{2}|^https|^file\\:|(?i)caixa$"
+        ))
+      ~ "xcef5",
       # Cabeçalho "Data Mov.", "Nr. Doc.", "Histórico", "Valor", "Saldo"
       any(stringr::str_detect(
         linhas_c,
         "(?i)data\\s?mov\\.\\s?nr\\.\\s?doc\\.\\s?hist[oó]rico\\s?valor\\s?saldo"
       )) &
-      # A variável "empresa" deve existir
-      any(str_starts(linhas_c, "(?i)cliente\\:\\s?([\\w\\s]+)")) &
-      # As variáveis "agencia", "produto" e "conta" devem existir
-      any(str_starts(
-        linhas_c,
-        "(?i)conta\\:\\s?\\d+\\s?\\|\\s?\\d+\\s?\\|\\s?\\d+-\\d{1}"
-      )) &
-      # A variável "data.consulta" deve existir
-      any(str_starts(
-        linhas_c,
-        "(?i)data\\:\\s?\\d{2}/\\d{2}/\\d{4}\\s?-\\s?\\d{2}\\:\\d{2}"
-      )) &
-      # As variáveis "periodo.inicio" e "periodo.fim" devem existir
-      any(str_detect(linhas_c, "(?i)m[eê]s\\:\\s?\\w+/\\s?\\d{4}")) &
-      any(str_detect(linhas_c, "(?i)per[ií]odo\\:\\s?\\d+\\s?-\\s?\\d+")) &
-      # Deve haver uma linha que começa com "SAC CAIXA"
-      any(str_starts(linhas_c, "(?i)sac\\s?caixa"))
-    ~ "xcef3",
-    # Extensão do arquivo deve ser ".pdf"
-    stringr::str_detect(f_caminho.arquivo_c, "(?i)\\.pdf$") &
+        # A variável "empresa" deve existir
+        any(str_starts(linhas_c, "(?i)cliente\\:\\s?([\\w\\s]+)")) &
+        # As variáveis "agencia", "produto" e "conta" devem existir
+        any(str_starts(
+          linhas_c,
+          "(?i)conta\\:\\s?\\d+\\s?\\|\\s?\\d+\\s?\\|\\s?\\d+-\\d{1}"
+        )) &
+        # A variável "data.consulta" deve existir
+        any(str_starts(
+          linhas_c,
+          "(?i)data\\:\\s?\\d{2}/\\d{2}/\\d{4}\\s?-\\s?\\d{2}\\:\\d{2}"
+        )) &
+        # As variáveis "periodo.inicio" e "periodo.fim" devem existir
+        any(str_detect(linhas_c, "(?i)m[eê]s\\:\\s?\\w+/\\s?\\d{4}")) &
+        any(str_detect(linhas_c, "(?i)per[ií]odo\\:\\s?\\d+\\s?-\\s?\\d+")) &
+        # Deve haver uma linha que começa com "SAC CAIXA"
+        any(str_starts(linhas_c, "(?i)sac\\s?caixa"))
+      ~ "xcef4",
       # Cabeçalho "Data Mov.", "Nr. Doc.", "Histórico", "Valor", "Saldo"
       any(stringr::str_detect(
         linhas_c,
         "(?i)data\\s?mov\\.\\s?nr\\.\\s?doc\\.\\s?hist[oó]rico\\s?valor\\s?saldo"
       )) &
-      # A variável "empresa" deve existir
-      any(str_starts(linhas_c, "(?i)cliente\\:\\s?([\\w\\s]+)")) &
-      # As variáveis "agencia", "produto" e "conta" devem existir
-      any(str_starts(
-        linhas_c,
-        "(?i)conta\\:\\s?\\d+\\s?\\|\\s?\\d+\\s?\\|\\s?\\d+-\\d{1}"
-      )) &
-      # A variável "data.consulta" não deve existir
-      any(!str_starts(linhas_c, "(?i)data\\:")) &
-      # As variáveis "periodo.inicio" e "periodo.fim" devem existir
-      any(str_detect(linhas_c, "(?i)m[eê]s\\:\\s?\\w+/\\s?\\d{4}")) &
-      any(str_detect(linhas_c, "(?i)per[ií]odo\\:\\s?\\d+\\s?-\\s?\\d+")) &
-      # Deve haver uma linha que começa com "SAC CAIXA"
-      any(str_starts(linhas_c, "(?i)sac\\s?caixa"))
-    ~ "xcef5",
-    # Extensão do arquivo deve ser ".pdf"
-    str_detect(f_caminho.arquivo_c, "(?i)\\.pdf$") &
+        # A variável "empresa" deve existir
+        any(str_starts(linhas_c, "(?i)cliente\\:\\s?([\\w\\s]+)")) &
+        # As variáveis "agencia", "produto" e "conta" devem existir
+        any(str_starts(
+          linhas_c,
+          "(?i)conta\\:\\s?\\d+\\s?\\|\\s?\\d+\\s?\\|\\s?\\d+-\\d{1}"
+        )) &
+        # A variável "data.consulta" não deve existir
+        any(!str_starts(linhas_c, "(?i)data\\:")) &
+        # As variáveis "periodo.inicio" e "periodo.fim" devem existir
+        any(str_detect(linhas_c, "(?i)m[eê]s\\:\\s?\\w+/\\s?\\d{4}")) &
+        any(str_detect(linhas_c, "(?i)per[ií]odo\\:\\s?\\d+\\s?-\\s?\\d+")) &
+        # Deve haver uma linha que começa com "SAC CAIXA"
+        any(str_starts(linhas_c, "(?i)sac\\s?caixa"))
+      ~ "xcef6",
       # Cabeçalho "Movimentação de dados", "Doutor.", "Histórico", "Valor",
       # "Equilíbrio"
       any(stringr::str_detect(
         linhas_c,
         "(?i)doutor\\.\\s?hist[oó]rico\\s?valor\\s?equilíbrio"
       )) &
-      # A variável "empresa" deve existir
-      any(str_starts(linhas_c, "(?i)cliente\\:\\s?([\\w\\s]+)")) &
-      # As variáveis "agencia", "produto" e "conta" devem existir
-      any(str_starts(
-        linhas_c,
-        "(?i)conta.?\\:\\s?\\d+\\s?\\|\\s?\\d+\\s?\\|\\s?\\d+-\\d"
-      )) &
-      # A variável "data.consulta" não deve existir
-      any(!str_starts(linhas_c, "(?i)data\\:")) &
-      # As variáveis "periodo.inicio" e "periodo.fim" devem existir
-      any(str_detect(linhas_c, "(?i)m[eê]s\\:\\s?\\w+\\s?/\\s?\\d{4}")) &
-      any(str_detect(linhas_c, "(?i)per[ií]odo\\:\\s?\\d+\\s?-\\s?\\d+")) &
-      # Deve haver uma linha que começa com "SAC CAIXA"
-      any(str_starts(linhas_c, "(?i)sac\\s?caixa"))
-    ~ "xcef6",
-    TRUE ~ "desconhecido"
-  )
+        # A variável "empresa" deve existir
+        any(str_starts(linhas_c, "(?i)cliente\\:\\s?([\\w\\s]+)")) &
+        # As variáveis "agencia", "produto" e "conta" devem existir
+        any(str_starts(
+          linhas_c,
+          "(?i)conta.?\\:\\s?\\d+\\s?\\|\\s?\\d+\\s?\\|\\s?\\d+-\\d"
+        )) &
+        # A variável "data.consulta" não deve existir
+        any(!str_starts(linhas_c, "(?i)data\\:")) &
+        # As variáveis "periodo.inicio" e "periodo.fim" devem existir
+        any(str_detect(linhas_c, "(?i)m[eê]s\\:\\s?\\w+\\s?/\\s?\\d{4}")) &
+        any(str_detect(linhas_c, "(?i)per[ií]odo\\:\\s?\\d+\\s?-\\s?\\d+")) &
+        # Deve haver uma linha que começa com "SAC CAIXA"
+        any(str_starts(linhas_c, "(?i)sac\\s?caixa"))
+      ~ "xcef7",
+      TRUE ~ NA_character_
+    )
+  } else if (fs::file_ext(f_caminho.arquivo_c) == "xlsx") {
+    tabela_t <- suppressMessages(
+      readxl::read_excel(f_caminho.arquivo_c, col_names = FALSE)
+    )
+    case_when(
+      # Quantidade de colunas
+      ncol(tabela_t) == 6 &
+        # Cabeçalho "Data Mov.", "Nr. Doc.", "Histórico", "Valor", "Saldo"
+        any(str_detect(pull(tabela_t, 1), "(?i)data mov\\.?")) &
+        any(str_detect(pull(tabela_t, 3), "(?i)nr\\.?\\s?doc\\.")) &
+        any(str_detect(pull(tabela_t, 4), "(?i)hist[oó]rico")) &
+        any(str_detect(pull(tabela_t, 5), "(?i)valor")) &
+        any(str_detect(pull(tabela_t, 6), "(?i)saldo")) &
+        # Verificar existência dos dados fora da tabela
+        any(str_starts(pull(tabela_t, 1), "(?i)cliente")) &
+        any(str_starts(pull(tabela_t, 1), "(?i)conta")) &
+        any(str_starts(pull(tabela_t, 1), "(?i)data")) &
+        any(str_starts(pull(tabela_t, 1), "(?i)m[eê]s")) &
+        any(str_starts(pull(tabela_t, 1), "(?i)per[ií]odo")) &
+        # Verificar existência do título
+        any(str_starts(pull(tabela_t, 1), "(?i)extrato\\s?por\\s?per[ií]odo")) &
+        # Verificar existência de footer
+        any(str_starts(pull(tabela_t, 1), "(?i)sac\\s?caixa"))
+      ~ "xcef8",
+      TRUE ~ NA_character_
+    )
+  } else {
+    NA_character_
+  }
 }

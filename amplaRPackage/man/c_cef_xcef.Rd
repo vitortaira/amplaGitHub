@@ -11,7 +11,7 @@ c_cef_xcef(f_caminho.arquivo_c)
 }
 \value{
 Character string. The classified type of the CEF bank statement
-(e.g., "xcef1", "xcef2", "xcef3", "xcef4", "xcef5", "xcef6", or "desconhecido").
+(e.g., "xcef1", "xcef3", "xcef4", "xcef5", "xcef6", "xcef7", or "desconhecido").
 }
 \description{
 Determines the type of a CEF (Caixa Econômica Federal) bank statement PDF

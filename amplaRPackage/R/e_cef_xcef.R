@@ -53,11 +53,11 @@
 
 caminhos.teste_c <- c(
   str_c(caminhos_pastas("testthat"), "/data/xcef1.pdf"),
-  str_c(caminhos_pastas("testthat"), "/data/xcef2.pdf"),
   str_c(caminhos_pastas("testthat"), "/data/xcef3.pdf"),
   str_c(caminhos_pastas("testthat"), "/data/xcef4.pdf"),
   str_c(caminhos_pastas("testthat"), "/data/xcef5.pdf"),
-  str_c(caminhos_pastas("testthat"), "/data/xcef6.pdf")
+  str_c(caminhos_pastas("testthat"), "/data/xcef6.pdf"),
+  str_c(caminhos_pastas("testthat"), "/data/xcef7.pdf")
 )
 
 e_cef_xcef <- function(f_caminho.arquivo_c) {
@@ -110,7 +110,7 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
         "about\\:|\\d{2}/\\d{2}/\\d{4}\\,\\s?\\d{2}\\:\\d{2}|\\d{2}/\\d{2}/\\d{4}$"
       ))
   }
-  if (tipo_c == "xcef2") {
+  if (tipo_c == "xcef3") {
     linhas_c %<>% keep(function(x) {
       !str_starts(x, "Data de lançamento")
     })
@@ -224,7 +224,7 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
       )
     return(extrato_t)
   }
-  if (tipo_c %in% c("xcef3", "xcef4", "xcef5", "xcef6")) {
+  if (tipo_c %in% c("xcef4", "xcef5", "xcef6", "xcef7")) {
     # Metadados
     cliente_c <- linhas_c %>%
       keep(function(x) {
