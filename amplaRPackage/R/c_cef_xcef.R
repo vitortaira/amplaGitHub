@@ -13,7 +13,7 @@
 #' # c_cef_xcef("caminho/para/arquivo.pdf")
 c_cef_xcef <- function(f_caminho.arquivo_c) {
   # Se o arquivo for em PDF
-  if (fs::file_ext(f_caminho.arquivo_c) == "pdf") {
+  if (fs::path_ext(f_caminho.arquivo_c) == "pdf") {
     linhas_c <- ler_pdf(f_caminho.arquivo_c)$linhas
     case_when(
       # Cabeçalho "Data processamento", "Valor (R$)", "Saldo (R$)"
@@ -170,7 +170,7 @@ c_cef_xcef <- function(f_caminho.arquivo_c) {
       ~ "xcef7",
       TRUE ~ NA_character_
     )
-  } else if (fs::file_ext(f_caminho.arquivo_c) == "xlsx") {
+  } else if (fs::path_ext(f_caminho.arquivo_c) == "xlsx") {
     tabela_t <- suppressMessages(
       readxl::read_excel(f_caminho.arquivo_c, col_names = FALSE)
     )
