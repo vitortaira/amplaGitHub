@@ -1,8 +1,8 @@
-#' Extrai cobertura de arquivos CEF e ITAÚ
+#' Extrai cobertura de arquivos CEF
 #'
 #' @description
 #' Função para extrair e consolidar informações de cobertura temporal de arquivos
-#' CEF (extratos bancários) e ITAÚ, retornando um tibble com dados combinados.
+#' CEF (extratos bancários), retornando um tibble com dados combinados.
 #'
 #' @return Um tibble com colunas: arquivo, arquivo.subtipo, empresa, conta,
 #'   periodo.inicio, periodo.fim, arquivo.tipo

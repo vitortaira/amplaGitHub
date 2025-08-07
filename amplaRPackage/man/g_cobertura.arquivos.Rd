@@ -4,7 +4,7 @@
 \alias{g_cobertura.arquivos}
 \title{Plot temporal coverage heatmap for arquivos}
 \usage{
-g_cobertura.arquivos(cobertura_t = e_cobertura.arquivos())
+g_cobertura.arquivos(cobertura_t = c_cef_xcefs())
 }
 \arguments{
 \item{cobertura_t}{Tibble with columns: arquivo, empresa, periodo.inicio, periodo.fim, arquivo.tipo, id}

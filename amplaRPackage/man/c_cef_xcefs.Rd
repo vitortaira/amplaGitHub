@@ -2,7 +2,7 @@
 % Please edit documentation in R/c_cef_xcefs.R
 \name{c_cef_xcefs}
 \alias{c_cef_xcefs}
-\title{Extrai cobertura de arquivos CEF e ITAÚ}
+\title{Extrai cobertura de arquivos CEF}
 \usage{
 c_cef_xcefs()
 }
@@ -12,5 +12,5 @@ periodo.inicio, periodo.fim, arquivo.tipo
 }
 \description{
 Função para extrair e consolidar informações de cobertura temporal de arquivos
-CEF (extratos bancários) e ITAÚ, retornando um tibble com dados combinados.
+CEF (extratos bancários), retornando um tibble com dados combinados.
 }

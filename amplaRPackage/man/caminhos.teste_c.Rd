@@ -5,7 +5,7 @@
 \alias{caminhos.teste_c}
 \title{Extracao dos dados do PDF de um extrato da CEF}
 \format{
-An object of class \code{character} of length 6.
+An object of class \code{character} of length 7.
 }
 \usage{
 caminhos.teste_c

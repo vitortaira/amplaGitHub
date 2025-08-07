@@ -9,7 +9,7 @@
 #' @import purrr
 #' @export
 
-g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
+g_cobertura.arquivos <- function(cobertura_t = c_cef_xcefs()) {
   # --- Helper Function: Prepare and Clean Data ---
   .prepare_heatmap_data <- function(raw_data) {
     # Verificar se os dados estão vazios
@@ -623,7 +623,7 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura.arquivos()) {
   return(final_plot)
 }
 
-# Example usage (ensure e_cobertura.arquivos() is available and returns data):
+# Example usage (ensure c_cef_xcefs() is available and returns data):
 # if (interactive()) {
 #   # sample_data <- tibble::tribble(
 #   #  ~arquivo, ~empresa, ~periodo.inicio, ~periodo.fim, ~arquivo.tipo,
