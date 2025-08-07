@@ -178,19 +178,19 @@ c_cef_xcef <- function(f_caminho.arquivo_c) {
       # Quantidade de colunas
       ncol(tabela_t) == 6 &
         # Cabeçalho "Data Mov.", "Nr. Doc.", "Histórico", "Valor", "Saldo"
-        any(str_detect(pull(tabela_t, 1), "(?i)data mov\\.?")) &
-        any(str_detect(pull(tabela_t, 3), "(?i)nr\\.?\\s?doc\\.")) &
-        any(str_detect(pull(tabela_t, 4), "(?i)hist[oó]rico")) &
-        any(str_detect(pull(tabela_t, 5), "(?i)valor")) &
-        any(str_detect(pull(tabela_t, 6), "(?i)saldo")) &
+        any(str_detect(tabela_t[7, 1], "(?i)data mov\\.?")) &
+        any(str_detect(tabela_t[7, 3], "(?i)nr\\.?\\s?doc\\.")) &
+        any(str_detect(tabela_t[7, 4], "(?i)hist[oó]rico")) &
+        any(str_detect(tabela_t[7, 5], "(?i)valor")) &
+        any(str_detect(tabela_t[7, 6], "(?i)saldo")) &
         # Verificar existência dos dados fora da tabela
-        any(str_starts(pull(tabela_t, 1), "(?i)cliente")) &
-        any(str_starts(pull(tabela_t, 1), "(?i)conta")) &
-        any(str_starts(pull(tabela_t, 1), "(?i)data")) &
-        any(str_starts(pull(tabela_t, 1), "(?i)m[eê]s")) &
-        any(str_starts(pull(tabela_t, 1), "(?i)per[ií]odo")) &
+        any(str_starts(tabela_t[2, 1], "(?i)cliente")) &
+        any(str_starts(tabela_t[3, 1], "(?i)conta")) &
+        any(str_starts(tabela_t[4, 1], "(?i)data")) &
+        any(str_starts(tabela_t[5, 1], "(?i)m[eê]s")) &
+        any(str_starts(tabela_t[6, 1], "(?i)per[ií]odo")) &
         # Verificar existência do título
-        any(str_starts(pull(tabela_t, 1), "(?i)extrato\\s?por\\s?per[ií]odo")) &
+        any(str_starts(tabela_t[1, 1], "(?i)extrato\\s?por\\s?per[ií]odo")) &
         # Verificar existência de footer
         any(str_starts(pull(tabela_t, 1), "(?i)sac\\s?caixa"))
       ~ "xcef8",

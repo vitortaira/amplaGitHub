@@ -57,13 +57,22 @@ caminhos.teste_c <- c(
   str_c(caminhos_pastas("testthat"), "/data/xcef4.pdf"),
   str_c(caminhos_pastas("testthat"), "/data/xcef5.pdf"),
   str_c(caminhos_pastas("testthat"), "/data/xcef6.pdf"),
-  str_c(caminhos_pastas("testthat"), "/data/xcef7.pdf")
+  str_c(caminhos_pastas("testthat"), "/data/xcef7.pdf"),
+  str_c(caminhos_pastas("testthat"), "/data/xcef8.xlsx")
 )
 
 e_cef_xcef <- function(f_caminho.arquivo_c) {
-  # Ler PDF
-  paginas_l <- ler_pdf(f_caminho.arquivo_c)$paginas
-  linhas_c <- ler_pdf(f_caminho.arquivo_c)$linhas
+  if (fs::path_ext(f_caminho.arquivo_c) == "pdf") {
+    # Ler PDF
+    paginas_l <- ler_pdf(f_caminho.arquivo_c)$paginas
+    linhas_c <- ler_pdf(f_caminho.arquivo_c)$linhas
+  }
+  if (fs::path_ext(f_caminho.arquivo_c) == "xlsx") {
+    # Ler XLSX
+    tabela_t <- suppressMessages(
+      readxl::read_excel(f_caminho.arquivo_c, col_names = FALSE)
+    )
+  }
   # Identificar o tipo do xcef
   tipo_c <- c_cef_xcef(f_caminho.arquivo_c)
   if (tipo_c == "xcef1") {
@@ -357,6 +366,119 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
         periodo.fim = str_remove(periodo.consultado_c, ".*-") %>%
           as.Date(format = "%d/%m/%Y"),
         data.consulta = data.consulta_h,
+        conta.interno = basename(f_caminho.arquivo_c) %>%
+          str_extract("\\d{4}"),
+        arquivo = f_caminho.arquivo_c,
+        arquivo.subtipo = tipo_c
+      ) %>%
+      select(
+        data.lancamento, data.movimentacao, documento, descricao, valor, saldo,
+        conta.interno, conta, agencia, produto, cnpj, empresa,
+        periodo.inicio, periodo.fim, data.consulta, arquivo, arquivo.subtipo
+      )
+    return(extrato_t)
+  } else if (tipo_c == "xcef8") {
+    # Fora da tabela
+    empresa <- tabela_t[2, 2] %>% as.character()
+    conta <- tabela_t[3, 2] %>%
+      as.character() %>%
+      str_extract("[^|]+$") %>%
+      str_trim()
+    agencia <- tabela_t[3, 2] %>%
+      as.character() %>%
+      str_extract("^[^|]+") %>%
+      str_trim()
+    produto <- tabela_t[3, 2] %>%
+      as.character() %>%
+      str_extract("\\|.*\\|") %>%
+      str_remove_all("\\|") %>%
+      str_trim()
+    data.consulta <- tabela_t[4, 2] %>%
+      as.character() %>%
+      str_extract("\\d{2}/\\d{2}/\\d{4}\\s?-\\s?\\d{2}:\\d{2}") %>%
+      str_remove_all("\\s") %>%
+      as.POSIXct(format = "%d/%m/%Y-%H:%M")
+    mes.referencia <- tabela_t[5, 2] %>%
+      as.character() %>%
+      str_replace_all(
+        c(
+          "Janeiro" = "01", "Fevereiro" = "02", "Março" = "03",
+          "Abril" = "04", "Maio" = "05", "Junho" = "06",
+          "Julho" = "07", "Agosto" = "08", "Setembro" = "09",
+          "Outubro" = "10", "Novembro" = "11", "Dezembro" = "12"
+        )
+      )
+    periodo.referencia <- str_c(
+      # Início
+      str_c(
+        tabela_t[6, 2] %>%
+          as.character() %>%
+          str_extract("^[^-]") %>%
+          str_trim(),
+        "/",
+        mes.referencia,
+        "-"
+      ),
+      # Fim
+      str_c(
+        tabela_t[6, 2] %>%
+          as.character() %>%
+          str_extract("[^-]+$") %>%
+          str_trim(),
+        "/",
+        mes.referencia
+      )
+    )
+    # Tabela
+    extrato_t <- tabela_t %>%
+      slice(-c(1:7)) %>%
+      {
+        # Encontrar linha SAC CAIXA nos dados filtrados
+        linha_sac <- str_which(pull(., 1), "(?i)sac\\s?caixa")
+        if (length(linha_sac) > 0) {
+          slice(., -c(linha_sac:nrow(.)))
+        } else {
+          .
+        }
+      } %>%
+      dplyr::select(-2) %>%
+      magrittr::set_names(c(
+        "data.movimentacao", "documento", "descricao", "valor", "saldo"
+      )) %>%
+      mutate(
+        data.movimentacao = as.Date(
+          as.integer(data.movimentacao),
+          origin = "1899-12-30"
+        ),
+        documento = str_pad(documento, 6, "0", side = "left"),
+        valor = valor %>%
+          str_remove("\\s?C") %>%
+          str_remove_all("\\.") %>%
+          str_replace("\\,", "\\.") %>%
+          if_else(str_detect(., "D$"),
+            str_c("-", .) %>% str_remove("\\s?D$"),
+            .
+          ) %>% as.numeric(),
+        saldo = saldo %>%
+          str_remove("\\s?C") %>%
+          str_remove_all("\\.") %>%
+          str_replace("\\,", "\\.") %>%
+          if_else(str_detect(., "D$"),
+            str_c("-", .) %>% str_remove("\\s?D$"),
+            .
+          ) %>% as.numeric(),
+        # Adicionar metadados que estavam faltando
+        data.lancamento = NA_Date_,
+        conta = word(conta, -1) %>% str_trim(),
+        agencia = agencia,
+        produto = produto,
+        cnpj = NA_character_,
+        empresa = empresa,
+        periodo.inicio = str_remove(periodo.referencia, "-.*") %>%
+          as.Date(format = "%d/%m/%Y"),
+        periodo.fim = str_remove(periodo.referencia, ".*-") %>%
+          as.Date(format = "%d/%m/%Y"),
+        data.consulta = data.consulta,
         conta.interno = basename(f_caminho.arquivo_c) %>%
           str_extract("\\d{4}"),
         arquivo = f_caminho.arquivo_c,
