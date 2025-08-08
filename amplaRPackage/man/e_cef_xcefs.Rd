@@ -30,7 +30,7 @@ combinando-os em um único data frame.
 }
 \details{
 A função utiliza e_metadados("xcef") para identificar arquivos xcef disponíveis.
-Dependendo do tipo selecionado, filtra os arquivos usando c_cef_xcefs().
+Dependendo do tipo selecionado, filtra os arquivos usando c_extratos().
 Para cada arquivo, chama e_cef_xcef() para extrair os dados e consolida
 os resultados em um único tibble.
 }

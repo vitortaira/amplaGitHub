@@ -12,7 +12,7 @@
 #' @importFrom fs path_file
 #' @export
 #'
-c_cef_xcefs <- function() {
+c_extratos <- function() {
   # Obter dados CEF
   dadosCef <- tryCatch(
     {
