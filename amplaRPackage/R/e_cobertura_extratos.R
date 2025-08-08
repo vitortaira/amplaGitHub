@@ -12,7 +12,7 @@
 #' @importFrom fs path_file
 #' @export
 #'
-c_extratos <- function() {
+e_cobertura_extratos <- function() {
   # Obter dados CEF
   dadosCef <- tryCatch(
     {
