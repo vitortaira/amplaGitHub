@@ -3,15 +3,21 @@
 #' Determines the type of a CEF (Caixa Econômica Federal) bank statement PDF
 #' based on its content.
 #'
-#' @param f_caminho.arquivo_c Character string. The file path of the PDF.
+#' @param f_caminho.arquivo_c Character string or vector. The file path(s) of the PDF/Excel files.
 #'
-#' @return Character string. The classified type of the CEF bank statement
-#'   (e.g., "xcef1", "xcef3", "xcef4", "xcef5", "xcef6", "xcef7", or "desconhecido").
+#' @return Character string or vector. The classified type(s) of the CEF bank statement(s)
+#'   (e.g., "xcef1", "xcef3", "xcef4", "xcef5", "xcef6", "xcef7", "xcef8", or NA).
 #' @export
 #' @examples
 #' # This is an internal function, but an example would look like:
 #' # c_cef_xcef("caminho/para/arquivo.pdf")
+#' # c_cef_xcef(c("arquivo1.pdf", "arquivo2.xlsx"))
 c_cef_xcef <- function(f_caminho.arquivo_c) {
+  # Vectorize the function to handle multiple file paths
+  if (length(f_caminho.arquivo_c) > 1) {
+    return(purrr::map_chr(f_caminho.arquivo_c, c_cef_xcef))
+  }
+
   # Se o arquivo for em PDF
   if (fs::path_ext(f_caminho.arquivo_c) == "pdf") {
     linhas_c <- ler_pdf(f_caminho.arquivo_c)$linhas
@@ -171,28 +177,64 @@ c_cef_xcef <- function(f_caminho.arquivo_c) {
       TRUE ~ NA_character_
     )
   } else if (fs::path_ext(f_caminho.arquivo_c) == "xlsx") {
-    tabela_t <- suppressMessages(
-      readxl::read_excel(f_caminho.arquivo_c, col_names = FALSE)
+    # Tentar ler o arquivo Excel com tratamento de erro
+    tabela_t <- tryCatch(
+      {
+        suppressMessages(
+          readxl::read_excel(f_caminho.arquivo_c, col_names = FALSE)
+        )
+      },
+      error = function(e) {
+        message(sprintf("Erro ao ler arquivo Excel: %s", basename(f_caminho.arquivo_c)))
+        return(NULL)
+      }
     )
+
+    # Se não conseguir ler o arquivo, retornar NA
+    if (is.null(tabela_t)) {
+      return(NA_character_)
+    }
+
+    # Verificar se há linhas e colunas suficientes
+    if (nrow(tabela_t) < 7 || ncol(tabela_t) < 5) {
+      return(NA_character_)
+    }
+
     case_when(
-      # Quantidade de colunas
-      ncol(tabela_t) == 6 &
-        # Cabeçalho "Data Mov.", "Nr. Doc.", "Histórico", "Valor", "Saldo"
-        any(str_detect(tabela_t[7, 1], "(?i)data mov\\.?")) &
-        any(str_detect(tabela_t[7, 3], "(?i)nr\\.?\\s?doc\\.")) &
-        any(str_detect(tabela_t[7, 4], "(?i)hist[oó]rico")) &
-        any(str_detect(tabela_t[7, 5], "(?i)valor")) &
-        any(str_detect(tabela_t[7, 6], "(?i)saldo")) &
-        # Verificar existência dos dados fora da tabela
-        any(str_starts(tabela_t[2, 1], "(?i)cliente")) &
-        any(str_starts(tabela_t[3, 1], "(?i)conta")) &
-        any(str_starts(tabela_t[4, 1], "(?i)data")) &
-        any(str_starts(tabela_t[5, 1], "(?i)m[eê]s")) &
-        any(str_starts(tabela_t[6, 1], "(?i)per[ií]odo")) &
-        # Verificar existência do título
-        any(str_starts(tabela_t[1, 1], "(?i)extrato\\s?por\\s?per[ií]odo")) &
-        # Verificar existência de footer
-        any(str_starts(pull(tabela_t, 1), "(?i)sac\\s?caixa"))
+      # Padrão xcef9: Arquivo Excel com 5 colunas (variante do formato CEF)
+      ncol(tabela_t) == 5 &
+        nrow(tabela_t) >= 7
+      ~ "xcef9",
+      # Padrão xcef8: Arquivo Excel com 6 colunas
+      ncol(tabela_t) >= 6 &
+        nrow(tabela_t) >= 7 &
+        # Usar tryCatch para evitar erros de acesso a colunas
+        tryCatch(
+          {
+            # Cabeçalho "Data Mov.", "Nr. Doc.", "Histórico", "Valor", "Saldo"
+            any(str_detect(tabela_t[7, 1], "(?i)data mov\\.?")) &
+              any(str_detect(tabela_t[7, 3], "(?i)nr\\.?\\s?doc\\.")) &
+              any(str_detect(tabela_t[7, 4], "(?i)hist[oó]rico")) &
+              any(str_detect(tabela_t[7, 5], "(?i)valor")) &
+              any(str_detect(tabela_t[7, 6], "(?i)saldo"))
+          },
+          error = function(e) FALSE
+        ) &
+        # Verificar existência dos dados fora da tabela com proteção contra erros
+        tryCatch(
+          {
+            any(str_starts(tabela_t[2, 1], "(?i)cliente")) &
+              any(str_starts(tabela_t[3, 1], "(?i)conta")) &
+              any(str_starts(tabela_t[4, 1], "(?i)data")) &
+              any(str_starts(tabela_t[5, 1], "(?i)m[eê]s")) &
+              any(str_starts(tabela_t[6, 1], "(?i)per[ií]odo")) &
+              # Verificar existência do título
+              any(str_starts(tabela_t[1, 1], "(?i)extrato\\s?por\\s?per[ií]odo")) &
+              # Verificar existência de footer
+              any(str_starts(pull(tabela_t, 1), "(?i)sac\\s?caixa"))
+          },
+          error = function(e) FALSE
+        )
       ~ "xcef8",
       TRUE ~ NA_character_
     )
