@@ -45,7 +45,18 @@
 #' @export
 
 e_cef_xcefs<-
-  function(f_caminho.pasta.extratos_c = caminhos_pastas("extratos")) {
+  function(
+    f_caminho.pasta.extratos_c = caminhos_pastas("extratos"),
+    arquivo.subtipo = "melhores"
+  ) {
+    # Validando parâmetros
+    arquivo.subtipo <- match.arg(arquivo.subtipo, c("todos", "melhores"))
+    # Caminhos dos arquivos a serem extraídos
+    caminhos <- if (arquivo.subtipo == "melhores") {
+      c_extratos(arquivo.tipo = "xcef", arquivo.subtipo = "melhores")$caminho
+    } else {
+      c_extratos(arquivo.tipo = "xcef", arquivo.subtipo = "todos")$caminho
+    }
     # Obter lista atualizada de contratos PJ
     contratos_pj_6_ultimos <- get_contratos_pj_6_ultimos()
 
@@ -59,7 +70,7 @@ e_cef_xcefs<-
     extratos_l <- list()
     extratos_t <- data.frame()
     for (
-      i_caminho.extrato.cef_c in e_metadados("xcef")$caminho
+      i_caminho.extrato.cef_c in caminhos
     ) {
       extrato <- tryCatch(
         e_cef_xcef(i_caminho.extrato.cef_c),
