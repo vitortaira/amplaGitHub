@@ -13,10 +13,15 @@ app_server <- function(input, output, session) {
   library(here) # Para gerenciamento de caminhos relativos ao projeto
 
   # Carregar dados reais dos arquivos RDS (mesmo padrão do amplaShiny)
-  # Carrega todos os arquivos RDS do diretório de dados
-  dadosLista <- readRDS(
-    dir_ls("inst/dados", type = "file")
-  )
+  # Carrega o arquivo RDS do diretório de dados
+  arquivosDados <- dir_ls("inst/dados", type = "file", glob = "*.rds")
+
+  if (length(arquivosDados) == 0) {
+    stop("Nenhum arquivo RDS encontrado em inst/dados/")
+  }
+
+  # Carrega o primeiro arquivo RDS encontrado
+  dadosLista <- readRDS(arquivosDados[1])
 
   # Inicializar módulos principais
   m_inicio_server("modulo_inicio")

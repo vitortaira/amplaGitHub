@@ -31,3 +31,11 @@ Thumbs.db
 
 # Deployment configs (keep local only)
 rsconnect/
+
+# Testing and debugging files (should not be committed)
+test_*.R
+testar_*.R
+testar_*.bat
+validate.R
+TESTE_LOCAL.md
+run_locally.R

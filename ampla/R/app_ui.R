@@ -5,6 +5,9 @@
 #' @import shiny
 #' @export
 app_ui <- function(request) {
+  # Adicionar recursos externos
+  recursos_externos <- adicionarRecursosExternos()
+
   # Obter o parâmetro de página da string de consulta da URL
   # Funciona com URLs como: /app?page=despesas ou /app?page=receitas
   pagina <- parseQueryString(request$QUERY_STRING)$page
@@ -15,7 +18,7 @@ app_ui <- function(request) {
   }
 
   # Determinar qual página mostrar baseado no parâmetro de página
-  if (pagina == "despesas") {
+  conteudo_pagina <- if (pagina == "despesas") {
     # Módulo de despesas
     m_despesas_ui("modulo_despesas")
   } else if (pagina == "receitas") {
@@ -25,6 +28,12 @@ app_ui <- function(request) {
     # Página inicial
     m_inicio_ui("modulo_inicio")
   }
+
+  # Retornar o UI completo
+  tagList(
+    recursos_externos,
+    conteudo_pagina
+  )
 }
 
 #' Adicionar recursos externos à aplicação

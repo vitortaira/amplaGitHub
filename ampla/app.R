@@ -5,21 +5,24 @@
 options(scipen = 999) # Prevenir notação científica
 
 # Carregar pacotes necessários
-suppressMessages({
-  library(shiny)
-  library(dplyr)
-  library(plotly)
-  library(here)
-  library(fs)
-  library(lubridate)
-  library(DT)
-  library(RColorBrewer)
-  library(pkgload)
-})
+library(shiny)
+library(dplyr)
+library(plotly)
+library(here)
+library(fs)
+library(lubridate)
+library(DT)
+library(RColorBrewer)
 
-# Carregar o pacote local em modo desenvolvimento
-# Para deployment, carrega todas as funções necessárias
-pkgload::load_all(".", export_all = FALSE, helpers = FALSE, attach_testthat = FALSE)
+# Carregar funções da aplicação
+source("R/notion_mcp.R")
+source("R/app_ui.R")
+source("R/m_inicio.R")
+source("R/sm_filtro_periodo.R")
+source("R/sm_grafico_barras_empilhadas.R")
+source("R/m_despesas.R")
+source("R/m_receitas.R")
+source("R/app_server.R")
 
 # Verificar se as funções estão disponíveis
 if (!exists("app_ui") || !exists("app_server")) {
