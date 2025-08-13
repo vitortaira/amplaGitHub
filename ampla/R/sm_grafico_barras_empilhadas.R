@@ -43,7 +43,7 @@ sm_grafico_barras_empilhadas_ui <- function(
         right: 0 !important;
         z-index: 1000 !important;
         background-color: white !important;
-        border-bottom: 1px solid #e5e5e5 !important;
+        border-bottom: none !important;
         margin: 0 !important;
         padding: 0 20px !important;
         height: 48px !important;
@@ -61,42 +61,52 @@ sm_grafico_barras_empilhadas_ui <- function(
       }
       .parameters-section {
         background-color: white;
-        padding: 20px;
-        margin: 15px;
-        border: 1px solid #e5e5e5;
+        padding: 15px 20px 10px 20px;
+        margin: 0;
+        border: 2px solid #dc3545;
+        border-bottom: 2px solid #dc3545;
         border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         position: fixed !important;
         top: 48px !important;
         left: 0 !important;
         right: 0 !important;
         z-index: 999 !important;
       }
+      .chart-title-container {
+        background-color: white;
+        padding: 8px 20px;
+        margin: 0;
+        border: 1px solid #e5e5e5;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        position: fixed !important;
+        top: calc(48px + var(--params-height, 100px)) !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 998 !important;
+      }
       .chart-title {
         background-color: transparent !important;
         background: none !important;
-        padding: 8px 20px !important;
+        padding: 0 !important;
         margin: 0 !important;
         border: none !important;
-        font-size: 18px !important;
+        font-size: 16px !important;
         font-weight: 600 !important;
         color: #333 !important;
         text-align: center !important;
         display: block !important;
         width: 100% !important;
-        position: fixed !important;
-        top: calc(48px + var(--params-height, 140px) + 5px) !important;
-        left: 0 !important;
-        right: 0 !important;
-        z-index: 997 !important;
         box-shadow: none !important;
         outline: none !important;
-        height: 35px !important;
-        line-height: 35px !important;
+        height: auto !important;
+        line-height: 1.1 !important;
       }
       .checkbox-wrapper {
-        margin: 15px 0 0 0 !important;
-        padding: 5px 0 !important;
+        margin: 8px 0 0 0 !important;
+        padding: 0 !important;
         background-color: transparent !important;
       }
       .checkbox-wrapper .form-group {
@@ -111,6 +121,27 @@ sm_grafico_barras_empilhadas_ui <- function(
         padding-left: 25px !important;
         display: block !important;
         position: relative !important;
+        font-weight: normal !important;
+        font-size: 14px !important;
+        color: #555 !important;
+        line-height: 1.4 !important;
+      }
+      /* Override Bootstrap checkbox styling */
+      .checkbox-wrapper .form-check-label,
+      .checkbox-wrapper .checkbox label,
+      .checkbox-wrapper label.form-check-label {
+        font-weight: 400 !important;
+        font-size: 14px !important;
+        color: #555 !important;
+      }
+      /* Override inline styles on checkbox text div */
+      .checkbox-wrapper label div,
+      .checkbox-wrapper label span div {
+        font-weight: normal !important;
+        font-size: 14px !important;
+        color: #555 !important;
+        margin: 0 !important;
+        padding: 0 !important;
       }
       .checkbox-wrapper input[type='checkbox'] {
         position: absolute !important;
@@ -119,7 +150,7 @@ sm_grafico_barras_empilhadas_ui <- function(
         margin: 0 !important;
       }
       .main-content-wrapper {
-        margin-top: calc(48px + var(--params-height, 140px) + 45px);
+        margin-top: calc(48px + var(--params-height, 100px) + var(--title-height, 35px));
         background-color: #fafafa;
       }
       .chart-container {
@@ -151,38 +182,53 @@ sm_grafico_barras_empilhadas_ui <- function(
     # JavaScript for dynamic height
     tags$script(HTML("
       $(document).ready(function() {
-        function updateParamsHeight() {
-          var paramsHeight = $('.parameters-section').outerHeight() || 140;
+        function updateContainerHeights() {
+          var paramsHeight = $('.parameters-section').outerHeight() || 100;
+          var titleHeight = $('.chart-title-container').outerHeight() || 35;
           document.documentElement.style.setProperty('--params-height', paramsHeight + 'px');
+          document.documentElement.style.setProperty('--title-height', titleHeight + 'px');
         }
-        updateParamsHeight();
-        $(window).on('resize', updateParamsHeight);
-        setTimeout(updateParamsHeight, 1000);
-        setTimeout(updateParamsHeight, 2000);
-        setTimeout(updateParamsHeight, 3000);
+        updateContainerHeights();
+        $(window).on('resize', updateContainerHeights);
+        setTimeout(updateContainerHeights, 500);
+        setTimeout(updateContainerHeights, 1000);
+        setTimeout(updateContainerHeights, 1500);
 
-        // Force remove checkbox margins
-        function removeCheckboxMargins() {
+        // Force remove checkbox margins and compress spacing
+        function compressSpacing() {
           $('.checkbox-wrapper').css({
-            'margin-bottom': '-10px',
-            'padding-bottom': '0px'
+            'margin-top': '8px',
+            'margin-bottom': '0px',
+            'padding': '0px'
           });
           $('.checkbox-wrapper *').css({
             'margin': '0px',
             'padding': '0px'
           });
+          // Compress parameters section spacing
+          $('.parameters-section > div').css({
+            'margin-bottom': '12px'
+          });
+          $('.parameters-section > div:last-child').css({
+            'margin-bottom': '0px'
+          });
         }
 
-        setTimeout(removeCheckboxMargins, 500);
-        setTimeout(removeCheckboxMargins, 1000);
-        setTimeout(removeCheckboxMargins, 2000);
+        setTimeout(compressSpacing, 300);
+        setTimeout(compressSpacing, 800);
+        setTimeout(compressSpacing, 1200);
 
-        // Update height when content changes
+        // Update heights when content changes
         var observer = new MutationObserver(function() {
-          updateParamsHeight();
-          setTimeout(removeCheckboxMargins, 100);
+          updateContainerHeights();
+          setTimeout(compressSpacing, 50);
         });
         observer.observe(document.querySelector('.parameters-section') || document.body, {
+          childList: true,
+          subtree: true,
+          attributes: true
+        });
+        observer.observe(document.querySelector('.chart-title-container') || document.body, {
           childList: true,
           subtree: true,
           attributes: true
@@ -207,26 +253,26 @@ sm_grafico_barras_empilhadas_ui <- function(
           # Clean parameters section
           div(
             class = "parameters-section",
-            h4("Parâmetros", style = "margin: 0 0 20px 0; font-weight: 600; color: #333; font-size: 20px; padding-bottom: 10px;"),
+            h4("Parâmetros", style = "margin: 0 0 15px 0; font-weight: 600; color: #333; font-size: 18px;"),
 
             # Period filter
             div(
-              style = "margin-bottom: 20px;",
-              h5("Período", style = "margin: 0 0 10px 0; font-weight: 600; color: #333;"),
+              style = "margin-bottom: 12px;",
+              h5("Período", style = "margin: 0 0 6px 0; font-weight: 600; color: #333; font-size: 14px;"),
               sm_filtro_periodo_ui(ns("filtro"))
             ),
 
             # Company filter
             div(
-              style = "margin-bottom: 20px;",
-              h5("Empresa(s)", style = "margin: 0 0 10px 0; font-weight: 600; color: #333;"),
+              style = "margin-bottom: 12px;",
+              h5("Empresa(s)", style = "margin: 0 0 6px 0; font-weight: 600; color: #333; font-size: 14px;"),
               uiOutput(ns("empresa_selector"))
             ),
 
             # Variable selection
             div(
-              style = "margin-bottom: 20px;",
-              h5("Empilhar barras por", style = "margin: 0 0 10px 0; font-weight: 600; color: #333;"),
+              style = "margin-bottom: 12px;",
+              h5("Empilhar barras por", style = "margin: 0 0 6px 0; font-weight: 600; color: #333; font-size: 14px;"),
               uiOutput(ns("variavel_selector"))
             ),
 
@@ -237,10 +283,10 @@ sm_grafico_barras_empilhadas_ui <- function(
             )
           ),
 
-          # Chart title - positioned after parameters but before main content
+          # Chart title container - positioned after parameters
           div(
-            class = "chart-title",
-            h4(textOutput(ns("charts_title")), style = "margin: 0; font-size: 18px; font-weight: 600; color: #333;")
+            class = "chart-title-container",
+            h4(textOutput(ns("charts_title")), class = "chart-title")
           ),
 
           # Charts content wrapper
