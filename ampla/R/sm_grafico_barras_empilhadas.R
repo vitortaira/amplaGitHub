@@ -201,6 +201,8 @@ sm_grafico_barras_empilhadas_ui <- function(
       @media (max-width: 768px) {
         .col-md-6 {
           margin-bottom: 12px !important;
+          padding-left: 0 !important;
+          padding-right: 0 !important;
         }
         .row {
           flex-direction: column !important;
@@ -210,6 +212,17 @@ sm_grafico_barras_empilhadas_ui <- function(
         }
         .empresa-filter-button {
           min-width: 150px !important;
+          width: 100% !important;
+        }
+        /* Custom dropdown responsive styling */
+        .variavel-selector-wrapper {
+          width: 100% !important;
+        }
+        /* Ensure both fields have same width on mobile */
+        .empresa-filter-container,
+        .variavel-selector-wrapper {
+          max-width: none !important;
+          width: 100% !important;
         }
       }
       /* Excel-like popup menu styling */
@@ -466,7 +479,7 @@ sm_grafico_barras_empilhadas_ui <- function(
                 style = "align-items: flex-start; margin: 0; display: flex;",
                 div(
                   class = "col-md-6 col-sm-12",
-                  style = "padding-right: 10px; display: flex; flex-direction: column; align-items: stretch; margin-bottom: 8px;",
+                  style = "display: flex; flex-direction: column; align-items: stretch; margin-bottom: 8px; padding-right: 10px;",
                   h5("Empresa(s)", style = "margin: 0 0 6px 0; font-weight: 600; color: #333; font-size: 14px; height: 20px; line-height: 20px;"),
                   div(
                     style = "flex: 1; display: flex; align-items: stretch; min-width: 0;",
@@ -475,7 +488,7 @@ sm_grafico_barras_empilhadas_ui <- function(
                 ),
                 div(
                   class = "col-md-6 col-sm-12",
-                  style = "padding-left: 10px; display: flex; flex-direction: column; align-items: stretch; margin-bottom: 8px;",
+                  style = "display: flex; flex-direction: column; align-items: stretch; margin-bottom: 8px; padding-left: 10px;",
                   h5("Empilhar barras por", style = "margin: 0 0 6px 0; font-weight: 600; color: #333; font-size: 14px; height: 20px; line-height: 20px;"),
                   div(
                     style = "flex: 1; display: flex; align-items: stretch; min-width: 0;",
