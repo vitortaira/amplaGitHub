@@ -121,25 +121,25 @@ sm_grafico_barras_empilhadas_ui <- function(
         padding-left: 25px !important;
         display: block !important;
         position: relative !important;
-        font-weight: normal !important;
+        font-weight: 600 !important;
         font-size: 14px !important;
-        color: #555 !important;
+        color: #333 !important;
         line-height: 1.4 !important;
       }
       /* Override Bootstrap checkbox styling */
       .checkbox-wrapper .form-check-label,
       .checkbox-wrapper .checkbox label,
       .checkbox-wrapper label.form-check-label {
-        font-weight: 400 !important;
+        font-weight: 600 !important;
         font-size: 14px !important;
-        color: #555 !important;
+        color: #333 !important;
       }
       /* Override inline styles on checkbox text div */
       .checkbox-wrapper label div,
       .checkbox-wrapper label span div {
-        font-weight: normal !important;
+        font-weight: 600 !important;
         font-size: 14px !important;
-        color: #555 !important;
+        color: #333 !important;
         margin: 0 !important;
         padding: 0 !important;
       }
@@ -162,10 +162,140 @@ sm_grafico_barras_empilhadas_ui <- function(
       .form-control, .form-select {
         border: 1px solid #ddd !important;
         box-shadow: none !important;
+        height: 38px !important;
+        padding: 6px 50px 6px 12px !important;
+        font-size: 14px !important;
+        line-height: 1.428571429 !important;
+        vertical-align: top !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
       }
       .form-control:focus, .form-select:focus {
         border-color: #007bff !important;
         box-shadow: 0 0 0 2px rgba(0,123,255,0.25) !important;
+      }
+      /* Ensure select inputs have consistent styling */
+      select.form-control, select.form-select {
+        height: 38px !important;
+        padding: 6px 60px 6px 12px !important;
+        line-height: 1.428571429 !important;
+        vertical-align: top !important;
+        width: 100% !important;
+        min-width: 120px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        appearance: none !important;
+        background-image: linear-gradient(45deg, transparent 50%, #666 50%), linear-gradient(135deg, #666 50%, transparent 50%) !important;
+        background-position: calc(100% - 25px) calc(50% + 2px), calc(100% - 20px) calc(50% + 2px) !important;
+        background-size: 5px 5px, 5px 5px !important;
+        background-repeat: no-repeat !important;
+      }
+      /* Extra specific rule for variavel selector */
+      #chart_tabs-graficos-filtros-variavel {
+        padding-right: 60px !important;
+      }
+      /* Responsive adjustments for small screens */
+      @media (max-width: 768px) {
+        .col-md-6 {
+          margin-bottom: 12px !important;
+        }
+        .row {
+          flex-direction: column !important;
+        }
+        .form-control, .form-select, select.form-control, select.form-select {
+          min-width: 150px !important;
+        }
+        .empresa-filter-button {
+          min-width: 150px !important;
+        }
+      }
+      /* Excel-like popup menu styling */
+      .empresa-filter-container {
+        position: relative;
+        width: 100%;
+        display: flex;
+        align-items: stretch;
+      }
+      .empresa-filter-button {
+        width: 100% !important;
+        text-align: left !important;
+        background-color: white !important;
+        border: 1px solid #ddd !important;
+        padding: 6px 12px !important;
+        font-size: 14px !important;
+        color: #333 !important;
+        border-radius: 4px !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        height: 38px !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        line-height: 1.428571429 !important;
+        vertical-align: top !important;
+      }
+      .empresa-filter-button:hover {
+        background-color: #f8f9fa !important;
+        border-color: #007bff !important;
+      }
+      .empresa-filter-button:focus {
+        border-color: #007bff !important;
+        box-shadow: 0 0 0 2px rgba(0,123,255,0.25) !important;
+        outline: none !important;
+      }
+      .empresa-filter-dropdown {
+        position: absolute !important;
+        top: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
+        background-color: white !important;
+        border: 1px solid #ddd !important;
+        border-top: none !important;
+        border-radius: 0 0 4px 4px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+        z-index: 1050 !important;
+        max-height: 200px !important;
+        overflow-y: auto !important;
+        display: none;
+      }
+      .empresa-filter-dropdown.show {
+        display: block !important;
+      }
+      .empresa-filter-header {
+        padding: 8px 12px !important;
+        border-bottom: 1px solid #f0f0f0 !important;
+        background-color: #f8f9fa !important;
+        display: flex !important;
+        gap: 8px !important;
+      }
+      .empresa-filter-header button {
+        font-size: 11px !important;
+        padding: 2px 6px !important;
+        border-radius: 3px !important;
+      }
+      .empresa-filter-item {
+        padding: 6px 12px !important;
+        border-bottom: 1px solid #f8f9fa !important;
+        cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        font-size: 13px !important;
+      }
+      .empresa-filter-item:hover {
+        background-color: #f8f9fa !important;
+      }
+      .empresa-filter-item input[type='checkbox'] {
+        margin: 0 !important;
+        transform: scale(0.9) !important;
+      }
+      .empresa-count {
+        color: #666 !important;
+        font-size: 12px !important;
+        font-weight: normal !important;
       }
       .tab-content {
         background-color: white;
@@ -179,7 +309,7 @@ sm_grafico_barras_empilhadas_ui <- function(
       }
     ")),
 
-    # JavaScript for dynamic height
+    # JavaScript for dynamic height and popup menu
     tags$script(HTML("
       $(document).ready(function() {
         function updateContainerHeights() {
@@ -234,6 +364,72 @@ sm_grafico_barras_empilhadas_ui <- function(
           attributes: true
         });
       });
+
+      // Empresa popup menu functions
+      function toggleEmpresaDropdown(dropdownId) {
+        var dropdown = document.getElementById(dropdownId);
+        if (dropdown) {
+          dropdown.classList.toggle('show');
+        }
+        // Close dropdown when clicking outside
+        $(document).off('click.empresaDropdown').on('click.empresaDropdown', function(e) {
+          if (!$(e.target).closest('.empresa-filter-container').length) {
+            $('.empresa-filter-dropdown').removeClass('show');
+            $(document).off('click.empresaDropdown');
+          }
+        });
+      }
+
+      function selectAllEmpresas(nsPrefix) {
+        $('.empresa-filter-item input[type=checkbox]').prop('checked', true);
+        updateEmpresaSelection(nsPrefix);
+      }
+
+      function deselectAllEmpresas(nsPrefix) {
+        $('.empresa-filter-item input[type=checkbox]').prop('checked', false);
+        updateEmpresaSelection(nsPrefix);
+      }
+
+      function toggleEmpresaCheck(nsPrefix, empresa) {
+        var checkboxId = nsPrefix + 'empresa_check_' + empresa.replace(/[^A-Za-z0-9]/g, '_');
+        var checkbox = document.getElementById(checkboxId);
+        if (checkbox) {
+          checkbox.checked = !checkbox.checked;
+          updateEmpresaSelection(nsPrefix);
+        }
+      }
+
+      function updateEmpresaSelection(nsPrefix) {
+        var selected = [];
+        $('.empresa-filter-item input[type=checkbox]:checked').each(function() {
+          var label = $(this).siblings('label').text();
+          selected.push(label);
+        });
+
+        // Update hidden input
+        var hiddenInput = document.getElementById(nsPrefix + 'empresa');
+        if (hiddenInput) {
+          hiddenInput.value = selected.join(',');
+          $(hiddenInput).trigger('change');
+        }
+
+        // Update button text
+        var displayText = '';
+        if (selected.length === 0) {
+          displayText = 'Nenhuma empresa selecionada';
+        } else if (selected.length === 1) {
+          displayText = selected[0];
+        } else if (selected.length <= 3) {
+          displayText = selected.join(', ');
+        } else {
+          displayText = selected.length + ' empresas selecionadas';
+        }
+
+        var displaySpan = document.getElementById(nsPrefix + 'empresa_display');
+        if (displaySpan) {
+          displaySpan.textContent = displayText;
+        }
+      }
     ")),
 
     # Professional wrapper
@@ -262,18 +458,31 @@ sm_grafico_barras_empilhadas_ui <- function(
               sm_filtro_periodo_ui(ns("filtro"))
             ),
 
-            # Company filter
+            # Company filter and Variable selection in same row
             div(
               style = "margin-bottom: 12px;",
-              h5("Empresa(s)", style = "margin: 0 0 6px 0; font-weight: 600; color: #333; font-size: 14px;"),
-              uiOutput(ns("empresa_selector"))
-            ),
-
-            # Variable selection
-            div(
-              style = "margin-bottom: 12px;",
-              h5("Empilhar barras por", style = "margin: 0 0 6px 0; font-weight: 600; color: #333; font-size: 14px;"),
-              uiOutput(ns("variavel_selector"))
+              div(
+                class = "row",
+                style = "align-items: flex-start; margin: 0; display: flex;",
+                div(
+                  class = "col-md-6 col-sm-12",
+                  style = "padding-right: 10px; display: flex; flex-direction: column; align-items: stretch; margin-bottom: 8px;",
+                  h5("Empresa(s)", style = "margin: 0 0 6px 0; font-weight: 600; color: #333; font-size: 14px; height: 20px; line-height: 20px;"),
+                  div(
+                    style = "flex: 1; display: flex; align-items: stretch; min-width: 0;",
+                    uiOutput(ns("empresa_selector"))
+                  )
+                ),
+                div(
+                  class = "col-md-6 col-sm-12",
+                  style = "padding-left: 10px; display: flex; flex-direction: column; align-items: stretch; margin-bottom: 8px;",
+                  h5("Empilhar barras por", style = "margin: 0 0 6px 0; font-weight: 600; color: #333; font-size: 14px; height: 20px; line-height: 20px;"),
+                  div(
+                    style = "flex: 1; display: flex; align-items: stretch; min-width: 0;",
+                    uiOutput(ns("variavel_selector"))
+                  )
+                )
+              )
             ),
 
             # Checkbox wrapper
@@ -483,10 +692,24 @@ sm_grafico_barras_empilhadas_server <- function(
         }
       )
 
-      # Get empresa text
+      # Get empresa text for multi-select
       empresa_text <- ""
-      if (!is.null(input$empresa) && input$empresa != "todas") {
-        empresa_text <- sprintf(" - %s", input$empresa)
+      if (!is.null(input$empresa) && length(input$empresa) > 0 && input$empresa != "") {
+        selected_empresas <- if (is.character(input$empresa)) {
+          strsplit(input$empresa, ",")[[1]]
+        } else {
+          input$empresa
+        }
+
+        if (length(selected_empresas) > 0 && selected_empresas[1] != "") {
+          if (length(selected_empresas) == 1) {
+            empresa_text <- sprintf(" - %s", selected_empresas[1])
+          } else if (length(selected_empresas) <= 3) {
+            empresa_text <- sprintf(" - %s", paste(selected_empresas, collapse = ", "))
+          } else {
+            empresa_text <- sprintf(" - %d empresas selecionadas", length(selected_empresas))
+          }
+        }
       }
 
       # Combine all parts
@@ -511,9 +734,17 @@ sm_grafico_barras_empilhadas_server <- function(
       date_mask <- date_col >= pr$start & date_col <= pr$end
       filtered_data <- df[date_mask, ]
 
-      if (!is.null(input$empresa) && input$empresa != "todas" && "empresa" %in% names(filtered_data)) {
-        empresa_mask <- filtered_data$empresa == input$empresa
-        filtered_data <- filtered_data[empresa_mask & !is.na(empresa_mask), ]
+      # Handle multi-select empresa filtering
+      if (!is.null(input$empresa) && length(input$empresa) > 0 && input$empresa != "" && "empresa" %in% names(filtered_data)) {
+        selected_empresas <- if (is.character(input$empresa)) {
+          strsplit(input$empresa, ",")[[1]]
+        } else {
+          input$empresa
+        }
+        if (length(selected_empresas) > 0 && selected_empresas[1] != "") {
+          empresa_mask <- filtered_data$empresa %in% selected_empresas
+          filtered_data <- filtered_data[empresa_mask & !is.na(empresa_mask), ]
+        }
       }
 
       group_values <- as.character(filtered_data[[group_var]])
@@ -984,9 +1215,17 @@ sm_grafico_barras_empilhadas_server <- function(
       date_mask <- date_col >= pr$start & date_col <= pr$end
       filtered_data <- df[date_mask, ]
 
-      if (!is.null(input$empresa) && input$empresa != "todas" && "empresa" %in% names(filtered_data)) {
-        empresa_mask <- filtered_data$empresa == input$empresa
-        filtered_data <- filtered_data[empresa_mask & !is.na(empresa_mask), ]
+      # Handle multi-select empresa filtering
+      if (!is.null(input$empresa) && length(input$empresa) > 0 && input$empresa != "" && "empresa" %in% names(filtered_data)) {
+        selected_empresas <- if (is.character(input$empresa)) {
+          strsplit(input$empresa, ",")[[1]]
+        } else {
+          input$empresa
+        }
+        if (length(selected_empresas) > 0 && selected_empresas[1] != "") {
+          empresa_mask <- filtered_data$empresa %in% selected_empresas
+          filtered_data <- filtered_data[empresa_mask & !is.na(empresa_mask), ]
+        }
       }
 
       data_formatted <- filtered_data
@@ -1052,18 +1291,73 @@ sm_grafico_barras_empilhadas_server <- function(
       if ("empresa" %in% names(df)) {
         empresas <- sort(unique(df$empresa))
         empresas <- empresas[!is.na(empresas)]
-        choices <- c("Todas" = "todas", setNames(empresas, empresas))
-      } else {
-        choices <- c("Todas" = "todas")
-      }
 
-      selectInput(
-        ns("empresa"),
-        label = NULL,
-        choices = choices,
-        selected = "todas",
-        width = "100%"
-      )
+        tagList(
+          # Popup menu container
+          div(
+            class = "empresa-filter-container",
+            # Main button
+            tags$button(
+              id = ns("empresa_filter_btn"),
+              class = "empresa-filter-button",
+              type = "button",
+              onclick = sprintf("toggleEmpresaDropdown('%s')", ns("empresa_dropdown")),
+              span(id = ns("empresa_display"), "Todas as empresas selecionadas"),
+              tags$i(class = "fa fa-chevron-down", style = "margin-left: auto;")
+            ),
+            # Dropdown menu
+            div(
+              id = ns("empresa_dropdown"),
+              class = "empresa-filter-dropdown",
+              # Header with Select All/Deselect All
+              div(
+                class = "empresa-filter-header",
+                tags$button(
+                  "Todas",
+                  class = "btn btn-xs btn-outline-primary",
+                  onclick = sprintf("selectAllEmpresas('%s')", ns("")),
+                  type = "button"
+                ),
+                tags$button(
+                  "Nenhuma",
+                  class = "btn btn-xs btn-outline-secondary",
+                  onclick = sprintf("deselectAllEmpresas('%s')", ns("")),
+                  type = "button"
+                )
+              ),
+              # Company checkboxes
+              lapply(empresas, function(empresa) {
+                div(
+                  class = "empresa-filter-item",
+                  onclick = sprintf("toggleEmpresaCheck('%s', '%s')", ns(""), empresa),
+                  tags$input(
+                    type = "checkbox",
+                    id = sprintf("%s_check_%s", ns("empresa"), gsub("[^A-Za-z0-9]", "_", empresa)),
+                    checked = "checked",
+                    onchange = sprintf("updateEmpresaSelection('%s')", ns(""))
+                  ),
+                  tags$label(
+                    `for` = sprintf("%s_check_%s", ns("empresa"), gsub("[^A-Za-z0-9]", "_", empresa)),
+                    empresa,
+                    style = "margin: 0; cursor: pointer; user-select: none;"
+                  )
+                )
+              })
+            )
+          ),
+          # Hidden input to store selected values
+          tags$input(
+            id = ns("empresa"),
+            type = "hidden",
+            value = paste(empresas, collapse = ",")
+          )
+        )
+      } else {
+        div(
+          style = "text-align: center; color: #666; font-style: italic;",
+          "Nenhuma empresa disponível"
+        )
+      }
     })
 
     output$variavel_selector <- renderUI({
@@ -1079,12 +1373,189 @@ sm_grafico_barras_empilhadas_server <- function(
         NULL
       }
 
-      selectInput(
-        ns("variavel"),
-        label = NULL,
-        choices = available_choices,
-        selected = default_selection,
-        width = "100%"
+      div(
+        class = "variavel-selector-wrapper",
+        style = "width: 100%;",
+        tags$style(HTML(paste0("
+          .custom-dropdown-", ns("variavel"), " {
+            position: relative;
+            width: 100%;
+          }
+          .custom-dropdown-", ns("variavel"), " .dropdown-display {
+            width: 100%;
+            height: 38px;
+            padding: 6px 40px 6px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.42857143;
+            color: #555;
+          }
+          .custom-dropdown-", ns("variavel"), " .dropdown-display:hover {
+            border-color: #66afe9;
+          }
+          .custom-dropdown-", ns("variavel"), " .dropdown-arrow {
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 4px solid #555;
+            margin-left: 8px;
+            flex-shrink: 0;
+          }
+          .custom-dropdown-", ns("variavel"), " .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ccc;
+            border-top: none;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1050;
+            display: none;
+          }
+          .custom-dropdown-", ns("variavel"), " .dropdown-option {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f5f5f5;
+          }
+          .custom-dropdown-", ns("variavel"), " .dropdown-option:hover {
+            background-color: #f5f5f5;
+          }
+          .custom-dropdown-", ns("variavel"), " .dropdown-option.selected {
+            background-color: #337ab7;
+            color: white;
+          }
+        "))),
+
+        div(
+          class = paste0("custom-dropdown-", ns("variavel")),
+          div(
+            class = "dropdown-display",
+            id = ns("variavel_display"),
+            onclick = paste0("toggleVariavelDropdown('", ns("variavel_menu"), "')"),
+            span(id = ns("variavel_text"), if(length(available_choices) > 0) names(available_choices)[1] else "Selecione..."),
+            div(class = "dropdown-arrow")
+          ),
+          div(
+            class = "dropdown-menu",
+            id = ns("variavel_menu"),
+            lapply(seq_along(available_choices), function(i) {
+              choice_value <- available_choices[i]
+              choice_label <- names(available_choices)[i]
+              if (is.null(choice_label) || choice_label == "") {
+                choice_label <- choice_value
+              }
+
+              div(
+                class = if(i == 1) "dropdown-option selected" else "dropdown-option",
+                `data-value` = choice_value,
+                onclick = paste0("selectVariavelOption('", ns("variavel"), "', '", choice_value, "', '", choice_label, "', '", ns("variavel_text"), "', '", ns("variavel_menu"), "')"),
+                choice_label
+              )
+            })
+          )
+        ),
+
+        # Hidden input to store the selected value
+        tags$input(
+          id = ns("variavel"),
+          type = "hidden",
+          value = if(length(available_choices) > 0) available_choices[1] else ""
+        ),
+
+        tags$script(HTML("
+          function toggleVariavelDropdown(menuId) {
+            var menu = document.getElementById(menuId);
+            if (menu.style.display === 'block') {
+              menu.style.display = 'none';
+            } else {
+              menu.style.display = 'block';
+            }
+          }
+
+          function selectVariavelOption(inputId, value, label, textId, menuId) {
+            // Update the hidden input
+            document.getElementById(inputId).value = value;
+
+            // Update the display text
+            document.getElementById(textId).textContent = label;
+
+            // Update selected state
+            var menu = document.getElementById(menuId);
+            var options = menu.querySelectorAll('.dropdown-option');
+            options.forEach(function(option) {
+              option.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+
+            // Close the menu
+            menu.style.display = 'none';
+
+            // Trigger Shiny input change
+            $(document).ready(function() {
+              $('#' + inputId).trigger('change');
+            });
+          }
+
+          // Close dropdown when clicking outside
+          document.addEventListener('click', function(event) {
+            var dropdowns = document.querySelectorAll('[id$=\"variavel_menu\"]');
+            dropdowns.forEach(function(dropdown) {
+              if (!dropdown.contains(event.target) && !dropdown.previousElementSibling.contains(event.target)) {
+                dropdown.style.display = 'none';
+              }
+            });
+          });
+
+          // Handle custom message for updating dropdown
+          Shiny.addCustomMessageHandler('updateCustomDropdown', function(message) {
+            var hiddenInput = document.getElementById(message.elementId);
+            var displayText = document.getElementById(message.textId);
+            var menu = document.getElementById(message.menuId);
+
+            if (hiddenInput && displayText && menu) {
+              // Update hidden input value
+              hiddenInput.value = message.selected || '';
+
+              // Update display text
+              var selectedLabel = '';
+              if (message.choices && message.selected) {
+                var choiceNames = Object.keys(message.choices);
+                var choiceIndex = Object.values(message.choices).indexOf(message.selected);
+                selectedLabel = choiceIndex >= 0 ? choiceNames[choiceIndex] : message.selected;
+              }
+              displayText.textContent = selectedLabel || 'Selecione...';
+
+              // Rebuild menu options
+              menu.innerHTML = '';
+              if (message.choices) {
+                Object.keys(message.choices).forEach(function(label, index) {
+                  var value = message.choices[label];
+                  var option = document.createElement('div');
+                  option.className = value === message.selected ? 'dropdown-option selected' : 'dropdown-option';
+                  option.setAttribute('data-value', value);
+                  option.textContent = label;
+                  option.onclick = function() {
+                    selectVariavelOption(message.elementId, value, label, message.textId, message.menuId);
+                  };
+                  menu.appendChild(option);
+                });
+              }
+
+              // Trigger change event
+              $(hiddenInput).trigger('change');
+            }
+          });
+        "))
       )
     })
 
@@ -1097,29 +1568,23 @@ sm_grafico_barras_empilhadas_server <- function(
         # Use the choices passed from the parent module instead of hardcoded ones
         available_choices <- choices[choices %in% names(df)]
 
-        if (input$empresa != "todas") {
-          available_choices <- available_choices[available_choices != "empresa"]
-        }
-
-        default_selection <- if (input$empresa == "todas") {
-          if (length(available_choices) > 0) {
-            available_choices[1]
-          } else {
-            NULL
-          }
+        # For multi-select, we don't need to exclude empresa from choices
+        default_selection <- if (length(available_choices) > 0) {
+          available_choices[1]
         } else {
-          if (length(available_choices) > 0) {
-            available_choices[1]
-          } else {
-            NULL
-          }
+          NULL
         }
 
-        updateSelectInput(
-          session = session,
-          inputId = "variavel",
-          choices = available_choices,
-          selected = default_selection
+        # Update custom dropdown instead of selectInput
+        session$sendCustomMessage(
+          type = "updateCustomDropdown",
+          message = list(
+            elementId = ns("variavel"),
+            textId = ns("variavel_text"),
+            menuId = ns("variavel_menu"),
+            choices = available_choices,
+            selected = default_selection
+          )
         )
       },
       ignoreInit = TRUE
