@@ -62,8 +62,10 @@ sm_grafico_barras_empilhadas_ui <- function(
       .parameters-section {
         background-color: white;
         padding: 20px;
-        margin: 0;
-        border-bottom: 1px solid #e5e5e5;
+        margin: 15px;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         position: fixed !important;
         top: 48px !important;
         left: 0 !important;
@@ -71,21 +73,53 @@ sm_grafico_barras_empilhadas_ui <- function(
         z-index: 999 !important;
       }
       .chart-title {
-        background-color: white;
-        padding: 15px 20px;
-        margin: 0;
-        border-bottom: 1px solid #e5e5e5;
-        font-size: 18px;
-        font-weight: 600;
-        color: #333;
+        background-color: transparent !important;
+        background: none !important;
+        padding: 8px 20px !important;
+        margin: 0 !important;
+        border: none !important;
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        color: #333 !important;
+        text-align: center !important;
+        display: block !important;
+        width: 100% !important;
         position: fixed !important;
-        top: calc(48px + var(--params-height, 140px)) !important;
+        top: calc(48px + var(--params-height, 140px) + 5px) !important;
         left: 0 !important;
         right: 0 !important;
-        z-index: 998 !important;
+        z-index: 997 !important;
+        box-shadow: none !important;
+        outline: none !important;
+        height: 35px !important;
+        line-height: 35px !important;
+      }
+      .checkbox-wrapper {
+        margin: 15px 0 0 0 !important;
+        padding: 5px 0 !important;
+        background-color: transparent !important;
+      }
+      .checkbox-wrapper .form-group {
+        margin: 0 !important;
+      }
+      .checkbox-wrapper .checkbox {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .checkbox-wrapper label {
+        margin: 0 !important;
+        padding-left: 25px !important;
+        display: block !important;
+        position: relative !important;
+      }
+      .checkbox-wrapper input[type='checkbox'] {
+        position: absolute !important;
+        left: 0 !important;
+        top: 2px !important;
+        margin: 0 !important;
       }
       .main-content-wrapper {
-        margin-top: calc(48px + var(--params-height, 140px) + 58px);
+        margin-top: calc(48px + var(--params-height, 140px) + 45px);
         background-color: #fafafa;
       }
       .chart-container {
@@ -124,6 +158,35 @@ sm_grafico_barras_empilhadas_ui <- function(
         updateParamsHeight();
         $(window).on('resize', updateParamsHeight);
         setTimeout(updateParamsHeight, 1000);
+        setTimeout(updateParamsHeight, 2000);
+        setTimeout(updateParamsHeight, 3000);
+
+        // Force remove checkbox margins
+        function removeCheckboxMargins() {
+          $('.checkbox-wrapper').css({
+            'margin-bottom': '-10px',
+            'padding-bottom': '0px'
+          });
+          $('.checkbox-wrapper *').css({
+            'margin': '0px',
+            'padding': '0px'
+          });
+        }
+
+        setTimeout(removeCheckboxMargins, 500);
+        setTimeout(removeCheckboxMargins, 1000);
+        setTimeout(removeCheckboxMargins, 2000);
+
+        // Update height when content changes
+        var observer = new MutationObserver(function() {
+          updateParamsHeight();
+          setTimeout(removeCheckboxMargins, 100);
+        });
+        observer.observe(document.querySelector('.parameters-section') || document.body, {
+          childList: true,
+          subtree: true,
+          attributes: true
+        });
       });
     ")),
 
@@ -138,18 +201,18 @@ sm_grafico_barras_empilhadas_ui <- function(
 
         # Charts tab
         tabPanel(
-          title = "Graficos",
+          title = "Gráficos",
           value = "graficos",
 
           # Clean parameters section
           div(
             class = "parameters-section",
-            h4("Parâmetros", style = "margin: 0 0 20px 0; font-weight: 600; color: #333; font-size: 20px; border-bottom: 1px solid #e5e5e5; padding-bottom: 10px;"),
+            h4("Parâmetros", style = "margin: 0 0 20px 0; font-weight: 600; color: #333; font-size: 20px; padding-bottom: 10px;"),
 
             # Period filter
             div(
               style = "margin-bottom: 20px;",
-              h5("Periodo", style = "margin: 0 0 10px 0; font-weight: 600; color: #333;"),
+              h5("Período", style = "margin: 0 0 10px 0; font-weight: 600; color: #333;"),
               sm_filtro_periodo_ui(ns("filtro"))
             ),
 
@@ -168,10 +231,13 @@ sm_grafico_barras_empilhadas_ui <- function(
             ),
 
             # Checkbox wrapper
-            uiOutput(ns("checkbox_wrapper"))
+            div(
+              class = "checkbox-wrapper",
+              uiOutput(ns("checkbox_wrapper"))
+            )
           ),
 
-          # Chart title
+          # Chart title - positioned after parameters but before main content
           div(
             class = "chart-title",
             h4(textOutput(ns("charts_title")), style = "margin: 0; font-size: 18px; font-weight: 600; color: #333;")
@@ -197,12 +263,12 @@ sm_grafico_barras_empilhadas_ui <- function(
 
         # Statistics tab
         tabPanel(
-          title = "Estatisticas",
+          title = "Estatísticas",
           value = "estatisticas",
           div(
             class = "chart-container",
             style = "text-align: center;",
-            h4("Estatisticas", style = "color: #333; margin-bottom: 10px;"),
+            h4("Estatísticas", style = "color: #333; margin-bottom: 10px;"),
             p("Em desenvolvimento...", style = "color: #666;")
           )
         ),
@@ -250,9 +316,6 @@ sm_grafico_barras_empilhadas_ui <- function(
 sm_grafico_barras_empilhadas_server <- function(
     id,
     dados,
-    filtro_periodo,
-    data_inicial,
-    data_final,
     choices,
     max_unicos_i = 20,
     total = "total.pago",
@@ -260,6 +323,9 @@ sm_grafico_barras_empilhadas_server <- function(
     comecoTitulo = "Analise") {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
+
+    # Initialize internal period filter
+    periodo_filtro <- sm_filtro_periodo_server("filtro")
 
     # Verificar se dados e reativo ou estatico
     dados_final <- reactive({
@@ -270,135 +336,115 @@ sm_grafico_barras_empilhadas_server <- function(
       }
     })
 
-    # Initialize the filtro_periodo module
-    filtroVals <- sm_filtro_periodo_server("filtro")
-
     # Define source_id for plotly events
     source_id <- paste0(id, "_click")
     detail_rv <- reactiveVal(NULL)
     top_vars_rv <- reactiveVal(NULL)
 
-    # 1) Reactive for date range
+    # 1) Reactive for date range - use internal filter
     period <- reactive({
-      if (!is.null(filtroVals) && !is.null(filtroVals$filtro_periodo)) {
-        req(filtroVals$filtro_periodo())
-        today <- Sys.Date()
-        switch(filtroVals$filtro_periodo(),
-          "ano_corrente" = list(start = as.Date(paste0(format(today, "%Y"), "-01-01")), end = today),
-          "ultimos_12" = list(start = as.Date(format(today - 365, "%Y-%m-%d")), end = today),
-          "desde_inicio" = {
-            df <- dados_final()
-            req(df)
-            dt <- as.Date(df[[data]], origin = "1970-01-01")
-            list(start = min(dt, na.rm = TRUE), end = today)
-          },
-          "personalizado" = {
-            req(filtroVals$data_inicial(), filtroVals$data_final())
-            start_date <- tryCatch(
-              {
-                if (inherits(filtroVals$data_inicial(), "Date")) {
-                  filtroVals$data_inicial()
-                } else {
-                  as.Date(filtroVals$data_inicial())
-                }
-              },
-              error = function(e) {
-                tryCatch(
-                  {
-                    as.Date(filtroVals$data_inicial(), format = "%d/%m/%Y")
-                  },
-                  error = function(e2) {
-                    lubridate::dmy(filtroVals$data_inicial())
-                  }
-                )
+      req(periodo_filtro$filtro_periodo())
+      today <- Sys.Date()
+      switch(periodo_filtro$filtro_periodo(),
+        "ano_corrente" = list(start = as.Date(paste0(format(today, "%Y"), "-01-01")), end = today),
+        "ultimos_12" = list(start = as.Date(format(today - 365, "%Y-%m-%d")), end = today),
+        "desde_inicio" = {
+          df <- dados_final()
+          req(df)
+          dt <- as.Date(df[[data]], origin = "1970-01-01")
+          list(start = min(dt, na.rm = TRUE), end = today)
+        },
+        "personalizado" = {
+          req(periodo_filtro$data_inicial(), periodo_filtro$data_final())
+          start_date <- tryCatch(
+            {
+              if (inherits(periodo_filtro$data_inicial(), "Date")) {
+                periodo_filtro$data_inicial()
+              } else {
+                as.Date(periodo_filtro$data_inicial())
               }
-            )
-
-            end_date <- tryCatch(
-              {
-                if (inherits(filtroVals$data_final(), "Date")) {
-                  filtroVals$data_final()
-                } else {
-                  as.Date(filtroVals$data_final())
+            },
+            error = function(e) {
+              tryCatch(
+                {
+                  as.Date(periodo_filtro$data_inicial(), format = "%d/%m/%Y")
+                },
+                error = function(e2) {
+                  lubridate::dmy(periodo_filtro$data_inicial())
                 }
-              },
-              error = function(e) {
-                tryCatch(
-                  {
-                    as.Date(filtroVals$data_final(), format = "%d/%m/%Y")
-                  },
-                  error = function(e2) {
-                    lubridate::dmy(filtroVals$data_final())
-                  }
-                )
-              }
-            )
+              )
+            }
+          )
 
-            list(start = start_date, end = end_date)
-          }
-        )
-      } else {
-        req(filtro_periodo())
-        today <- Sys.Date()
-        switch(filtro_periodo(),
-          "ano_corrente" = list(start = floor_date(today, "year"), end = today),
-          "ultimos_12" = list(start = today %m-% months(12), end = today),
-          "desde_inicio" = {
-            df <- dados_final()
-            req(df)
-            dt <- as.Date(df[[data]], origin = "1970-01-01")
-            list(start = min(dt, na.rm = TRUE), end = today)
-          },
-          "personalizado" = {
-            req(data_inicial(), data_final())
-            list(start = data_inicial(), end = data_final())
-          }
-        )
-      }
+          end_date <- tryCatch(
+            {
+              if (inherits(periodo_filtro$data_final(), "Date")) {
+                periodo_filtro$data_final()
+              } else {
+                as.Date(periodo_filtro$data_final())
+              }
+            },
+            error = function(e) {
+              tryCatch(
+                {
+                  as.Date(periodo_filtro$data_final(), format = "%d/%m/%Y")
+                },
+                error = function(e2) {
+                  lubridate::dmy(periodo_filtro$data_final())
+                }
+              )
+            }
+          )
+
+          list(start = start_date, end = end_date)
+        }
+      )
     })
 
-    # 2) Chart title
+    # 2) Chart title - PROPER DYNAMIC VERSION
     chart_title <- reactive({
+      # Require variable selection
       req(input$variavel)
 
-      period_text <- if (!is.null(filtroVals) && !is.null(filtroVals$filtro_periodo)) {
-        req(filtroVals$filtro_periodo())
-        switch(filtroVals$filtro_periodo(),
-          "ano_corrente" = "no ano corrente",
-          "ultimos_12" = "nos ultimos 12 meses",
-          "desde_inicio" = "desde o inicio",
-          "personalizado" = {
-            req(filtroVals$data_inicial(), filtroVals$data_final())
-            sprintf(
-              "de %s ate %s",
-              format(filtroVals$data_inicial(), "%d/%m/%Y"),
-              format(filtroVals$data_final(), "%d/%m/%Y")
-            )
-          }
-        )
-      } else {
-        req(filtro_periodo())
-        switch(filtro_periodo(),
-          "ano_corrente" = "no ano corrente",
-          "ultimos_12" = "nos ultimos 12 meses",
-          "desde_inicio" = "desde o inicio",
-          "personalizado" = {
-            req(data_inicial(), data_final())
-            sprintf(
-              "de %s ate %s",
-              format(data_inicial(), "%d/%m/%Y"),
-              format(data_final(), "%d/%m/%Y")
-            )
-          }
-        )
+      # Get the display name for the variable from choices
+      var_display_name <- names(choices)[choices == input$variavel]
+      if (length(var_display_name) == 0) {
+        var_display_name <- input$variavel
       }
 
-      var_name <- paste0("'", input$variavel, "'")
+      # Get period text using internal filter
+      period_text <- tryCatch(
+        {
+          req(periodo_filtro$filtro_periodo())
+          periodo_value <- periodo_filtro$filtro_periodo()
+
+          switch(periodo_value,
+            "ano_corrente" = "no ano corrente",
+            "ultimos_12" = "nos últimos 12 meses",
+            "desde_inicio" = "desde o início",
+            "personalizado" = {
+              req(periodo_filtro$data_inicial(), periodo_filtro$data_final())
+              sprintf(
+                "de %s até %s",
+                format(periodo_filtro$data_inicial(), "%d/%m/%Y"),
+                format(periodo_filtro$data_final(), "%d/%m/%Y")
+              )
+            }
+          )
+        },
+        error = function(e) {
+          "nos últimos 12 meses"
+        }
+      )
+
+      # Get empresa text
       empresa_text <- ""
       if (!is.null(input$empresa) && input$empresa != "todas") {
-        empresa_text <- paste0(" - ", input$empresa)
+        empresa_text <- sprintf(" - %s", input$empresa)
       }
-      sprintf("%s %s %s%s", comecoTitulo, var_name, period_text, empresa_text)
+
+      # Combine all parts
+      sprintf("%s por %s %s%s", comecoTitulo, var_display_name, period_text, empresa_text)
     })
 
     output$charts_title <- renderText({
@@ -978,22 +1024,10 @@ sm_grafico_barras_empilhadas_server <- function(
       df <- dados_final()
       req(df)
 
-      base_choices <- c(
-        "Empresa" = "empresa",
-        "Centro" = "centro.custo",
-        "Credor" = "fornecedor",
-        "Agente Financeiro" = "banco",
-        "Empreendimento" = "empreendimento",
-        "Classificacao" = "classificacao"
-      )
+      # Use the choices passed from the parent module instead of hardcoded ones
+      available_choices <- choices[choices %in% names(df)]
 
-      available_choices <- base_choices[base_choices %in% names(df)]
-
-      default_selection <- if ("empresa" %in% available_choices) {
-        "empresa"
-      } else if ("centro.custo" %in% available_choices) {
-        "centro.custo"
-      } else if (length(available_choices) > 0) {
+      default_selection <- if (length(available_choices) > 0) {
         available_choices[1]
       } else {
         NULL
@@ -1014,37 +1048,21 @@ sm_grafico_barras_empilhadas_server <- function(
         df <- dados_final()
         req(df, input$empresa)
 
-        base_choices <- c(
-          "Empresa" = "empresa",
-          "Centro" = "centro.custo",
-          "Credor" = "fornecedor",
-          "Agente Financeiro" = "banco",
-          "Empreendimento" = "empreendimento",
-          "Classificacao" = "classificacao"
-        )
-
-        available_choices <- base_choices[base_choices %in% names(df)]
+        # Use the choices passed from the parent module instead of hardcoded ones
+        available_choices <- choices[choices %in% names(df)]
 
         if (input$empresa != "todas") {
           available_choices <- available_choices[available_choices != "empresa"]
         }
 
         default_selection <- if (input$empresa == "todas") {
-          if ("empresa" %in% available_choices) {
-            "empresa"
-          } else if ("centro.custo" %in% available_choices) {
-            "centro.custo"
-          } else if (length(available_choices) > 0) {
+          if (length(available_choices) > 0) {
             available_choices[1]
           } else {
             NULL
           }
         } else {
-          if ("centro.custo" %in% available_choices) {
-            "centro.custo"
-          } else if ("fornecedor" %in% available_choices) {
-            "fornecedor"
-          } else if (length(available_choices) > 0) {
+          if (length(available_choices) > 0) {
             available_choices[1]
           } else {
             NULL

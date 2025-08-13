@@ -28,11 +28,6 @@ m_receitas_ui <- function(id) {
     # Conteúdo principal
     div(
       style = "padding: 20px;",
-      # Filtro de período
-      wellPanel(
-        h4("Filtros de Período"),
-        sm_filtro_periodo_ui(ns("filtro_periodo"))
-      ),
       # Gráficos
       sm_grafico_barras_empilhadas_ui(
         ns("grafico_receitas"),
@@ -107,16 +102,10 @@ m_receitas_server <- function(id, dados_receitas) {
       return(dados_limpos)
     })
 
-    # Inicializar submódulo de filtro de período
-    periodo_filtro <- sm_filtro_periodo_server("filtro_periodo")
-
     # Inicializar submódulo de gráficos
     sm_grafico_barras_empilhadas_server(
       "grafico_receitas",
       dados = dados_validados,
-      filtro_periodo = periodo_filtro$filtro_periodo,
-      data_inicial = periodo_filtro$data_inicial,
-      data_final = periodo_filtro$data_final,
       choices = list(
         "Empresa" = "empresa",
         "Empreendimento" = "empreendimento",

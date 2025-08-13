@@ -45,7 +45,7 @@ app_ui <- function(request) {
 #' @noRd
 adicionarRecursosExternos <- function() {
   tags$head(
-    tags$title("Ampla - Financial Dashboard"),
+    tags$title("Ampla - Dashboard"),
     tags$meta(charset = "utf-8"),
     tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
     tags$link(rel = "icon", type = "image/jpeg", href = "ampla_icon.jpeg"),
