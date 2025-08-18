@@ -230,7 +230,8 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
         valor, saldo,
         conta.interno, conta, agencia, produto, cnpj, empresa,
         periodo.inicio, periodo.fim, data.consulta, arquivo, arquivo.subtipo
-      )
+      ) %>%
+      dplyr::filter(!documento %in% c("0", "000000"))
     return(extrato_t)
   }
   if (tipo_c %in% c("xcef4", "xcef5", "xcef6", "xcef7")) {
@@ -371,11 +372,12 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
         arquivo = f_caminho.arquivo_c,
         arquivo.subtipo = tipo_c
       ) %>%
-      select(
+      dplyr::select(
         data.lancamento, data.movimentacao, documento, descricao, valor, saldo,
         conta.interno, conta, agencia, produto, cnpj, empresa,
         periodo.inicio, periodo.fim, data.consulta, arquivo, arquivo.subtipo
-      )
+      ) %>%
+      dplyr::filter(!documento %in% c("0", "000000"))
     return(extrato_t)
   } else if (tipo_c == "xcef8") {
     # Fora da tabela
@@ -484,11 +486,12 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
         arquivo = f_caminho.arquivo_c,
         arquivo.subtipo = tipo_c
       ) %>%
-      select(
+      dplyr::select(
         data.lancamento, data.movimentacao, documento, descricao, valor, saldo,
         conta.interno, conta, agencia, produto, cnpj, empresa,
         periodo.inicio, periodo.fim, data.consulta, arquivo, arquivo.subtipo
-      )
+      ) %>%
+      dplyr::filter(!documento %in% c("0", "000000"))
     return(extrato_t)
   } else {
     message(sprintf("Tipo desconhecido para o arquivo: %s", f_caminho.arquivo_c))
