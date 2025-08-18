@@ -125,16 +125,18 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
     })
     agencia_c <- linhas_c %>%
       keep(function(x) {
-        str_starts(x, "Agência:")
+        str_starts(x, "(?i)ag[eê]ncia")
       }) %>%
-      str_remove("\\s*produto:.*") %>%
-      str_sub(-4, -1)
+      str_remove("(?i)\\s?produto.*") %>%
+      str_remove("^(?i)ag[eê]ncia\\s?:\\s?")
     cliente_c <- linhas_c %>%
       nth(1) %>%
       str_trim()
     cnpj_c <- linhas_c %>%
-      nth(2) %>%
-      str_remove("^cnpj:\\s*") %>%
+      keep(function(x) {
+        str_starts(x, "^(?i)cnpj\\s?:\\s?")
+      }) %>%
+      str_remove("^(?i)cnpj\\s?:\\s?") %>%
       str_remove_all("[A-Za-z]") %>%
       str_trim()
     conta_c <- linhas_c %>%
@@ -161,11 +163,10 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
       str_trim()
     produto_c <- linhas_c %>%
       keep(function(x) {
-        str_starts(x, "Agência:")
+        str_starts(x, "(?i)ag[eê]ncia")
       }) %>%
-      str_remove("\\s*Conta:.*") %>%
-      str_remove(".*produto:\\s*") %>%
-      str_trim()
+      str_remove("(?i)\\s?conta.*") %>%
+      str_remove("^(?i).*produto\\s?:\\s?")
     indice.comeco_i <- linhas_c %>%
       str_which("^\\d{2}/\\d{2}/\\d{4}") %>%
       first()
