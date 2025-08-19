@@ -116,7 +116,7 @@ e_cef_xcefs<-
           FALSE
         ),
         pj = if_else(
-          (descricao == "CR DESBLOQ") &
+          ((descricao == "CR DESBLOQ") | (descricao == "CRE D IMOB")) &
             (documento %in% contratos_pj_6_ultimos),
           TRUE,
           FALSE

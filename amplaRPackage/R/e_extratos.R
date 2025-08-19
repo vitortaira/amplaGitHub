@@ -429,8 +429,64 @@ e_extratos <- function(xlsx = FALSE) {
     }
   }
 
+  # Criar DFC a partir dos dados CEF (repasse e pj separadamente)
+  DFC <- tryCatch(
+    {
+      # Criar dataframe base com todas as combinações de mes e empresa
+      df_base <- dadosCef %>%
+        dplyr::mutate(
+          mes = lubridate::floor_date(.data$data.movimentacao, "month")
+        ) %>%
+        dplyr::select(.data$mes, .data$empresa) %>%
+        dplyr::distinct()
+
+      # Calcular repasses
+      df_repasse <- dadosCef %>%
+        dplyr::filter(.data$repasse == TRUE) %>%
+        dplyr::group_by(
+          mes = lubridate::floor_date(.data$data.movimentacao, "month"),
+          .data$empresa
+        ) %>%
+        dplyr::summarise(
+          repasse = sum(.data$valor, na.rm = TRUE),
+          .groups = "drop"
+        )
+
+      # Calcular PJ
+      df_pj <- dadosCef %>%
+        dplyr::filter(.data$pj == TRUE) %>%
+        dplyr::group_by(
+          mes = lubridate::floor_date(.data$data.movimentacao, "month"),
+          .data$empresa
+        ) %>%
+        dplyr::summarise(
+          pj = sum(.data$valor, na.rm = TRUE),
+          .groups = "drop"
+        )
+
+      # Juntar tudo
+      df_base %>%
+        dplyr::left_join(df_repasse, by = c("mes", "empresa")) %>%
+        dplyr::left_join(df_pj, by = c("mes", "empresa")) %>%
+        dplyr::mutate(
+          repasse = dplyr::coalesce(.data$repasse, 0),
+          pj = dplyr::coalesce(.data$pj, 0)
+        ) %>%
+        dplyr::arrange(.data$mes, .data$empresa)
+    },
+    error = function(e) {
+      message("Erro ao criar DFC: ", e$message)
+      return(tibble::tibble(
+        mes = as.Date(character()),
+        empresa = character(),
+        valor = numeric()
+      ))
+    }
+  )
+
   return(list(
     extratosConsolidados = extratosConsolidados,
-    mapaExtratos = mapaExtratos
+    mapaExtratos = mapaExtratos,
+    DFC = DFC
   ))
 }
