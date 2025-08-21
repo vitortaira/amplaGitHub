@@ -7,11 +7,11 @@
 c_cef_xcef(f_caminho.arquivo_c)
 }
 \arguments{
-\item{f_caminho.arquivo_c}{Character string. The file path of the PDF.}
+\item{f_caminho.arquivo_c}{Character string or vector. The file path(s) of the PDF/Excel files.}
 }
 \value{
-Character string. The classified type of the CEF bank statement
-(e.g., "xcef1", "xcef3", "xcef4", "xcef5", "xcef6", "xcef7", or "desconhecido").
+Character string or vector. The classified type(s) of the CEF bank statement(s)
+(e.g., "xcef1", "xcef3", "xcef4", "xcef5", "xcef6", "xcef7", "xcef8", or NA).
 }
 \description{
 Determines the type of a CEF (Caixa Econômica Federal) bank statement PDF
@@ -20,4 +20,5 @@ based on its content.
 \examples{
 # This is an internal function, but an example would look like:
 # c_cef_xcef("caminho/para/arquivo.pdf")
+# c_cef_xcef(c("arquivo1.pdf", "arquivo2.xlsx"))
 }

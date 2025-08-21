@@ -6,44 +6,50 @@
 \usage{
 e_cef_xcefs(
   f_caminho.pasta.extratos_c = caminhos_pastas("extratos"),
-  tipo = "melhores"
+  arquivo.subtipo = "melhores"
 )
 }
 \arguments{
 \item{f_caminho.pasta.extratos_c}{Caminho completo para a pasta que
-contém os arquivos dos extratos (mantido por compatibilidade).}
-
-\item{tipo}{Tipo de seleção de arquivos. Opções:
-\itemize{
-\item "melhores" (padrão): Para cada 4tupla (empresa, banco, conta.interno, mês),
-seleciona apenas o subtipo de maior prioridade: xcef3 > xcef4 > xcef5 > xcef6 > xcef7 > xcef8 > xcef1 > xcef2
-\item "todos": Extrai todos os arquivos independentemente do subtipo
-\item "xcef1", "xcef2", ..., "xcef8": Extrai apenas arquivos do subtipo específico
-}}
+contém os arquivos PDF dos extratos.}
 }
 \value{
-Retorna um tibble com as colunas padrão dos extratos CEF processados.
+Retorna um tibble com as seguintes colunas:
+\itemize{
+\item Data de lançamento: Date.
+\item Data de movimento: Date.
+\item documento: Character.
+\item Histórico: Character.
+\item Valor: Numeric.
+\item Saldo: Numeric.
+\item conta.interno: Character.
+\item Conta: Character.
+\item Agência: Character.
+\item produto: Character.
+\item CNPJ: Character.
+\item Cliente: Character.
+\item periodo.inicio: Date.
+\item periodo.fim: Date.
+\item data.consulta: POSIXct.
+}
 }
 \description{
-Consolida e processa dados de múltiplos extratos da CEF,
+Consolida e processa dados de múltiplos extratos em PDF da CEF,
 combinando-os em um único data frame.
 }
 \details{
-A função utiliza e_metadados("xcef") para identificar arquivos xcef disponíveis.
-Dependendo do tipo selecionado, filtra os arquivos usando e_cobertura_extratos().
-Para cada arquivo, chama e_cef_xcef() para extrair os dados e consolida
-os resultados em um único tibble.
+A função percorre a pasta especificada buscando arquivos PDF que
+contenham os códigos 2429, 2419 ou 2245, ignorando aqueles que contenham
+a palavra "fundo". Para cada arquivo encontrado, chama a função
+\code{e_cef_xcef} para realizar a extração dos dados e, posteriormente,
+consolida os resultados em um único tibble.
 }
 \examples{
 \dontrun{
-# Extrair apenas os melhores arquivos (padrão)
-extratos <- e_cef_xcefs()
-
-# Extrair todos os arquivos
-extratos_todos <- e_cef_xcefs(tipo = "todos")
-
-# Extrair apenas arquivos xcef8 (Excel)
-extratos_excel <- e_cef_xcefs(tipo = "xcef8")
+extratos <- e_cef_xcef
+  f_caminho.pasta.extratos_c = "caminho/para/a/pasta/dos/extratos"
+)
+print(extratos)
 }
 
 }
