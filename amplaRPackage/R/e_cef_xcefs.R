@@ -58,7 +58,9 @@ e_cef_xcefs<-
       c_extratos(arquivo.tipo = "xcef", arquivo.subtipo = "todos")$caminho
     }
     # Obter lista atualizada de contratos PJ
-    contratos_pj_6_ultimos <- get_contratos_pj_6_ultimos()
+    contratos_pj <- c(
+      e_cef_nplpjs()$contrato.6.ultimo, e_cef_nplpjs()$contrato.6.penultimo
+    )
 
     # Mensagem informando o número de extratos identificados
     # n_extratos <- length(caminhos.extratos.cef_c)
@@ -110,14 +112,16 @@ e_cef_xcefs<-
           # TRUE ~ NA_character_
         ),
         repasse = if_else(
-          (descricao == "CR DESBLOQ") &
-            !(documento %in% contratos_pj_6_ultimos),
+          (((descricao == "CR DESBLOQ") | (descricao == "CRE D IMOB")) &
+            !(documento %in% contratos_pj)) |
+            (descricao == "DESB CR CX") |
+            (descricao == "DESBL.SALD"),
           TRUE,
           FALSE
         ),
         pj = if_else(
           ((descricao == "CR DESBLOQ") | (descricao == "CRE D IMOB")) &
-            (documento %in% contratos_pj_6_ultimos),
+            (documento %in% contratos_pj),
           TRUE,
           FALSE
         ),

@@ -15,6 +15,8 @@ e_cef_nplpj <- function(caminhoArquivo) {
     devedor = devedor
   ) %>%
     mutate(
+      contrato.6.ultimo = str_sub(contrato, -6, -1),
+      contrato.6.penultimo = str_sub(contrato, -7, -2),
       empresa = case_when(
         !is.na(devedor) & str_detect(devedor, "(?i)ampla\\s?incorporadora") ~ "AMP",
         !is.na(devedor) & str_detect(devedor, "(?i)metro\\s?vila\\s?sonia") ~ "AVS",
@@ -25,8 +27,7 @@ e_cef_nplpj <- function(caminhoArquivo) {
         !is.na(devedor) & str_detect(devedor, "(?i)up\\s?s\\.") ~ "SAU",
         !is.na(devedor) & str_detect(devedor, "(?i)sonia\\s?ii") ~ "SN2",
         !is.na(devedor) & str_detect(devedor, "(?i)sonia\\s?iv") ~ "SN4",
-        TRUE ~ devedor
-        # TRUE ~ NA_character_
+        TRUE ~ NA_character_
       )
     )
 }

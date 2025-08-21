@@ -60,7 +60,7 @@ e_ita_xitas <-
       as_tibble() %>%
       dplyr::filter(
         !str_starts(descricao, "(?i)saldo") &
-          str_detect(descricao, "(?i)saldo\\s?a\\s?liberar")
+          !str_detect(descricao, "(?i)saldo\\s?a\\s?liberar")
       )
     list(
       xita_l = xita.l_t
