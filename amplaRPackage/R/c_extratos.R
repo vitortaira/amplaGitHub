@@ -23,7 +23,7 @@ c_extratos <- function(arquivo.subtipo = "melhores", arquivo.tipo = "todos") {
       ),
     e_metadados("xita") %>%
       mutate(
-        arquivo.subtipo = "xita1",
+        arquivo.subtipo = c_ita_xita(caminho),
         arquivo.tipo = "xita"
       )
   ) %>%
