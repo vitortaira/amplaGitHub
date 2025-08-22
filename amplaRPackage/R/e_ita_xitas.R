@@ -1,7 +1,7 @@
 e_ita_xitas <-
   function(f_caminho.pasta.extratos_c = caminhos_pastas("extratos")) {
     extratos_l <- list()
-    extratos_t <- data.frame()
+    extratos_t <- tibble()
 
     for (i_caminho.extrato.ita_c in e_metadados("xita")$caminho) {
       extrato <- tryCatch(
@@ -57,7 +57,6 @@ e_ita_xitas <-
         arquivo.tipo = "xita",
         arquivo.fonte = "ita"
       ) %>%
-      as_tibble() %>%
       dplyr::filter(
         !str_starts(descricao, "(?i)saldo") &
           !str_detect(descricao, "(?i)saldo\\s?a\\s?liberar")

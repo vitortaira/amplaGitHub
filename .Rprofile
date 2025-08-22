@@ -29,22 +29,10 @@ if (interactive() && Sys.getenv("RSTUDIO") == "") {
   ))
 }
 
-# Load the 'amplaRPackage' package quietly (using library for proper help system)
-tryCatch({
-  if ("amplaRPackage" %in% utils::installed.packages()[, "Package"]) {
-    invisible(suppressMessages(suppressPackageStartupMessages(library(amplaRPackage))))
-  } else {
-    # Fallback to load_all if package not installed
-    invisible(suppressMessages(suppressPackageStartupMessages(devtools::load_all(
-      "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaRPackage"
-    ))))
-  }
-}, error = function(e) {
-  # If there's any error, just use load_all as fallback
-  invisible(suppressMessages(suppressPackageStartupMessages(devtools::load_all(
-    "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaRPackage"
-  ))))
-})
+# Load the 'amplaRPackage' package quietly
+invisible(suppressMessages(suppressPackageStartupMessages(devtools::load_all(
+  "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaRPackage"
+))))
 
 # Display a startup message
 message("Custom .Rprofile loaded: LOCALE set to pt_BR.UTF-8 and packages loaded.")
