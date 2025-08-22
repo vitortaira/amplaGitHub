@@ -1,3 +1,73 @@
+#' @title Consolidação dos dados dos extratos bancários do Itaú
+#'
+#' @description
+#' A função **e_ita_xitas** extrai e consolida os dados de todos os extratos
+#' bancários do Itaú disponíveis na pasta de extratos. Para cada arquivo de
+#' extrato encontrado, a função chama `e_ita_xita()` para realizar a extração
+#' dos dados e, posteriormente, consolida os resultados em uma única tabela.
+#'
+#' @param f_caminho.pasta.extratos_c Caminho para a pasta contendo os extratos.
+#'   Por padrão, utiliza o caminho relativo baseado na estrutura do projeto
+#'   retornado por `caminhos_pastas("extratos")`.
+#'
+#' @details
+#' A função realiza as seguintes operações:
+#' \enumerate{
+#'   \item Busca todos os arquivos de extratos do Itaú através de `e_metadados("xita")`
+#'   \item Para cada arquivo encontrado, tenta extrair os dados usando `e_ita_xita()`
+#'   \item Consolida todos os dados extraídos em uma única tabela
+#'   \item Padroniza os códigos das empresas usando mapeamento interno
+#'   \item Remove entradas relacionadas a saldos
+#'   \item Adiciona metadados sobre o tipo de arquivo e fonte
+#' }
+#'
+#' O mapeamento de empresas inclui:
+#' \itemize{
+#'   \item AMP: Ampla Incorporadora
+#'   \item AVS: Metro VS e I
+#'   \item CBL: Campo Belo
+#'   \item ENC: Nova Civil
+#'   \item GRA: Grauca
+#'   \item INC: Incorflora
+#'   \item JSP: Jardim São Paulo
+#'   \item POM: Pompeia
+#'   \item SAU: Saúde
+#'   \item SN2: Sonia II
+#'   \item SN4: Sonia IV
+#'   \item USL: Sale
+#'   \item LUC: São Lucas
+#'   \item SOC: Socorro
+#' }
+#'
+#' @return
+#' Retorna uma lista com um elemento:
+#'   \item{xita_l}{Tibble consolidado com os dados de todos os extratos do Itaú,
+#'     incluindo colunas padronizadas para empresa, descrição, valores, datas e
+#'     metadados sobre o tipo de arquivo.}
+#'
+#' @examples
+#' \dontrun{
+#' # Extrair e consolidar todos os extratos do Itaú
+#' extratos_ita <- e_ita_xitas()
+#' print(extratos_ita$xita_l)
+#'
+#' # Usar caminho personalizado
+#' extratos_ita <- e_ita_xitas(
+#'   f_caminho.pasta.extratos_c = "caminho/para/extratos"
+#' )
+#' }
+#'
+#' @seealso
+#' \code{\link{e_ita_xita}} para extração de um único extrato,
+#' \code{\link{e_metadados}} para obtenção dos metadados dos arquivos,
+#' \code{\link{caminhos_pastas}} para definição dos caminhos das pastas.
+#'
+#' @importFrom dplyr mutate case_when filter bind_rows
+#' @importFrom stringr str_detect str_starts
+#' @importFrom tibble tibble
+#'
+#' @export
+
 e_ita_xitas <-
   function(f_caminho.pasta.extratos_c = caminhos_pastas("extratos")) {
     extratos_l <- list()
