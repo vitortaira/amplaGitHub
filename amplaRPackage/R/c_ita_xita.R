@@ -3,8 +3,8 @@
 #' @description
 #' A função **c_ita_xita** classifica o subtipo dos arquivos de extratos bancários
 #' do Itaú com base na extensão do arquivo. A classificação é simples:
-#' arquivos Excel (.xlsx) são classificados como "xita1" e arquivos PDF (.pdf)
-#' são classificados como "xita2".
+#' arquivos Excel (.xlsx) são classificados como "xita2" e arquivos PDF (.pdf)
+#' são classificados como "xita1".
 #'
 #' @param f_caminho.arquivo_c Caminho(s) do(s) arquivo(s) a ser(em) classificado(s).
 #'   Pode ser um único caminho (string) ou um vetor de caminhos.
@@ -12,8 +12,8 @@
 #' @details
 #' A função determina o subtipo baseado na extensão do arquivo:
 #' \itemize{
-#'   \item **xita1**: Arquivos com extensão .xlsx (Excel)
-#'   \item **xita2**: Arquivos com extensão .pdf (PDF)
+#'   \item **xita1**: Arquivos com extensão .pdf (PDF)
+#'   \item **xita2**: Arquivos com extensão .xlsx (Excel)
 #'   \item **NA**: Arquivos com outras extensões ou arquivos inexistentes
 #' }
 #'
@@ -23,16 +23,16 @@
 #' @return
 #' Retorna um vetor de caracteres com as classificações dos subtipos:
 #' \itemize{
-#'   \item "xita1" para arquivos Excel (.xlsx)
-#'   \item "xita2" para arquivos PDF (.pdf)
+#'   \item "xita1" para arquivos PDF (.pdf)
+#'   \item "xita2" para arquivos Excel (.xlsx)
 #'   \item NA para outras extensões ou arquivos inexistentes
 #' }
 #'
 #' @examples
 #' \dontrun{
 #' # Classificar um único arquivo
-#' c_ita_xita("extrato_janeiro.xlsx") # Retorna "xita1"
-#' c_ita_xita("extrato_fevereiro.pdf") # Retorna "xita2"
+#' c_ita_xita("extrato_janeiro.xlsx") # Retorna "xita2"
+#' c_ita_xita("extrato_fevereiro.pdf") # Retorna "xita1"
 #'
 #' # Classificar múltiplos arquivos
 #' arquivos <- c("extrato1.xlsx", "extrato2.pdf", "extrato3.txt")
@@ -60,8 +60,8 @@ c_ita_xita <- function(f_caminho.arquivo_c) {
 
   # Classificar baseado na extensão
   resultado <- dplyr::case_when(
-    tolower(extensao) == "xlsx" ~ "xita1",
-    tolower(extensao) == "pdf" ~ "xita2",
+    tolower(extensao) == "xlsx" ~ "xita2",
+    tolower(extensao) == "pdf" ~ "xita1",
     TRUE ~ NA_character_
   )
 
