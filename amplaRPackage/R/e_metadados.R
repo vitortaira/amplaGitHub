@@ -93,7 +93,7 @@ e_metadados <- function(f_arquivo.tipo_c = NULL) {
   c_xita <- function() {
     dir_ls(caminhos_pastas("extratos"), recurse = TRUE, type = "file") %>%
       keep(
-        ~ str_detect(.x, "(?i)ita[uú]") & str_ends(.x, "\\.pdf|\\.xlsx")
+        ~ str_detect(.x, "(?i)ita[uú]") & str_ends(.x, "\\.pdf")
       ) %>%
       as_tibble_col("caminho") %>%
       mutate(

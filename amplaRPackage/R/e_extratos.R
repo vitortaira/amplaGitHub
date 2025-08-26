@@ -11,10 +11,13 @@
 #' @return Uma lista contendo:
 #'   - extratosConsolidados: tibble com dados consolidados de extratos
 #'   - mapaExtratos: tibble com combinações únicas de (empresa, banco, conta, descricao)
+#'   - fluxosContaMes: tibble com análise de entradas e saídas por conta e mês
+#'   - DFC: tibble com dados para Demonstração do Fluxo de Caixa
 #' @importFrom dplyr bind_rows mutate select rename case_when if_else arrange all_of
 #' @importFrom dplyr distinct group_by summarise n filter
 #' @importFrom stringr str_detect str_pad str_sub str_c
 #' @importFrom tibble tibble as_tibble
+#' @importFrom lubridate floor_date
 #' @importFrom openxlsx loadWorkbook writeData saveWorkbook addWorksheet addStyle createStyle
 #' @importFrom openxlsx setColWidths addFilter freezePane
 #' @export
@@ -225,6 +228,69 @@ e_extratos <- function(xlsx = FALSE) {
   # Gerar mapa de extratos
   mapaExtratos <- .mapeamento(extratosConsolidados)
 
+  # Criar análise de entradas e saídas por conta e mês
+  fluxosContaMes <- tryCatch(
+    {
+      message("Criando análise de fluxos por conta e mês...")
+      message(sprintf("Dados consolidados: %d registros", nrow(extratosConsolidados)))
+      
+      # Verificar se há dados válidos
+      dados_validos <- extratosConsolidados %>%
+        dplyr::filter(!is.na(.data$valor), !is.na(.data$data.movimentacao))
+      
+      message(sprintf("Dados válidos (com valor e data): %d registros", nrow(dados_validos)))
+      
+      if (nrow(dados_validos) == 0) {
+        message("Nenhum dado válido encontrado para análise de fluxos")
+        tibble::tibble(
+          mes = as.Date(character()),
+          identificacao.conta = character(),
+          empresa = character(),
+          banco = character(),
+          conta = character(),
+          entradas = numeric(),
+          saidas = numeric(),
+          saldo.liquido = numeric(),
+          qtd.transacoes = integer()
+        )
+      } else {
+      
+      # Criar análise de fluxos
+      resultado <- dados_validos %>%
+        dplyr::mutate(
+          mes = lubridate::floor_date(.data$data.movimentacao, "month"),
+          identificacao.conta = paste(.data$empresa, .data$banco, .data$conta, sep = " - ")
+        ) %>%
+        dplyr::group_by(.data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta) %>%
+        dplyr::summarise(
+          entradas = sum(pmax(.data$valor, 0), na.rm = TRUE),
+          saidas = sum(pmin(.data$valor, 0), na.rm = TRUE),
+          saldo.liquido = sum(.data$valor, na.rm = TRUE),
+          qtd.transacoes = dplyr::n(),
+          .groups = "drop"
+        ) %>%
+        dplyr::arrange(.data$mes, .data$empresa, .data$banco, .data$conta)
+      
+      message(sprintf("Análise de fluxos criada: %d registros", nrow(resultado)))
+      resultado
+      }
+    },
+    error = function(e) {
+      message("Erro ao criar análise de fluxos por conta e mês: ", e$message)
+      return(tibble::tibble(
+        mes = as.Date(character()),
+        identificacao.conta = character(),
+        empresa = character(),
+        banco = character(),
+        conta = character(),
+        entradas = numeric(),
+        saidas = numeric(),
+        saldo.liquido = numeric(),
+        qtd.transacoes = integer()
+      ))
+    }
+  )
+
   # Criar arquivo Excel se solicitado
   if (xlsx && nrow(mapaExtratos) > 0) {
     # Definindo o nome do arquivo dinamicamente
@@ -387,6 +453,61 @@ e_extratos <- function(xlsx = FALSE) {
       )
     }
 
+    # Adicionar aba "Fluxos por Conta"
+    openxlsx::addWorksheet(wb, "Fluxos por Conta")
+    openxlsx::writeData(wb, sheet = "Fluxos por Conta", x = fluxosContaMes)
+
+    # Formatação da aba Fluxos por Conta
+    openxlsx::addStyle(
+      wb,
+      sheet = "Fluxos por Conta",
+      style = openxlsx::createStyle(
+        border = "TopBottomLeftRight",
+        halign = "center",
+        valign = "center"
+      ),
+      rows = 1:(nrow(fluxosContaMes) + 1),
+      cols = seq_len(ncol(fluxosContaMes)),
+      gridExpand = TRUE
+    )
+
+    # Cabeçalho da aba Fluxos por Conta
+    openxlsx::addStyle(
+      wb,
+      sheet = "Fluxos por Conta",
+      style = openxlsx::createStyle(
+        fgFill = "#4472C4",
+        fontColour = "white",
+        border = "TopBottomLeftRight",
+        halign = "center",
+        valign = "center"
+      ),
+      rows = 1,
+      cols = seq_len(ncol(fluxosContaMes)),
+      gridExpand = TRUE
+    )
+
+    # Adicionar filtro e congelar painel na aba Fluxos por Conta
+    openxlsx::addFilter(wb, sheet = "Fluxos por Conta", rows = 1, cols = seq_len(ncol(fluxosContaMes)))
+    openxlsx::freezePane(wb, sheet = "Fluxos por Conta", firstRow = TRUE, firstActiveRow = 2)
+
+    # Formatação monetária na aba Fluxos por Conta
+    colunas_monetarias_fluxos <- which(colnames(fluxosContaMes) %in% c("entradas", "saidas", "saldo.liquido"))
+    if (length(colunas_monetarias_fluxos) > 0) {
+      openxlsx::addStyle(
+        wb,
+        sheet = "Fluxos por Conta",
+        style = openxlsx::createStyle(numFmt = "#,##0.00"),
+        rows = 2:(nrow(fluxosContaMes) + 1),
+        cols = colunas_monetarias_fluxos,
+        gridExpand = TRUE,
+        stack = TRUE
+      )
+    }
+
+    # Largura das colunas na aba Fluxos por Conta
+    openxlsx::setColWidths(wb, sheet = "Fluxos por Conta", cols = seq_len(ncol(fluxosContaMes)), widths = 18)
+
     # Obter descrições únicas em ordem alfabética
     descricoesUnicas <- sort(unique(extratosConsolidados$descricao[!is.na(extratosConsolidados$descricao)]))
 
@@ -415,6 +536,7 @@ e_extratos <- function(xlsx = FALSE) {
     message(sprintf("Arquivo Excel criado com template: %s", caminhoArquivo))
     message("  - Aba 'Extratos': Dados consolidados de extratos CEF e ITAÚ")
     message("  - Aba 'Resumo': Mapa de combinações únicas")
+    message("  - Aba 'Fluxos por Conta': Análise de entradas e saídas por conta e mês")
     message("  - Aba 'Mapeamento': Descrições únicas populadas")
 
     # Mostrar estatísticas
@@ -484,9 +606,11 @@ e_extratos <- function(xlsx = FALSE) {
     }
   )
 
+  # Retornar lista com os objetos criados
   return(list(
     extratosConsolidados = extratosConsolidados,
     mapaExtratos = mapaExtratos,
+    fluxosContaMes = fluxosContaMes,
     DFC = DFC
   ))
 }
