@@ -342,18 +342,21 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
         linhas = str_remove(linhas, "^\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
         documento = word(linhas),
         linhas = str_remove(linhas, str_c("^", word(linhas))) %>% str_trim(),
-        Saldo = str_extract(linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?$") %>%
+        saldo = str_extract(linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?$") %>%
           str_remove("\\s?C") %>% str_remove_all("\\.") %>%
           str_replace("\\,", "\\.") %>%
           if_else(str_detect(., "D$"),
             str_c("-", .) %>% str_remove("\\s?D$"),
             .
           ) %>% as.numeric(),
-        linhas = str_remove(linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?$"),
-        valor = stringr::str_extract(linhas, "-?\\d{1,3}(\\.\\d{3})*(,\\d{2})?") %>%
-          readr::parse_number(locale = readr::locale(decimal_mark = ",", grouping_mark = ".")),
-        saldo = stringr::str_extract(linhas, "-?\\d{1,3}(\\.\\d{3})*(,\\d{2})?") %>%
-          readr::parse_number(locale = readr::locale(decimal_mark = ",", grouping_mark = ".")),
+        linhas = str_remove(linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?$") %>% str_trim(),
+        valor = str_extract(linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?$") %>%
+          str_remove("\\s?C") %>% str_remove_all("\\.") %>%
+          str_replace("\\,", "\\.") %>%
+          if_else(str_detect(., "D$"),
+            str_c("-", .) %>% str_remove("\\s?D$"),
+            .
+          ) %>% as.numeric(),
         descricao = str_remove(
           linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?"
         ) %>% str_trim(),
