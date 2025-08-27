@@ -13,6 +13,7 @@
 #'   - mapaExtratos: tibble com combinações únicas de (empresa, banco, conta, descricao)
 #'   - fluxosContaMes: tibble com análise de entradas e saídas por conta e mês
 #'   - DFC: tibble com dados para Demonstração do Fluxo de Caixa
+#'   - extratosIk: tibble com dados CMF extraídos do Informakon
 #' @importFrom dplyr bind_rows mutate select rename case_when if_else arrange all_of
 #' @importFrom dplyr distinct group_by summarise n filter
 #' @importFrom stringr str_detect str_pad str_sub str_c
@@ -79,6 +80,22 @@ e_extratos <- function(xlsx = FALSE) {
         arquivo.tipo = character(),
         arquivo.fonte = character()
       ))
+    }
+  )
+
+  # Obter dados CMF (Informakon)
+  dadosIk <- tryCatch(
+    {
+      if (exists("e_ik_cmf", mode = "function")) {
+        e_ik_cmf()
+      } else {
+        message("Função e_ik_cmf não encontrada. Dados CMF não serão incluídos.")
+        tibble::tibble()
+      }
+    },
+    error = function(e) {
+      message("Erro ao extrair dados CMF (Informakon): ", e$message)
+      return(tibble::tibble())
     }
   )
 
@@ -174,6 +191,7 @@ e_extratos <- function(xlsx = FALSE) {
 
   message(sprintf("Total de registros CEF: %d", nrow(dadosCefLimpos)))
   message(sprintf("Total de registros ITAÚ: %d", nrow(dadosItaLimpos)))
+  message(sprintf("Total de registros CMF (Informakon): %d", nrow(dadosIk)))
   message(sprintf("Total de registros consolidados: %d", nrow(extratosConsolidados)))
 
   if (nrow(extratosConsolidados) > 0) {
@@ -308,8 +326,9 @@ e_extratos <- function(xlsx = FALSE) {
     # Preparar dados para gerar_xlsx
     dadosAbas <- list(
       "Extratos" = extratosConsolidados,
-      "Resumo" = mapaExtratos,
-      "Fluxos por Conta" = fluxosContaMes
+      "Resumo - Lançamentos" = mapaExtratos,
+      "Extratos - Ik" = dadosIk,
+      "Contas mensal" = fluxosContaMes
     )
 
     # Definir larguras específicas das colunas
@@ -331,10 +350,10 @@ e_extratos <- function(xlsx = FALSE) {
     # Definir colunas com quebra de texto
     colunasTexto <- c("arquivo(s)", "descricao")
 
-    # Usar gerar_xlsx para criar o arquivo (sem template para criar abas automaticamente)
+    # Usar gerar_xlsx para carregar o template e popular as abas existentes
     caminhoArquivo <- gerar_xlsx(
       data = dadosAbas,
-      wb_load = NULL, # Não usar template aqui para permitir criação automática das abas
+      wb_load = caminhoTemplate, # Carregar o template diretamente
       tab_names = names(dadosAbas),
       col_width_def = 18,
       col_width_spec = largurasColunas,
@@ -343,30 +362,8 @@ e_extratos <- function(xlsx = FALSE) {
       save = list(nomeArquivo, caminhoDestino)
     )
 
-    # Carregar o arquivo criado e adicionar abas do template
+    # Carregar o arquivo criado para adicionar descrições na aba Mapeamento
     wb <- openxlsx::loadWorkbook(caminhoArquivo)
-    wbTemplate <- openxlsx::loadWorkbook(caminhoTemplate)
-
-    # Copiar abas do template (DFC, Mapeamento, Configurações)
-    for (abaTemplate in names(wbTemplate)) {
-      if (!abaTemplate %in% names(wb)) {
-        # Criar a aba
-        openxlsx::addWorksheet(wb, abaTemplate)
-
-        # Copiar dados da aba do template se existirem
-        tryCatch(
-          {
-            dadosTemplate <- openxlsx::readWorkbook(wbTemplate, sheet = abaTemplate, colNames = FALSE)
-            if (nrow(dadosTemplate) > 0) {
-              openxlsx::writeData(wb, sheet = abaTemplate, x = dadosTemplate, colNames = FALSE)
-            }
-          },
-          error = function(e) {
-            message(sprintf("Não foi possível copiar dados da aba '%s': %s", abaTemplate, e$message))
-          }
-        )
-      }
-    }
 
     # Obter descrições únicas em ordem alfabética
     descricoesUnicas <- sort(unique(extratosConsolidados$descricao[!is.na(extratosConsolidados$descricao)]))
@@ -393,11 +390,14 @@ e_extratos <- function(xlsx = FALSE) {
     # Salvar as alterações
     openxlsx::saveWorkbook(wb, caminhoArquivo, overwrite = TRUE)
 
-    message(sprintf("Arquivo Excel criado com template: %s", caminhoArquivo))
+    message(sprintf("Arquivo Excel criado baseado no template: %s", caminhoArquivo))
+    message("Abas populadas com dados extraídos:")
     message("  - Aba 'Extratos': Dados consolidados de extratos CEF e ITAÚ")
-    message("  - Aba 'Resumo': Mapa de combinações únicas")
-    message("  - Aba 'Fluxos por Conta': Análise de entradas e saídas por conta e mês")
-    message("  - Aba 'Mapeamento': Descrições únicas populadas")
+    message("  - Aba 'Resumo - Lançamentos': Mapa de combinações únicas")
+    message("  - Aba 'Extratos - Ik': Dados CMF extraídos do Informakon")
+    message("  - Aba 'Contas mensal': Análise de entradas e saídas por conta e mês")
+    message("  - Aba 'Mapeamento': Descrições únicas adicionadas")
+    message("Abas do template preservadas: Empresa mensal, DFC, Configurações")
 
     # Mostrar estatísticas
     if (nrow(mapaExtratos) > 0) {
@@ -471,6 +471,7 @@ e_extratos <- function(xlsx = FALSE) {
     extratosConsolidados = extratosConsolidados,
     mapaExtratos = mapaExtratos,
     fluxosContaMes = fluxosContaMes,
-    DFC = DFC
+    DFC = DFC,
+    extratosIk = dadosIk
   ))
 }

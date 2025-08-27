@@ -473,6 +473,43 @@ e_ik_cmf <- function(
     }
   }
 
+  # Criar coluna conta.interno com os últimos 4 dígitos de Conta.N
+  colunas_conta_comuns <- c("Conta.N", "conta.n", "Conta.Numero", "conta.numero", "conta", "Conta")
+
+  for (col_conta in colunas_conta_comuns) {
+    if (col_conta %in% names(cmf_consolidado)) {
+      tryCatch(
+        {
+          # Obter valores da coluna de conta
+          valor_conta <- cmf_consolidado[[col_conta]]
+          
+          # Criar conta.interno tratando NA explicitamente
+          cmf_consolidado$conta.interno <- ifelse(
+            is.na(valor_conta),
+            NA_character_,
+            {
+              # Extrair apenas números da coluna
+              conta_numeros <- stringr::str_extract_all(as.character(valor_conta), "\\d") %>%
+                sapply(function(x) paste(x, collapse = ""))
+              
+              # Se não houver dígitos ou for string vazia, retornar NA
+              ifelse(nchar(conta_numeros) == 0 | conta_numeros == "",
+                     NA_character_,
+                     stringr::str_pad(stringr::str_sub(conta_numeros, -4, -1), 
+                                    4, side = "left", pad = "0"))
+            }
+          )
+
+          message(sprintf("Coluna 'conta.interno' criada baseada em '%s'", col_conta))
+          break # Sair do loop após encontrar a primeira coluna válida
+        },
+        error = function(e) {
+          message(sprintf("Aviso: Não foi possível extrair conta.interno de '%s': %s", col_conta, e$message))
+        }
+      )
+    }
+  }
+
   # Se solicitado, salva em xlsx usando gerar_xlsx
   if (xlsx && nrow(cmf_consolidado) > 0) {
     tryCatch(

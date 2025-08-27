@@ -118,23 +118,28 @@ gerar_xlsx <- function(data,
         openxlsx::addWorksheet(wb, nome_aba)
       }
 
-      # Deletar região nomeada antiga, se existir
-      nome_regiao <- tolower(nome_aba)
-      if (nome_regiao %in% openxlsx::getNamedRegions(wb)) {
-        openxlsx::deleteNamedRegion(wb, name = nome_regiao)
+      # Deletar região nomeada antiga, se existir (apenas para novos workbooks)
+      if (is.null(wb_load)) {
+        nome_regiao <- tolower(nome_aba)
+        if (nome_regiao %in% openxlsx::getNamedRegions(wb)) {
+          openxlsx::deleteNamedRegion(wb, name = nome_regiao)
+        }
       }
 
       # Escrever os dados
       openxlsx::writeData(wb, sheet = nome_aba, x = df_dados)
 
-      # Criar nova região nomeada
-      openxlsx::createNamedRegion(
-        wb,
-        sheet = nome_aba,
-        name = nome_regiao,
-        rows = 1:(nrow(df_dados) + 1),
-        cols = seq_len(ncol(df_dados))
-      )
+      # Criar nova região nomeada (apenas para novos workbooks)
+      if (is.null(wb_load)) {
+        nome_regiao <- tolower(nome_aba)
+        openxlsx::createNamedRegion(
+          wb,
+          sheet = nome_aba,
+          name = nome_regiao,
+          rows = 1:(nrow(df_dados) + 1),
+          cols = seq_len(ncol(df_dados))
+        )
+      }
 
       # Estilo geral (bordas e alinhamento)
       openxlsx::addStyle(
