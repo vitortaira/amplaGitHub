@@ -233,13 +233,13 @@ e_extratos <- function(xlsx = FALSE) {
     {
       message("Criando análise de fluxos por conta e mês...")
       message(sprintf("Dados consolidados: %d registros", nrow(extratosConsolidados)))
-      
+
       # Verificar se há dados válidos
       dados_validos <- extratosConsolidados %>%
         dplyr::filter(!is.na(.data$valor), !is.na(.data$data.movimentacao))
-      
+
       message(sprintf("Dados válidos (com valor e data): %d registros", nrow(dados_validos)))
-      
+
       if (nrow(dados_validos) == 0) {
         message("Nenhum dado válido encontrado para análise de fluxos")
         tibble::tibble(
@@ -254,25 +254,24 @@ e_extratos <- function(xlsx = FALSE) {
           qtd.transacoes = integer()
         )
       } else {
-      
-      # Criar análise de fluxos
-      resultado <- dados_validos %>%
-        dplyr::mutate(
-          mes = lubridate::floor_date(.data$data.movimentacao, "month"),
-          identificacao.conta = paste(.data$empresa, .data$banco, .data$conta, sep = " - ")
-        ) %>%
-        dplyr::group_by(.data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta) %>%
-        dplyr::summarise(
-          entradas = sum(pmax(.data$valor, 0), na.rm = TRUE),
-          saidas = sum(pmin(.data$valor, 0), na.rm = TRUE),
-          saldo.liquido = sum(.data$valor, na.rm = TRUE),
-          qtd.transacoes = dplyr::n(),
-          .groups = "drop"
-        ) %>%
-        dplyr::arrange(.data$mes, .data$empresa, .data$banco, .data$conta)
-      
-      message(sprintf("Análise de fluxos criada: %d registros", nrow(resultado)))
-      resultado
+        # Criar análise de fluxos
+        resultado <- dados_validos %>%
+          dplyr::mutate(
+            mes = lubridate::floor_date(.data$data.movimentacao, "month"),
+            identificacao.conta = paste(.data$empresa, .data$banco, .data$conta, sep = " - ")
+          ) %>%
+          dplyr::group_by(.data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta) %>%
+          dplyr::summarise(
+            entradas = sum(pmax(.data$valor, 0), na.rm = TRUE),
+            saidas = sum(pmin(.data$valor, 0), na.rm = TRUE),
+            saldo.liquido = sum(.data$valor, na.rm = TRUE),
+            qtd.transacoes = dplyr::n(),
+            .groups = "drop"
+          ) %>%
+          dplyr::arrange(.data$mes, .data$empresa, .data$banco, .data$conta)
+
+        message(sprintf("Análise de fluxos criada: %d registros", nrow(resultado)))
+        resultado
       }
     },
     error = function(e) {
@@ -303,7 +302,17 @@ e_extratos <- function(xlsx = FALSE) {
     # Caminho do template
     caminhoTemplate <- "C:\\Users\\Ampla\\AMPLA INCORPORADORA LTDA\\Controladoria - Documentos\\amplaGitHub\\templates\\Template-DFC.xlsx"
 
-    # Definir larguras específicas das colunas para o resumo
+    # Criar caminho de destino completo
+    caminhoDestino <- stringr::str_c(caminhos_pastas("extratos"), "/Consolidados")
+
+    # Preparar dados para gerar_xlsx
+    dadosAbas <- list(
+      "Extratos" = extratosConsolidados,
+      "Resumo" = mapaExtratos,
+      "Fluxos por Conta" = fluxosContaMes
+    )
+
+    # Definir larguras específicas das colunas
     largurasColunas <- c(
       "empresa" = 20,
       "banco" = 12,
@@ -316,197 +325,48 @@ e_extratos <- function(xlsx = FALSE) {
       "arquivo(s)" = 80
     )
 
-    # Criar caminho de destino completo
-    caminhoDestino <- stringr::str_c(caminhos_pastas("extratos"), "/Consolidados")
-    caminhoArquivo <- file.path(caminhoDestino, nomeArquivo)
+    # Definir colunas monetárias
+    colunasMonetarias <- c("valor", "soma.valor", "soma.valor.abs", "entradas", "saidas", "saldo.liquido")
 
-    # Criar diretório se não existir
-    dir.create(caminhoDestino, showWarnings = FALSE, recursive = TRUE)
+    # Definir colunas com quebra de texto
+    colunasTexto <- c("arquivo(s)", "descricao")
 
-    # Copiar template para destino
-    file.copy(caminhoTemplate, caminhoArquivo, overwrite = TRUE)
+    # Usar gerar_xlsx para criar o arquivo (sem template para criar abas automaticamente)
+    caminhoArquivo <- gerar_xlsx(
+      data = dadosAbas,
+      wb_load = NULL, # Não usar template aqui para permitir criação automática das abas
+      tab_names = names(dadosAbas),
+      col_width_def = 18,
+      col_width_spec = largurasColunas,
+      col_monetary = colunasMonetarias,
+      col_clip = colunasTexto,
+      save = list(nomeArquivo, caminhoDestino)
+    )
 
-    # Carregar o workbook copiado
+    # Carregar o arquivo criado e adicionar abas do template
     wb <- openxlsx::loadWorkbook(caminhoArquivo)
+    wbTemplate <- openxlsx::loadWorkbook(caminhoTemplate)
 
-    # Adicionar aba "Extratos"
-    openxlsx::addWorksheet(wb, "Extratos")
-    openxlsx::writeData(wb, sheet = "Extratos", x = extratosConsolidados)
+    # Copiar abas do template (DFC, Mapeamento, Configurações)
+    for (abaTemplate in names(wbTemplate)) {
+      if (!abaTemplate %in% names(wb)) {
+        # Criar a aba
+        openxlsx::addWorksheet(wb, abaTemplate)
 
-    # Formatação da aba Extratos
-    openxlsx::addStyle(
-      wb,
-      sheet = "Extratos",
-      style = openxlsx::createStyle(
-        border = "TopBottomLeftRight",
-        halign = "center",
-        valign = "center"
-      ),
-      rows = 1:(nrow(extratosConsolidados) + 1),
-      cols = seq_len(ncol(extratosConsolidados)),
-      gridExpand = TRUE
-    )
-
-    # Cabeçalho da aba Extratos
-    openxlsx::addStyle(
-      wb,
-      sheet = "Extratos",
-      style = openxlsx::createStyle(
-        border = "TopBottomLeftRight",
-        fontSize = 11,
-        halign = "center",
-        valign = "center",
-        textDecoration = "bold",
-        fgFill = "darkgray",
-        wrapText = TRUE
-      ),
-      rows = 1,
-      cols = seq_len(ncol(extratosConsolidados)),
-      gridExpand = TRUE
-    )
-
-    # Adicionar filtro e congelar painel na aba Extratos
-    openxlsx::addFilter(wb, sheet = "Extratos", rows = 1, cols = seq_len(ncol(extratosConsolidados)))
-    openxlsx::freezePane(wb, sheet = "Extratos", firstRow = TRUE, firstActiveRow = 2)
-
-    # Largura das colunas na aba Extratos
-    openxlsx::setColWidths(wb, sheet = "Extratos", cols = seq_len(ncol(extratosConsolidados)), widths = 18)
-
-    # Adicionar aba "Resumo"
-    openxlsx::addWorksheet(wb, "Resumo")
-    openxlsx::writeData(wb, sheet = "Resumo", x = mapaExtratos)
-
-    # Formatação da aba Resumo
-    openxlsx::addStyle(
-      wb,
-      sheet = "Resumo",
-      style = openxlsx::createStyle(
-        border = "TopBottomLeftRight",
-        halign = "center",
-        valign = "center"
-      ),
-      rows = 1:(nrow(mapaExtratos) + 1),
-      cols = seq_len(ncol(mapaExtratos)),
-      gridExpand = TRUE
-    )
-
-    # Cabeçalho da aba Resumo
-    openxlsx::addStyle(
-      wb,
-      sheet = "Resumo",
-      style = openxlsx::createStyle(
-        border = "TopBottomLeftRight",
-        fontSize = 11,
-        halign = "center",
-        valign = "center",
-        textDecoration = "bold",
-        fgFill = "darkgray",
-        wrapText = TRUE
-      ),
-      rows = 1,
-      cols = seq_len(ncol(mapaExtratos)),
-      gridExpand = TRUE
-    )
-
-    # Adicionar filtro e congelar painel na aba Resumo
-    openxlsx::addFilter(wb, sheet = "Resumo", rows = 1, cols = seq_len(ncol(mapaExtratos)))
-    openxlsx::freezePane(wb, sheet = "Resumo", firstRow = TRUE, firstActiveRow = 2)
-
-    # Larguras específicas das colunas na aba Resumo
-    for (nome_coluna in names(largurasColunas)) {
-      if (nome_coluna %in% colnames(mapaExtratos)) {
-        col_pos <- which(colnames(mapaExtratos) == nome_coluna)
-        openxlsx::setColWidths(wb, sheet = "Resumo", cols = col_pos, widths = largurasColunas[nome_coluna])
+        # Copiar dados da aba do template se existirem
+        tryCatch(
+          {
+            dadosTemplate <- openxlsx::readWorkbook(wbTemplate, sheet = abaTemplate, colNames = FALSE)
+            if (nrow(dadosTemplate) > 0) {
+              openxlsx::writeData(wb, sheet = abaTemplate, x = dadosTemplate, colNames = FALSE)
+            }
+          },
+          error = function(e) {
+            message(sprintf("Não foi possível copiar dados da aba '%s': %s", abaTemplate, e$message))
+          }
+        )
       }
     }
-
-    # Formatação monetária na aba Resumo
-    colunas_monetarias_resumo <- which(colnames(mapaExtratos) %in% c("soma.valor", "soma.valor.abs"))
-    if (length(colunas_monetarias_resumo) > 0) {
-      openxlsx::addStyle(
-        wb,
-        sheet = "Resumo",
-        style = openxlsx::createStyle(numFmt = "#,##0.00"),
-        rows = 2:(nrow(mapaExtratos) + 1),
-        cols = colunas_monetarias_resumo,
-        gridExpand = TRUE,
-        stack = TRUE
-      )
-    }
-
-    # Formatação de texto com quebra na aba Resumo
-    colunas_texto_resumo <- which(colnames(mapaExtratos) %in% c("arquivo(s)"))
-    if (length(colunas_texto_resumo) > 0) {
-      openxlsx::addStyle(
-        wb,
-        sheet = "Resumo",
-        style = openxlsx::createStyle(
-          border = "TopBottomLeftRight",
-          halign = "left",
-          valign = "top",
-          wrapText = TRUE
-        ),
-        rows = 2:(nrow(mapaExtratos) + 1),
-        cols = colunas_texto_resumo,
-        gridExpand = TRUE,
-        stack = TRUE
-      )
-    }
-
-    # Adicionar aba "Fluxos por Conta"
-    openxlsx::addWorksheet(wb, "Fluxos por Conta")
-    openxlsx::writeData(wb, sheet = "Fluxos por Conta", x = fluxosContaMes)
-
-    # Formatação da aba Fluxos por Conta
-    openxlsx::addStyle(
-      wb,
-      sheet = "Fluxos por Conta",
-      style = openxlsx::createStyle(
-        border = "TopBottomLeftRight",
-        halign = "center",
-        valign = "center"
-      ),
-      rows = 1:(nrow(fluxosContaMes) + 1),
-      cols = seq_len(ncol(fluxosContaMes)),
-      gridExpand = TRUE
-    )
-
-    # Cabeçalho da aba Fluxos por Conta
-    openxlsx::addStyle(
-      wb,
-      sheet = "Fluxos por Conta",
-      style = openxlsx::createStyle(
-        fgFill = "#4472C4",
-        fontColour = "white",
-        border = "TopBottomLeftRight",
-        halign = "center",
-        valign = "center"
-      ),
-      rows = 1,
-      cols = seq_len(ncol(fluxosContaMes)),
-      gridExpand = TRUE
-    )
-
-    # Adicionar filtro e congelar painel na aba Fluxos por Conta
-    openxlsx::addFilter(wb, sheet = "Fluxos por Conta", rows = 1, cols = seq_len(ncol(fluxosContaMes)))
-    openxlsx::freezePane(wb, sheet = "Fluxos por Conta", firstRow = TRUE, firstActiveRow = 2)
-
-    # Formatação monetária na aba Fluxos por Conta
-    colunas_monetarias_fluxos <- which(colnames(fluxosContaMes) %in% c("entradas", "saidas", "saldo.liquido"))
-    if (length(colunas_monetarias_fluxos) > 0) {
-      openxlsx::addStyle(
-        wb,
-        sheet = "Fluxos por Conta",
-        style = openxlsx::createStyle(numFmt = "#,##0.00"),
-        rows = 2:(nrow(fluxosContaMes) + 1),
-        cols = colunas_monetarias_fluxos,
-        gridExpand = TRUE,
-        stack = TRUE
-      )
-    }
-
-    # Largura das colunas na aba Fluxos por Conta
-    openxlsx::setColWidths(wb, sheet = "Fluxos por Conta", cols = seq_len(ncol(fluxosContaMes)), widths = 18)
 
     # Obter descrições únicas em ordem alfabética
     descricoesUnicas <- sort(unique(extratosConsolidados$descricao[!is.na(extratosConsolidados$descricao)]))
