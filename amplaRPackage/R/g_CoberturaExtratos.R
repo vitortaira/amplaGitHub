@@ -1,4 +1,4 @@
-#' Plot temporal coverage heatmap for arquivos
+#' Plot temporal coverage heatmap for extratos
 #'
 #' @param cobertura_t Tibble with columns: arquivo, empresa, periodo.inicio, periodo.fim, arquivo.tipo, id
 #' @return Plotly heatmap object
@@ -7,9 +7,10 @@
 #' @import lubridate
 #' @import plotly
 #' @import purrr
+#' @import stringr
 #' @export
 
-g_cobertura.arquivos <- function(cobertura_t = e_cobertura_extratos()) {
+g_CoberturaExtratos <- function(cobertura_t = e_cobertura_extratos()) {
   # --- Helper Function: Prepare and Clean Data ---
   .prepare_heatmap_data <- function(raw_data) {
     # Verificar se os dados estão vazios
@@ -529,7 +530,7 @@ g_cobertura.arquivos <- function(cobertura_t = e_cobertura_extratos()) {
 
     # Apply layout
     p <- plotly::layout(p, # Explicitly call plotly::layout
-      title = list(text = "Cobertura temporal dos arquivos", pad = list(t = 20)),
+      title = list(text = str_c("Cobertura temporal dos extratos em ", format(Sys.time(), "%d/%m/%Y %H:%M")), pad = list(t = 20)),
       xaxis = list(
         title = list(text = "Mês"), # Ensure title is a list for consistency
         type = "category",

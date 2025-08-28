@@ -482,7 +482,7 @@ e_ik_cmf <- function(
         {
           # Obter valores da coluna de conta
           valor_conta <- cmf_consolidado[[col_conta]]
-          
+
           # Criar conta.interno tratando NA explicitamente
           cmf_consolidado$conta.interno <- ifelse(
             is.na(valor_conta),
@@ -491,12 +491,15 @@ e_ik_cmf <- function(
               # Extrair apenas números da coluna
               conta_numeros <- stringr::str_extract_all(as.character(valor_conta), "\\d") %>%
                 sapply(function(x) paste(x, collapse = ""))
-              
+
               # Se não houver dígitos ou for string vazia, retornar NA
               ifelse(nchar(conta_numeros) == 0 | conta_numeros == "",
-                     NA_character_,
-                     stringr::str_pad(stringr::str_sub(conta_numeros, -4, -1), 
-                                    4, side = "left", pad = "0"))
+                NA_character_,
+                stringr::str_pad(stringr::str_sub(conta_numeros, -4, -1),
+                  4,
+                  side = "left", pad = "0"
+                )
+              )
             }
           )
 

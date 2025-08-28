@@ -15,6 +15,9 @@ Uma lista contendo:
 \itemize{
 \item extratosConsolidados: tibble com dados consolidados de extratos
 \item mapaExtratos: tibble com combinações únicas de (empresa, banco, conta, descricao)
+\item fluxosContaMes: tibble com análise de entradas e saídas por conta e mês
+\item DFC: tibble com dados para Demonstração do Fluxo de Caixa
+\item extratosIk: tibble com dados CMF extraídos do Informakon
 }
 }
 \description{
