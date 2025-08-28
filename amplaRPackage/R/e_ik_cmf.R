@@ -513,6 +513,30 @@ e_ik_cmf <- function(
     }
   }
 
+  # Criar coluna empresa baseada em EmpFilial (primeiros 3 caracteres)
+  if ("EmpFilial" %in% names(cmf_consolidado)) {
+    cmf_consolidado$empresa <- stringr::str_sub(as.character(cmf_consolidado$EmpFilial), 1, 3)
+    message("Coluna 'empresa' criada baseada em 'EmpFilial'")
+  } else {
+    cmf_consolidado$empresa <- "Diversos"
+    message("Coluna 'EmpFilial' não encontrada. Usando 'Diversos' para empresa")
+  }
+
+  # Criar coluna banco baseada em AgenteFinanceiro
+  if ("AgenteFinanceiro" %in% names(cmf_consolidado)) {
+    cmf_consolidado$banco <- dplyr::case_when(
+      stringr::str_detect(cmf_consolidado$AgenteFinanceiro, "(?i)abc") ~ "ABC",
+      stringr::str_detect(cmf_consolidado$AgenteFinanceiro, "(?i)caixa|cef") ~ "CEF",
+      stringr::str_detect(cmf_consolidado$AgenteFinanceiro, "(?i)itau|itaú") ~ "Itau",
+      stringr::str_detect(cmf_consolidado$AgenteFinanceiro, "(?i)qi\\s?tech") ~ "QIT",
+      !is.na(cmf_consolidado$AgenteFinanceiro) ~ as.character(cmf_consolidado$AgenteFinanceiro)
+    )
+    message("Coluna 'banco' criada baseada em 'AgenteFinanceiro'")
+  } else {
+    cmf_consolidado$banco <- "Informakon"
+    message("Coluna 'AgenteFinanceiro' não encontrada. Usando 'Informakon' para banco")
+  }
+
   # Se solicitado, salva em xlsx usando gerar_xlsx
   if (xlsx && nrow(cmf_consolidado) > 0) {
     tryCatch(
