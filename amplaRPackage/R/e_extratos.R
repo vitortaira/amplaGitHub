@@ -249,48 +249,195 @@ e_extratos <- function(xlsx = FALSE) {
   # Criar análise de entradas e saídas por conta e mês
   fluxosContaMes <- tryCatch(
     {
-      message("Criando análise de fluxos por conta e mês...")
+      message("Criando análise de fluxos por conta e mês (comparando extratos consolidados e IK)...")
       message(sprintf("Dados consolidados: %d registros", nrow(extratosConsolidados)))
+      message(sprintf("Dados IK: %d registros", nrow(dadosIk)))
 
-      # Verificar se há dados válidos
+      # Verificar se há dados válidos nos extratos consolidados
       dados_validos <- extratosConsolidados %>%
         dplyr::filter(!is.na(.data$valor), !is.na(.data$data.movimentacao))
 
-      message(sprintf("Dados válidos (com valor e data): %d registros", nrow(dados_validos)))
-
-      if (nrow(dados_validos) == 0) {
-        message("Nenhum dado válido encontrado para análise de fluxos")
-        tibble::tibble(
-          mes = as.Date(character()),
-          identificacao.conta = character(),
-          empresa = character(),
-          banco = character(),
-          conta = character(),
-          entradas = numeric(),
-          saidas = numeric(),
-          saldo.liquido = numeric(),
-          qtd.transacoes = integer()
-        )
+      # Verificar se há dados válidos nos dados IK
+      # Identificar as colunas corretas de valor e data nos dados IK
+      coluna_valor_ik <- if ("valor" %in% names(dadosIk)) {
+        "valor"
+      } else if ("Valor" %in% names(dadosIk)) {
+        "Valor"
       } else {
-        # Criar análise de fluxos
-        resultado <- dados_validos %>%
+        NULL
+      }
+
+      coluna_data_ik <- if ("data.movimento" %in% names(dadosIk)) {
+        "data.movimento"
+      } else if ("Data.Movimento" %in% names(dadosIk)) {
+        "Data.Movimento"
+      } else if ("Data" %in% names(dadosIk)) {
+        "Data"
+      } else {
+        NULL
+      }
+
+      message(sprintf("Coluna valor IK identificada: %s", if (is.null(coluna_valor_ik)) "NENHUMA" else coluna_valor_ik))
+      message(sprintf("Coluna data IK identificada: %s", if (is.null(coluna_data_ik)) "NENHUMA" else coluna_data_ik))
+
+      dados_ik_validos <- if (!is.null(coluna_valor_ik) && !is.null(coluna_data_ik)) {
+        dadosIk %>%
+          dplyr::filter(!is.na(.data[[coluna_valor_ik]]), !is.na(.data[[coluna_data_ik]]))
+      } else {
+        tibble::tibble()
+      }
+
+      message(sprintf("Dados consolidados válidos (com valor e data): %d registros", nrow(dados_validos)))
+      message(sprintf("Dados IK válidos (com valor e data): %d registros", nrow(dados_ik_validos)))
+
+      # Criar análise de fluxos para extratos consolidados
+      fluxos_consolidados <- if (nrow(dados_validos) > 0) {
+        dados_validos %>%
           dplyr::mutate(
             mes = lubridate::floor_date(.data$data.movimentacao, "month"),
-            identificacao.conta = paste(.data$empresa, .data$banco, .data$conta, sep = " - ")
+            identificacao.conta = paste(.data$empresa, .data$banco, .data$conta.interno, sep = " - ")
           ) %>%
-          dplyr::group_by(.data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta) %>%
+          dplyr::group_by(.data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta, .data$conta.interno) %>%
           dplyr::summarise(
             entradas = sum(pmax(.data$valor, 0), na.rm = TRUE),
             saidas = sum(pmin(.data$valor, 0), na.rm = TRUE),
             saldo.liquido = sum(.data$valor, na.rm = TRUE),
             qtd.transacoes = dplyr::n(),
             .groups = "drop"
-          ) %>%
-          dplyr::arrange(.data$mes, .data$empresa, .data$banco, .data$conta)
-
-        message(sprintf("Análise de fluxos criada: %d registros", nrow(resultado)))
-        resultado
+          )
+      } else {
+        tibble::tibble(
+          mes = as.Date(character()),
+          identificacao.conta = character(),
+          empresa = character(),
+          banco = character(),
+          conta = character(),
+          conta.interno = character(),
+          entradas = numeric(),
+          saidas = numeric(),
+          saldo.liquido = numeric(),
+          qtd.transacoes = integer()
+        )
       }
+
+      # Criar análise de fluxos para dados IK
+      fluxos_ik <- if (nrow(dados_ik_validos) > 0 && !is.null(coluna_valor_ik) && !is.null(coluna_data_ik)) {
+        # Identificar coluna Conta.N nos dados IK para conta.ik
+        coluna_conta_n <- if ("Conta.N" %in% names(dados_ik_validos)) {
+          "Conta.N"
+        } else if ("conta.n" %in% names(dados_ik_validos)) {
+          "conta.n"
+        } else if ("Conta.Numero" %in% names(dados_ik_validos)) {
+          "Conta.Numero"
+        } else if ("conta" %in% names(dados_ik_validos)) {
+          "conta" # fallback
+        } else {
+          NULL
+        }
+
+        if (!is.null(coluna_conta_n)) {
+          dados_ik_validos %>%
+            dplyr::mutate(
+              mes = lubridate::floor_date(.data[[coluna_data_ik]], "month"),
+              # Criar conta.ik a partir de Conta.N
+              conta.ik = as.character(.data[[coluna_conta_n]]),
+              # Recalcular conta.interno a partir de conta.ik (últimos 4 dígitos numéricos)
+              conta.interno = ifelse(
+                is.na(.data[["conta.ik"]]) | .data[["conta.ik"]] == "",
+                .data$conta.interno, # manter o existente se conta.ik estiver vazio
+                {
+                  # Extrair apenas números de conta.ik
+                  conta_numeros <- stringr::str_extract_all(as.character(.data[["conta.ik"]]), "\\d") %>%
+                    sapply(function(x) paste(x, collapse = ""))
+
+                  # Se não houver dígitos ou for string vazia, usar conta.interno existente
+                  ifelse(nchar(conta_numeros) == 0 | conta_numeros == "",
+                    .data$conta.interno,
+                    stringr::str_pad(stringr::str_sub(conta_numeros, -4, -1), 4, side = "left", pad = "0")
+                  )
+                }
+              ),
+              identificacao.conta = paste(.data$empresa, .data$banco, .data$conta.interno, sep = " - ")
+            ) %>%
+            dplyr::group_by(.data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta.interno) %>%
+            dplyr::summarise(
+              conta.ik = first(.data$conta.ik),
+              entradas.ik = sum(pmax(.data[[coluna_valor_ik]], 0), na.rm = TRUE),
+              saidas.ik = sum(pmin(.data[[coluna_valor_ik]], 0), na.rm = TRUE),
+              saldo.liquido.ik = sum(.data[[coluna_valor_ik]], na.rm = TRUE),
+              qtd.transacoes.ik = dplyr::n(),
+              .groups = "drop"
+            )
+        } else {
+          # Se não tiver Conta.N, criar usando conta.interno existente
+          dados_ik_validos %>%
+            dplyr::mutate(
+              mes = lubridate::floor_date(.data[[coluna_data_ik]], "month"),
+              conta.ik = .data$conta.interno, # usar conta.interno como conta.ik
+              identificacao.conta = paste(.data$empresa, .data$banco, .data$conta.interno, sep = " - ")
+            ) %>%
+            dplyr::group_by(.data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta.ik, .data$conta.interno) %>%
+            dplyr::summarise(
+              entradas.ik = sum(pmax(.data[[coluna_valor_ik]], 0), na.rm = TRUE),
+              saidas.ik = sum(pmin(.data[[coluna_valor_ik]], 0), na.rm = TRUE),
+              saldo.liquido.ik = sum(.data[[coluna_valor_ik]], na.rm = TRUE),
+              qtd.transacoes.ik = dplyr::n(),
+              .groups = "drop"
+            )
+        }
+      } else {
+        tibble::tibble(
+          mes = as.Date(character()),
+          identificacao.conta = character(),
+          empresa = character(),
+          banco = character(),
+          conta.ik = character(),
+          conta.interno = character(),
+          entradas.ik = numeric(),
+          saidas.ik = numeric(),
+          saldo.liquido.ik = numeric(),
+          qtd.transacoes.ik = integer()
+        )
+      }
+
+      # Criar conjunto completo de combinações mes/identificacao.conta
+      todas_combinacoes <- bind_rows(
+        fluxos_consolidados %>% select(.data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta.interno),
+        fluxos_ik %>% select(.data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta.interno)
+      ) %>%
+        distinct()
+
+      # Fazer left join para combinar ambos os datasets
+      resultado <- todas_combinacoes %>%
+        dplyr::left_join(
+          fluxos_consolidados %>% select(.data$mes, .data$identificacao.conta, .data$conta, .data$entradas, .data$saidas, .data$saldo.liquido, .data$qtd.transacoes),
+          by = c("mes", "identificacao.conta")
+        ) %>%
+        dplyr::left_join(
+          fluxos_ik %>% select(.data$mes, .data$identificacao.conta, .data$conta.ik, .data$entradas.ik, .data$saidas.ik, .data$saldo.liquido.ik, .data$qtd.transacoes.ik),
+          by = c("mes", "identificacao.conta")
+        ) %>%
+        dplyr::mutate(
+          # Preencher valores NA com 0
+          entradas = dplyr::coalesce(.data$entradas, 0),
+          entradas.ik = dplyr::coalesce(.data$entradas.ik, 0),
+          saidas = dplyr::coalesce(.data$saidas, 0),
+          saidas.ik = dplyr::coalesce(.data$saidas.ik, 0),
+          saldo.liquido = dplyr::coalesce(.data$saldo.liquido, 0),
+          saldo.liquido.ik = dplyr::coalesce(.data$saldo.liquido.ik, 0),
+          qtd.transacoes = dplyr::coalesce(.data$qtd.transacoes, 0L),
+          qtd.transacoes.ik = dplyr::coalesce(.data$qtd.transacoes.ik, 0L)
+          # Não alterar a coluna 'conta' - ela deve preservar os valores originais dos extratos consolidados
+        ) %>%
+        dplyr::select(
+          .data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta, .data$conta.ik, .data$conta.interno,
+          .data$entradas, .data$entradas.ik, .data$saidas, .data$saidas.ik,
+          .data$saldo.liquido, .data$saldo.liquido.ik, .data$qtd.transacoes, .data$qtd.transacoes.ik
+        ) %>%
+        dplyr::arrange(.data$mes, .data$empresa, .data$banco, .data$conta.interno)
+
+      message(sprintf("Análise de fluxos comparativa criada: %d registros", nrow(resultado)))
+      resultado
     },
     error = function(e) {
       message("Erro ao criar análise de fluxos por conta e mês: ", e$message)
@@ -300,10 +447,16 @@ e_extratos <- function(xlsx = FALSE) {
         empresa = character(),
         banco = character(),
         conta = character(),
+        conta.ik = character(),
+        conta.interno = character(),
         entradas = numeric(),
+        entradas.ik = numeric(),
         saidas = numeric(),
+        saidas.ik = numeric(),
         saldo.liquido = numeric(),
-        qtd.transacoes = integer()
+        saldo.liquido.ik = numeric(),
+        qtd.transacoes = integer(),
+        qtd.transacoes.ik = integer()
       ))
     }
   )
@@ -331,24 +484,135 @@ e_extratos <- function(xlsx = FALSE) {
       "Contas mensal" = fluxosContaMes
     )
 
-    # Definir larguras específicas das colunas
-    largurasColunas <- c(
-      "empresa" = 20,
-      "banco" = 12,
-      "conta" = 18,
-      "descricao" = 60,
-      "quantidade.arquivos" = 18,
-      "quantidade.registros" = 20,
-      "soma.valor" = 15,
-      "soma.valor.abs" = 15,
-      "arquivo(s)" = 80
+    # Definir larguras específicas das colunas por aba
+    largurasColunas <- list(
+      # Aba Extratos
+      "Extratos" = c(
+        "data.lancamento" = 15,
+        "data.movimentacao" = 15,
+        "documento" = 18,
+        "descricao" = 60,
+        "valor" = 15,
+        "saldo" = 15,
+        "conta.interno" = 12,
+        "conta" = 18,
+        "agencia" = 12,
+        "produto" = 25,
+        "cnpj" = 20,
+        "empresa" = 12,
+        "periodo.inicio" = 15,
+        "periodo.fim" = 15,
+        "data.consulta" = 20,
+        "arquivo" = 40,
+        "banco" = 12
+      ),
+      # Aba Resumo - Lançamentos
+      "Resumo - Lançamentos" = c(
+        "empresa" = 12,
+        "banco" = 12,
+        "conta" = 18,
+        "descricao" = 60,
+        "quantidade.arquivos" = 18,
+        "quantidade.registros" = 20,
+        "soma.valor" = 15,
+        "soma.valor.abs" = 15,
+        "arquivo(s)" = 80
+      ),
+      # Aba Extratos - Ik (adaptar baseado nas colunas reais dos dados IK)
+      "Extratos - Ik" = if (nrow(dadosIk) > 0) {
+        # Criar larguras dinâmicas baseadas nas colunas reais dos dados IK
+        colunas_ik <- names(dadosIk)
+        larguras_ik <- rep(15, length(colunas_ik))
+        names(larguras_ik) <- colunas_ik
+
+        # Ajustar larguras específicas para colunas conhecidas
+        larguras_especiais <- c(
+          "Data" = 15, "data.movimento" = 15, "Data.Movimento" = 15,
+          "Valor" = 15, "valor" = 15,
+          "empresa" = 12, "banco" = 12,
+          "conta.interno" = 12, "conta" = 18,
+          "mes" = 15,
+          "Descricao" = 50, "descricao" = 50,
+          "Historico" = 50, "historico" = 50
+        )
+
+        for (col_nome in names(larguras_especiais)) {
+          if (col_nome %in% colunas_ik) {
+            larguras_ik[col_nome] <- larguras_especiais[col_nome]
+          }
+        }
+
+        larguras_ik
+      } else {
+        c(
+          "Data" = 15, "Valor" = 15, "empresa" = 12, "banco" = 12,
+          "conta.interno" = 12, "conta" = 18, "mes" = 15
+        )
+      },
+      # Aba Contas mensal
+      "Contas mensal" = c(
+        "mes" = 15,
+        "identificacao.conta" = 40,
+        "empresa" = 12,
+        "banco" = 12,
+        "conta" = 18,
+        "conta.ik" = 18,
+        "conta.interno" = 12,
+        "entradas" = 15,
+        "entradas.ik" = 15,
+        "saidas" = 15,
+        "saidas.ik" = 15,
+        "saldo.liquido" = 15,
+        "saldo.liquido.ik" = 15,
+        "qtd.transacoes" = 15,
+        "qtd.transacoes.ik" = 15
+      )
     )
 
-    # Definir colunas monetárias
-    colunasMonetarias <- c("valor", "soma.valor", "soma.valor.abs", "entradas", "saidas", "saldo.liquido")
+    # Definir colunas monetárias por aba
+    colunasMonetarias <- list(
+      "Extratos" = c("valor", "saldo"),
+      "Resumo - Lançamentos" = c("soma.valor", "soma.valor.abs"),
+      "Extratos - Ik" = if (nrow(dadosIk) > 0) {
+        # Identificar colunas monetárias dinamicamente nos dados IK
+        colunas_valor_ik <- c(
+          "Valor", "valor", "Total.Pago", "total.pago",
+          "Valor.Titulo", "valor.titulo"
+        )
+        colunas_valor_ik[colunas_valor_ik %in% names(dadosIk)]
+      } else {
+        c("Valor")
+      },
+      "Contas mensal" = c(
+        "entradas", "entradas.ik", "saidas", "saidas.ik",
+        "saldo.liquido", "saldo.liquido.ik"
+      )
+    )
 
-    # Definir colunas com quebra de texto
-    colunasTexto <- c("arquivo(s)", "descricao")
+    # Definir colunas com quebra de texto por aba
+    colunasTexto <- list(
+      "Extratos" = c("descricao"),
+      "Resumo - Lançamentos" = c("arquivo(s)", "descricao"),
+      "Extratos - Ik" = character(0),
+      "Contas mensal" = c("identificacao.conta")
+    )
+
+    # Definir colunas de data por aba
+    colunasData <- list(
+      "Extratos" = c("data.lancamento", "data.movimentacao", "periodo.inicio", "periodo.fim"),
+      "Resumo - Lançamentos" = character(0),
+      "Extratos - Ik" = if (nrow(dadosIk) > 0) {
+        # Identificar colunas de data dinamicamente nos dados IK
+        colunas_data_ik <- c(
+          "Data", "data.movimento", "Data.Movimento",
+          "mes", "Data.Lancamento", "data.lancamento"
+        )
+        colunas_data_ik[colunas_data_ik %in% names(dadosIk)]
+      } else {
+        c("Data", "mes")
+      },
+      "Contas mensal" = c("mes")
+    )
 
     # Usar gerar_xlsx para carregar o template e popular as abas existentes
     caminhoArquivo <- gerar_xlsx(
@@ -356,14 +620,94 @@ e_extratos <- function(xlsx = FALSE) {
       wb_load = caminhoTemplate, # Carregar o template diretamente
       tab_names = names(dadosAbas),
       col_width_def = 18,
-      col_width_spec = largurasColunas,
-      col_monetary = colunasMonetarias,
-      col_clip = colunasTexto,
+      col_width_spec = largurasColunas[["Extratos"]], # Usar primeira aba como base
+      col_monetary = colunasMonetarias[["Extratos"]], # Usar primeira aba como base
+      col_clip = colunasTexto[["Extratos"]], # Usar primeira aba como base
       save = list(nomeArquivo, caminhoDestino)
     )
 
-    # Carregar o arquivo criado para adicionar descrições na aba Mapeamento
+    # Carregar o arquivo criado para formatação adicional específica por aba
     wb <- openxlsx::loadWorkbook(caminhoArquivo)
+
+    # Aplicar formatação específica para cada aba
+    for (nome_aba in names(dadosAbas)) {
+      if (nome_aba %in% names(wb) && nrow(dadosAbas[[nome_aba]]) > 0) {
+        dados_aba <- dadosAbas[[nome_aba]]
+
+        # Aplicar larguras específicas da aba
+        if (nome_aba %in% names(largurasColunas)) {
+          larguras_aba <- largurasColunas[[nome_aba]]
+          for (nome_coluna in names(larguras_aba)) {
+            if (nome_coluna %in% colnames(dados_aba)) {
+              col_pos <- which(colnames(dados_aba) == nome_coluna)
+              openxlsx::setColWidths(
+                wb,
+                sheet = nome_aba,
+                cols = col_pos,
+                widths = larguras_aba[nome_coluna]
+              )
+            }
+          }
+        }
+
+        # Aplicar formatação monetária específica da aba
+        if (nome_aba %in% names(colunasMonetarias)) {
+          colunas_monetarias_aba <- colunasMonetarias[[nome_aba]]
+          if (length(colunas_monetarias_aba) > 0) {
+            colunas_monetarias_pos <- which(colnames(dados_aba) %in% colunas_monetarias_aba)
+            if (length(colunas_monetarias_pos) > 0) {
+              openxlsx::addStyle(
+                wb,
+                sheet = nome_aba,
+                style = openxlsx::createStyle(numFmt = "#,##0.00"),
+                rows = 2:(nrow(dados_aba) + 1),
+                cols = colunas_monetarias_pos,
+                gridExpand = TRUE,
+                stack = TRUE
+              )
+            }
+          }
+        }
+
+        # Aplicar formatação de data específica da aba
+        if (nome_aba %in% names(colunasData)) {
+          colunas_data_aba <- colunasData[[nome_aba]]
+          if (length(colunas_data_aba) > 0) {
+            colunas_data_pos <- which(colnames(dados_aba) %in% colunas_data_aba)
+            if (length(colunas_data_pos) > 0) {
+              openxlsx::addStyle(
+                wb,
+                sheet = nome_aba,
+                style = openxlsx::createStyle(numFmt = "DD/MM/YYYY"),
+                rows = 2:(nrow(dados_aba) + 1),
+                cols = colunas_data_pos,
+                gridExpand = TRUE,
+                stack = TRUE
+              )
+            }
+          }
+        }
+
+        # Aplicar formatação de texto com quebra específica da aba
+        if (nome_aba %in% names(colunasTexto)) {
+          colunas_texto_aba <- colunasTexto[[nome_aba]]
+          if (length(colunas_texto_aba) > 0) {
+            colunas_texto_pos <- which(colnames(dados_aba) %in% colunas_texto_aba)
+            if (length(colunas_texto_pos) > 0) {
+              openxlsx::addStyle(
+                wb,
+                sheet = nome_aba,
+                style = openxlsx::createStyle(halign = "left", wrapText = TRUE),
+                rows = 2:(nrow(dados_aba) + 1),
+                cols = colunas_texto_pos,
+                gridExpand = TRUE,
+                stack = TRUE
+              )
+            }
+          }
+        }
+      }
+    }
 
     # Obter descrições únicas em ordem alfabética
     descricoesUnicas <- sort(unique(extratosConsolidados$descricao[!is.na(extratosConsolidados$descricao)]))
