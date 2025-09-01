@@ -130,7 +130,7 @@ e_ik_cmf <- function(
     dplyr::mutate(
       n.mov = as.integer(n.mov),
       data = as.Date(as.integer(data), origin = "1899-12-30"),
-      valor = valor %>% as.numeric(),
+      valor = if_else(`d.c` == "D", as.numeric(valor) * -1, as.numeric(valor)),
       conciliacao = as.Date(as.integer(conciliacao), origin = "1899-12-30"),
       saldo.caucao.cliente = saldo.caucao.cliente %>% as.numeric(),
       arquivo = caminho_arquivo_cmf,
