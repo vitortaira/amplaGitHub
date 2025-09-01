@@ -102,11 +102,11 @@ e_extratos <- function(xlsx = FALSE) {
   # Padronizar estrutura dos dados ITAÚ para compatibilidade com CEF
   dadosItaPadronizados <- dadosIta %>%
     dplyr::mutate(
-      data.lancamento = .data$data,
+      data.lancamento = NA_Date_,
       data.movimentacao = .data$data,
       documento = NA_character_,
       saldo = NA_real_,
-      conta.interno = .data$conta,
+      conta.interno = str_remove_all(.data$conta, "[^0-9]") %>% str_sub(-4, -1),
       produto = NA_character_
     ) %>%
     dplyr::select(
@@ -183,7 +183,7 @@ e_extratos <- function(xlsx = FALSE) {
       banco = dplyr::case_when(
         .data$arquivo.fonte == "cef" ~ "CEF",
         .data$arquivo.fonte == "ita" ~ "Itau",
-        TRUE ~ "Desconhecido"
+        TRUE ~ NA_character_
       )
     ) %>%
     dplyr::arrange(.data$data.movimentacao, .data$empresa, .data$valor) %>%
@@ -246,56 +246,40 @@ e_extratos <- function(xlsx = FALSE) {
   # Gerar mapa de extratos
   mapaExtratos <- .mapeamento(extratosConsolidados)
 
-  # Criar análise de entradas e saídas por conta e mês
+  # Criar análise de contas mensal
   fluxosContaMes <- tryCatch(
     {
-      message("Criando análise de fluxos por conta e mês (comparando extratos consolidados e IK)...")
-      message(sprintf("Dados consolidados: %d registros", nrow(extratosConsolidados)))
-      message(sprintf("Dados IK: %d registros", nrow(dadosIk)))
+      message("Criando análise de contas mensal...")
 
-      # Verificar se há dados válidos nos extratos consolidados
-      dados_validos <- extratosConsolidados %>%
-        dplyr::filter(!is.na(.data$valor), !is.na(.data$data.movimentacao))
+      contasMensal <- tibble::tibble(
+        mes = as.Date(character()),
+        identificacao.conta = character(),
+        empresa = character(),
+        banco = character(),
+        conta = character(),
+        conta.ik = character(),
+        conta.interno = character(),
+        entradas = numeric(),
+        entradas.ik = numeric(),
+        saidas = numeric(),
+        saidas.ik = numeric(),
+        saldo.liquido = numeric(),
+        saldo.liquido.ik = numeric(),
+        qtd.transacoes = integer(),
+        qtd.transacoes.ik = integer()
+      )
 
-      # Verificar se há dados válidos nos dados IK
-      # Identificar as colunas corretas de valor e data nos dados IK
-      coluna_valor_ik <- if ("valor" %in% names(dadosIk)) {
-        "valor"
-      } else if ("Valor" %in% names(dadosIk)) {
-        "Valor"
-      } else {
-        NULL
-      }
-
-      coluna_data_ik <- if ("data.movimento" %in% names(dadosIk)) {
-        "data.movimento"
-      } else if ("Data.Movimento" %in% names(dadosIk)) {
-        "Data.Movimento"
-      } else if ("Data" %in% names(dadosIk)) {
-        "Data"
-      } else {
-        NULL
-      }
-
-      message(sprintf("Coluna valor IK identificada: %s", if (is.null(coluna_valor_ik)) "NENHUMA" else coluna_valor_ik))
-      message(sprintf("Coluna data IK identificada: %s", if (is.null(coluna_data_ik)) "NENHUMA" else coluna_data_ik))
-
-      dados_ik_validos <- if (!is.null(coluna_valor_ik) && !is.null(coluna_data_ik)) {
-        dadosIk %>%
-          dplyr::filter(!is.na(.data[[coluna_valor_ik]]), !is.na(.data[[coluna_data_ik]]))
-      } else {
-        tibble::tibble()
-      }
-
-      message(sprintf("Dados consolidados válidos (com valor e data): %d registros", nrow(dados_validos)))
-      message(sprintf("Dados IK válidos (com valor e data): %d registros", nrow(dados_ik_validos)))
-
-      # Criar análise de fluxos para extratos consolidados
-      fluxos_consolidados <- if (nrow(dados_validos) > 0) {
-        dados_validos %>%
+      # Resumo dos dados de extratos consolidados
+      if (nrow(extratosConsolidados) > 0) {
+        contasMensal <- extratosConsolidados %>%
+          dplyr::filter(!is.na(.data$valor), !is.na(.data$data.movimentacao)) %>%
           dplyr::mutate(
             mes = lubridate::floor_date(.data$data.movimentacao, "month"),
-            identificacao.conta = paste(.data$empresa, .data$banco, .data$conta.interno, sep = " - ")
+            # Criar identificacao.conta baseada apenas em empresa e conta.interno (para permitir combinação)
+            identificacao.conta = paste(
+              .data$empresa, .data$banco, .data$conta.interno,
+              sep = "-"
+            )
           ) %>%
           dplyr::group_by(.data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta, .data$conta.interno) %>%
           dplyr::summarise(
@@ -304,140 +288,223 @@ e_extratos <- function(xlsx = FALSE) {
             saldo.liquido = sum(.data$valor, na.rm = TRUE),
             qtd.transacoes = dplyr::n(),
             .groups = "drop"
+          ) %>%
+          dplyr::mutate(
+            # Colunas IK vazias (serão preenchidas posteriormente)
+            conta.ik = NA_character_,
+            entradas.ik = 0,
+            saidas.ik = 0,
+            saldo.liquido.ik = 0,
+            qtd.transacoes.ik = 0L
+          ) %>%
+          dplyr::select(
+            .data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta, .data$conta.ik, .data$conta.interno,
+            .data$entradas, .data$entradas.ik, .data$saidas, .data$saidas.ik,
+            .data$saldo.liquido, .data$saldo.liquido.ik, .data$qtd.transacoes, .data$qtd.transacoes.ik
           )
+
+        message(sprintf("Resumo dos extratos consolidados criado: %d registros", nrow(contasMensal)))
+      }
+
+      # Passo 2: Resumo dos dados IK (Informakon)
+      if (nrow(dadosIk) > 0) {
+        # Detectar colunas automaticamente
+        coluna_valor <- if ("valor" %in% names(dadosIk)) "valor" else if ("Valor" %in% names(dadosIk)) "Valor" else NULL
+        coluna_data <- if ("data" %in% names(dadosIk)) "data" else if ("Data" %in% names(dadosIk)) "Data" else NULL
+        coluna_conta <- if ("n.conta" %in% names(dadosIk)) "n.conta" else if ("conta.interno" %in% names(dadosIk)) "conta.interno" else NULL
+
+        if (!is.null(coluna_valor) && !is.null(coluna_data) && !is.null(coluna_conta)) {
+          # Debug: Verificar dados originais do IK antes do processamento
+          valores_originais <- dadosIk[[coluna_valor]]
+          valores_positivos_orig <- sum(valores_originais > 0, na.rm = TRUE)
+          valores_negativos_orig <- sum(valores_originais < 0, na.rm = TRUE)
+          valores_zero_orig <- sum(valores_originais == 0, na.rm = TRUE)
+
+          message(sprintf("Debug dadosIk originais: %d registros totais", nrow(dadosIk)))
+          message(sprintf(
+            "Debug valores originais: %d positivos, %d negativos, %d zeros",
+            valores_positivos_orig, valores_negativos_orig, valores_zero_orig
+          ))
+          message(sprintf("Debug valores exemplo: %s", paste(head(valores_originais, 5), collapse = ", ")))
+
+          resumoIk <- dadosIk %>%
+            dplyr::filter(!is.na(.data[[coluna_valor]]), !is.na(.data[[coluna_data]])) %>%
+            dplyr::mutate(
+              mes = lubridate::floor_date(.data[[coluna_data]], "month"),
+              conta.ik = as.character(.data[[coluna_conta]]),
+              # Usar conta.interno existente ou criar baseado em conta.ik
+              conta.interno = if ("conta.interno" %in% names(dadosIk)) {
+                .data$conta.interno
+              } else {
+                # Extrair últimos 4 dígitos da conta.ik
+                stringr::str_remove_all(.data$conta.ik, "[^0-9]") %>%
+                  stringr::str_sub(-4, -1)
+              },
+              empresa = stringr::str_sub(.data$emp.filial, 1, 3),
+              banco = case_when(
+                stringr::str_detect(.data$agente.financeiro, "(?i)ita[uú]") ~ "Itau",
+                stringr::str_detect(.data$agente.financeiro, "(?i)caixa\\s?econ[oô]mica") ~ "CEF",
+                stringr::str_detect(.data$agente.financeiro, "(?i)qi\\s?tech") ~ "QIT",
+                TRUE ~ NA_character_
+              ),
+              # Criar identificacao.conta baseada apenas em empresa e conta.interno (para permitir combinação)
+              identificacao.conta = paste(.data$empresa, .data$banco, .data$conta.interno, sep = "-")
+            ) %>%
+            dplyr::group_by(.data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta.ik, .data$conta.interno) %>%
+            dplyr::summarise(
+              entradas.ik = sum(pmax(.data[[coluna_valor]], 0), na.rm = TRUE),
+              saidas.ik = sum(pmin(.data[[coluna_valor]], 0), na.rm = TRUE),
+              saldo.liquido.ik = sum(.data[[coluna_valor]], na.rm = TRUE),
+              qtd.transacoes.ik = dplyr::n(),
+              .groups = "drop"
+            ) %>%
+            dplyr::mutate(
+              # Colunas de extratos vazias (serão preenchidas posteriormente no join)
+              conta = NA_character_,
+              entradas = 0,
+              saidas = 0,
+              saldo.liquido = 0,
+              qtd.transacoes = 0L
+            ) %>%
+            dplyr::select(
+              .data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta, .data$conta.ik, .data$conta.interno,
+              .data$entradas, .data$entradas.ik, .data$saidas, .data$saidas.ik,
+              .data$saldo.liquido, .data$saldo.liquido.ik, .data$qtd.transacoes, .data$qtd.transacoes.ik
+            )
+
+          # Debug: Verificar se os valores IK estão sendo criados corretamente
+          if (nrow(resumoIk) > 0) {
+            valores_positivos_ik <- sum(resumoIk$entradas.ik > 0)
+            valores_negativos_ik <- sum(resumoIk$saidas.ik < 0)
+            message(sprintf(
+              "Debug IK: %d registros, %d com entradas.ik>0, %d com saidas.ik<0",
+              nrow(resumoIk), valores_positivos_ik, valores_negativos_ik
+            ))
+            message(sprintf(
+              "Debug IK - Exemplo entradas.ik: %s",
+              paste(head(resumoIk$entradas.ik, 3), collapse = ", ")
+            ))
+            message(sprintf(
+              "Debug IK - Exemplo saidas.ik: %s",
+              paste(head(resumoIk$saidas.ik, 3), collapse = ", ")
+            ))
+          }
+
+          message(sprintf("Resumo dos dados IK criado: %d registros", nrow(resumoIk)))
+        } else {
+          message("Colunas necessárias não encontradas nos dados IK")
+          resumoIk <- tibble::tibble()
+        }
       } else {
-        tibble::tibble(
+        message("Nenhum dado IK disponível")
+        resumoIk <- tibble::tibble()
+      }
+
+      # Passo 3: Combinar os dados
+      if (exists("contasMensal") && exists("resumoIk")) {
+        if (nrow(resumoIk) > 0) {
+          # Debug: Verificar dados antes da combinação
+          message(sprintf("Debug antes combinação - contasMensal: %d registros", nrow(contasMensal)))
+          message(sprintf("Debug antes combinação - resumoIk: %d registros", nrow(resumoIk)))
+
+          # Modificar identificacao.conta para usar apenas conta.interno + empresa
+          # Isso permite combinar dados de diferentes bancos (CEF/Itau vs IK)
+          contasMensal <- contasMensal %>%
+            dplyr::mutate(
+              chave_combinacao = paste(.data$empresa, .data$conta.interno, sep = " - ")
+            )
+
+          resumoIk <- resumoIk %>%
+            dplyr::mutate(
+              chave_combinacao = paste(.data$empresa, .data$conta.interno, sep = " - ")
+            )
+
+          # Combinar dados usando bind_rows e depois agrupar APENAS por chave_combinacao e mes
+          contasMensal <- dplyr::bind_rows(contasMensal, resumoIk) %>%
+            dplyr::group_by(.data$mes, .data$chave_combinacao) %>%
+            dplyr::summarise(
+              # Manter dados de identificação (priorizar dados dos extratos)
+              identificacao.conta = dplyr::first(.data$identificacao.conta[.data$banco != "IK"]),
+              empresa = dplyr::first(.data$empresa),
+              banco = dplyr::first(.data$banco[.data$banco != "IK"]), # Priorizar banco real (CEF/Itau)
+              conta.interno = dplyr::first(.data$conta.interno),
+              conta = dplyr::first(.data$conta[!is.na(.data$conta)]),
+              conta.ik = dplyr::first(.data$conta.ik[!is.na(.data$conta.ik)]),
+              # Somar os valores financeiros
+              entradas = sum(.data$entradas, na.rm = TRUE),
+              entradas.ik = sum(.data$entradas.ik, na.rm = TRUE),
+              saidas = sum(.data$saidas, na.rm = TRUE),
+              saidas.ik = sum(.data$saidas.ik, na.rm = TRUE),
+              saldo.liquido = sum(.data$saldo.liquido, na.rm = TRUE),
+              saldo.liquido.ik = sum(.data$saldo.liquido.ik, na.rm = TRUE),
+              qtd.transacoes = sum(.data$qtd.transacoes, na.rm = TRUE),
+              qtd.transacoes.ik = sum(.data$qtd.transacoes.ik, na.rm = TRUE),
+              .groups = "drop"
+            ) %>%
+            # Ajustar identificacao.conta para usar banco real quando disponível
+            dplyr::mutate(
+              identificacao.conta = dplyr::if_else(
+                !is.na(.data$banco) & .data$banco != "IK",
+                paste(.data$empresa, .data$banco, .data$conta.interno, sep = " - "),
+                .data$chave_combinacao
+              )
+            ) %>%
+            dplyr::select(
+              .data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta, .data$conta.ik, .data$conta.interno,
+              .data$entradas, .data$entradas.ik, .data$saidas, .data$saidas.ik,
+              .data$saldo.liquido, .data$saldo.liquido.ik, .data$qtd.transacoes, .data$qtd.transacoes.ik
+            ) %>%
+            dplyr::arrange(.data$mes, .data$empresa, .data$conta.interno)
+
+          # Debug: Verificar dados depois da combinação
+          message(sprintf("Debug depois combinação: %d registros finais", nrow(contasMensal)))
+
+          # Debug: Verificar registros combinados
+          registros_com_ambos_qtd <- sum(contasMensal$qtd.transacoes > 0 & contasMensal$qtd.transacoes.ik > 0, na.rm = TRUE)
+          registros_com_ambos_valores <- sum((contasMensal$entradas > 0 | contasMensal$saidas < 0) &
+            (contasMensal$entradas.ik > 0 | contasMensal$saidas.ik < 0), na.rm = TRUE)
+
+          message(sprintf("Debug SUCESSO - Registros com dados de ambas as fontes:"))
+          message(sprintf("  - Com qtd.transacoes>0 E qtd.transacoes.ik>0: %d registros", registros_com_ambos_qtd))
+          message(sprintf("  - Com valores financeiros de ambas as fontes: %d registros", registros_com_ambos_valores))
+
+          # Debug: Mostrar registros apenas com extratos vs apenas com IK
+          apenas_extratos <- sum(contasMensal$qtd.transacoes > 0 & contasMensal$qtd.transacoes.ik == 0, na.rm = TRUE)
+          apenas_ik <- sum(contasMensal$qtd.transacoes == 0 & contasMensal$qtd.transacoes.ik > 0, na.rm = TRUE)
+          message(sprintf("Debug - Apenas extratos: %d, Apenas IK: %d", apenas_extratos, apenas_ik))
+
+          message(sprintf("Dados combinados: %d registros finais", nrow(contasMensal)))
+        } else {
+          message("Mantendo apenas dados dos extratos consolidados (sem dados IK)")
+        }
+      } else if (exists("resumoIk") && nrow(resumoIk) > 0) {
+        # Se só temos dados IK, usar apenas eles
+        contasMensal <- resumoIk
+        message(sprintf("Usando apenas dados IK: %d registros", nrow(contasMensal)))
+      }
+
+      # Garantir que contasMensal existe
+      if (!exists("contasMensal")) {
+        contasMensal <- tibble::tibble(
           mes = as.Date(character()),
           identificacao.conta = character(),
           empresa = character(),
           banco = character(),
           conta = character(),
-          conta.interno = character(),
-          entradas = numeric(),
-          saidas = numeric(),
-          saldo.liquido = numeric(),
-          qtd.transacoes = integer()
-        )
-      }
-
-      # Criar análise de fluxos para dados IK
-      fluxos_ik <- if (nrow(dados_ik_validos) > 0 && !is.null(coluna_valor_ik) && !is.null(coluna_data_ik)) {
-        # Identificar coluna Conta.N nos dados IK para conta.ik
-        coluna_conta_n <- if ("Conta.N" %in% names(dados_ik_validos)) {
-          "Conta.N"
-        } else if ("conta.n" %in% names(dados_ik_validos)) {
-          "conta.n"
-        } else if ("Conta.Numero" %in% names(dados_ik_validos)) {
-          "Conta.Numero"
-        } else if ("conta" %in% names(dados_ik_validos)) {
-          "conta" # fallback
-        } else {
-          NULL
-        }
-
-        if (!is.null(coluna_conta_n)) {
-          dados_ik_validos %>%
-            dplyr::mutate(
-              mes = lubridate::floor_date(.data[[coluna_data_ik]], "month"),
-              # Criar conta.ik a partir de Conta.N
-              conta.ik = as.character(.data[[coluna_conta_n]]),
-              # Recalcular conta.interno a partir de conta.ik (últimos 4 dígitos numéricos)
-              conta.interno = ifelse(
-                is.na(.data[["conta.ik"]]) | .data[["conta.ik"]] == "",
-                .data$conta.interno, # manter o existente se conta.ik estiver vazio
-                {
-                  # Extrair apenas números de conta.ik
-                  conta_numeros <- stringr::str_extract_all(as.character(.data[["conta.ik"]]), "\\d") %>%
-                    sapply(function(x) paste(x, collapse = ""))
-
-                  # Se não houver dígitos ou for string vazia, usar conta.interno existente
-                  ifelse(nchar(conta_numeros) == 0 | conta_numeros == "",
-                    .data$conta.interno,
-                    stringr::str_pad(stringr::str_sub(conta_numeros, -4, -1), 4, side = "left", pad = "0")
-                  )
-                }
-              ),
-              identificacao.conta = paste(.data$empresa, .data$banco, .data$conta.interno, sep = " - ")
-            ) %>%
-            dplyr::group_by(.data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta.interno) %>%
-            dplyr::summarise(
-              conta.ik = first(.data$conta.ik),
-              entradas.ik = sum(pmax(.data[[coluna_valor_ik]], 0), na.rm = TRUE),
-              saidas.ik = sum(pmin(.data[[coluna_valor_ik]], 0), na.rm = TRUE),
-              saldo.liquido.ik = sum(.data[[coluna_valor_ik]], na.rm = TRUE),
-              qtd.transacoes.ik = dplyr::n(),
-              .groups = "drop"
-            )
-        } else {
-          # Se não tiver Conta.N, criar usando conta.interno existente
-          dados_ik_validos %>%
-            dplyr::mutate(
-              mes = lubridate::floor_date(.data[[coluna_data_ik]], "month"),
-              conta.ik = .data$conta.interno, # usar conta.interno como conta.ik
-              identificacao.conta = paste(.data$empresa, .data$banco, .data$conta.interno, sep = " - ")
-            ) %>%
-            dplyr::group_by(.data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta.ik, .data$conta.interno) %>%
-            dplyr::summarise(
-              entradas.ik = sum(pmax(.data[[coluna_valor_ik]], 0), na.rm = TRUE),
-              saidas.ik = sum(pmin(.data[[coluna_valor_ik]], 0), na.rm = TRUE),
-              saldo.liquido.ik = sum(.data[[coluna_valor_ik]], na.rm = TRUE),
-              qtd.transacoes.ik = dplyr::n(),
-              .groups = "drop"
-            )
-        }
-      } else {
-        tibble::tibble(
-          mes = as.Date(character()),
-          identificacao.conta = character(),
-          empresa = character(),
-          banco = character(),
           conta.ik = character(),
           conta.interno = character(),
+          entradas = numeric(),
           entradas.ik = numeric(),
+          saidas = numeric(),
           saidas.ik = numeric(),
+          saldo.liquido = numeric(),
           saldo.liquido.ik = numeric(),
+          qtd.transacoes = integer(),
           qtd.transacoes.ik = integer()
         )
       }
 
-      # Criar conjunto completo de combinações mes/identificacao.conta
-      todas_combinacoes <- bind_rows(
-        fluxos_consolidados %>% select(.data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta.interno),
-        fluxos_ik %>% select(.data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta.interno)
-      ) %>%
-        distinct()
-
-      # Fazer left join para combinar ambos os datasets
-      resultado <- todas_combinacoes %>%
-        dplyr::left_join(
-          fluxos_consolidados %>% select(.data$mes, .data$identificacao.conta, .data$conta, .data$entradas, .data$saidas, .data$saldo.liquido, .data$qtd.transacoes),
-          by = c("mes", "identificacao.conta")
-        ) %>%
-        dplyr::left_join(
-          fluxos_ik %>% select(.data$mes, .data$identificacao.conta, .data$conta.ik, .data$entradas.ik, .data$saidas.ik, .data$saldo.liquido.ik, .data$qtd.transacoes.ik),
-          by = c("mes", "identificacao.conta")
-        ) %>%
-        dplyr::mutate(
-          # Preencher valores NA com 0
-          entradas = dplyr::coalesce(.data$entradas, 0),
-          entradas.ik = dplyr::coalesce(.data$entradas.ik, 0),
-          saidas = dplyr::coalesce(.data$saidas, 0),
-          saidas.ik = dplyr::coalesce(.data$saidas.ik, 0),
-          saldo.liquido = dplyr::coalesce(.data$saldo.liquido, 0),
-          saldo.liquido.ik = dplyr::coalesce(.data$saldo.liquido.ik, 0),
-          qtd.transacoes = dplyr::coalesce(.data$qtd.transacoes, 0L),
-          qtd.transacoes.ik = dplyr::coalesce(.data$qtd.transacoes.ik, 0L)
-          # Não alterar a coluna 'conta' - ela deve preservar os valores originais dos extratos consolidados
-        ) %>%
-        dplyr::select(
-          .data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta, .data$conta.ik, .data$conta.interno,
-          .data$entradas, .data$entradas.ik, .data$saidas, .data$saidas.ik,
-          .data$saldo.liquido, .data$saldo.liquido.ik, .data$qtd.transacoes, .data$qtd.transacoes.ik
-        ) %>%
-        dplyr::arrange(.data$mes, .data$empresa, .data$banco, .data$conta.interno)
-
-      message(sprintf("Análise de fluxos comparativa criada: %d registros", nrow(resultado)))
-      resultado
+      contasMensal
     },
     error = function(e) {
       message("Erro ao criar análise de fluxos por conta e mês: ", e$message)
@@ -527,13 +594,20 @@ e_extratos <- function(xlsx = FALSE) {
 
         # Ajustar larguras específicas para colunas conhecidas
         larguras_especiais <- c(
+          "n.mov" = 12, "data" = 15, "conciliacao" = 15,
+          "valor" = 15, "saldo.caucao.cliente" = 18,
+          "n.conta" = 18, "agente.financeiro" = 25,
+          "historico" = 50, "origem" = 20,
+          "d.c" = 8, "cancelado" = 12,
+          "nat" = 8, "natureza.mov" = 25,
+          "emp.filial" = 15, "nucleo" = 15,
+          "cliente" = 25, "link.natureza" = 20,
+          "arquivo" = 40, "arquivo.tipo" = 12, "arquivo.fonte" = 12,
+          # Manter larguras antigas para compatibilidade
           "Data" = 15, "data.movimento" = 15, "Data.Movimento" = 15,
-          "Valor" = 15, "valor" = 15,
-          "empresa" = 12, "banco" = 12,
-          "conta.interno" = 12, "conta" = 18,
-          "mes" = 15,
-          "Descricao" = 50, "descricao" = 50,
-          "Historico" = 50, "historico" = 50
+          "Valor" = 15, "empresa" = 12, "banco" = 12,
+          "conta.interno" = 12, "conta" = 18, "mes" = 15,
+          "Descricao" = 50, "descricao" = 50, "Historico" = 50
         )
 
         for (col_nome in names(larguras_especiais)) {
@@ -576,12 +650,12 @@ e_extratos <- function(xlsx = FALSE) {
       "Extratos - Ik" = if (nrow(dadosIk) > 0) {
         # Identificar colunas monetárias dinamicamente nos dados IK
         colunas_valor_ik <- c(
-          "Valor", "valor", "Total.Pago", "total.pago",
+          "valor", "saldo.caucao.cliente", "Valor", "Total.Pago", "total.pago",
           "Valor.Titulo", "valor.titulo"
         )
         colunas_valor_ik[colunas_valor_ik %in% names(dadosIk)]
       } else {
-        c("Valor")
+        c("valor", "saldo.caucao.cliente")
       },
       "Contas mensal" = c(
         "entradas", "entradas.ik", "saidas", "saidas.ik",
@@ -604,12 +678,12 @@ e_extratos <- function(xlsx = FALSE) {
       "Extratos - Ik" = if (nrow(dadosIk) > 0) {
         # Identificar colunas de data dinamicamente nos dados IK
         colunas_data_ik <- c(
-          "Data", "data.movimento", "Data.Movimento",
+          "data", "conciliacao", "Data", "data.movimento", "Data.Movimento",
           "mes", "Data.Lancamento", "data.lancamento"
         )
         colunas_data_ik[colunas_data_ik %in% names(dadosIk)]
       } else {
-        c("Data", "mes")
+        c("data", "conciliacao")
       },
       "Contas mensal" = c("mes")
     )
