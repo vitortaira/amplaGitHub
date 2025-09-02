@@ -123,6 +123,11 @@ e_ita_xitas <-
           !is.na(empresa) & str_detect(empresa, "(?i)socorro") ~ "SOC",
           TRUE ~ empresa
         ),
+        mutuo = if_else(
+          str_detect(descricao, "(?i)ampla|buti[aá]|grau[cç][aá]"),
+          TRUE,
+          FALSE
+        ),
         arquivo.tabela.tipo = "xita_l",
         arquivo.tipo = "xita",
         arquivo.fonte = "ita"
