@@ -124,7 +124,8 @@ e_ita_xitas <-
           TRUE ~ empresa
         ),
         mutuo = if_else(
-          str_detect(descricao, "(?i)ampla|buti[aá]|grau[cç][aá]"),
+          str_detect(descricao, "(?i)ampla|buti[aá]|grau[cç][aá]") &
+            !str_detect(descricao, "(?i)maq|pgto\\s?ativo"),
           TRUE,
           FALSE
         ),
