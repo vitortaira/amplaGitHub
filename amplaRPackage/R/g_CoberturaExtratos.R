@@ -10,7 +10,7 @@
 #' @import stringr
 #' @export
 
-g_CoberturaExtratos <- function(cobertura_t = e_cobertura_extratos()) {
+g_coberturaExtratos <- function(cobertura_t = e_cobertura_extratos()) {
   # --- Helper Function: Prepare and Clean Data ---
   .prepare_heatmap_data <- function(raw_data) {
     # Verificar se os dados estão vazios
