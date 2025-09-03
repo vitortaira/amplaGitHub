@@ -82,7 +82,9 @@ e_cef_xcefs<-
         }
       )
       if (!is.null(extrato) && nrow(extrato) > 0) {
-        message(sprintf("Arquivo extraído com sucesso: %s", basename(i_caminho.extrato.cef_c)))
+        message(sprintf("Arquivo extraído com sucesso: %s (subtipo: %s)", 
+                       basename(i_caminho.extrato.cef_c), 
+                       unique(extrato$arquivo.subtipo)[1]))
         extratos_l[[i_caminho.extrato.cef_c]] <- extrato
         extratos_t <- bind_rows(extratos_t, extrato)
       } else {
@@ -95,6 +97,27 @@ e_cef_xcefs<-
       message("Nenhum extrato foi extraído com sucesso.")
       return(tibble())
     }
+
+    # Garantir que colunas xcef2 existam mesmo se nenhum arquivo xcef2 foi processado
+    if (!"cpf.cnpj" %in% names(extratos_t)) {
+      extratos_t$cpf.cnpj <- NA_character_
+    }
+    if (!"nome.razao" %in% names(extratos_t)) {
+      extratos_t$nome.razao <- NA_character_
+    }
+
+    # Mostrar resumo dos subtipos processados
+    subtipos_encontrados <- table(extratos_t$arquivo.subtipo)
+    message("Subtipos processados:")
+    for(subtipo in names(subtipos_encontrados)) {
+      message(sprintf("  %s: %d registros", subtipo, subtipos_encontrados[subtipo]))
+    }
+    
+    # Verificar se há colunas xcef2 específicas
+    tem_cpf_cnpj <- "cpf.cnpj" %in% names(extratos_t)
+    tem_nome_razao <- "nome.razao" %in% names(extratos_t)
+    message(sprintf("Colunas xcef2 presentes: cpf.cnpj=%s, nome.razao=%s", 
+                   tem_cpf_cnpj, tem_nome_razao))
 
     extratos_t %<>%
       mutate(
@@ -136,7 +159,8 @@ e_cef_xcefs<-
         data.lancamento, data.movimentacao, documento, descricao, valor, saldo,
         repasse, pj, conta.interno, conta, agencia, produto, cnpj, empresa,
         periodo.inicio, periodo.fim, data.consulta, contrato.6, arquivo,
-        arquivo.subtipo, arquivo.tabela.tipo, arquivo.tipo, arquivo.fonte
+        arquivo.subtipo, arquivo.tabela.tipo, arquivo.tipo, arquivo.fonte,
+        cpf.cnpj, nome.razao
       )
     return(extratos_t)
   }

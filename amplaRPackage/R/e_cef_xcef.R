@@ -53,6 +53,7 @@
 
 caminhos.teste_c <- c(
   str_c(caminhos_pastas("testthat"), "/data/xcef1.pdf"),
+  str_c(caminhos_pastas("testthat"), "/data/xcef2.xls"),
   str_c(caminhos_pastas("testthat"), "/data/xcef3.pdf"),
   str_c(caminhos_pastas("testthat"), "/data/xcef4.pdf"),
   str_c(caminhos_pastas("testthat"), "/data/xcef5.pdf"),
@@ -67,14 +68,21 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
     paginas_l <- ler_pdf(f_caminho.arquivo_c)$paginas
     linhas_c <- ler_pdf(f_caminho.arquivo_c)$linhas
   }
-  if (fs::path_ext(f_caminho.arquivo_c) == "xlsx") {
-    # Ler XLSX
+  if (fs::path_ext(f_caminho.arquivo_c) %in% c("xlsx", "xls")) {
+    # Ler Excel (XLSX ou XLS)
     tabela_t <- suppressMessages(
       readxl::read_excel(f_caminho.arquivo_c, col_names = FALSE)
     )
   }
   # Identificar o tipo do xcef
   tipo_c <- c_cef_xcef(f_caminho.arquivo_c)
+  
+  # Verificar se o tipo foi identificado
+  if (is.na(tipo_c)) {
+    message(sprintf("Tipo de arquivo não reconhecido: %s", f_caminho.arquivo_c))
+    return(tibble())
+  }
+  
   if (tipo_c == "xcef1") {
     message(sprintf("Formato pendente para o arquivo: %s", f_caminho.arquivo_c))
     palavras_t <-
@@ -118,6 +126,129 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
         .x,
         "about\\:|\\d{2}/\\d{2}/\\d{4}\\,\\s?\\d{2}\\:\\d{2}|\\d{2}/\\d{2}/\\d{4}$"
       ))
+  }
+  if (tipo_c == "xcef2") {
+    # Extrair período da primeira linha
+    periodo.inicio <- read_excel(f_caminho.arquivo_c, range = "A1") %>%
+      names() %>%
+      str_extract("(?<=(?i)extrato\\s?de\\s?)(\\d{2}/\\d{2}/\\d{4})")
+    periodo.fim <- read_excel(f_caminho.arquivo_c, range = "A1") %>%
+      names() %>%
+      str_extract(
+        "(?<=(?i)\\s?\\d{2}/\\d{2}/\\d{4}\\s?[aà]\\s?)(\\d{2}/\\d{2}/\\d{4})"
+      )
+    
+    # Encontrar a linha correta do cabeçalho
+    skip_rows <- 1  # Padrão
+    for(skip_test in 1:5) {
+      dados_teste <- tryCatch({
+        read_excel(f_caminho.arquivo_c, skip = skip_test)
+      }, error = function(e) NULL)
+      
+      if(!is.null(dados_teste) && ncol(dados_teste) >= 5) {
+        colunas_teste <- names(dados_teste)
+        tem_genericos <- sum(str_detect(colunas_teste, "^\\.\\.\\.[0-9]+$"))
+        
+        # Se tem menos nomes genéricos, usar esta linha
+        if(tem_genericos < ncol(dados_teste) / 2) {
+          skip_rows <- skip_test
+          break
+        }
+      }
+    }
+    
+    # Ler dados com o cabeçalho correto
+    dados_brutos <- read_excel(f_caminho.arquivo_c, skip = skip_rows)
+    
+    # Criar mapeamento flexível de colunas
+    colunas <- names(dados_brutos)
+    mapeamento <- list()
+    
+    # Encontrar colunas por padrão
+    for(i in seq_along(colunas)) {
+      col_name <- colunas[i]
+      if(str_detect(col_name, "(?i)data.*lan[cç]|lan[cç]amento")) {
+        mapeamento$data.lancamento <- col_name
+      } else if(str_detect(col_name, "(?i)data.*mov|movimento")) {
+        mapeamento$data.movimentacao <- col_name
+      } else if(str_detect(col_name, "(?i)documento|doc")) {
+        mapeamento$documento <- col_name
+      } else if(str_detect(col_name, "(?i)hist[oó]rico|descri[cç][aã]o")) {
+        mapeamento$descricao <- col_name
+      } else if(str_detect(col_name, "(?i)valor")) {
+        mapeamento$valor <- col_name
+      } else if(str_detect(col_name, "(?i)saldo")) {
+        mapeamento$saldo <- col_name
+      } else if(str_detect(col_name, "(?i)cpf|cnpj")) {
+        mapeamento$cpf.cnpj <- col_name
+      } else if(str_detect(col_name, "(?i)nome|raz[aã]o")) {
+        mapeamento$nome.razao <- col_name
+      }
+    }
+    
+    # Aplicar renomeação apenas para colunas encontradas
+    extrato_t <- dados_brutos
+    for(novo_nome in names(mapeamento)) {
+      if(mapeamento[[novo_nome]] %in% names(extrato_t)) {
+        names(extrato_t)[names(extrato_t) == mapeamento[[novo_nome]]] <- novo_nome
+      }
+    }
+    
+    # Adicionar colunas que não existem com nomes padronizados
+    if(!"cpf.cnpj" %in% names(extrato_t)) extrato_t$cpf.cnpj <- NA_character_
+    if(!"nome.razao" %in% names(extrato_t)) extrato_t$nome.razao <- NA_character_
+    if(!"data.lancamento" %in% names(extrato_t)) extrato_t$data.lancamento <- NA_character_
+    if(!"data.movimentacao" %in% names(extrato_t)) extrato_t$data.movimentacao <- NA_character_
+    if(!"documento" %in% names(extrato_t)) extrato_t$documento <- NA_character_
+    if(!"descricao" %in% names(extrato_t)) extrato_t$descricao <- NA_character_
+    if(!"valor" %in% names(extrato_t)) extrato_t$valor <- NA_character_
+    if(!"saldo" %in% names(extrato_t)) extrato_t$saldo <- NA_character_
+    
+    extrato_t <- extrato_t %>%
+      mutate(
+        # Converter datas de datetime para Date
+        data.lancamento = case_when(
+          !is.na(data.lancamento) & !is.character(data.lancamento) ~ as.Date(data.lancamento),
+          is.character(data.lancamento) ~ as.Date(data.lancamento, format = "%d/%m/%Y"),
+          TRUE ~ as.Date(NA)
+        ),
+        data.movimentacao = case_when(
+          !is.na(data.movimentacao) & !is.character(data.movimentacao) ~ as.Date(data.movimentacao),
+          is.character(data.movimentacao) ~ as.Date(data.movimentacao, format = "%d/%m/%Y"),
+          TRUE ~ as.Date(NA)
+        ),
+        # Converter valor e saldo para character para compatibilidade com outros tipos xcef
+        valor = as.character(valor),
+        saldo = as.character(saldo),
+        # Garantir que outras colunas sejam character também
+        documento = as.character(documento),
+        descricao = as.character(descricao),
+        cpf.cnpj = as.character(cpf.cnpj),
+        nome.razao = as.character(nome.razao),
+        # Adicionar metadados
+        conta.interno = basename(f_caminho.arquivo_c) %>%
+          str_extract("\\d{4}"),
+        conta = NA_character_,
+        agencia = NA_character_,
+        produto = NA_character_,
+        cnpj = cpf.cnpj,
+        empresa = nome.razao,
+        periodo.inicio = as.Date(periodo.inicio, format = "%d/%m/%Y"),
+        periodo.fim = as.Date(periodo.fim, format = "%d/%m/%Y"),
+        data.consulta = NA_POSIXct_,
+        arquivo = f_caminho.arquivo_c,
+        arquivo.subtipo = tipo_c
+      ) %>%
+      dplyr::select(
+        data.lancamento, data.movimentacao, documento, descricao, valor, saldo,
+        conta.interno, conta, agencia, produto, cnpj, empresa,
+        periodo.inicio, periodo.fim, data.consulta, arquivo, arquivo.subtipo,
+        cpf.cnpj, nome.razao
+      ) %>%
+      dplyr::filter(
+        !str_starts(descricao, "(?i)saldo\\s?anterior|(?i)saldo\\s?dia")
+      )
+    return(extrato_t)
   }
   if (tipo_c == "xcef3") {
     linhas_c %<>% keep(function(x) {

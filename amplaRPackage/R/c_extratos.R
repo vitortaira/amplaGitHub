@@ -153,14 +153,14 @@ c_extratos <- function(arquivo.subtipo = "melhores", arquivo.tipo = "todos") {
         # Definir prioridade customizada por arquivo.tipo
         prioridade_subtipo = case_when(
           # Prioridades para arquivos CEF (xcef): 3>4>5>6>7>8>1>2
-          arquivo.tipo == "xcef" & arquivo.subtipo == "xcef3" ~ 1,
-          arquivo.tipo == "xcef" & arquivo.subtipo == "xcef4" ~ 2,
-          arquivo.tipo == "xcef" & arquivo.subtipo == "xcef5" ~ 3,
-          arquivo.tipo == "xcef" & arquivo.subtipo == "xcef6" ~ 4,
-          arquivo.tipo == "xcef" & arquivo.subtipo == "xcef7" ~ 5,
-          arquivo.tipo == "xcef" & arquivo.subtipo == "xcef8" ~ 6,
-          arquivo.tipo == "xcef" & arquivo.subtipo == "xcef1" ~ 7,
-          arquivo.tipo == "xcef" & arquivo.subtipo == "xcef2" ~ 8,
+          arquivo.tipo == "xcef" & arquivo.subtipo == "xcef2" ~ 1,
+          arquivo.tipo == "xcef" & arquivo.subtipo == "xcef3" ~ 2,
+          arquivo.tipo == "xcef" & arquivo.subtipo == "xcef4" ~ 3,
+          arquivo.tipo == "xcef" & arquivo.subtipo == "xcef5" ~ 4,
+          arquivo.tipo == "xcef" & arquivo.subtipo == "xcef6" ~ 5,
+          arquivo.tipo == "xcef" & arquivo.subtipo == "xcef7" ~ 6,
+          arquivo.tipo == "xcef" & arquivo.subtipo == "xcef8" ~ 7,
+          arquivo.tipo == "xcef" & arquivo.subtipo == "xcef1" ~ 8,
           arquivo.tipo == "xcef" & arquivo.subtipo == "xcef9" ~ 9,
           # Prioridades para arquivos ITAÚ (xita): manter lógica simples
           arquivo.tipo == "xita" & arquivo.subtipo == "xita1" ~ 1,

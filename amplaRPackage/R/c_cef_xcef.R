@@ -176,7 +176,7 @@ c_cef_xcef <- function(f_caminho.arquivo_c) {
       ~ "xcef7",
       TRUE ~ NA_character_
     )
-  } else if (fs::path_ext(f_caminho.arquivo_c) == "xlsx") {
+  } else if (fs::path_ext(f_caminho.arquivo_c) %in% c("xlsx", "xls")) {
     # Tentar ler o arquivo Excel com tratamento de erro
     tabela_t <- tryCatch(
       {
@@ -238,6 +238,13 @@ c_cef_xcef <- function(f_caminho.arquivo_c) {
       ~ "xcef8",
       TRUE ~ NA_character_
     )
+
+    # Garantir que sempre retornamos um valor único
+    if (length(resultado) == 0 || is.null(resultado)) {
+      return(NA_character_)
+    } else {
+      return(as.character(resultado[1]))
+    }
   } else {
     NA_character_
   }
