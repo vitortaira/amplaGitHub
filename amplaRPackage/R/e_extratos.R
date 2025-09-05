@@ -829,7 +829,7 @@ e_extratos <- function(xlsx = FALSE) {
     }
   }
 
-  # Criar DFC a partir dos dados CEF (repasse e pj separadamente)
+  # Criar DFC a partir dos dados CEF (repasse e pj separadamente) e ITAÚ (mutuos)
   DFC <- tryCatch(
     {
       # Criar dataframe base com todas as combinações de mes e empresa
@@ -864,13 +864,49 @@ e_extratos <- function(xlsx = FALSE) {
           .groups = "drop"
         )
 
+      # Calcular mutuos a partir dos dados ITAÚ
+      df_mutuos <- tryCatch(
+        {
+          dadosItaMutuos <- dadosIta %>%
+            dplyr::filter(.data$mutuo == TRUE) %>%
+            dplyr::mutate(
+              mes = lubridate::floor_date(.data$data, "month")
+            ) %>%
+            dplyr::group_by(.data$mes, .data$empresa) %>%
+            dplyr::summarise(
+              mutuos.entradas = sum(pmax(.data$valor, 0), na.rm = TRUE),
+              mutuos.saidas = sum(pmin(.data$valor, 0), na.rm = TRUE),
+              .groups = "drop"
+            ) %>%
+            dplyr::mutate(
+              mutuos.saldo = .data$mutuos.entradas + .data$mutuos.saidas
+            )
+
+          dadosItaMutuos
+        },
+        error = function(e) {
+          message("Erro ao calcular mutuos ITAÚ: ", e$message)
+          return(tibble::tibble(
+            mes = as.Date(character()),
+            empresa = character(),
+            mutuos.entradas = numeric(),
+            mutuos.saidas = numeric(),
+            mutuos.saldo = numeric()
+          ))
+        }
+      )
+
       # Juntar tudo
       df_base %>%
         dplyr::left_join(df_repasse, by = c("mes", "empresa")) %>%
         dplyr::left_join(df_pj, by = c("mes", "empresa")) %>%
+        dplyr::left_join(df_mutuos, by = c("mes", "empresa")) %>%
         dplyr::mutate(
           repasse = dplyr::coalesce(.data$repasse, 0),
-          pj = dplyr::coalesce(.data$pj, 0)
+          pj = dplyr::coalesce(.data$pj, 0),
+          mutuos.entradas = dplyr::coalesce(.data$mutuos.entradas, 0),
+          mutuos.saidas = dplyr::coalesce(.data$mutuos.saidas, 0),
+          mutuos.saldo = dplyr::coalesce(.data$mutuos.saldo, 0)
         ) %>%
         dplyr::arrange(.data$mes, .data$empresa)
     },

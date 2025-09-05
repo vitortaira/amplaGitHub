@@ -82,8 +82,8 @@ e_cef_xcefs<-
         }
       )
       if (!is.null(extrato) && nrow(extrato) > 0) {
-        message(sprintf("Arquivo extraído com sucesso: %s (subtipo: %s)", 
-                       basename(i_caminho.extrato.cef_c), 
+        message(sprintf("Arquivo extraído com sucesso: %s (subtipo: %s)",
+                       basename(i_caminho.extrato.cef_c),
                        unique(extrato$arquivo.subtipo)[1]))
         extratos_l[[i_caminho.extrato.cef_c]] <- extrato
         extratos_t <- bind_rows(extratos_t, extrato)
@@ -112,11 +112,11 @@ e_cef_xcefs<-
     for(subtipo in names(subtipos_encontrados)) {
       message(sprintf("  %s: %d registros", subtipo, subtipos_encontrados[subtipo]))
     }
-    
+
     # Verificar se há colunas xcef2 específicas
     tem_cpf_cnpj <- "cpf.cnpj" %in% names(extratos_t)
     tem_nome_razao <- "nome.razao" %in% names(extratos_t)
-    message(sprintf("Colunas xcef2 presentes: cpf.cnpj=%s, nome.razao=%s", 
+    message(sprintf("Colunas xcef2 presentes: cpf.cnpj=%s, nome.razao=%s",
                    tem_cpf_cnpj, tem_nome_razao))
 
     extratos_t %<>%
