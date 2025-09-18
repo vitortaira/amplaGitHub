@@ -190,71 +190,65 @@ c_cef_xcef <- function(f_caminho.arquivo_c) {
     )
 
     # Se não conseguir ler o arquivo ou dados insuficientes, retornar NA
-    if (is.null(tabela_t) || nrow(tabela_t) < 7 || ncol(tabela_t) < 5) {
+    if (is.null(tabela_t) || nrow(tabela_t) < 2 || ncol(tabela_t) < 5) {
       return(NA_character_)
     }
 
     resultado <- case_when(
       # Padrão xcef2: Arquivo Excel com colunas específicas CEF
-      tryCatch(
-        {
-          # Verificar se é um arquivo de teste conhecido
-          if (str_detect(basename(f_caminho.arquivo_c), "xcef2\\.(xls|xlsx)")) {
-            TRUE
-          } else {
-            # Tentar ler dados com diferentes linhas de cabeçalho
-            dados_completos <- NULL
-            for (skip_rows in 0:5) {
-              dados_temp <- tryCatch(
-                {
-                  suppressMessages(readxl::read_excel(f_caminho.arquivo_c, skip = skip_rows))
-                },
-                error = function(e) NULL
-              )
+      {
+        # Verificar se é um arquivo de teste conhecido
+        if (str_detect(basename(f_caminho.arquivo_c), "xcef2\\.(xls|xlsx)")) {
+          TRUE
+        } else {
+          # Tentar ler dados com diferentes linhas de cabeçalho
+          dados_completos <- NULL
+          for (skip_rows in 0:5) {
+            dados_temp <- tryCatch(
+              {
+                suppressMessages(readxl::read_excel(f_caminho.arquivo_c, skip = skip_rows))
+              },
+              error = function(e) NULL
+            )
 
-              if (!is.null(dados_temp) && ncol(dados_temp) >= 5) {
-                colunas_temp <- names(dados_temp)
-                tem_genericos <- sum(str_detect(colunas_temp, "^\\.\\.\\.[0-9]+$"))
+            if (!is.null(dados_temp) && ncol(dados_temp) >= 5) {
+              colunas_temp <- names(dados_temp)
+              tem_genericos <- sum(str_detect(colunas_temp, "^\\.\\.\\.[0-9]+$"))
 
-                if (tem_genericos < ncol(dados_temp) / 2) {
-                  dados_completos <- dados_temp
-                  break
-                }
+              if (tem_genericos < ncol(dados_temp) / 2) {
+                dados_completos <- dados_temp
+                break
               }
             }
-
-            if (is.null(dados_completos) || ncol(dados_completos) == 0) {
-              FALSE
-            } else {
-              colunas <- names(dados_completos)
-
-              # Verificar colunas características do xcef2
-              tem_data_lancamento <- any(str_detect(colunas, "(?i)data.*lan[cç]|lan[cç]amento"))
-              tem_data_movimento <- any(str_detect(colunas, "(?i)data.*mov|movimento"))
-              tem_cpf_cnpj <- any(str_detect(colunas, "(?i)cpf|cnpj"))
-              tem_nome_razao <- any(str_detect(colunas, "(?i)nome|raz[aã]o"))
-              tem_historico <- any(str_detect(colunas, "(?i)hist"))
-              tem_valor <- any(str_detect(colunas, "(?i)valor"))
-
-              matches <- sum(c(
-                tem_data_lancamento, tem_data_movimento, tem_cpf_cnpj,
-                tem_nome_razao, tem_historico, tem_valor
-              ))
-
-              # Deve ter CPF/CNPJ ou Nome/Razão e pelo menos 3 outras colunas
-              (tem_cpf_cnpj || tem_nome_razao) && matches >= 3 && ncol(dados_completos) >= 5
-            }
           }
-        },
-        error = function(e) {
-          # Fallback: verificar pelo nome do arquivo
-          str_detect(basename(f_caminho.arquivo_c), "xcef2\\.(xls|xlsx)")
+
+          if (is.null(dados_completos) || ncol(dados_completos) == 0) {
+            FALSE
+          } else {
+            colunas <- names(dados_completos)
+
+            # Verificar colunas características do xcef2
+            tem_data_lancamento <- any(str_detect(colunas, "(?i)data.*lan[cç]|lan[cç]amento"))
+            tem_data_movimento <- any(str_detect(colunas, "(?i)data.*mov|movimento"))
+            tem_cpf_cnpj <- any(str_detect(colunas, "(?i)cpf|cnpj"))
+            tem_nome_razao <- any(str_detect(colunas, "(?i)nome|raz[aã]o"))
+            tem_historico <- any(str_detect(colunas, "(?i)hist"))
+            tem_valor <- any(str_detect(colunas, "(?i)valor"))
+
+            matches <- sum(c(
+              tem_data_lancamento, tem_data_movimento, tem_cpf_cnpj,
+              tem_nome_razao, tem_historico, tem_valor
+            ))
+
+            # Deve ter CPF/CNPJ ou Nome/Razão e pelo menos 3 outras colunas
+            (tem_cpf_cnpj || tem_nome_razao) && matches >= 3 && ncol(dados_completos) >= 5
+          }
         }
-      )
+      }
       ~ "xcef2",
       # Padrão xcef9: Arquivo Excel com 5 colunas (variante do formato CEF)
       ncol(tabela_t) == 5 &
-        nrow(tabela_t) >= 7
+        nrow(tabela_t) >= 2
       ~ "xcef9",
       # Padrão xcef8: Arquivo Excel com 6 colunas
       ncol(tabela_t) >= 6 &
