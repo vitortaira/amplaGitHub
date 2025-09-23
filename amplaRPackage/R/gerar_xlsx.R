@@ -16,9 +16,9 @@
 #' @param col_monetary Vetor com nomes de colunas que devem ser formatadas como valores monetários
 #' @param col_clip Vetor com nomes de colunas de texto que devem ter quebra de texto habilitada
 #' @param save Lista com 2 elementos: (1) nome do arquivo, (2) caminho de destino.
-#'   Se NULL, não salva o arquivo
+#'   Se NULL, salva automaticamente no diretório Downloads com nome "xlsx-YYYY_MM_DD-HH_MM_SS.xlsx"
 #'
-#' @return Caminho do arquivo salvo (se save não for NULL) ou objeto workbook
+#' @return Caminho do arquivo salvo
 #' @importFrom dplyr bind_rows mutate select rename case_when if_else arrange all_of
 #' @importFrom stringr str_c
 #' @importFrom openxlsx createWorkbook loadWorkbook addWorksheet writeData addStyle createStyle
@@ -109,22 +109,22 @@ gerar_xlsx <- function(data,
   names(dados_lista) <- tab_names
 
   # Processar cada aba
-  purrr::walk2(
-    .x = dados_lista,
-    .y = names(dados_lista),
-    .f = function(df_dados, nome_aba) {
-      # Adicionar worksheet se necessário (para novos workbooks)
-      if (is.null(wb_load)) {
-        openxlsx::addWorksheet(wb, nome_aba)
-      }
+  for (i in seq_along(dados_lista)) {
+    df_dados <- dados_lista[[i]]
+    nome_aba <- names(dados_lista)[i]
+    
+    # Adicionar worksheet se necessário (para novos workbooks)
+    if (is.null(wb_load)) {
+      openxlsx::addWorksheet(wb, nome_aba)
+    }
 
-      # Deletar região nomeada antiga, se existir (apenas para novos workbooks)
-      if (is.null(wb_load)) {
-        nome_regiao <- tolower(nome_aba)
-        if (nome_regiao %in% openxlsx::getNamedRegions(wb)) {
-          openxlsx::deleteNamedRegion(wb, name = nome_regiao)
-        }
+    # Deletar região nomeada antiga, se existir (apenas para novos workbooks)
+    if (is.null(wb_load)) {
+      nome_regiao <- tolower(nome_aba)
+      if (nome_regiao %in% openxlsx::getNamedRegions(wb)) {
+        openxlsx::deleteNamedRegion(wb, name = nome_regiao)
       }
+    }
 
       # Escrever os dados
       openxlsx::writeData(wb, sheet = nome_aba, x = df_dados)
@@ -148,7 +148,8 @@ gerar_xlsx <- function(data,
         style = openxlsx::createStyle(
           border = "TopBottomLeftRight",
           halign = "center",
-          valign = "center"
+          valign = "center",
+          wrapText = FALSE  # Evitar wrap text por padrão
         ),
         rows = 1:(nrow(df_dados) + 1),
         cols = seq_len(ncol(df_dados)),
@@ -165,7 +166,7 @@ gerar_xlsx <- function(data,
           halign = "center",
           valign = "center",
           textDecoration = "bold",
-          fgFill = "darkgray",
+          fgFill = "lightgray",  # Cor mais suave
           wrapText = TRUE
         ),
         rows = 1,
@@ -177,8 +178,33 @@ gerar_xlsx <- function(data,
       openxlsx::addFilter(wb, sheet = nome_aba, rows = 1, cols = seq_len(ncol(df_dados)))
       openxlsx::freezePane(wb, sheet = nome_aba, firstRow = TRUE, firstActiveRow = 2)
 
-      # Largura das colunas - aplicar largura padrão primeiro
-      openxlsx::setColWidths(wb, sheet = nome_aba, cols = seq_len(ncol(df_dados)), widths = col_width_def)
+      # Ajustar larguras automaticamente baseado no conteúdo
+      # Para colunas de texto muito longas, limitar a largura máxima
+      larguras_calculadas <- sapply(seq_len(ncol(df_dados)), function(col_idx) {
+        col_data <- df_dados[[col_idx]]
+        col_name <- names(df_dados)[col_idx]
+        
+        # Calcular largura baseada no nome da coluna e dados
+        max_nome <- nchar(col_name)
+        max_dados <- if (is.character(col_data) || is.factor(col_data)) {
+          max(nchar(as.character(col_data)), na.rm = TRUE)
+        } else {
+          max(nchar(format(col_data)), na.rm = TRUE)
+        }
+        
+        largura_sugerida <- max(max_nome, max_dados, na.rm = TRUE)
+        
+        # Limitar larguras muito grandes (colunas de texto extenso)
+        if (largura_sugerida > 50) {
+          30  # Largura máxima para colunas muito longas
+        } else if (largura_sugerida < 8) {
+          10  # Largura mínima
+        } else {
+          min(largura_sugerida + 2, col_width_def)  # Adicionar padding
+        }
+      })
+      
+      openxlsx::setColWidths(wb, sheet = nome_aba, cols = seq_len(ncol(df_dados)), widths = larguras_calculadas)
 
       # Colunas de texto (alinhamento à esquerda, sem quebra de texto)
       colunas_texto <- which(sapply(df_dados, function(x) is.character(x) | is.factor(x)))
@@ -274,20 +300,35 @@ gerar_xlsx <- function(data,
         }
       }
     }
-  )
 
-  # Salvar se especificado
+  # Salvar arquivo
   if (!is.null(save)) {
+    # Salvar com parâmetros especificados pelo usuário
     nome_arquivo <- save[[1]]
     caminho_destino <- save[[2]]
     caminho_completo <- file.path(caminho_destino, nome_arquivo)
-
-    openxlsx::saveWorkbook(wb, caminho_completo, overwrite = TRUE)
-
-    message(sprintf("Planilha salva em: %s", caminho_completo))
-
-    return(caminho_completo)
   } else {
-    return(wb)
+    # Salvar automaticamente no diretório de downloads com timestamp
+    timestamp <- format(Sys.time(), "%Y_%m_%d-%H_%M_%S")
+    nome_arquivo <- paste0("xlsx-", timestamp, ".xlsx")
+
+    # Determinar diretório de downloads
+    if (Sys.info()["sysname"] == "Windows") {
+      caminho_destino <- file.path(Sys.getenv("USERPROFILE"), "Downloads")
+    } else {
+      caminho_destino <- file.path(path.expand("~"), "Downloads")
+    }
+
+    caminho_completo <- file.path(caminho_destino, nome_arquivo)
   }
+
+  # Criar diretório se não existir
+  dir.create(dirname(caminho_completo), showWarnings = FALSE, recursive = TRUE)
+
+  # Salvar workbook
+  openxlsx::saveWorkbook(wb, caminho_completo, overwrite = TRUE)
+
+  message(sprintf("Planilha salva em: %s", caminho_completo))
+
+  return(caminho_completo)
 }
