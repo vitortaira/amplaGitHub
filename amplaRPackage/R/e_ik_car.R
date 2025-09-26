@@ -3,6 +3,23 @@ e_ik_car <- function() {
     file.path(caminhos_pastas("informakon"), "car-20250901_20991231.pdf")
   )
   linhas <- pdf$linhas
+  contr_t <-
+    e_ik_contr("C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/dados/Informakon/contr-2025_09_23.xlsx") %>%
+    mutate(
+      empresa = case_when(
+        str_detect(identificacao.imovel, "(?i)s[oô]nia\\s?4") ~ "SN4",
+        str_detect(identificacao.imovel, "(?i)prud[eê]ncia") ~ "AMP",
+        str_detect(identificacao.imovel, "(?i)up\\s?vila\\s?s[oô]nia") ~ "AVS",
+        str_detect(identificacao.imovel, "(?i)select") ~ "GRA",
+        str_detect(identificacao.imovel, "(?i)s[aã]o\\s?lucas") ~ "LUC",
+        str_detect(identificacao.imovel, "(?i)pomp[eé]ia") ~ "POM",
+        str_detect(identificacao.imovel, "(?i)esta[cç][aã]o\\s?vila") ~ "SN2",
+        TRUE ~ NA_character_
+      )
+    ) %>%
+    dplyr::select(empresa, contrato.ampla, contrato.cef, repassado) %>%
+    rename(contrato = contrato.ampla) %>%
+    dplyr::filter(!is.na(empresa))
   car_t <- linhas %>%
     keep(~ str_starts(.x, "\\d{2}/\\d{2}/\\d{4}")) %>%
     as_tibble_col("linha") %>%
@@ -84,22 +101,38 @@ e_ik_car <- function() {
     select(-linha) %>%
     mutate(
       empresa = str_sub(empreendimento.codigo, 1, 3),
+    ) %>%
+    left_join(contr_t, by = c("empresa", "contrato")) %>%
+    select(
+      empresa, contrato, contrato.cef, repassado, everything()
+    ) %>%
+    mutate(
       natureza = case_when(
-        ele %in% c("FGT", "FIB", "FIN") ~ "Repasse CEF",
-        !ele %in% c("FGT", "FIB", "FIN") ~ "Pro soluto",
-        TRUE ~ "Outro"
+        ele %in% c("CEF", "FGT", "FIB", "FIN") &
+          !empresa %in% c("POM", "SAU") &
+          repassado == "Não" ~ "Parcela CEF a repassar",
+        ele %in% c("CEF", "FGT", "FIB", "FIN") &
+          !empresa %in% c("POM", "SAU") &
+          repassado == "Sim" ~ "Parcela CEF",
+        TRUE ~ "Pro soluto"
       )
     )
   carm_t <- car_t %>%
     group_by(empresa, natureza,
-      ano = year(data.vencimento),
-      mes = month(data.vencimento)
+      data.mes = floor_date(data.vencimento, "month")
     ) %>%
     summarise(
-      across(where(is.numeric), sum, na.rm = TRUE),
+      across(valor.atualizado, sum, na.rm = TRUE),
       .groups = "drop"
     ) %>%
-    arrange(empresa, ano, mes, natureza)
-  return(list(car = car_t, carm = carm_t))
+    pivot_wider(
+      names_from = data.mes,
+      values_from = where(is.numeric),
+      values_fill = 0
+    ) %>%
+    arrange(empresa, natureza) %>%
+    select(empresa, natureza, everything()) %>%
+    select(empresa, natureza, sort(names(select(., -empresa, -natureza))))
+  return(list(car = car_t, carm = carm_t, contr = contr_t))
 }
 # View(car_t)
