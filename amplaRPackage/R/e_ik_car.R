@@ -21,8 +21,17 @@ e_ik_car <- function() {
     rename(contrato = contrato.ampla) %>%
     dplyr::filter(!is.na(empresa))
   car_t <- linhas %>%
-    keep(~ str_starts(.x, "\\d{2}/\\d{2}/\\d{4}")) %>%
+    ###
+    keep(~ str_starts(.x, "\\d{2}/\\d{2}/\\d{4}") |
+      str_detect(.x, "(?i)im[oó]v\\s?el")) %>%
     as_tibble_col("linha") %>%
+    mutate(
+      parcela = str_starts(linha, "\\d{2}/\\d{2}/\\d{4}"),
+      unidade = if_else(!parcela, linha[row_number()], NA_character_)
+    ) %>%
+    fill(unidade, .direction = "down") %>%
+    dplyr::filter(parcela) %>%
+    dplyr::select(-parcela) %>%
     mutate(
       data.vencimento = str_extract(linha, "^\\d{2}/\\d{2}/\\d{4}") %>%
         lubridate::dmy(),
