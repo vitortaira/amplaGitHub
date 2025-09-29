@@ -105,7 +105,13 @@ e_ik_car <- function() {
       cart = word(linha, 1),
       linha = str_remove(linha, str_c(cart, "\\s+")),
       disp = word(linha, 1),
-      linha = str_remove(linha, str_c(disp, "\\s+"))
+      linha = str_remove(linha, str_c(disp, "\\s+")),
+      cliente = str_extract(unidade, "(?i)^.*?(?=\\s*-\\s?im[oó])"),
+      unidade = str_remove(unidade, "^[^,]*,\\s?"),
+      pavimento = str_extract(unidade, "^[^,]*,") %>% str_remove(","),
+      unidade = str_remove(unidade, "^[^,]*,\\s?") %>% str_remove("\\s-\\s.*$"),
+      especie = str_remove_all(unidade, "\\d|\\s"),
+      unidade = str_remove_all(unidade, "\\D")
     ) %>%
     select(-linha) %>%
     mutate(
