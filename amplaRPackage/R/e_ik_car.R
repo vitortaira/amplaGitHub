@@ -111,7 +111,7 @@ e_ik_car <- function() {
       pavimento = str_extract(unidade, "^[^,]*,") %>% str_remove(","),
       unidade = str_remove(unidade, "^[^,]*,\\s?") %>% str_remove("\\s-\\s.*$"),
       especie = str_remove_all(unidade, "\\d|\\s"),
-      unidade = str_remove_all(unidade, "\\D")
+      unidade = str_remove_all(unidade, "\\D") %>% as.integer()
     ) %>%
     select(-linha) %>%
     mutate(
@@ -148,6 +148,12 @@ e_ik_car <- function() {
     arrange(empresa, natureza) %>%
     select(empresa, natureza, everything()) %>%
     select(empresa, natureza, sort(names(select(., -empresa, -natureza))))
-  return(list(car = car_t, carm = carm_t, contr = contr_t))
+  caru_t <- car_t %>%
+    group_by(empresa, especie, pavimento, unidade) %>%
+    summarise(
+      total = sum(valor.atualizado, na.rm = TRUE),
+      .groups = "drop"
+    )
+  return(list(car = car_t, carm = carm_t, contr = contr_t, caru = caru_t))
 }
 # View(car_t)
