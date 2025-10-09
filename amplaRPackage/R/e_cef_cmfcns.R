@@ -41,21 +41,16 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
     caminhos.cmfcn_c %>%
     str_extract("\\d{12}") %>%
     unique()
-  caminhos.cmfcn.recentes_c <- map(
-    contratos.empreendimentos.12.primeiros_c,
-    ~ {
-      i <- caminhos.cmfcn_c %>%
-        str_subset(.x) %>%
-        path_file() %>%
-        str_extract("^\\d{8}") %>%
-        ymd() %>%
-        which.max()
-      caminhos.cmfcn_c[i]
-    }
-  ) %>%
-    flatten_chr() %>%
-    unname()
-  #
+  caminhos.cmfcn.recentes_c <-
+    caminhos.cmfcn_c %>%
+    tibble(caminho = .) %>%
+    mutate(
+      empreendimento = str_extract(caminho, "\\d{12}"),
+      data.arquivo = str_extract(path_file(caminho), "^\\d{8}") %>% ymd()
+    ) %>%
+    group_by(empreendimento) %>%
+    slice_max(data.arquivo, n = 1) %>%
+    pull(caminho)
   cmfcns_l <- list()
   cmfcns_t <- data.frame()
   for (i_caminho.cmfcn_c in caminhos.cmfcn.recentes_c) {
@@ -81,4 +76,27 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
       arquivo.tipo, arquivo.tabela.tipo, arquivo.fonte
     )
   return(cmfcns_t)
+}
+
+#' @title Agrupamento de CMF_CN por contrato e mês
+#'
+#' @description
+#' Agrupa os dados de e_cef_cmfcns() por contrato, pivotando valores mensais.
+#'
+#' @param f_caminho.pasta.ciweb_c Caminho para a pasta "Relatorios - CIWEB".
+#'
+#' @return
+#' Tibble com uma linha por contrato e colunas mensais de valores.
+#'
+#' @export
+e_cef_cmfcns_mensal <- function(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
+  e_cef_cmfcns(f_caminho.pasta.ciweb_c) %>%
+    mutate(mes = floor_date(data.movimento, "month")) %>%
+    group_by(contrato, mes) %>%
+    summarise(valor = sum(valor, na.rm = TRUE), .groups = "drop") %>%
+    pivot_wider(
+      names_from = mes,
+      values_from = valor,
+      values_fill = 0
+    )
 }
