@@ -36,7 +36,7 @@ e_ik_car <- function() {
       data.vencimento = str_extract(linha, "^\\d{2}/\\d{2}/\\d{4}") %>%
         lubridate::dmy(),
       linha = str_remove(linha, "^\\d{2}/\\d{2}/\\d{4}\\s+"),
-      empreendimento.codigo =
+      empreendimento =
         str_extract(linha, "[A-Z0-9]{3}\\.\\d{2}\\.\\d{4}"),
       linha = str_remove(linha, "^[A-Z0-9]{3}\\.\\d{2}\\.\\d{4}\\s+"),
       contrato = str_extract(linha, "\\d{4}-\\d"),
@@ -115,7 +115,7 @@ e_ik_car <- function() {
     ) %>%
     select(-linha) %>%
     mutate(
-      empresa = str_sub(empreendimento.codigo, 1, 3),
+      empresa = str_sub(empreendimento, 1, 3),
     ) %>%
     left_join(contr_t, by = c("empresa", "contrato")) %>%
     select(
@@ -144,10 +144,10 @@ e_ik_car <- function() {
       names_from = data.mes,
       values_from = valor.atualizado,
       values_fill = 0
-    ) %>%
-    arrange(empresa, natureza) %>%
-    select(empresa, natureza, everything()) %>%
-    select(empresa, natureza, sort(names(select(., -empresa, -natureza))))
+    )
+  # arrange(empresa, natureza) %>%
+  # select(empresa, natureza, everything()) %>%
+  # select(empresa, natureza, sort(names(select(., -empresa, -natureza))))
   caru_t <- car_t %>%
     group_by(empresa, especie, pavimento, unidade) %>%
     summarise(
