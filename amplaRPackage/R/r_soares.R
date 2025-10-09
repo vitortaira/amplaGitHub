@@ -1,0 +1,269 @@
+r_soares <- function() {
+  # ECNs
+  caminhos.ecn_c <- c(
+    "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - CIWEB/1. UP Vila Sonia/2025_09_02/ECN/20250902_091103_000_PP_177770014920_RELATORIO_EMPREENDIMENTO_CONSTRUCAO.PDF",
+    "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - CIWEB/2. UP Jardim Prudencia/2025_09_02/ECN/20250902_092447_000_PP_177770016646_RELATORIO_EMPREENDIMENTO_CONSTRUCAO.PDF",
+    "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - CIWEB/3. UP Estação Vila Sonia/2025_09_02/ECN/20250902_092802_000_PP_177770020232_RELATORIO_EMPREENDIMENTO_CONSTRUCAO.PDF",
+    "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - CIWEB/4. UP Select Vila Sonia/2025_09_02/ECN/20250902_093301_000_PP_177770021818_RELATORIO_EMPREENDIMENTO_CONSTRUCAO.PDF"
+  )
+    ecns.unidades_t <-
+      caminhos.ecn_c %>%
+      map_dfr(~ e_cef_ecn(.x)$ecn_u) %>%
+      distinct() %>%
+      mutate(
+        arquivo.tabela.tipo = "ecn_u",
+        arquivo.tipo = "ecn",
+        arquivo.fonte = "cef"
+      )
+    ecns <- ecns.unidades_t %>%
+    rename(contrato.cef = contrato) %>%
+    mutate(
+      contrato.cef = str_remove_all(contrato.cef, "-") %>%
+        if_else(str_length(.) == 13, str_sub(., 1, 12), .),
+      fin.cef = financiamento + desconto.subsidio + fgts + recursos.proprios,
+      creditado = valor.liberado.terreno + valor.liberado.obra
+    ) %>%
+    dplyr::select(contrato.cef, fin.cef, creditado)
+  # Contratos
+  contr <-
+    e_ik_contr("C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/dados/Informakon/contr-2025_09_23.xlsx") %>%
+    rename(contrato = contrato.ampla) %>%
+    mutate(
+      empresa = case_when(
+        str_detect(identificacao.imovel, "(?i)s[oô]nia\\s?4") ~ "SN4",
+        str_detect(identificacao.imovel, "(?i)prud[eê]ncia") ~ "AMP",
+        str_detect(identificacao.imovel, "(?i)up\\s?vila\\s?s[oô]nia") ~ "AVS",
+        str_detect(identificacao.imovel, "(?i)select") ~ "GRA",
+        str_detect(identificacao.imovel, "(?i)s[aã]o\\s?lucas") ~ "LUC",
+        str_detect(identificacao.imovel, "(?i)pomp[eé]ia") ~ "POM",
+        str_detect(identificacao.imovel, "(?i)esta[cç][aã]o\\s?vila") ~ "SN2",
+        TRUE ~ NA_character_
+      ),
+      id.contr = str_c(empresa, contrato, sep = "-")
+    ) %>%
+    dplyr::select(id.contr, empresa, contrato, contrato.cef, repassado) %>%
+    dplyr::filter(!is.na(empresa))
+  # Contas recebidas
+  cr <- e_ik_rec() %>%
+    rename(
+      data.vencimento = vencimento,
+      edificacao = torre,
+      ele = elemento,
+      r.f = `r/f`,
+      unidade = apto
+    ) %>%
+    mutate(
+      empreendimento = word(empreendimento),
+      especie = if_else(str_detect(edificacao, "^(?i)vaga"),
+        "Garagem",
+        "Apartamento"
+      ),
+      contrato.cef = NA_character_,
+      data.emissao = NA_Date_,
+      disp = NA_character_,
+      esp.con = NA_character_,
+      juros.contrato = NA_real_,
+      pavimento = NA_character_,
+      repassado = NA_character_
+    ) %>%
+    dplyr::filter(
+      empresa %in% c("AMP", "AVS", "GRA", "LUC", "POM", "SN2", "SN4") &
+        !str_detect(empreendimento, "(?i)sic[ií]lia")
+    ) %>%
+    dplyr::select(
+      empreendimento, empresa, total, data.vencimento, data.pagamento, cliente,
+      contrato, contrato.cef, repassado, ele, esp, esp.con, agente, parcela,
+      principal, juros, juros.contrato, juros.mora, reajuste, encargos, multa,
+      seguro, desconto, cart, r.f, edificacao, especie, unidade, data.emissao,
+      disp, pavimento, arquivo, arquivo.tipo, arquivo.tabela.tipo, arquivo.fonte
+    )
+  # Contas a receber
+  car <- e_ik_car()$car %>%
+    rename(
+      data.emissao = emissao,
+      seguro = seguros,
+      total = valor.atualizado
+    ) %>%
+    mutate(
+      arquivo = file.path(
+        caminhos_pastas("informakon"), "car-20250901_20991231.pdf"
+      ),
+      arquivo.tipo = "car",
+      arquivo.tabela.tipo = "car",
+      arquivo.fonte = "ik",
+      data.pagamento = NA_Date_,
+      juros.mora = NA_real_,
+      desconto = NA_real_,
+      r.f = NA_character_,
+      edificacao = NA_character_
+    ) %>%
+    dplyr::filter(
+      empresa %in% c("AMP", "AVS", "GRA", "LUC", "POM", "SN2", "SN4")
+    ) %>%
+    dplyr::select(
+      empreendimento, empresa, total, data.vencimento, data.pagamento, cliente,
+      contrato, contrato.cef, repassado, ele, esp, esp.con, agente, parcela,
+      principal, juros, juros.contrato, juros.mora, reajuste, encargos, multa,
+      seguro, desconto, cart, r.f, edificacao, especie, unidade, data.emissao,
+      disp, pavimento, arquivo, arquivo.tipo, arquivo.tabela.tipo, arquivo.fonte
+    )
+  # Receitas: cr + car
+  rec <- bind_rows(cr, car) %>%
+    dplyr::filter(empreendimento != "AMP.01.0001") %>%
+    mutate(
+      cruzada = TRUE,
+      data = coalesce(data.pagamento, data.vencimento),
+      especie = if_else(
+        str_detect(especie, "(?i)garagens"), "Garagem", especie
+      ),
+      id = str_c(empresa, especie, unidade, sep = "-"),
+      natureza = case_when(
+        ele == "TAX" ~ "Taxa extra",
+        ele %in% c("CEF", "FGT", "FIB", "FIN") &
+          !empresa %in% c("POM", "SAU") &
+          repassado == "Não" ~ "Parcela CEF a repassar",
+        ele %in% c("CEF", "FGT", "FIB", "FIN") &
+          !empresa %in% c("POM", "SAU") &
+          repassado == "Sim" ~ "Parcela CEF",
+
+        TRUE ~ "Pro soluto"
+      )
+    ) %>%
+    dplyr::filter(id != "AVS-Apartamento-2")
+  # Unidades
+  unis <- e_ik_unis() %>%
+    rename(unidade = numero) %>%
+    mutate(
+      empresa = str_sub(empreendimento, 1, 3),
+      especie = case_when(
+        str_detect(unidade, "(?i)moto") ~ "Moto",
+        str_detect(especie, "(?i)garagens") ~ "Garagem",
+        TRUE ~ especie
+      ),
+      unidade = str_remove_all(unidade, "[^\\d]*") %>% as.integer(),
+      id = str_c(empresa, especie, unidade, sep = "-")
+    ) %>%
+    dplyr::filter(
+      empresa %in% c("AMP", "AVS", "GRA", "LUC", "POM", "SN2", "SN4") &
+        !str_detect(empreendimento, "Sicília")
+    )
+# Totais por natureza que devem virar colunas
+  totais <- rec %>%
+    group_by(id, natureza) %>%
+    summarise(total = sum(total, na.rm = TRUE), .groups = "drop") %>%
+    dplyr::filter(natureza %in% c("Parcela CEF", "Parcela CEF a repassar", "Taxa extra")) %>%
+    tidyr::pivot_wider(
+      names_from = natureza,
+      values_from = total,
+      values_fill = 0,
+      names_repair = "minimal"
+    )
+  # Fran: unis + rec
+  fran <- unis %>%
+    left_join(rec, by = "id", suffix = c(".unis", ".rec")) %>%
+    # Juntar contr para obter contrato.cef válido (usar contrato do rec diretamente)
+    left_join(
+      contr %>% select(empresa, contrato, contrato.cef),
+      by = c("empresa.unis" = "empresa", "contrato" = "contrato"),
+      suffix = c("", ".contr")
+    ) %>%
+    mutate(
+      cliente = cliente.unis,
+      data.venda = data.unis,
+      situacao = situacao,
+      valor.venda = valor.venda,
+      contrato.cef = coalesce(contrato.cef.contr, contrato.cef),
+      cruzada = case_when(
+        id %in% anti_join(unis, rec, by = "id")$id ~ "unis",
+        id %in% anti_join(rec, unis, by = "id")$id ~ "rec",
+        TRUE ~ "ambos"
+      )
+    ) %>%
+    # Manter Pro soluto e também ids sem receita (natureza NA) para não perder unis
+    dplyr::filter(is.na(natureza) | natureza == "Pro soluto") %>%
+    group_by(id,
+      data.mes = floor_date(data.rec, "month")
+    ) %>%
+    summarise(
+      empresa = first(coalesce(empresa.unis, empresa.rec)),
+      especie = first(coalesce(especie.unis, especie.rec)),
+      pavimento = first(coalesce(pavimento.unis, pavimento.rec)),
+      unidade = first(coalesce(unidade.unis, unidade.rec)),
+      cliente = first(cliente),
+      data.venda = first(data.venda),
+      situacao = first(situacao),
+      valor.venda = first(valor.venda),
+      contrato = first(contrato),
+      contrato.cef = first(contrato.cef),
+      total = sum(total, na.rm = TRUE),
+      natureza = dplyr::first(natureza),
+      .groups = "drop"
+    ) %>%
+    pivot_wider(
+      names_from = data.mes,
+      values_from = total,
+      values_fill = 0,
+      values_fn = sum
+    ) %>%
+    # Adicionar colunas de CEF e CEF a repassar
+    left_join(totais, by = "id") %>%
+    mutate(
+      `Parcela CEF` = if ("Parcela CEF" %in% names(pick(everything()))) {
+        tidyr::replace_na(`Parcela CEF`, 0)
+      } else {
+        0
+      },
+      `Parcela CEF a repassar` = if ("Parcela CEF a repassar" %in% names(pick(everything()))) {
+        tidyr::replace_na(`Parcela CEF a repassar`, 0)
+      } else {
+        0
+      },
+      `Taxa extra` = if ("Taxa extra" %in% names(pick(everything()))) {
+        tidyr::replace_na(`Taxa extra`, 0)
+      } else {
+        0
+      }
+    ) %>%
+    arrange(id, natureza) %>%
+    select(
+      id, empresa, especie, pavimento, unidade, cliente, situacao, data.venda,
+      contrato, contrato.cef, valor.venda, `Parcela CEF`, `Parcela CEF a repassar`, `Taxa extra`, natureza,
+      sort(names(select(., -id, -natureza)))
+    ) %>%
+    # Colapsar linhas duplicadas por id (quebra por mês) mantendo atributos e
+    # somando apenas as colunas mensais (nomes no formato YYYY-MM-DD)
+    dplyr::group_by(id) %>%
+    mutate(contrato.cef = if_else(
+      str_length(contrato.cef) == 13,
+      str_sub(contrato.cef, 1, 12),
+      contrato.cef
+    )) %>%
+    left_join(ecns, by = "contrato.cef") %>%
+    mutate(
+      checar = if_else(
+        !is.na(contrato.cef) & is.na(fin.cef),
+        TRUE,
+        FALSE
+      ),
+      contrato.comeco = str_sub(contrato, 1, 4),
+      contrato.fim = str_sub(contrato, -1) %>% as.integer()
+
+    ) %>%
+    group_by(id, contrato.comeco) %>%
+    slice_max(contrato.fim, n = 1, with_ties = FALSE) %>%
+    ungroup() %>%
+    group_by(id) %>%
+    # Calcular soma das colunas mensais (formato YYYY-MM-DD) para cada contrato
+    rowwise() %>%
+    mutate(
+      soma_meses = sum(c_across(matches("^\\d{4}-\\d{2}-\\d{2}$")), na.rm = TRUE)
+    ) %>%
+    ungroup() %>%
+    group_by(id) %>%
+    # Manter apenas o contrato com maior soma das parcelas mensais
+    slice_max(soma_meses, n = 1, with_ties = FALSE) %>%
+    ungroup()
+
+
+  list(fran = fran, rec = rec, unis = unis, ecns = ecns, contr = contr)
+}

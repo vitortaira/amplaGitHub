@@ -133,7 +133,7 @@ e_ik_car <- function() {
       )
     )
   carm_t <- car_t %>%
-    group_by(empresa, natureza,
+    group_by(empresa, especie, pavimento, unidade,
       data.mes = floor_date(data.vencimento, "month")
     ) %>%
     summarise(
@@ -142,7 +142,7 @@ e_ik_car <- function() {
     ) %>%
     pivot_wider(
       names_from = data.mes,
-      values_from = where(is.numeric),
+      values_from = valor.atualizado,
       values_fill = 0
     ) %>%
     arrange(empresa, natureza) %>%
