@@ -118,8 +118,9 @@ e_cef_cmfcn <-
             linhas %>% str_detect("\\d{5}\\."),
             linhas %>% str_remove("\\d{5}\\..*") %>% str_trim(),
             linhas
-          ),
-        np = linhas %>% str_sub(-2, -1) %>% as.integer(),
+          )
+        np = linhas %>% str_sub(-2, -1) %>%
+          {ifelse(str_detect(., "^\\d{2}$"), as.integer(.), NA)},
         lancamentos = linhas %>% str_sub(1, -3) %>% str_trim(),
         arquivo = f_caminho.arquivo.cmfcn_c
       ) %>%
