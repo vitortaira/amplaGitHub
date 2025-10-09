@@ -77,7 +77,6 @@ e_cef_cmfcn <-
     # Lançamentos
     lancamentos_t <-
       tibble(linhas = linhas_c %>% head(str_which(linhas_c, "^TOTAIS")[1])) %>%
-      # tibble(linhas = linhas_c) %>%
       dplyr::filter(str_detect(linhas, "^[0-9]{12}")) %>%
       mutate(
         contrato = linhas %>% str_extract("^[0-9]{12}"),
@@ -96,17 +95,19 @@ e_cef_cmfcn <-
           linhas %>% str_remove("^\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
         mot = linhas %>% str_sub(-2, -1) %>% as.integer(),
         linhas = linhas %>% str_sub(1, -3) %>% str_trim(),
-        situacao =
-          linhas %>% str_remove(".*\\d{1,3}(?:\\.\\d{3})*,\\d{2}") %>% str_trim(),
         valor =
-          linhas %>%
-            str_extract("\\d{1,3}(?:\\.\\d{3})*,\\d{2}") %>%
-            str_trim() %>%
-            str_remove_all("\\.") %>%
-            str_replace("\\,", "\\.") %>%
-            as.numeric(),
+          if_else(
+            linhas %>% str_detect("\\d{1,3}(?:\\.\\d{3})*,\\d{2}"),
+            linhas %>%
+              str_extract("\\d{1,3}(?:\\.\\d{3})*,\\d{2}") %>%
+              str_trim() %>%
+              str_remove_all("\\.") %>%
+              str_replace("\\,", "\\.") %>%
+              as.numeric(),
+            NA_real_
+          ),
         linhas =
-          linhas %>% str_remove("\\d{1,3}(?:\\.\\d{3})*,\\d{2}.*") %>% str_trim(),
+          linhas %>% str_remove("\\d{1,3}(?:\\.\\d{3})*,\\d{2}") %>% str_trim(),
         `conta.sidec/nsgd` =
           if_else(
             linhas %>% str_detect("\\d{5}\\."),
@@ -118,9 +119,24 @@ e_cef_cmfcn <-
             linhas %>% str_detect("\\d{5}\\."),
             linhas %>% str_remove("\\d{5}\\..*") %>% str_trim(),
             linhas
-          )
+          ),
+        #
+        situacao =
+          if_else(
+            is.na(`conta.sidec/nsgd`),
+            linhas %>% str_extract("(?<=\\s\\d{2}\\s).*") %>% str_trim(),
+            `conta.sidec/nsgd` %>% str_squish() %>% word(2, -1)
+          ),
+        `conta.sidec/nsgd` =
+          if_else(
+            is.na(`conta.sidec/nsgd`),
+            NA_character_,
+            `conta.sidec/nsgd` %>% str_squish() %>% word(1)
+          ),
+        linhas = linhas %>% str_remove("\\s(?=\\d{2}\\s.*|\\d{2}$)") %>% str_trim(),
         np = linhas %>% str_sub(-2, -1) %>%
-          {ifelse(str_detect(., "^\\d{2}$"), as.integer(.), NA)},
+          str_extract("^\\d{2}$") %>%
+          as.integer(),
         lancamentos = linhas %>% str_sub(1, -3) %>% str_trim(),
         arquivo = f_caminho.arquivo.cmfcn_c
       ) %>%
