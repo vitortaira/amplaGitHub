@@ -57,14 +57,6 @@ r_soares <- function() {
       total = valor.atualizado
     ) %>%
     mutate(
-      arquivo = file.path(
-        "C:", "Users", "Ampla", "AMPLA INCORPORADORA LTDA",
-        "Relatórios - Documentos", "Dados", "Para o Soares", "Inputs",
-        "2025_09_30", "car-2025_10_01-2099_12_31.pdf"
-      ),
-      arquivo.tipo = "car",
-      arquivo.tabela.tipo = "car",
-      arquivo.fonte = "ik",
       data.pagamento = NA_Date_,
       juros.mora = NA_real_,
       desconto = NA_real_,
