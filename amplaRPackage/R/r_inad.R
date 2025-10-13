@@ -13,7 +13,7 @@ r_inad <- function() {
   # contr ----------------------------------------------------------------------
 
   # Consolida os dados dos arquivos do tipo contr
-  contrs_t <- e_ik_contrs()
+  contrs_t <- e_ik_contrs_inad()
   # Tabela com todos os caminhos dos arquivos do tipo contr
   caminhos.contrs_t <- e_metadados("contr")
   # Tabela com os caminhos dos arquivos mais recentes do tipo contr
@@ -43,7 +43,7 @@ r_inad <- function() {
       contrato.ampla, contrato.cef, unidade, quantidade.parcelas,
       parcela, atraso, vencimento, ele,
       principal, juros, encargos, juros.mora, multa, seguro,
-      everything()                # now grab all the other cols (incl. arquivo.*)
+      everything() # now grab all the other cols (incl. arquivo.*)
     ) %>%
     relocate(starts_with("arquivo"), .after = last_col()) %>%
     distinct() %>%
@@ -254,30 +254,29 @@ r_inad <- function() {
         }
       }
 
-        # Estilo para data
-        addStyle(
-          xlsx,
-          sheet = f_aba_c,
-          style = createStyle(numFmt = "DD/MM/YYYY"),
-          rows = 2:(nrow(f_df_t) + 1),
-          cols = which(colnames(f_df_t) %in% c("vencimento", "data.contrato")),
-          gridExpand = TRUE,
-          stack = TRUE
-        )
+      # Estilo para data
+      addStyle(
+        xlsx,
+        sheet = f_aba_c,
+        style = createStyle(numFmt = "DD/MM/YYYY"),
+        rows = 2:(nrow(f_df_t) + 1),
+        cols = which(colnames(f_df_t) %in% c("vencimento", "data.contrato")),
+        gridExpand = TRUE,
+        stack = TRUE
+      )
 
-        # Estilo para data e hora
-        addStyle(
-          xlsx,
-          sheet = f_aba_c,
-          style = createStyle(numFmt = "YYYY-MM-DD HH:MM:SS"),
-          rows = 2:(nrow(f_df_t) + 1),
-          cols = which(colnames(f_df_t) %in%
-            c("data.consulta", "criado.em", "alterado.em", "data.autorizacao")),
-          gridExpand = TRUE,
-          stack = TRUE
-        )
-      }
-
+      # Estilo para data e hora
+      addStyle(
+        xlsx,
+        sheet = f_aba_c,
+        style = createStyle(numFmt = "YYYY-MM-DD HH:MM:SS"),
+        rows = 2:(nrow(f_df_t) + 1),
+        cols = which(colnames(f_df_t) %in%
+          c("data.consulta", "criado.em", "alterado.em", "data.autorizacao")),
+        gridExpand = TRUE,
+        stack = TRUE
+      )
+    }
   )
 
   # salvar ---------------------------------------------------------------------

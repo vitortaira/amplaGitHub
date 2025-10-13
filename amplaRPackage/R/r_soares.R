@@ -11,7 +11,11 @@ r_soares <- function() {
     dplyr::select(contrato.cef, fin.cef, creditado)
   # Contratos
   contr <-
-    e_ik_contr("C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/dados/Informakon/contr-2025_09_23.xlsx") %>%
+    e_ik_contr(file.path(
+      "C:", "Users", "Ampla", "AMPLA INCORPORADORA LTDA",
+      "Relatórios - Documentos", "Dados", "Para o Soares", "Inputs",
+      "2025_09_30", "contr-2025_10_09.xlsx"
+    )) %>%
     rename(contrato = contrato.ampla) %>%
     mutate(
       empresa = case_when(
@@ -71,7 +75,9 @@ r_soares <- function() {
     ) %>%
     mutate(
       arquivo = file.path(
-        caminhos_pastas("informakon"), "car-20250901_20991231.pdf"
+        "C:", "Users", "Ampla", "AMPLA INCORPORADORA LTDA",
+        "Relatórios - Documentos", "Dados", "Para o Soares", "Inputs",
+        "2025_09_30", "car-2025_10_01-2099_12_31.pdf"
       ),
       arquivo.tipo = "car",
       arquivo.tabela.tipo = "car",
