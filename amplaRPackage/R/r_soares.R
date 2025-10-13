@@ -1,21 +1,6 @@
 r_soares <- function() {
   # ECNs
-  caminhos.ecn_c <- c(
-    "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - CIWEB/1. UP Vila Sonia/2025_09_02/ECN/20250902_091103_000_PP_177770014920_RELATORIO_EMPREENDIMENTO_CONSTRUCAO.PDF",
-    "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - CIWEB/2. UP Jardim Prudencia/2025_09_02/ECN/20250902_092447_000_PP_177770016646_RELATORIO_EMPREENDIMENTO_CONSTRUCAO.PDF",
-    "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - CIWEB/3. UP Estação Vila Sonia/2025_09_02/ECN/20250902_092802_000_PP_177770020232_RELATORIO_EMPREENDIMENTO_CONSTRUCAO.PDF",
-    "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - CIWEB/4. UP Select Vila Sonia/2025_09_02/ECN/20250902_093301_000_PP_177770021818_RELATORIO_EMPREENDIMENTO_CONSTRUCAO.PDF"
-  )
-    ecns.unidades_t <-
-      caminhos.ecn_c %>%
-      map_dfr(~ e_cef_ecn(.x)$ecn_u) %>%
-      distinct() %>%
-      mutate(
-        arquivo.tabela.tipo = "ecn_u",
-        arquivo.tipo = "ecn",
-        arquivo.fonte = "cef"
-      )
-    ecns <- ecns.unidades_t %>%
+  ecns <- e_cef_ecns()$ecn_u %>%
     rename(contrato.cef = contrato) %>%
     mutate(
       contrato.cef = str_remove_all(contrato.cef, "-") %>%
@@ -125,7 +110,6 @@ r_soares <- function() {
         ele %in% c("CEF", "FGT", "FIB", "FIN") &
           !empresa %in% c("POM", "SAU") &
           repassado == "Sim" ~ "Parcela CEF",
-
         TRUE ~ "Pro soluto"
       )
     ) %>%
@@ -147,7 +131,7 @@ r_soares <- function() {
       empresa %in% c("AMP", "AVS", "GRA", "LUC", "POM", "SN2", "SN4") &
         !str_detect(empreendimento, "Sicília")
     )
-# Totais por natureza que devem virar colunas
+  # Totais por natureza que devem virar colunas
   totais <- rec %>%
     group_by(id, natureza) %>%
     summarise(total = sum(total, na.rm = TRUE), .groups = "drop") %>%
@@ -247,7 +231,6 @@ r_soares <- function() {
       ),
       contrato.comeco = str_sub(contrato, 1, 4),
       contrato.fim = str_sub(contrato, -1) %>% as.integer()
-
     ) %>%
     group_by(id, contrato.comeco) %>%
     slice_max(contrato.fim, n = 1, with_ties = FALSE) %>%
