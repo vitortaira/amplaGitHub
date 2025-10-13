@@ -133,11 +133,19 @@ e_cef_cmfcn <-
             NA_character_,
             `conta.sidec/nsgd` %>% str_squish() %>% word(1)
           ),
-        linhas = linhas %>% str_remove("(?<=\\d{2})\\s.*") %>% str_trim(),
+        linhas = if_else(
+          str_sub(linhas, -2, -1) %>% str_detect("\\d{2}"),
+          linhas %>% str_trim(),
+          str_remove(linhas, "(?<=\\D\\d{2})\\s.*") %>% str_trim()
+        ),
         np = linhas %>% str_sub(-2, -1) %>%
           str_extract("^\\d{2}$") %>%
           as.integer(),
-        lancamentos = linhas %>% str_sub(1, -3) %>% str_trim(),
+        lancamentos = if_else(
+          !is.na(np),
+          linhas %>% str_sub(1, -3) %>% str_trim(),
+          linhas %>% str_trim()
+        ),
         arquivo = f_caminho.arquivo.cmfcn_c
       ) %>%
       select(
@@ -228,28 +236,28 @@ e_cef_cmfcn <-
 
 # Teste -------------------------------------------------------------------
 
-# teste_cmf <- function() {
-#   f_caminho.pasta.ciweb_c <- caminhos_pastas("ciweb")
-#   caminhos.cmfcn_c <-
-#     dir_ls(f_caminho.pasta.ciweb_c, recurse = TRUE, type = "file") %>%
-#     keep(~ str_detect(.x, "(?i)mov_financ_cn.pdf"))
-#   contratos.empreendimentos.12.primeiros_c <-
-#     caminhos.cmfcn_c %>%
-#     str_extract("\\d{12}") %>%
-#     unique()
-#   caminhos.cmfcn.recentes_c <-
-#     caminhos.cmfcn_c %>%
-#     tibble(caminho = .) %>%
-#     mutate(
-#       empreendimento = str_extract(caminho, "\\d{12}"),
-#       data.arquivo = str_extract(path_file(caminho), "^\\d{8}") %>% ymd()
-#     ) %>%
-#     group_by(empreendimento) %>%
-#     slice_max(data.arquivo, n = 1) %>%
-#     pull(caminho)
-#   # 1=AVS, 2=AMP, 3=SN2, 4=GRA (checar 1, 2 e 4)
-#   f_caminho.arquivo.cmfcn_c <- caminhos.cmfcn.recentes_c[1]
-#   View(lancamentos_t %>% dplyr::filter(if_any(everything(), is.na)))
-# }
+teste_cmf <- function() {
+  f_caminho.pasta.ciweb_c <- caminhos_pastas("ciweb")
+  caminhos.cmfcn_c <-
+    dir_ls(f_caminho.pasta.ciweb_c, recurse = TRUE, type = "file") %>%
+    keep(~ str_detect(.x, "(?i)mov_financ_cn.pdf"))
+  contratos.empreendimentos.12.primeiros_c <-
+    caminhos.cmfcn_c %>%
+    str_extract("\\d{12}") %>%
+    unique()
+  caminhos.cmfcn.recentes_c <-
+    caminhos.cmfcn_c %>%
+    tibble(caminho = .) %>%
+    mutate(
+      empreendimento = str_extract(caminho, "\\d{12}"),
+      data.arquivo = str_extract(path_file(caminho), "^\\d{8}") %>% ymd()
+    ) %>%
+    group_by(empreendimento) %>%
+    slice_max(data.arquivo, n = 1) %>%
+    pull(caminho)
+  # 1=AVS, 2=AMP, 3=SN2, 4=GRA (checar 1, 2 e 4)
+  f_caminho.arquivo.cmfcn_c <- caminhos.cmfcn.recentes_c[2]
+  View(lancamentos_t %>% dplyr::filter(if_any(everything(), is.na)))
+}
 # e_cef_cmfcn(f_caminho.arquivo.cmfcn_c)
 # shell.exec(f_caminho.arquivo.cmfcn_c)
