@@ -124,8 +124,11 @@ e_ik_car <- function() {
       )
     ) %>%
     mutate(
-      arquivo =
-      )
+      arquivo = caminho.arquivo,
+      arquivo.tipo = "car",
+      arquivo.tabela.tipo = "car",
+      arquivo.fonte = "ik"
+    )
   carm_t <- car_t %>%
     group_by(empresa, especie, pavimento, unidade,
       data.mes = floor_date(data.vencimento, "month")
