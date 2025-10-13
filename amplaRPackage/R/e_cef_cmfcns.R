@@ -92,11 +92,15 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
 e_cef_cmfcns_mensal <- function(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
   e_cef_cmfcns(f_caminho.pasta.ciweb_c) %>%
     mutate(mes = floor_date(data.movimento, "month")) %>%
-    group_by(contrato, mes) %>%
+    group_by(contrato, lancamentos, mes) %>%
     summarise(valor = sum(valor, na.rm = TRUE), .groups = "drop") %>%
     pivot_wider(
       names_from = mes,
       values_from = valor,
       values_fill = 0
+    ) %>%
+    select(
+      contrato, lancamentos,
+      sort(names(.)[!names(.) %in% c("contrato", "lancamentos")])
     )
 }
