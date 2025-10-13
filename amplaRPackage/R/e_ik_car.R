@@ -1,22 +1,13 @@
 e_ik_car <- function() {
-  pdf <- ler_pdf(
-    file.path(caminhos_pastas("informakon"), "car-20250901_20991231.pdf")
+  caminho.arquivo <- file.path(
+    "C:", "Users", "Ampla", "AMPLA INCORPORADORA LTDA",
+    "Relatórios - Documentos", "Dados", "Para o Soares", "Inputs",
+    "2025_09_30", "car-2025_10_01-2099_12_31.pdf"
   )
+  pdf <- ler_pdf(caminho.arquivo)
   linhas <- pdf$linhas
   contr_t <-
-    e_ik_contr("C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/dados/Informakon/contr-2025_09_23.xlsx") %>%
-    mutate(
-      empresa = case_when(
-        str_detect(identificacao.imovel, "(?i)s[oô]nia\\s?4") ~ "SN4",
-        str_detect(identificacao.imovel, "(?i)prud[eê]ncia") ~ "AMP",
-        str_detect(identificacao.imovel, "(?i)up\\s?vila\\s?s[oô]nia") ~ "AVS",
-        str_detect(identificacao.imovel, "(?i)select") ~ "GRA",
-        str_detect(identificacao.imovel, "(?i)s[aã]o\\s?lucas") ~ "LUC",
-        str_detect(identificacao.imovel, "(?i)pomp[eé]ia") ~ "POM",
-        str_detect(identificacao.imovel, "(?i)esta[cç][aã]o\\s?vila") ~ "SN2",
-        TRUE ~ NA_character_
-      )
-    ) %>%
+    e_ik_contrs() %>%
     dplyr::select(empresa, contrato.ampla, contrato.cef, repassado) %>%
     rename(contrato = contrato.ampla) %>%
     dplyr::filter(!is.na(empresa))
@@ -131,7 +122,10 @@ e_ik_car <- function() {
           repassado == "Sim" ~ "Parcela CEF",
         TRUE ~ "Pro soluto"
       )
-    )
+    ) %>%
+    mutate(
+      arquivo =
+      )
   carm_t <- car_t %>%
     group_by(empresa, especie, pavimento, unidade,
       data.mes = floor_date(data.vencimento, "month")

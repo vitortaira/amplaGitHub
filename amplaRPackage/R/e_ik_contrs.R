@@ -60,7 +60,19 @@ e_ik_contrs <- function(
   message("Extraindo arquivo: ", basename(caminho.arquivo.contr_c))
 
   # Extrai os dados usando a função e_ik_contr
-  contr_t <- e_ik_contr(caminho.arquivo.contr_c)
-
+  contr_t <- e_ik_contr(caminho.arquivo.contr_c) %>%
+    mutate(
+      empresa = case_when(
+        str_detect(identificacao.imovel, "(?i)s[oô]nia\\s?4") ~ "SN4",
+        str_detect(identificacao.imovel, "(?i)prud[eê]ncia") ~ "AMP",
+        str_detect(identificacao.imovel, "(?i)up\\s?vila\\s?s[oô]nia") ~ "AVS",
+        str_detect(identificacao.imovel, "(?i)select") ~ "GRA",
+        str_detect(identificacao.imovel, "(?i)s[aã]o\\s?lucas") ~ "LUC",
+        str_detect(identificacao.imovel, "(?i)pomp[eé]ia") ~ "POM",
+        str_detect(identificacao.imovel, "(?i)esta[cç][aã]o\\s?vila") ~ "SN2",
+        TRUE ~ NA_character_
+      ),
+      id.contr = str_c(empresa, contrato, sep = "-")
+    )
   return(contr_t)
 }
