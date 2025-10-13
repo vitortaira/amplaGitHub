@@ -72,7 +72,7 @@ e_ik_contrs <- function(
         str_detect(identificacao.imovel, "(?i)esta[cç][aã]o\\s?vila") ~ "SN2",
         TRUE ~ NA_character_
       ),
-      id.contr = str_c(empresa, contrato, sep = "-")
+      id.contr = str_c(empresa, contrato.ampla, sep = "-")
     )
   return(contr_t)
 }

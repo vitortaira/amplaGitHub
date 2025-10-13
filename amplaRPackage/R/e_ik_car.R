@@ -1,9 +1,32 @@
 e_ik_car <- function() {
-  caminho.arquivo <- file.path(
+  diretorio.base <- file.path(
     "C:", "Users", "Ampla", "AMPLA INCORPORADORA LTDA",
-    "Relatórios - Documentos", "Dados", "Para o Soares", "Inputs",
-    "2025_09_30", "car-2025_10_01-2099_12_31.pdf"
+    "Relatórios - Documentos", "Dados", "Para o Soares", "Inputs"
   )
+
+  # Buscar todas as pastas de data no diretório
+  pastas.data <- fs::dir_ls(diretorio.base, type = "directory") %>%
+    basename() %>%
+    keep(~ str_detect(.x, "^\\d{4}_\\d{2}_\\d{2}$")) %>%
+    sort(decreasing = TRUE)
+
+  if (length(pastas.data) == 0) {
+    stop("Nenhuma pasta de data encontrada no diretório: ", diretorio.base)
+  }
+
+  # Usar a pasta de data mais recente
+  pasta.mais.recente <- pastas.data[1]
+  diretorio.arquivos <- file.path(diretorio.base, pasta.mais.recente)
+
+  # Buscar arquivo CAR mais recente na pasta
+  arquivos.car <- fs::dir_ls(diretorio.arquivos, regexp = "car-.*\\.pdf$") %>%
+    sort(decreasing = TRUE)
+
+  if (length(arquivos.car) == 0) {
+    stop("Nenhum arquivo CAR encontrado no diretório: ", diretorio.arquivos)
+  }
+
+  caminho.arquivo <- arquivos.car[1]
   pdf <- ler_pdf(caminho.arquivo)
   linhas <- pdf$linhas
   contr_t <-
