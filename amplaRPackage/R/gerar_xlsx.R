@@ -13,8 +13,8 @@
 #'   ou "Dados" para tibble único
 #' @param col_width_def Largura padrão das colunas (valor numérico). Padrão: 18
 #' @param col_width_spec Vetor nomeado com larguras específicas para colunas por nome
-#' @param col_monetary Vetor com nomes de colunas que devem ser formatadas como valores monetários.
-#'   Se NULL, infere automaticamente baseado no tipo das colunas (numeric/integer)
+#' @param col_monetary Vetor com nomes de colunas que devem ser formatadas como valores monetários (com decimais).
+#'   Se NULL, infere automaticamente baseado no tipo das colunas (numeric, excluindo integer)
 #' @param col_dates Vetor com nomes de colunas que devem ser formatadas como datas.
 #'   Se NULL, infere automaticamente baseado no tipo das colunas (Date)
 #' @param col_clip Vetor com nomes de colunas de texto que devem ter quebra de texto habilitada
@@ -25,7 +25,7 @@
 #' @importFrom dplyr bind_rows mutate select rename case_when if_else arrange all_of
 #' @importFrom stringr str_c
 #' @importFrom openxlsx createWorkbook loadWorkbook addWorksheet writeData addStyle createStyle
-#' @importFrom openxlsx saveWorkbook setColWidths addFilter freezePane createNamedRegion deleteNamedRegion getNamedRegions
+#' @importFrom openxlsx saveWorkbook setColWidths addFilter freezePane createNamedRegion deleteNamedRegion getNamedRegions showGridLines
 #' @importFrom purrr walk2
 #' @export
 #'
@@ -117,9 +117,9 @@ gerar_xlsx <- function(data,
     df_dados <- dados_lista[[i]]
     nome_aba <- names(dados_lista)[i]
 
-    # Inferir colunas monetárias se não especificadas
+    # Inferir colunas monetárias (apenas numeric, não integer) se não especificadas
     if (is.null(col_monetary)) {
-      col_monetary <- colnames(df_dados)[sapply(df_dados, function(x) is.numeric(x) | is.integer(x))]
+      col_monetary <- colnames(df_dados)[sapply(df_dados, function(x) is.numeric(x) & !is.integer(x))]
     }
 
     # Inferir colunas de data se não especificadas
@@ -129,7 +129,10 @@ gerar_xlsx <- function(data,
 
     # Adicionar worksheet se necessário (para novos workbooks)
     if (is.null(wb_load)) {
-      openxlsx::addWorksheet(wb, nome_aba)
+      openxlsx::addWorksheet(wb, nome_aba, gridLines = FALSE)
+    } else {
+      # Remover gridlines de worksheet existente
+      openxlsx::showGridLines(wb, sheet = nome_aba, showGridLines = FALSE)
     }
 
     # Deletar região nomeada antiga, se existir (apenas para novos workbooks)
@@ -249,7 +252,7 @@ gerar_xlsx <- function(data,
       }
     }
 
-    # Estilo para valores monetários (baseado no argumento 'col_monetary' ou inferido)
+    # Estilo para valores monetários (real numbers - com decimais)
     if (!is.null(col_monetary) && length(col_monetary) > 0) {
       colunas_monetarias <- which(colnames(df_dados) %in% col_monetary)
       if (length(colunas_monetarias) > 0) {
@@ -263,6 +266,20 @@ gerar_xlsx <- function(data,
           stack = TRUE
         )
       }
+    }
+
+    # Estilo para valores inteiros (sem decimais)
+    colunas_inteiras <- which(sapply(df_dados, is.integer))
+    if (length(colunas_inteiras) > 0) {
+      openxlsx::addStyle(
+        wb,
+        sheet = nome_aba,
+        style = openxlsx::createStyle(numFmt = "#,##0"),
+        rows = 2:(nrow(df_dados) + 1),
+        cols = colunas_inteiras,
+        gridExpand = TRUE,
+        stack = TRUE
+      )
     }
 
     # Estilo para datas (baseado no argumento 'col_dates' ou inferido)
