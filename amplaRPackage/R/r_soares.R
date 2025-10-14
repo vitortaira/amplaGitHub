@@ -1,6 +1,6 @@
 r_soares <- function() {
   # ECNs
-  ecns <- e_cef_ecns()$ecn_u %>%
+  in.ecns <- e_cef_ecns()$ecn_u %>%
     rename(contrato.cef = contrato) %>%
     mutate(
       contrato.cef = str_remove_all(contrato.cef, "-") %>%
@@ -10,13 +10,13 @@ r_soares <- function() {
     ) %>%
     dplyr::select(contrato.cef, fin.cef, creditado)
   # Contratos
-  contr <-
+  in.contr <-
     e_ik_contrs() %>%
     rename(contrato = contrato.ampla) %>%
     dplyr::select(id.contr, empresa, contrato, contrato.cef, repassado) %>%
     dplyr::filter(!is.na(empresa))
   # Contas recebidas
-  cr <- e_ik_rec() %>%
+  in.cr <- e_ik_rec() %>%
     rename(
       data.vencimento = vencimento,
       edificacao = torre,
@@ -50,7 +50,7 @@ r_soares <- function() {
       disp, pavimento, arquivo, arquivo.tipo, arquivo.tabela.tipo, arquivo.fonte
     )
   # Contas a receber
-  car <- e_ik_car()$car %>%
+  in.car <- e_ik_car()$car %>%
     rename(
       data.emissao = emissao,
       seguro = seguros,
@@ -74,7 +74,7 @@ r_soares <- function() {
       disp, pavimento, arquivo, arquivo.tipo, arquivo.tabela.tipo, arquivo.fonte
     )
   # Receitas: cr + car
-  rec <- bind_rows(cr, car) %>%
+  in.rec <- bind_rows(in.cr, in.car) %>%
     dplyr::filter(empreendimento != "AMP.01.0001") %>%
     mutate(
       cruzada = TRUE,
@@ -96,7 +96,7 @@ r_soares <- function() {
     ) %>%
     dplyr::filter(id != "AVS-Apartamento-2")
   # Unidades
-  unis <- e_ik_unis() %>%
+  in.unis <- e_ik_unis() %>%
     rename(unidade = numero) %>%
     mutate(
       empresa = str_sub(empreendimento, 1, 3),
@@ -113,7 +113,7 @@ r_soares <- function() {
         !str_detect(empreendimento, "Sicília")
     )
   # Totais por natureza que devem virar colunas
-  totais <- rec %>%
+  totais <- in.rec %>%
     group_by(id, natureza) %>%
     summarise(total = sum(total, na.rm = TRUE), .groups = "drop") %>%
     dplyr::filter(natureza %in% c("Parcela CEF", "Parcela CEF a repassar", "Taxa extra")) %>%
@@ -123,37 +123,37 @@ r_soares <- function() {
       values_fill = 0,
       names_repair = "minimal"
     )
-  # Fran: unis + rec
-  fran <- unis %>%
-    left_join(rec, by = "id", suffix = c(".unis", ".rec")) %>%
-    # Juntar contr para obter contrato.cef válido (usar contrato do rec diretamente)
+  # Fran: in.unis + in.rec
+  rec.uni <- in.unis %>%
+    left_join(in.rec, by = "id", suffix = c(".in.unis", ".in.rec")) %>%
+    # Juntar in.contr para obter contrato.cef válido (usar contrato do in.rec diretamente)
     left_join(
-      contr %>% select(empresa, contrato, contrato.cef),
-      by = c("empresa.unis" = "empresa", "contrato" = "contrato"),
-      suffix = c("", ".contr")
+      in.contr %>% select(empresa, contrato, contrato.cef),
+      by = c("empresa.in.unis" = "empresa", "contrato" = "contrato"),
+      suffix = c("", ".in.contr")
     ) %>%
     mutate(
-      cliente = cliente.unis,
-      data.venda = data.unis,
+      cliente = cliente.in.unis,
+      data.venda = data.in.unis,
       situacao = situacao,
       valor.venda = valor.venda,
-      contrato.cef = coalesce(contrato.cef.contr, contrato.cef),
+      contrato.cef = coalesce(contrato.cef.in.contr, contrato.cef),
       cruzada = case_when(
-        id %in% anti_join(unis, rec, by = "id")$id ~ "unis",
-        id %in% anti_join(rec, unis, by = "id")$id ~ "rec",
+        id %in% anti_join(in.unis, in.rec, by = "id")$id ~ "in.unis",
+        id %in% anti_join(in.rec, in.unis, by = "id")$id ~ "in.rec",
         TRUE ~ "ambos"
       )
     ) %>%
-    # Manter Pro soluto e também ids sem receita (natureza NA) para não perder unis
+    # Manter Pro soluto e também ids sem receita (natureza NA) para não perder in.unis
     dplyr::filter(is.na(natureza) | natureza == "Pro soluto") %>%
     group_by(id,
-      data.mes = floor_date(data.rec, "month")
+      data.mes = floor_date(data.in.rec, "month")
     ) %>%
     summarise(
-      empresa = first(coalesce(empresa.unis, empresa.rec)),
-      especie = first(coalesce(especie.unis, especie.rec)),
-      pavimento = first(coalesce(pavimento.unis, pavimento.rec)),
-      unidade = first(coalesce(unidade.unis, unidade.rec)),
+      empresa = first(coalesce(empresa.in.unis, empresa.in.rec)),
+      especie = first(coalesce(especie.in.unis, especie.in.rec)),
+      pavimento = first(coalesce(pavimento.in.unis, pavimento.in.rec)),
+      unidade = first(coalesce(unidade.in.unis, unidade.in.rec)),
       cliente = first(cliente),
       data.venda = first(data.venda),
       situacao = first(situacao),
@@ -203,7 +203,7 @@ r_soares <- function() {
       str_sub(contrato.cef, 1, 12),
       contrato.cef
     )) %>%
-    left_join(ecns, by = "contrato.cef") %>%
+    left_join(in.ecns, by = "contrato.cef") %>%
     mutate(
       checar = if_else(
         !is.na(contrato.cef) & is.na(fin.cef),
@@ -229,5 +229,16 @@ r_soares <- function() {
     ungroup()
 
 
-  list(fran = fran, rec = rec, unis = unis, ecns = ecns, contr = contr)
+  list(
+    # Outputs
+    rec.uni  = rec.uni,
+    # Inputs
+    in.car   = in.car,
+    # in.cmfcn = in.cmfcn,
+    in.contr = in.contr,
+    in.cr    = in.cr,
+    in.ecns  = in.ecns,
+    in.rec   = in.rec,
+    in.unis  = in.unis
+  )
 }
