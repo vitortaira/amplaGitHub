@@ -203,16 +203,32 @@ gerar_xlsx <- function(data,
 
       # Calcular largura baseada no nome da coluna e dados
       max_nome <- nchar(col_name)
-      max_dados <- if (is.character(col_data) || is.factor(col_data)) {
-        max(nchar(as.character(col_data)), na.rm = TRUE)
+
+      # Calcular largura dos dados, lidando com colunas completamente NA
+      if (is.character(col_data) || is.factor(col_data)) {
+        # Para colunas de texto/fator
+        valores_nao_na <- as.character(col_data)[!is.na(col_data)]
+        if (length(valores_nao_na) > 0) {
+          max_dados <- max(nchar(valores_nao_na), na.rm = TRUE)
+        } else {
+          max_dados <- 0 # Coluna totalmente NA
+        }
       } else {
-        max(nchar(format(col_data)), na.rm = TRUE)
+        # Para colunas numéricas/outras
+        valores_nao_na <- col_data[!is.na(col_data)]
+        if (length(valores_nao_na) > 0) {
+          max_dados <- max(nchar(format(valores_nao_na)), na.rm = TRUE)
+        } else {
+          max_dados <- 0 # Coluna totalmente NA
+        }
       }
 
       largura_sugerida <- max(max_nome, max_dados, na.rm = TRUE)
 
       # Limitar larguras muito grandes (colunas de texto extenso)
-      if (largura_sugerida > 50) {
+      if (is.infinite(largura_sugerida) || largura_sugerida == 0) {
+        max_nome + 2 # Usar apenas o nome da coluna se não houver dados válidos
+      } else if (largura_sugerida > 50) {
         30 # Largura máxima para colunas muito longas
       } else if (largura_sugerida < 8) {
         10 # Largura mínima
