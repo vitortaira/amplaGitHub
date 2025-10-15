@@ -1,4 +1,6 @@
 r_soares <- function() {
+  # CMF_CN
+  in.cmfcn <- e_cef_cmfcns()
   # ECNs
   in.ecns <- e_cef_ecns()$ecn_u %>%
     rename(contrato.cef = contrato) %>%
@@ -93,8 +95,8 @@ r_soares <- function() {
           repassado == "Sim" ~ "Parcela CEF",
         TRUE ~ "Pro soluto"
       )
-    ) %>%
-    dplyr::filter(id != "AVS-Apartamento-2")
+    )
+  # dplyr::filter(id != "AVS-Apartamento-2")
   # Unidades
   in.unis <- e_ik_unis() %>%
     rename(unidade = numero) %>%
@@ -234,7 +236,7 @@ r_soares <- function() {
     rec.uni  = rec.uni,
     # Inputs
     in.car   = in.car,
-    # in.cmfcn = in.cmfcn,
+    in.cmfcn = in.cmfcn,
     in.contr = in.contr,
     in.cr    = in.cr,
     in.ecns  = in.ecns,
