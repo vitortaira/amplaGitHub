@@ -116,119 +116,109 @@ r_soares <- function() {
     )
   # Totais por natureza que devem virar colunas
   totais <- in.rec %>%
+    dplyr::filter(natureza %in% c("Parcela CEF", "Parcela CEF a repassar", "Taxa extra")) %>%
     group_by(id, natureza) %>%
     summarise(total = sum(total, na.rm = TRUE), .groups = "drop") %>%
-    dplyr::filter(natureza %in% c("Parcela CEF", "Parcela CEF a repassar", "Taxa extra")) %>%
     tidyr::pivot_wider(
       names_from = natureza,
       values_from = total,
-      values_fill = 0,
-      names_repair = "minimal"
+      values_fill = 0
     )
-  # Fran: in.unis + in.rec
+
+  # Fran: integração unis + rec com agregação mensal
   rec.uni <- in.unis %>%
-    left_join(in.rec, by = "id", suffix = c(".in.unis", ".in.rec")) %>%
-    # Juntar in.contr para obter contrato.cef válido (usar contrato do in.rec diretamente)
+    left_join(
+      in.rec %>% dplyr::filter(is.na(natureza) | natureza == "Pro soluto"),
+      by = "id",
+      suffix = c(".unis", ".rec")
+    ) %>%
+    # Adicionar contrato.cef via in.contr
     left_join(
       in.contr %>% select(empresa, contrato, contrato.cef),
-      by = c("empresa.in.unis" = "empresa", "contrato" = "contrato"),
-      suffix = c("", ".in.contr")
+      by = c("empresa.unis" = "empresa", "contrato" = "contrato"),
+      suffix = c("", ".contr")
     ) %>%
+    # Consolidar colunas e identificar origem dos dados
     mutate(
-      cliente = cliente.in.unis,
-      data.venda = data.in.unis,
-      situacao = situacao,
-      valor.venda = valor.venda,
-      contrato.cef = coalesce(contrato.cef.in.contr, contrato.cef),
+      empresa = coalesce(empresa.unis, empresa.rec),
+      especie = coalesce(especie.unis, especie.rec),
+      pavimento = coalesce(pavimento.unis, pavimento.rec),
+      unidade = coalesce(unidade.unis, unidade.rec),
+      contrato.cef = coalesce(contrato.cef.contr, contrato.cef),
+      data.mes = floor_date(coalesce(data.pagamento, data.vencimento), "month"),
       cruzada = case_when(
-        id %in% anti_join(in.unis, in.rec, by = "id")$id ~ "in.unis",
-        id %in% anti_join(in.rec, in.unis, by = "id")$id ~ "in.rec",
+        is.na(empresa.rec) ~ "in.unis",
+        is.na(empresa.unis) ~ "in.rec",
         TRUE ~ "ambos"
       )
     ) %>%
-    # Manter Pro soluto e também ids sem receita (natureza NA) para não perder in.unis
-    dplyr::filter(is.na(natureza) | natureza == "Pro soluto") %>%
-    group_by(id,
-      data.mes = floor_date(data.in.rec, "month")
-    ) %>%
+    # Agregar por id e mês
+    group_by(id, data.mes) %>%
     summarise(
-      empresa = first(coalesce(empresa.in.unis, empresa.in.rec)),
-      especie = first(coalesce(especie.in.unis, especie.in.rec)),
-      pavimento = first(coalesce(pavimento.in.unis, pavimento.in.rec)),
-      unidade = first(coalesce(unidade.in.unis, unidade.in.rec)),
-      cliente = first(cliente),
-      data.venda = first(data.venda),
+      empresa = first(empresa),
+      especie = first(especie),
+      pavimento = first(pavimento),
+      unidade = first(unidade),
+      cliente = first(cliente.unis),
+      data.venda = first(data.unis),
       situacao = first(situacao),
       valor.venda = first(valor.venda),
       contrato = first(contrato),
       contrato.cef = first(contrato.cef),
+      natureza = first(natureza),
       total = sum(total, na.rm = TRUE),
-      natureza = dplyr::first(natureza),
       .groups = "drop"
     ) %>%
+    # Pivotar meses para colunas
     pivot_wider(
       names_from = data.mes,
       values_from = total,
       values_fill = 0,
       values_fn = sum
     ) %>%
-    # Adicionar colunas de CEF e CEF a repassar
+    # Adicionar totais de natureza
     left_join(totais, by = "id") %>%
     mutate(
-      `Parcela CEF` = if ("Parcela CEF" %in% names(pick(everything()))) {
-        tidyr::replace_na(`Parcela CEF`, 0)
-      } else {
-        0
-      },
-      `Parcela CEF a repassar` = if ("Parcela CEF a repassar" %in% names(pick(everything()))) {
-        tidyr::replace_na(`Parcela CEF a repassar`, 0)
-      } else {
-        0
-      },
-      `Taxa extra` = if ("Taxa extra" %in% names(pick(everything()))) {
-        tidyr::replace_na(`Taxa extra`, 0)
-      } else {
-        0
-      }
+      across(
+        c(`Parcela CEF`, `Parcela CEF a repassar`, `Taxa extra`),
+        ~ tidyr::replace_na(.x, 0)
+      )
     ) %>%
-    arrange(id, natureza) %>%
-    select(
-      id, empresa, especie, pavimento, unidade, cliente, situacao, data.venda,
-      contrato, contrato.cef, valor.venda, `Parcela CEF`, `Parcela CEF a repassar`, `Taxa extra`, natureza,
-      sort(names(select(., -id, -natureza)))
+    # Normalizar contrato.cef (13 → 12 caracteres)
+    mutate(
+      contrato.cef = if_else(
+        str_length(contrato.cef) == 13,
+        str_sub(contrato.cef, 1, 12),
+        contrato.cef
+      )
     ) %>%
-    # Colapsar linhas duplicadas por id (quebra por mês) mantendo atributos e
-    # somando apenas as colunas mensais (nomes no formato YYYY-MM-DD)
-    dplyr::group_by(id) %>%
-    mutate(contrato.cef = if_else(
-      str_length(contrato.cef) == 13,
-      str_sub(contrato.cef, 1, 12),
-      contrato.cef
-    )) %>%
+    # Adicionar dados ECN
     left_join(in.ecns, by = "contrato.cef") %>%
     mutate(
-      checar = if_else(
-        !is.na(contrato.cef) & is.na(fin.cef),
-        TRUE,
-        FALSE
-      ),
+      checar = !is.na(contrato.cef) & is.na(fin.cef),
       contrato.comeco = str_sub(contrato, 1, 4),
       contrato.fim = str_sub(contrato, -1) %>% as.integer()
     ) %>%
+    # Priorizar contrato mais recente dentro de cada série
     group_by(id, contrato.comeco) %>%
     slice_max(contrato.fim, n = 1, with_ties = FALSE) %>%
     ungroup() %>%
-    group_by(id) %>%
-    # Calcular soma das colunas mensais (formato YYYY-MM-DD) para cada contrato
+    # Priorizar contrato com maior soma mensal
     rowwise() %>%
-    mutate(
-      soma_meses = sum(c_across(matches("^\\d{4}-\\d{2}-\\d{2}$")), na.rm = TRUE)
-    ) %>%
+    mutate(soma_meses = sum(c_across(matches("^\\d{4}-\\d{2}-\\d{2}$")), na.rm = TRUE)) %>%
     ungroup() %>%
     group_by(id) %>%
-    # Manter apenas o contrato com maior soma das parcelas mensais
     slice_max(soma_meses, n = 1, with_ties = FALSE) %>%
-    ungroup()
+    ungroup() %>%
+    # Organizar colunas
+    select(
+      id, empresa, especie, pavimento, unidade, cliente, situacao, data.venda,
+      contrato, contrato.cef, valor.venda,
+      `Parcela CEF`, `Parcela CEF a repassar`, `Taxa extra`,
+      natureza, fin.cef, creditado, checar, soma_meses,
+      matches("^\\d{4}-\\d{2}-\\d{2}$")
+    ) %>%
+    arrange(id)
 
 
   list(
