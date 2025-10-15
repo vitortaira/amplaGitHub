@@ -40,7 +40,29 @@
 r_xcef <-
   function(f_caminho.pasta.extratos_c, f_caminho.pasta.ciweb_c) {
     # Consolida os dados dos extratos da CEF na pasta "Relatorios - Extratos"
-    extratos_t <- e_cef_xcefs()
+    extratos_t <- e_cef_xcefs() %>%
+      mutate(
+        # Corrigir conversões de data problemáticas
+        data.lancamento = tryCatch(
+          if (is.numeric(data.lancamento)) {
+            as.Date(as.integer(data.lancamento), origin = "1899-12-30")
+          } else {
+            as.Date(data.lancamento)
+          },
+          error = function(e) as.Date(NA),
+          warning = function(w) as.Date(NA)
+        ),
+        data.movimentacao = tryCatch(
+          if (is.numeric(data.movimentacao)) {
+            as.Date(as.integer(data.movimentacao), origin = "1899-12-30")
+          } else {
+            as.Date(data.movimentacao)
+          },
+          error = function(e) as.Date(NA),
+          warning = function(w) as.Date(NA)
+        )
+      )
+
     # Consolida os dados dos relatórios CMF_CN na pasta "Relatorios - CIWEB"
     cmfcns_t <- e_cef_cmfcns()
     # Cruza os dados consolidados
@@ -48,57 +70,35 @@ r_xcef <-
       inner_join(
         extratos_t,
         cmfcns_t,
-        by = c("Data de movimento", "Contrato_6", "Valor")
+        by = c("data.movimentacao" = "data.movimento", "contrato.6", "valor")
       ) %>%
       select(
         # Interseção
-        Contrato_6, `Data de movimento`, Valor,
-        # Extratos
-        "Data de lan\u00e7amento", Documento, "Hist\u00f3rico", Saldo,
-        conta.interno, Conta, "Ag\u00eancia",
-        produto, CNPJ, Cliente, "Per\u00edodo_in\u00edcio", "Per\u00edodo_fim",
-        `data.consulta`,
-        # CMF_CNs
-        CONTRATO, `DT. LANCTO`, `LANCAMENTOS`, NP, `CONTA SIDEC/NSGD`,
-        SITUACAO, `MOT.`
+        contrato.6, valor,
+        # Incluir todas as outras colunas
+        everything()
       ) %>%
       mutate(
         id_xcef = paste0(
           # Interseção
-          Contrato_6, `Data de movimento`, Valor,
-          # Extratos
-          "Data de lan\u00e7amento", Documento, "Hist\u00f3rico", Saldo
+          contrato.6, valor
         ),
         id_cmfcn = paste0(
           # Interseção
-          Contrato_6, `Data de movimento`, Valor,
-          # CMF_CNs
-          `CONTRATO`, `DT. LANCTO`, `LANCAMENTOS`, NP, `CONTA SIDEC/NSGD`,
-          SITUACAO, `MOT.`
+          contrato.6, valor
         )
       )
     # Colunas que identificam linhas cruzadas em extratos_t e cmfcns_t
     extratos_t %<>% mutate(
       cruzada = if_else(
-        paste0(
-          # Interseção
-          Contrato_6, `Data de movimento`, Valor,
-          # Extratos
-          "Data de lan\u00e7amento", Documento, "Hist\u00f3rico", Saldo
-        ) %in% extratos.cruzados_t$id_xcef,
+        paste0(contrato.6, valor) %in% paste0(extratos.cruzados_t$contrato.6, extratos.cruzados_t$valor),
         "sim",
         "não"
       )
     )
     cmfcns_t %<>% mutate(
       cruzada = if_else(
-        paste0(
-          # Interseção
-          Contrato_6, `Data de movimento`, Valor,
-          # CMF_CNs
-          `CONTRATO`, `DT. LANCTO`, `LANCAMENTOS`, NP, `CONTA SIDEC/NSGD`,
-          SITUACAO, `MOT.`
-        ) %in% extratos.cruzados_t$id_cmfcn,
+        paste0(contrato.6, valor) %in% paste0(extratos.cruzados_t$contrato.6, extratos.cruzados_t$valor),
         "sim",
         "não"
       )
@@ -560,13 +560,18 @@ r_xcef <-
     # Congelar a primeira linha
     freezePane(xlsx, sheet = "CMF_CNs", firstRow = T, firstActiveRow = 2)
     # Salvar a planilha localmente
+    caminho_pasta_extratos_cruzados <- file.path(
+      "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - Extratos/Extratos cruzados"
+    )
+
+    # Criar pasta se não existir
+    if (!dir.exists(caminho_pasta_extratos_cruzados)) {
+      dir.create(caminho_pasta_extratos_cruzados, recursive = TRUE)
+    }
+
     saveWorkbook(
       xlsx,
-      paste0(
-        caminhos_pastas("extratos"),
-        "/Extratos cruzados/",
-        nome.xlsx_c
-      ),
+      file.path(caminho_pasta_extratos_cruzados, nome.xlsx_c),
       overwrite = TRUE
     )
     #  # Caminho da planilha na pasta local
