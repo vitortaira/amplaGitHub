@@ -7,10 +7,10 @@ r_soares <- function() {
     mutate(
       contrato.cef = str_remove_all(contrato.cef, "-") %>%
         if_else(str_length(.) == 13, str_sub(., 1, 12), .),
-      fin.cef = financiamento + desconto.subsidio + fgts + recursos.proprios,
-      creditado = valor.liberado.terreno + valor.liberado.obra
+      parcela.cef.total = financiamento + desconto.subsidio + fgts + recursos.proprios,
+      parcela.cef.incorrido = valor.liberado.terreno + valor.liberado.obra
     ) %>%
-    dplyr::select(contrato.cef, fin.cef, creditado)
+    dplyr::select(contrato.cef, parcela.cef.total, parcela.cef.incorrido)
   # Contratos
   in.contr <-
     e_ik_contrs() %>%
@@ -86,13 +86,13 @@ r_soares <- function() {
       ),
       id = str_c(empresa, especie, unidade, sep = "-"),
       natureza = case_when(
-        ele == "TAX" ~ "Taxa extra",
+        ele == "TAX" ~ "taxa.extra",
         ele %in% c("CEF", "FGT", "FIB", "FIN") &
           !empresa %in% c("POM", "SAU") &
-          repassado == "Não" ~ "Parcela CEF a repassar",
+          repassado == "Não" ~ "parcela.cef.assinar",
         ele %in% c("CEF", "FGT", "FIB", "FIN") &
           !empresa %in% c("POM", "SAU") &
-          repassado == "Sim" ~ "Parcela CEF",
+          repassado == "Sim" ~ "parcela.cef.total.ik",
         TRUE ~ "Pro soluto"
       )
     )
@@ -116,7 +116,7 @@ r_soares <- function() {
     )
   # Totais por natureza que devem virar colunas
   totais <- in.rec %>%
-    dplyr::filter(natureza %in% c("Parcela CEF", "Parcela CEF a repassar", "Taxa extra")) %>%
+    dplyr::filter(natureza %in% c("parcela.cef.total.ik", "parcela.cef.assinar", "taxa.extra")) %>%
     group_by(id, natureza) %>%
     summarise(total = sum(total, na.rm = TRUE), .groups = "drop") %>%
     tidyr::pivot_wider(
@@ -180,7 +180,7 @@ r_soares <- function() {
     left_join(totais, by = "id") %>%
     mutate(
       across(
-        c(`Parcela CEF`, `Parcela CEF a repassar`, `Taxa extra`),
+        c(parcela.cef.total.ik, parcela.cef.assinar, taxa.extra),
         ~ tidyr::replace_na(.x, 0)
       )
     ) %>%
@@ -195,7 +195,7 @@ r_soares <- function() {
     # Adicionar dados ECN
     left_join(in.ecns, by = "contrato.cef") %>%
     mutate(
-      checar = !is.na(contrato.cef) & is.na(fin.cef),
+      checar = !is.na(contrato.cef) & is.na(parcela.cef.total),
       contrato.comeco = str_sub(contrato, 1, 4),
       contrato.fim = str_sub(contrato, -1) %>% as.integer()
     ) %>%
@@ -205,17 +205,17 @@ r_soares <- function() {
     ungroup() %>%
     # Priorizar contrato com maior soma mensal
     rowwise() %>%
-    mutate(soma_meses = sum(c_across(matches("^\\d{4}-\\d{2}-\\d{2}$")), na.rm = TRUE)) %>%
+    mutate(soma.meses = sum(c_across(matches("^\\d{4}-\\d{2}-\\d{2}$")), na.rm = TRUE)) %>%
     ungroup() %>%
     group_by(id) %>%
-    slice_max(soma_meses, n = 1, with_ties = FALSE) %>%
+    slice_max(soma.meses, n = 1, with_ties = FALSE) %>%
     ungroup() %>%
     # Organizar colunas
     select(
       id, empresa, especie, pavimento, unidade, cliente, situacao, data.venda,
       contrato, contrato.cef, valor.venda,
-      `Parcela CEF`, `Parcela CEF a repassar`, `Taxa extra`,
-      natureza, fin.cef, creditado, checar, soma_meses,
+      parcela.cef.total.ik, parcela.cef.assinar, taxa.extra,
+      natureza, parcela.cef.total, parcela.cef.incorrido, checar, soma.meses,
       matches("^\\d{4}-\\d{2}-\\d{2}$")
     ) %>%
     arrange(id)
