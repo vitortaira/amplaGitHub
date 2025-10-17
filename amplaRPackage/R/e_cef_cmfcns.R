@@ -96,23 +96,33 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
 #' Agrupa os dados de e_cef_cmfcns() por contrato, pivotando valores mensais.
 #'
 #' @param f_caminho.pasta.ciweb_c Caminho para a pasta "Relatorios - CIWEB".
+#' @param agrupamento Tipo de agrupamento: "natureza" ou "lancamentos".
 #'
 #' @return
 #' Tibble com uma linha por contrato e colunas mensais de valores.
 #'
 #' @export
-e_cef_cmfcns_mensal <- function(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
+e_cef_cmfcns_mensal <- function(
+    f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb"),
+    agrupamento = c("natureza", "lancamentos")) {
+  agrupamento <- match.arg(agrupamento)
+
   e_cef_cmfcns(f_caminho.pasta.ciweb_c) %>%
     mutate(mes = floor_date(data.movimento, "month")) %>%
-    group_by(contrato, lancamentos, mes) %>%
+    group_by(contrato, .data[[agrupamento]], mes) %>%
     summarise(valor = sum(valor, na.rm = TRUE), .groups = "drop") %>%
     pivot_wider(
       names_from = mes,
       values_from = valor,
       values_fill = 0
     ) %>%
+    rowwise() %>%
+    mutate(
+      total = sum(c_across(where(is.numeric)), na.rm = TRUE)
+    ) %>%
+    ungroup() %>%
     select(
-      contrato, lancamentos,
-      sort(names(.)[!names(.) %in% c("contrato", "lancamentos")])
+      contrato, all_of(agrupamento), total,
+      any_of(sort(names(.)[!names(.) %in% c("contrato", agrupamento, "total")]))
     )
 }
