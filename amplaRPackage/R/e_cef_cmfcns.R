@@ -69,10 +69,22 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
     rename(
       data.movimento = data.remessa,
     ) %>%
+    mutate(
+      natureza = case_when(
+        str_detect(lancamentos, "(?i)amort\\.|amortizacao") ~ "amortizacao",
+        str_detect(lancamentos, "(?i)fgts") ~ "fgts",
+        str_detect(lancamentos, "(?i)rem\\sterr") ~ "remuneracao.terrreno",
+        str_detect(lancamentos, "(?i)terreno") ~ "repasse.cef.terreno",
+        str_detect(lancamentos, "(?i)financ") &
+          !str_detect(lancamentos, "(?i)financ\\.pj") ~ "repasse.cef.obra",
+        str_detect(lancamentos, "(?i)subs/desc") ~ "subs.desc",
+        TRUE ~ NA_character_
+      )
+    ) %>%
     as_tibble() %>%
     select(
       contrato, data.lancamento, data.movimento, lancamentos, np,
-      `conta.sidec/nsgd`, valor, situacao, mot, contrato.6, arquivo,
+      `conta.sidec/nsgd`, valor, situacao, mot, contrato.6, natureza, arquivo,
       arquivo.tipo, arquivo.tabela.tipo, arquivo.fonte
     )
   return(cmfcns_t)

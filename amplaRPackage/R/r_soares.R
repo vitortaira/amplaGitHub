@@ -1,6 +1,7 @@
 r_soares <- function() {
   # CMF_CN
-  in.cmfcn <- e_cef_cmfcns()
+  in.cmfcn <- e_cef_cmfcns() %>%
+    rename(contrato.cef = contrato)
   # ECNs
   in.ecns <- e_cef_ecns()$ecn_u %>%
     rename(contrato.cef = contrato) %>%
@@ -8,9 +9,14 @@ r_soares <- function() {
       contrato.cef = str_remove_all(contrato.cef, "-") %>%
         if_else(str_length(.) == 13, str_sub(., 1, 12), .),
       parcela.cef.total = financiamento + desconto.subsidio + fgts + recursos.proprios,
-      parcela.cef.incorrido = valor.liberado.terreno + valor.liberado.obra
+      parcela.cef.incorrido = valor.liberado.terreno + valor.liberado.obra,
+      parcela.cef.a.incorrer = parcela.cef.total - parcela.cef.incorrido
     ) %>%
-    dplyr::select(contrato.cef, parcela.cef.total, parcela.cef.incorrido)
+    dplyr::select(
+      contrato.cef, parcela.cef.total, parcela.cef.incorrido,
+      parcela.cef.a.incorrer, financiamento, desconto.subsidio, fgts,
+      recursos.proprios, valor.liberado.terreno, valor.liberado.obra
+    )
   # Contratos
   in.contr <-
     e_ik_contrs() %>%
@@ -210,13 +216,13 @@ r_soares <- function() {
     group_by(id) %>%
     slice_max(soma.meses, n = 1, with_ties = FALSE) %>%
     ungroup() %>%
-    # Organizar colunas
+    # Organizar colunas com meses ordenados cronologicamente
     select(
       id, empresa, especie, pavimento, unidade, cliente, situacao, data.venda,
       contrato, contrato.cef, valor.venda,
       parcela.cef.total.ik, parcela.cef.assinar, taxa.extra,
       natureza, parcela.cef.total, parcela.cef.incorrido, checar, soma.meses,
-      matches("^\\d{4}-\\d{2}-\\d{2}$")
+      any_of(sort(names(.)[str_detect(names(.), "^\\d{4}-\\d{2}-\\d{2}$")]))
     ) %>%
     arrange(id)
 
