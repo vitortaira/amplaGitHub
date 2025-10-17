@@ -1,6 +1,6 @@
 r_soares <- function() {
   # CMF_CN
-  in.cmfcn <- e_cef_cmfcns() %>%
+  in.cmfcns <- e_cef_cmfcns_mensal() %>%
     rename(contrato.cef = contrato)
   # ECNs
   in.ecns <- e_cef_ecns()$ecn_u %>%
@@ -16,6 +16,19 @@ r_soares <- function() {
       contrato.cef, parcela.cef.total, parcela.cef.incorrido,
       parcela.cef.a.incorrer, financiamento, desconto.subsidio, fgts,
       recursos.proprios, valor.liberado.terreno, valor.liberado.obra
+    )
+  # cef: cmfcns + ecns
+  in.cef <- in.ecns %>%
+    left_join(
+      in.cmfcns %>%
+        select(contrato.cef, natureza, total) %>%
+        tidyr::pivot_wider(
+          names_from = natureza,
+          values_from = total,
+          values_fill = 0
+        ),
+      by = "contrato.cef",
+      suffix = c(".ecns", ".cmfcns")
     )
   # Contratos
   in.contr <-
@@ -229,14 +242,15 @@ r_soares <- function() {
 
   list(
     # Outputs
-    rec.uni  = rec.uni,
+    rec.uni = rec.uni,
     # Inputs
-    in.car   = in.car,
-    in.cmfcn = in.cmfcn,
+    in.car = in.car,
+    in.cef = in.cef,
+    in.cmfcns = in.cmfcns,
     in.contr = in.contr,
-    in.cr    = in.cr,
-    in.ecns  = in.ecns,
-    in.rec   = in.rec,
-    in.unis  = in.unis
+    in.cr = in.cr,
+    in.ecns = in.ecns,
+    in.rec = in.rec,
+    in.unis = in.unis
   )
 }

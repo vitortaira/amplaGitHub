@@ -73,12 +73,13 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
       natureza = case_when(
         str_detect(lancamentos, "(?i)amort\\.|amortizacao") ~ "amortizacao",
         str_detect(lancamentos, "(?i)fgts") ~ "fgts",
-        str_detect(lancamentos, "(?i)rem\\sterr") ~ "remuneracao.terrreno",
+        str_detect(lancamentos, "(?i)rem\\sterr") ~ "remuneracao.terreno",
+        str_detect(lancamentos, "(?i)rem\\svend") ~ "remuneracao.venda",
         str_detect(lancamentos, "(?i)terreno") ~ "repasse.cef.terreno",
         str_detect(lancamentos, "(?i)financ") &
           !str_detect(lancamentos, "(?i)financ\\.pj") ~ "repasse.cef.obra",
         str_detect(lancamentos, "(?i)subs/desc") ~ "subs.desc",
-        TRUE ~ NA_character_
+        TRUE ~ "classificar"
       )
     ) %>%
     as_tibble() %>%
@@ -108,6 +109,7 @@ e_cef_cmfcns_mensal <- function(
   agrupamento <- match.arg(agrupamento)
 
   e_cef_cmfcns(f_caminho.pasta.ciweb_c) %>%
+    dplyr::filter(!is.na(valor)) %>%
     mutate(mes = floor_date(data.movimento, "month")) %>%
     group_by(contrato, .data[[agrupamento]], mes) %>%
     summarise(valor = sum(valor, na.rm = TRUE), .groups = "drop") %>%
