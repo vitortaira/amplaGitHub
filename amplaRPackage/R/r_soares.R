@@ -1,6 +1,6 @@
 r_soares <- function() {
   # CMF_CN
-  in.cmfcns <- e_cef_cmfcns_mensal() %>%
+  in.cmfcns.mensal <- e_cef_cmfcns_mensal() %>%
     rename(contrato.cef = contrato)
   # ECNs
   in.ecns <- e_cef_ecns()$ecn_u %>%
@@ -20,7 +20,7 @@ r_soares <- function() {
   # cef: cmfcns + ecns
   in.cef <- in.ecns %>%
     left_join(
-      in.cmfcns %>%
+      in.cmfcns.mensal %>%
         select(contrato.cef, natureza, total) %>%
         tidyr::pivot_wider(
           names_from = natureza,
@@ -244,13 +244,16 @@ r_soares <- function() {
     # Outputs
     rec.uni = rec.uni,
     # Inputs
+    # Inputs originais
     in.car = in.car,
-    in.cef = in.cef,
-    in.cmfcns = in.cmfcns,
+    in.cmfcns = e_cef_cmfcns(),
+    in.cmfcns.mensal = in.cmfcns.mensal,
     in.contr = in.contr,
     in.cr = in.cr,
     in.ecns = in.ecns,
-    in.rec = in.rec,
-    in.unis = in.unis
+    in.unis = in.unis,
+    # Inputs combinados
+    in.cef = in.cef,
+    in.rec = in.rec
   )
 }
