@@ -91,6 +91,17 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
       )
     ) %>%
     as_tibble() %>%
+    # Tratamento para desbloqueios: herdar natureza da transação bloqueada
+    arrange(data.movimento) %>%
+    group_by(valor) %>%
+    mutate(
+      natureza = if_else(
+        lancamentos == "86-DES - 89-FIN NAO PRD",
+        str_c("desbloqueio - ", last(natureza[lancamentos != "86-DES - 89-FIN NAO PRD"])),
+        natureza
+      )
+    ) %>%
+    ungroup() %>%
     select(
       contrato, data.lancamento, data.movimento, lancamentos, np,
       `conta.sidec/nsgd`, valor, situacao, mot, contrato.6, natureza, arquivo,
