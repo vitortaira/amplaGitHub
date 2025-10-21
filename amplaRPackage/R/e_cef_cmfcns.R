@@ -71,14 +71,22 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
     ) %>%
     mutate(
       natureza = case_when(
-        str_detect(lancamentos, "(?i)amort\\.|amortizacao") ~ "amortizacao",
-        str_detect(lancamentos, "(?i)fgts") ~ "fgts",
-        str_detect(lancamentos, "(?i)rem\\sterr") ~ "remuneracao.terreno",
-        str_detect(lancamentos, "(?i)rem\\svend") ~ "remuneracao.venda",
-        str_detect(lancamentos, "(?i)terreno") ~ "repasse.cef.terreno",
-        str_detect(lancamentos, "(?i)financ") &
-          !str_detect(lancamentos, "(?i)financ\\.pj") ~ "repasse.cef.obra",
-        str_detect(lancamentos, "(?i)subs/desc") ~ "subs.desc",
+        str_detect(lancamentos, "(?i)amort\\.|amortizacao") &
+          !str_detect(lancamentos, "(?i)cre\\sbloqueado")
+        ~ "amortizacao",
+        str_detect(lancamentos, "(?i)rem\\sterr") &
+          !str_detect(lancamentos, "(?i)cre\\sbloqueado")
+        ~ "remuneracao.terreno",
+        str_detect(lancamentos, "(?i)rem\\svend") &
+          !str_detect(lancamentos, "(?i)cre\\sbloqueado")
+        ~ "remuneracao.venda",
+        str_detect(lancamentos, "(?i)terreno") &
+          !str_detect(lancamentos, "(?i)cre\\sbloqueado")
+        ~ "repasse.cef.terreno",
+        str_detect(lancamentos, "(?i)financ|fgts|subs/desc") &
+          !str_detect(lancamentos, "(?i)cre\\sbloqueado|financ\\.pj")
+        ~ "repasse.cef.obra",
+        str_detect(lancamentos, "(?i)cre\\sbloqueado") ~ "credito.bloqueado",
         TRUE ~ "classificar"
       )
     ) %>%
