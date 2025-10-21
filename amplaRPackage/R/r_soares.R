@@ -15,13 +15,13 @@ r_soares <- function() {
     dplyr::select(
       contrato.cef, parcela.cef.total, parcela.cef.incorrido,
       parcela.cef.a.incorrer, financiamento, desconto.subsidio, fgts,
-      recursos.proprios, valor.liberado.terreno, valor.liberado.obra
+      recursos.proprios, valor.liberado.terreno, valor.liberado.obra, arquivo
     )
   # cef: cmfcns + ecns
   in.cef <- in.ecns %>%
     left_join(
       in.cmfcns.mensal %>%
-        select(contrato.cef, natureza, total) %>%
+        select(contrato.cef, natureza, total, arquivo) %>%
         tidyr::pivot_wider(
           names_from = natureza,
           values_from = total,

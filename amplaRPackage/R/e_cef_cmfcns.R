@@ -140,7 +140,7 @@ e_cef_cmfcns_mensal <- function(
   e_cef_cmfcns(f_caminho.pasta.ciweb_c) %>%
     dplyr::filter(!is.na(valor)) %>%
     mutate(mes = floor_date(data.movimento, "month")) %>%
-    group_by(contrato, .data[[agrupamento]], mes) %>%
+    group_by(contrato, .data[[agrupamento]], arquivo, mes) %>%
     summarise(valor = sum(valor, na.rm = TRUE), .groups = "drop") %>%
     pivot_wider(
       names_from = mes,
@@ -153,7 +153,7 @@ e_cef_cmfcns_mensal <- function(
     ) %>%
     ungroup() %>%
     select(
-      contrato, all_of(agrupamento), total,
-      any_of(sort(names(.)[!names(.) %in% c("contrato", agrupamento, "total")]))
+      contrato, all_of(agrupamento), arquivo, total,
+      any_of(sort(names(.)[!names(.) %in% c("contrato", agrupamento, "arquivo", "total")]))
     )
 }
