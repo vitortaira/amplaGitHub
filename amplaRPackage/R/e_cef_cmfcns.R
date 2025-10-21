@@ -73,7 +73,7 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
       natureza = case_when(
         str_detect(lancamentos, "(?i)amort\\.|amortizacao") &
           !str_detect(lancamentos, "(?i)cre\\sbloqueado")
-        ~ "amortizacao",
+        ~ "amortizacao.pj",
         str_detect(lancamentos, "(?i)rem\\sterr") &
           !str_detect(lancamentos, "(?i)cre\\sbloqueado")
         ~ "remuneracao.terreno",
@@ -87,7 +87,8 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
           !str_detect(lancamentos, "(?i)cre\\sbloqueado|financ\\.pj")
         ~ "repasse.cef.obra",
         str_detect(lancamentos, "(?i)cre\\sbloqueado") ~ "credito.bloqueado",
-        TRUE ~ "classificar"
+        str_detect(lancamentos, "(?i)fim\\sde\\sobra") ~ "fim.obra",
+        TRUE ~ NA_character_
       )
     ) %>%
     as_tibble() %>%
@@ -95,13 +96,15 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
     arrange(data.movimento) %>%
     group_by(valor) %>%
     mutate(
+      desbloqueio = str_detect(lancamentos, "(?i)des.*fin\\snao\\sprd|desb\\sfinanc/ter"),
       natureza = if_else(
-        lancamentos == "86-DES - 89-FIN NAO PRD",
-        str_c("desbloqueio - ", last(natureza[lancamentos != "86-DES - 89-FIN NAO PRD"])),
+        desbloqueio,
+        str_c("desbloqueio - ", last(natureza[!desbloqueio])),
         natureza
       )
     ) %>%
     ungroup() %>%
+    select(-desbloqueio) %>%
     select(
       contrato, data.lancamento, data.movimento, lancamentos, np,
       `conta.sidec/nsgd`, valor, situacao, mot, contrato.6, natureza, arquivo,
