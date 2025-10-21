@@ -74,37 +74,44 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
         str_detect(lancamentos, "(?i)amort\\.|amortizacao") &
           !str_detect(lancamentos, "(?i)cre\\sbloqueado")
         ~ "amortizacao.pj",
+        str_detect(lancamentos, "(?i)cre\\sbloqueado") &
+          !str_detect(lancamentos, "(?i)terr")
+        ~ "bloqueio - repasse.cef.obra",
+        str_detect(lancamentos, "(?i)cre\\sbloqueado.*terr")
+        ~ "bloqueio - repasse.cef.terreno",
+        str_detect(lancamentos, "(?i)fim\\sde\\sobra") ~ "fim.obra",
         str_detect(lancamentos, "(?i)rem\\sterr") &
           !str_detect(lancamentos, "(?i)cre\\sbloqueado")
         ~ "remuneracao.terreno",
         str_detect(lancamentos, "(?i)rem\\svend") &
           !str_detect(lancamentos, "(?i)cre\\sbloqueado")
         ~ "remuneracao.venda",
-        str_detect(lancamentos, "(?i)terreno") &
-          !str_detect(lancamentos, "(?i)cre\\sbloqueado")
-        ~ "repasse.cef.terreno",
         str_detect(lancamentos, "(?i)financ|fgts|subs/desc") &
           !str_detect(lancamentos, "(?i)cre\\sbloqueado|financ\\.pj")
         ~ "repasse.cef.obra",
-        str_detect(lancamentos, "(?i)cre\\sbloqueado") ~ "credito.bloqueado",
-        str_detect(lancamentos, "(?i)fim\\sde\\sobra") ~ "fim.obra",
+        str_detect(lancamentos, "(?i)terreno") &
+          !str_detect(lancamentos, "(?i)cre\\sbloqueado")
+        ~ "repasse.cef.terreno",
         TRUE ~ NA_character_
       )
     ) %>%
     as_tibble() %>%
-    # Tratamento para desbloqueios: herdar natureza da transação bloqueada
+    # Desbloqueios: herdar natureza da transação bloqueada e remover bloqueadas
     arrange(data.movimento) %>%
-    group_by(valor) %>%
+    group_by(contrato, valor) %>%
     mutate(
       desbloqueio = str_detect(lancamentos, "(?i)des.*fin\\snao\\sprd|desb\\sfinanc/ter"),
+      tem.desbloqueio = any(desbloqueio),
+      bloqueio = !desbloqueio & tem.desbloqueio & row_number() < which(desbloqueio)[1],
       natureza = if_else(
         desbloqueio,
-        str_c("desbloqueio - ", last(natureza[!desbloqueio])),
+        str_replace(last(natureza[!desbloqueio]), "^bloqueio - ", ""),
         natureza
       )
     ) %>%
     ungroup() %>%
-    select(-desbloqueio) %>%
+    dplyr::filter(!bloqueio) %>%
+    select(-desbloqueio, -tem.desbloqueio, -bloqueio) %>%
     select(
       contrato, data.lancamento, data.movimento, lancamentos, np,
       `conta.sidec/nsgd`, valor, situacao, mot, contrato.6, natureza, arquivo,
