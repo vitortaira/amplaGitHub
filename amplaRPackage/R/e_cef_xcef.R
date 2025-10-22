@@ -137,6 +137,12 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
       str_extract(
         "(?<=(?i)\\s?\\d{2}/\\d{2}/\\d{4}\\s?[aà]\\s?)(\\d{2}/\\d{2}/\\d{4})"
       )
+    agencia <- excel_sheets(f_caminho.arquivo_c)[1] %>%
+      str_sub(1, 5)
+    conta <- excel_sheets(f_caminho.arquivo_c)[1] %>%
+      str_sub(-10, -1)
+    produto <- excel_sheets(f_caminho.arquivo_c)[1] %>%
+      str_sub(6, 9)
     extrato_t <- read_excel(f_caminho.arquivo_c, skip = 1) %>%
       rename(
         data.lancamento = `Data Lançamento`,
@@ -170,9 +176,9 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
         # Adicionar metadados
         conta.interno = basename(f_caminho.arquivo_c) %>%
           str_extract("\\d{4}"),
-        conta = NA_character_,
-        agencia = NA_character_,
-        produto = NA_character_,
+        conta = conta,
+        agencia = agencia,
+        produto = produto,
         cnpj = cpf.cnpj,
         empresa = case_when(
           # Tentar extrair da estrutura de diretórios (padrão esperado)
@@ -537,27 +543,49 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
         "data.movimentacao", "documento", "descricao", "valor", "saldo"
       )) %>%
       mutate(
-        data.movimentacao = as.Date(
-          as.integer(data.movimentacao),
-          origin = "1899-12-30"
+        data.movimentacao = case_when(
+          is.na(data.movimentacao) ~ as.Date(NA),
+          is.numeric(data.movimentacao) ~ as.Date(data.movimentacao, origin = "1899-12-30"),
+          is.character(data.movimentacao) ~ as.Date(data.movimentacao, format = "%d/%m/%Y"),
+          TRUE ~ as.Date(NA)
         ),
-        documento = str_pad(documento, 6, "0", side = "left"),
-        valor = valor %>%
-          str_remove("\\s?C") %>%
-          str_remove_all("\\.") %>%
-          str_replace("\\,", "\\.") %>%
-          if_else(str_detect(., "D$"),
-            str_c("-", .) %>% str_remove("\\s?D$"),
-            .
-          ) %>% as.numeric(),
-        saldo = saldo %>%
-          str_remove("\\s?C") %>%
-          str_remove_all("\\.") %>%
-          str_replace("\\,", "\\.") %>%
-          if_else(str_detect(., "D$"),
-            str_c("-", .) %>% str_remove("\\s?D$"),
-            .
-          ) %>% as.numeric(),
+        documento = str_pad(as.character(documento), 6, "0", side = "left"),
+        valor = case_when(
+          is.na(valor) ~ as.numeric(NA),
+          is.numeric(valor) ~ valor,
+          is.character(valor) ~ {
+            valor %>%
+              str_remove("\\s?C") %>%
+              str_remove_all("\\.") %>%
+              str_replace("\\,", "\\.") %>%
+              {
+                if_else(str_detect(., "D$"),
+                  str_c("-", .) %>% str_remove("\\s?D$"),
+                  .
+                )
+              } %>%
+              as.numeric()
+          },
+          TRUE ~ as.numeric(NA)
+        ),
+        saldo = case_when(
+          is.na(saldo) ~ as.numeric(NA),
+          is.numeric(saldo) ~ saldo,
+          is.character(saldo) ~ {
+            saldo %>%
+              str_remove("\\s?C") %>%
+              str_remove_all("\\.") %>%
+              str_replace("\\,", "\\.") %>%
+              {
+                if_else(str_detect(., "D$"),
+                  str_c("-", .) %>% str_remove("\\s?D$"),
+                  .
+                )
+              } %>%
+              as.numeric()
+          },
+          TRUE ~ as.numeric(NA)
+        ),
         # Adicionar metadados que estavam faltando
         data.lancamento = NA_Date_,
         conta = word(conta, -1) %>% str_trim(),
