@@ -39,6 +39,10 @@ caminhos_pastas <- function(alias) {
     ciweb = fs::path(
       caminho.base_c, "Relatórios - Documentos", "Relatorios - CIWEB"
     ),
+    cobertura = fs::path(
+      caminho.base_c, "Controladoria - Documentos",
+      "Extratos Originais - Grupo Ampla", "Consolidados", "Cobertura"
+    ),
     cobranca = fs::path(
       caminho.base_c, "Relatórios - Documentos", "Relatorios - Cobrança"
     ),
