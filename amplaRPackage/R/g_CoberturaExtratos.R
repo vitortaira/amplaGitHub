@@ -1,7 +1,7 @@
 #' Plot temporal coverage heatmap for extratos
 #'
 #' @param cobertura_t Tibble with columns: arquivo, empresa, periodo.inicio, periodo.fim, arquivo.tipo, id
-#' @return Plotly heatmap object
+#' @return Plotly heatmap object. Also saves the plot as PNG in the relatorios folder.
 #' @import dplyr
 #' @import tidyr
 #' @import lubridate
@@ -621,6 +621,20 @@ g_coberturaExtratos <- function(cobertura_t = e_cobertura_extratos()) {
   final_plot <- .generate_plotly_figure(plot_elements, prepared_data$row_keys, prepared_data$formatted_months)
 
   if (interactive()) message("--- Plotly figure generated. ---")
+
+  # Salvar HTML em pasta própria
+  timestamp <- format(Sys.time(), "%Y_%m_%d-%H_%M_%S")
+  nome_relatorio <- paste0("Cobertura-", timestamp)
+  pasta_relatorio <- file.path(caminhos_pastas("cobertura"), nome_relatorio)
+  dir.create(pasta_relatorio, showWarnings = FALSE, recursive = TRUE)
+
+  htmlwidgets::saveWidget(
+    final_plot,
+    file = file.path(pasta_relatorio, paste0(nome_relatorio, ".html")),
+    selfcontained = FALSE,
+    libdir = "lib"
+  )
+
   return(final_plot)
 }
 
