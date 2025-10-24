@@ -1,4 +1,4 @@
-r_soares <- function() {
+r_soares <- function(xlsx = FALSE) {
   # CMF_CN
   in.cmfcns.mensal <- e_cef_cmfcns_mensal() %>%
     rename(contrato.cef = contrato)
@@ -145,7 +145,7 @@ r_soares <- function() {
     )
 
   # Fran: integração unis + rec com agregação mensal
-  rec.uni <- in.unis %>%
+  ps.uni <- in.unis %>%
     left_join(
       in.rec %>% dplyr::filter(is.na(natureza) | natureza == "Pro soluto"),
       by = "id",
@@ -239,10 +239,38 @@ r_soares <- function() {
     ) %>%
     arrange(id)
 
+if (xlsx) {
+  gerar_xlsx(
+    data = list(
+      # Outputs
+      # cef.uni = cef.uni,
+      ps.uni = ps.uni,
+      # tx.uni = tx.uni,
+      # Inputs
+      ## Inputs originais
+      in.car = in.car,
+      in.cmfcns = e_cef_cmfcns(),
+      in.cmfcns.mensal = in.cmfcns.mensal,
+      in.contr = in.contr,
+      in.cr = in.cr,
+      in.ecns = in.ecns,
+      in.unis = in.unis,
+      ## Inputs combinados
+      in.cef = in.cef,
+      in.rec = in.rec
+    ),
+    arquivo = normalizePath(
+      file.path(Sys.getenv("USERPROFILE"), "Downloads",
+                sprintf("soares-%s.xlsx", format(Sys.time(), "%Y%m%d_%H%M%S"))),
+      winslash = "\\",
+      mustWork = FALSE
+    )
+  )
+}
 
   list(
     # Outputs
-    rec.uni = rec.uni,
+    ps.uni = ps.uni,
     # Inputs
     # Inputs originais
     in.car = in.car,
