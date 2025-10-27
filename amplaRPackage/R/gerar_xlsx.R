@@ -371,6 +371,9 @@ gerar_xlsx <- function(data,
     caminho_completo <- file.path(caminho_destino, nome_arquivo)
   }
 
+  # Normalizar caminho para consistência de separadores no Windows
+  caminho_completo <- normalizePath(caminho_completo, winslash = "\\", mustWork = FALSE)
+
   # Criar diretório se não existir
   dir.create(dirname(caminho_completo), showWarnings = FALSE, recursive = TRUE)
 

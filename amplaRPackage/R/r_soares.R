@@ -259,11 +259,9 @@ if (xlsx) {
       in.cef = in.cef,
       in.rec = in.rec
     ),
-    arquivo = normalizePath(
-      file.path(Sys.getenv("USERPROFILE"), "Downloads",
-                sprintf("soares-%s.xlsx", format(Sys.time(), "%Y%m%d_%H%M%S"))),
-      winslash = "\\",
-      mustWork = FALSE
+    save = list(
+      nome_arquivo = sprintf("soares-%s.xlsx", format(Sys.time(), "%Y%m%d_%H%M%S")),
+      caminho_destino = normalizePath(file.path(Sys.getenv("USERPROFILE"), "Downloads"), winslash = "\\", mustWork = FALSE)
     )
   )
 }
