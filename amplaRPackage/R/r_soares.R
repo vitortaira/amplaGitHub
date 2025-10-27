@@ -112,7 +112,7 @@ r_soares <- function(xlsx = FALSE) {
         ele %in% c("CEF", "FGT", "FIB", "FIN") &
           !empresa %in% c("POM", "SAU") &
           repassado == "Sim" ~ "parcela.cef.total.ik",
-        TRUE ~ "Pro soluto"
+        TRUE ~ "pro.soluto"
       )
     )
   # dplyr::filter(id != "AVS-Apartamento-2")
@@ -133,6 +133,8 @@ r_soares <- function(xlsx = FALSE) {
       empresa %in% c("AMP", "AVS", "GRA", "LUC", "POM", "SN2", "SN4") &
         !str_detect(empreendimento, "Sicília")
     )
+  # Extratos da CEF
+  in.xcef <- e_cef_xcefs()
   # Totais por natureza que devem virar colunas
   totais <- in.rec %>%
     dplyr::filter(natureza %in% c("parcela.cef.total.ik", "parcela.cef.assinar", "taxa.extra")) %>%
@@ -144,10 +146,9 @@ r_soares <- function(xlsx = FALSE) {
       values_fill = 0
     )
 
-  # Fran: integração unis + rec com agregação mensal
-  ps.uni <- in.unis %>%
+    natureza <- in.unis %>%
     left_join(
-      in.rec %>% dplyr::filter(is.na(natureza) | natureza == "Pro soluto"),
+      in.rec,
       by = "id",
       suffix = c(".unis", ".rec")
     ) %>%
@@ -166,13 +167,13 @@ r_soares <- function(xlsx = FALSE) {
       contrato.cef = coalesce(contrato.cef.contr, contrato.cef),
       data.mes = floor_date(coalesce(data.pagamento, data.vencimento), "month"),
       cruzada = case_when(
-        is.na(empresa.rec) ~ "in.unis",
-        is.na(empresa.unis) ~ "in.rec",
-        TRUE ~ "ambos"
+      is.na(empresa.rec) ~ "in.unis",
+      is.na(empresa.unis) ~ "in.rec",
+      TRUE ~ "ambos"
       )
     ) %>%
-    # Agregar por id e mês
-    group_by(id, data.mes) %>%
+    # Agregar por id, mês e natureza
+    group_by(id, data.mes, natureza) %>%
     summarise(
       empresa = first(empresa),
       especie = first(especie),
@@ -184,7 +185,6 @@ r_soares <- function(xlsx = FALSE) {
       valor.venda = first(valor.venda),
       contrato = first(contrato),
       contrato.cef = first(contrato.cef),
-      natureza = first(natureza),
       total = sum(total, na.rm = TRUE),
       .groups = "drop"
     ) %>%
@@ -195,20 +195,12 @@ r_soares <- function(xlsx = FALSE) {
       values_fill = 0,
       values_fn = sum
     ) %>%
-    # Adicionar totais de natureza
-    left_join(totais, by = "id") %>%
-    mutate(
-      across(
-        c(parcela.cef.total.ik, parcela.cef.assinar, taxa.extra),
-        ~ tidyr::replace_na(.x, 0)
-      )
-    ) %>%
     # Normalizar contrato.cef (13 → 12 caracteres)
     mutate(
       contrato.cef = if_else(
-        str_length(contrato.cef) == 13,
-        str_sub(contrato.cef, 1, 12),
-        contrato.cef
+      str_length(contrato.cef) == 13,
+      str_sub(contrato.cef, 1, 12),
+      contrato.cef
       )
     ) %>%
     # Adicionar dados ECN
@@ -219,22 +211,33 @@ r_soares <- function(xlsx = FALSE) {
       contrato.fim = str_sub(contrato, -1) %>% as.integer()
     ) %>%
     # Priorizar contrato mais recente dentro de cada série
-    group_by(id, contrato.comeco) %>%
+    group_by(id, natureza, contrato.comeco) %>%
     slice_max(contrato.fim, n = 1, with_ties = FALSE) %>%
     ungroup() %>%
     # Priorizar contrato com maior soma mensal
     rowwise() %>%
     mutate(soma.meses = sum(c_across(matches("^\\d{4}-\\d{2}-\\d{2}$")), na.rm = TRUE)) %>%
     ungroup() %>%
-    group_by(id) %>%
+    group_by(id, natureza) %>%
     slice_max(soma.meses, n = 1, with_ties = FALSE) %>%
     ungroup() %>%
     # Organizar colunas com meses ordenados cronologicamente
     select(
+      id, natureza, empresa, especie, pavimento, unidade, cliente, situacao,
+      data.venda, contrato, contrato.cef, valor.venda,
+      parcela.cef.total, parcela.cef.incorrido, checar, soma.meses,
+      any_of(sort(names(.)[str_detect(names(.), "^\\d{4}-\\d{2}-\\d{2}$")]))
+    ) %>%
+    arrange(id, natureza)
+
+
+  # Pró soluto por unidade
+  ps.uni <- natureza %>%
+    dplyr::filter(natureza == "pro.soluto" | is.na(natureza)) %>%
+    # Organizar colunas com meses ordenados cronologicamente
+    select(
       id, empresa, especie, pavimento, unidade, cliente, situacao, data.venda,
-      contrato, contrato.cef, valor.venda,
-      parcela.cef.total.ik, parcela.cef.assinar, taxa.extra,
-      natureza, parcela.cef.total, parcela.cef.incorrido, checar, soma.meses,
+      contrato, contrato.cef, valor.venda, soma.meses,
       any_of(sort(names(.)[str_detect(names(.), "^\\d{4}-\\d{2}-\\d{2}$")]))
     ) %>%
     arrange(id)
@@ -244,6 +247,7 @@ if (xlsx) {
     data = list(
       # Outputs
       # cef.uni = cef.uni,
+      natureza.uni = natureza,
       ps.uni = ps.uni,
       # tx.uni = tx.uni,
       # Inputs
@@ -255,6 +259,7 @@ if (xlsx) {
       in.cr = in.cr,
       in.ecns = in.ecns,
       in.unis = in.unis,
+      in.xcef = in.xcef,
       ## Inputs combinados
       in.cef = in.cef,
       in.rec = in.rec
@@ -278,8 +283,10 @@ if (xlsx) {
     in.cr = in.cr,
     in.ecns = in.ecns,
     in.unis = in.unis,
+    in.xcef = in.xcef,
     # Inputs combinados
     in.cef = in.cef,
-    in.rec = in.rec
+    in.rec = in.rec,
+    natureza = natureza
   )
 }
