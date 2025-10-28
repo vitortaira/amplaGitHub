@@ -263,8 +263,6 @@ gerar_xlsx <- function(data,
         openxlsx::freezePane(
           wb,
           sheet = nome_aba,
-          firstRow = TRUE,
-          firstCol = col_pos + 1,
           firstActiveRow = 2,
           firstActiveCol = col_pos + 1
         )
