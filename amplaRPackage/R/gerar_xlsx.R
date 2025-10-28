@@ -17,6 +17,7 @@
 #' @param col_width_def Largura padrão das colunas (valor numérico). Padrão: 18
 #' @param col_width_spec Vetor nomeado com larguras específicas para colunas por nome
 #' @param col_width_auto Vetor com nomes de colunas que devem ter largura ajustada automaticamente ao conteúdo
+#' @param col_headers_colours Lista nomeada associando pares (aba, coluna) a cores. Formato: list(aba = c(coluna1 = "cor1", coluna2 = "cor2"))
 #' @param col_monetary Vetor com nomes de colunas que devem ser formatadas como valores monetários (com decimais).
 #'   Se NULL, infere automaticamente baseado no tipo das colunas (numeric, excluindo integer)
 #' @param col_dates Vetor com nomes de colunas que devem ser formatadas como datas.
@@ -40,6 +41,7 @@ gerar_xlsx <- function(data,
                        col_width_def = 18,
                        col_width_spec = NULL,
                        col_width_auto = NULL,
+                       col_headers_colours = NULL,
                        col_monetary = NULL,
                        col_dates = NULL,
                        col_clip = NULL,
@@ -203,6 +205,33 @@ gerar_xlsx <- function(data,
       cols = seq_len(ncol(df_dados)),
       gridExpand = TRUE
     )
+
+    # Cores customizadas para cabeçalhos específicos
+    if (!is.null(col_headers_colours) && nome_aba %in% names(col_headers_colours)) {
+      cores_aba <- col_headers_colours[[nome_aba]]
+      for (nome_coluna in names(cores_aba)) {
+        if (nome_coluna %in% colnames(df_dados)) {
+          col_pos <- which(colnames(df_dados) == nome_coluna)
+          openxlsx::addStyle(
+            wb,
+            sheet = nome_aba,
+            style = openxlsx::createStyle(
+              border = "TopBottomLeftRight",
+              fontSize = 11,
+              halign = "center",
+              valign = "center",
+              textDecoration = "bold",
+              fgFill = cores_aba[nome_coluna],
+              wrapText = TRUE
+            ),
+            rows = 1,
+            cols = col_pos,
+            gridExpand = TRUE,
+            stack = TRUE
+          )
+        }
+      }
+    }
 
     # Adicionar filtro e congelar painel
     openxlsx::addFilter(wb, sheet = nome_aba, rows = 1, cols = seq_len(ncol(df_dados)))

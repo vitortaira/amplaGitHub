@@ -282,6 +282,14 @@ if (xlsx) {
       in.cmfcn_xcef = "darkgray",
       in.rec = "darkgray"
     ),
+    col_headers_colours = list(
+      in.cef = c(
+        valor.liberado.obra = "lightblue",
+        valor.liberado.terreno = "lightblue",
+        repasse.cef.terreno = "red",
+        repasse.cef.obra = "red"
+      )
+    ),
     col_dates = c(
       "data", "data.emissao", "data.lancamento", "data.movimentacao",
       "data.movimento", "data.pagamento", "data.venda", "data.vencimento",
