@@ -19,6 +19,7 @@
 #' @param col_width_auto Vetor com nomes de colunas que devem ter largura ajustada automaticamente ao conteúdo
 #' @param col_headers Lista customizando estilos de cabeçalhos por aba e coluna. Formato: list(aba = list(coluna = list(colour = "cor", font_colour = "cor", font_size = tam)))
 #' @param col_groups Lista definindo grupos de colunas por aba. Formato: list(aba = list(list(cols = c("col1", "col2"), hidden = FALSE, level = 1)))
+#' @param tab_freeze Vetor nomeado definindo onde congelar painéis por aba. Formato: c(aba = "nome_coluna"). A coluna especificada será a última congelada.
 #' @param col_monetary Vetor com nomes de colunas que devem ser formatadas como valores monetários (com decimais).
 #'   Se NULL, infere automaticamente baseado no tipo das colunas (numeric, excluindo integer)
 #' @param col_dates Vetor com nomes de colunas que devem ser formatadas como datas.
@@ -45,6 +46,7 @@ gerar_xlsx <- function(data,
                        col_width_auto = NULL,
                        col_headers = NULL,
                        col_groups = NULL,
+                       tab_freeze = NULL,
                        col_monetary = NULL,
                        col_dates = NULL,
                        col_clip = NULL,
@@ -252,7 +254,26 @@ gerar_xlsx <- function(data,
 
     # Adicionar filtro e congelar painel
     openxlsx::addFilter(wb, sheet = nome_aba, rows = 1, cols = seq_len(ncol(df_dados)))
-    openxlsx::freezePane(wb, sheet = nome_aba, firstRow = TRUE, firstActiveRow = 2)
+
+    # Congelar painel baseado em tab_freeze ou padrão (apenas primeira linha)
+    if (!is.null(tab_freeze) && nome_aba %in% names(tab_freeze)) {
+      col_congelar <- tab_freeze[[nome_aba]]
+      if (col_congelar %in% colnames(df_dados)) {
+        col_pos <- which(colnames(df_dados) == col_congelar)
+        openxlsx::freezePane(
+          wb,
+          sheet = nome_aba,
+          firstRow = TRUE,
+          firstCol = col_pos + 1,
+          firstActiveRow = 2,
+          firstActiveCol = col_pos + 1
+        )
+      } else {
+        openxlsx::freezePane(wb, sheet = nome_aba, firstRow = TRUE, firstActiveRow = 2)
+      }
+    } else {
+      openxlsx::freezePane(wb, sheet = nome_aba, firstRow = TRUE, firstActiveRow = 2)
+    }
 
     # Ajustar larguras automaticamente baseado no conteúdo
     # Para colunas de texto muito longas, limitar a largura máxima

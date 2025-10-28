@@ -347,6 +347,10 @@ if (xlsx) {
         )
       )
     ),
+    tab_freeze = c(
+      natureza.uni = "situacao",
+      in.cef = "contrato.cef"
+    ),
     col_monetary = c(
       "amortizacao.pj", "desconto", "desconto.subsidio", "encargos", "fgts",
       "financiamento", "juros", "juros.contrato", "juros.mora", "multa",
