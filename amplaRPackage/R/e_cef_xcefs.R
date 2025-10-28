@@ -149,7 +149,7 @@ e_cef_xcefs<-
           arquivo.subtipo == "xcef6",
           str_sub(contrato.6, start = 1, end = 5),
           str_sub(contrato.6, start = 2, end = 6),
-        )
+        ),
         arquivo.tabela.tipo = "xcef",
         arquivo.tipo = "xcef",
         arquivo.fonte = "cef"
