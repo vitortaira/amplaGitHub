@@ -304,6 +304,9 @@ if (xlsx) {
       in.rec = "darkgray"
     ),
     col_headers = list(
+      natureza.uni = list(
+        checar = list(colour = "yellow")
+      ),
       in.cef = list(
         # ECNs (blue)
         arquivo.ecns = list(colour = "blue", font_colour = "white"),
@@ -336,7 +339,11 @@ if (xlsx) {
     col_groups = list(
       natureza.uni = list(
         list(
-          cols = c("cliente", "contrato", "contrato.cef", "pavimento")
+          cols = c(
+            "empresa", "especie", "unidade", "cliente", "contrato",
+            "contrato.cef", "pavimento"
+          ),
+          hidden = TRUE
         )
       )
     ),
@@ -355,6 +362,8 @@ if (xlsx) {
       "setor"
     ),
     col_width_spec = c(
+      cef.obra = 15,
+      cef.terreno = 15,
       empreendimento = 30,
       id = 22,
       parcela.cef.a.incorrer = 22,
