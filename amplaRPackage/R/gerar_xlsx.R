@@ -17,7 +17,8 @@
 #' @param col_width_def Largura padrão das colunas (valor numérico). Padrão: 18
 #' @param col_width_spec Vetor nomeado com larguras específicas para colunas por nome
 #' @param col_width_auto Vetor com nomes de colunas que devem ter largura ajustada automaticamente ao conteúdo
-#' @param col_headers_colours Lista nomeada associando pares (aba, coluna) a cores. Formato: list(aba = c(coluna1 = "cor1", coluna2 = "cor2"))
+#' @param col_headers Lista customizando estilos de cabeçalhos por aba e coluna. Formato: list(aba = list(coluna = list(colour = "cor", font_colour = "cor", font_size = tam)))
+#' @param col_groups Lista definindo grupos de colunas por aba. Formato: list(aba = list(list(cols = c("col1", "col2"), hidden = FALSE, level = 1)))
 #' @param col_monetary Vetor com nomes de colunas que devem ser formatadas como valores monetários (com decimais).
 #'   Se NULL, infere automaticamente baseado no tipo das colunas (numeric, excluindo integer)
 #' @param col_dates Vetor com nomes de colunas que devem ser formatadas como datas.
@@ -31,6 +32,7 @@
 #' @importFrom stringr str_c
 #' @importFrom openxlsx createWorkbook loadWorkbook addWorksheet writeData addStyle createStyle
 #' @importFrom openxlsx saveWorkbook setColWidths addFilter freezePane createNamedRegion deleteNamedRegion getNamedRegions showGridLines
+#' @importFrom openxlsx groupColumns
 #' @importFrom purrr walk2
 #' @export
 #'
@@ -41,7 +43,8 @@ gerar_xlsx <- function(data,
                        col_width_def = 18,
                        col_width_spec = NULL,
                        col_width_auto = NULL,
-                       col_headers_colours = NULL,
+                       col_headers = NULL,
+                       col_groups = NULL,
                        col_monetary = NULL,
                        col_dates = NULL,
                        col_clip = NULL,
@@ -206,24 +209,38 @@ gerar_xlsx <- function(data,
       gridExpand = TRUE
     )
 
-    # Cores customizadas para cabeçalhos específicos
-    if (!is.null(col_headers_colours) && nome_aba %in% names(col_headers_colours)) {
-      cores_aba <- col_headers_colours[[nome_aba]]
-      for (nome_coluna in names(cores_aba)) {
+    # Estilos customizados para cabeçalhos específicos
+    if (!is.null(col_headers) && nome_aba %in% names(col_headers)) {
+      headers_aba <- col_headers[[nome_aba]]
+      for (nome_coluna in names(headers_aba)) {
         if (nome_coluna %in% colnames(df_dados)) {
           col_pos <- which(colnames(df_dados) == nome_coluna)
+          config <- headers_aba[[nome_coluna]]
+
+          # Valores padrão
+          cor_fundo <- if (!is.null(config$colour)) config$colour else "lightgray"
+          cor_fonte <- if (!is.null(config$font_colour)) config$font_colour else NULL
+          tamanho_fonte <- if (!is.null(config$font_size)) config$font_size else 11
+
+          # Criar estilo com ou sem cor de fonte
+          estilo_params <- list(
+            border = "TopBottomLeftRight",
+            fontSize = tamanho_fonte,
+            halign = "center",
+            valign = "center",
+            textDecoration = "bold",
+            fgFill = cor_fundo,
+            wrapText = TRUE
+          )
+
+          if (!is.null(cor_fonte)) {
+            estilo_params$fontColour <- cor_fonte
+          }
+
           openxlsx::addStyle(
             wb,
             sheet = nome_aba,
-            style = openxlsx::createStyle(
-              border = "TopBottomLeftRight",
-              fontSize = 11,
-              halign = "center",
-              valign = "center",
-              textDecoration = "bold",
-              fgFill = cores_aba[nome_coluna],
-              wrapText = TRUE
-            ),
+            style = do.call(openxlsx::createStyle, estilo_params),
             rows = 1,
             cols = col_pos,
             gridExpand = TRUE,
@@ -403,6 +420,31 @@ gerar_xlsx <- function(data,
           gridExpand = TRUE,
           stack = TRUE
         )
+      }
+    }
+
+    # Agrupar colunas
+    if (!is.null(col_groups) && nome_aba %in% names(col_groups)) {
+      grupos_aba <- col_groups[[nome_aba]]
+      for (grupo in grupos_aba) {
+        colunas_nomes <- grupo$cols
+        colunas_indices <- which(colnames(df_dados) %in% colunas_nomes)
+
+        if (length(colunas_indices) > 0) {
+          col_inicio <- min(colunas_indices)
+          col_fim <- max(colunas_indices)
+
+          ocultar <- if (!is.null(grupo$hidden)) grupo$hidden else FALSE
+          nivel <- if (!is.null(grupo$level)) grupo$level else 1
+
+          openxlsx::groupColumns(
+            wb,
+            sheet = nome_aba,
+            cols = col_inicio:col_fim,
+            hidden = ocultar,
+            level = nivel
+          )
+        }
       }
     }
   }

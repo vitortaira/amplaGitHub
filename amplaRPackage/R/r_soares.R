@@ -225,7 +225,7 @@ r_soares <- function(xlsx = FALSE) {
     ungroup() %>%
     # Organizar colunas com meses ordenados cronologicamente
     select(
-      id, natureza, empresa, especie, pavimento, unidade, cliente, situacao,
+      id, empresa, especie, unidade, natureza, pavimento, cliente, situacao,
       data.venda, contrato, contrato.cef, valor.venda,
       parcela.cef.total, parcela.cef.incorrido, checar, soma.meses,
       any_of(sort(names(.)[str_detect(names(.), "^\\d{4}-\\d{2}-\\d{2}$")]))
@@ -282,12 +282,26 @@ if (xlsx) {
       in.cmfcn_xcef = "darkgray",
       in.rec = "darkgray"
     ),
-    col_headers_colours = list(
-      in.cef = c(
-        valor.liberado.obra = "lightblue",
-        valor.liberado.terreno = "lightblue",
-        repasse.cef.terreno = "red",
-        repasse.cef.obra = "red"
+    col_headers = list(
+      in.cef = list(
+        # ECNs (blue)
+        arquivo.ecns = list(colour = "blue", font_colour = "white"),
+        desconto.subsidio = list(colour = "blue", font_colour = "white"),
+        fgts = list(colour = "blue", font_colour = "white"),
+        financiamento = list(colour = "blue", font_colour = "white"),
+        parcela.cef.a.incorrer = list(colour = "blue", font_colour = "white"),
+        parcela.cef.incorrido = list(colour = "blue", font_colour = "white"),
+        parcela.cef.total = list(colour = "blue", font_colour = "white"),
+        recursos.proprios = list(colour = "blue", font_colour = "white"),
+        valor.liberado.obra = list(colour = "blue", font_colour = "white"),
+        valor.liberado.terreno = list(colour = "blue", font_colour = "white"),
+        # CMF_CNs (lightblue)
+        arquivo.cmfcns = list(colour = "lightblue", font_colour = "white"),
+        amortizacao.pj = list(colour = "lightblue", font_colour = "white"),
+        remuneracao.terreno = list(colour = "lightblue", font_colour = "white"),
+        remuneracao.venda = list(colour = "lightblue", font_colour = "white"),
+        repasse.cef.obra = list(colour = "lightblue", font_colour = "white"),
+        repasse.cef.terreno = list(colour = "lightblue", font_colour = "white")
       )
     ),
     col_dates = c(
@@ -315,7 +329,10 @@ if (xlsx) {
     ),
     save = list(
       nome_arquivo = sprintf("soares-%s.xlsx", format(Sys.time(), "%Y%m%d_%H%M%S")),
-      caminho_destino = normalizePath(file.path(Sys.getenv("USERPROFILE"), "Downloads"), winslash = "\\", mustWork = FALSE)
+      caminho_destino = normalizePath(
+        file.path(Sys.getenv("USERPROFILE"), "Downloads"),
+        winslash = "\\", mustWork = FALSE
+      )
     )
   )
 }
