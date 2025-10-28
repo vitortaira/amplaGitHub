@@ -267,6 +267,21 @@ if (xlsx) {
       in.cmfcn_xcef = in.cmfcn_xcef,
       in.rec = in.rec
     ),
+    tab_colours = c(
+      natureza.uni = "darkblue",
+      ps.uni = "lightblue",
+      in.car = "white",
+      in.cmfcns = "white",
+      in.cmfcns.mensal = "white",
+      in.contr = "white",
+      in.cr = "white",
+      in.ecns = "white",
+      in.unis = "white",
+      in.xcef = "white",
+      in.cef = "darkgray",
+      in.cmfcn_xcef = "darkgray",
+      in.rec = "darkgray"
+    ),
     save = list(
       nome_arquivo = sprintf("soares-%s.xlsx", format(Sys.time(), "%Y%m%d_%H%M%S")),
       caminho_destino = normalizePath(file.path(Sys.getenv("USERPROFILE"), "Downloads"), winslash = "\\", mustWork = FALSE)

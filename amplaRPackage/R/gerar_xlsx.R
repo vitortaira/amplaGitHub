@@ -11,6 +11,9 @@
 #'   Se vazio, cria um novo workbook
 #' @param tab_names Vetor de strings com nomes das abas. Se NULL, usa nomes da lista
 #'   ou "Dados" para tibble único
+#' @param tab_colours Vetor nomeado com cores para as abas. Os nomes devem corresponder
+#'   aos nomes das abas em `tab_names`. Cores podem ser nomes de cores do Excel
+#'   (ex: "red", "blue", "purple") ou códigos hexadecimais. Se NULL, não aplica cores.
 #' @param col_width_def Largura padrão das colunas (valor numérico). Padrão: 18
 #' @param col_width_spec Vetor nomeado com larguras específicas para colunas por nome
 #' @param col_monetary Vetor com nomes de colunas que devem ser formatadas como valores monetários (com decimais).
@@ -32,6 +35,7 @@
 gerar_xlsx <- function(data,
                        wb_load = NULL,
                        tab_names = NULL,
+                       tab_colours = NULL,
                        col_width_def = 18,
                        col_width_spec = NULL,
                        col_monetary = NULL,
@@ -129,7 +133,14 @@ gerar_xlsx <- function(data,
 
     # Adicionar worksheet se necessário (para novos workbooks)
     if (is.null(wb_load)) {
-      openxlsx::addWorksheet(wb, nome_aba, gridLines = FALSE)
+      # Verificar se há cor especificada para esta aba
+      cor_aba <- if (!is.null(tab_colours) && nome_aba %in% names(tab_colours)) {
+        tab_colours[nome_aba]
+      } else {
+        NULL
+      }
+
+      openxlsx::addWorksheet(wb, nome_aba, gridLines = FALSE, tabColour = cor_aba)
     } else {
       # Remover gridlines de worksheet existente
       openxlsx::showGridLines(wb, sheet = nome_aba, showGridLines = FALSE)
