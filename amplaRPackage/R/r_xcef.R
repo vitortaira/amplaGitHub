@@ -7,13 +7,15 @@
 #'
 #' @param f_caminho.pasta.extratos_c Caminho para a pasta "Relatorios - Extratos".
 #' @param f_caminho.pasta.ciweb_c Caminho para a pasta "Relatorios - CIWEB".
+#' @param xlsx Lógico. Se TRUE, gera um arquivo Excel (.xlsx) com os dados cruzados.
+#'   Valor padrão: FALSE.
 #'
 #' @details
 #' A função executa as seguintes etapas:
 #' 1. Consolida os dados dos extratos da CEF na pasta "Relatorios - Extratos".
 #' 2. Consolida os dados dos relatórios CMF_CN na pasta "Relatorios - CIWEB".
 #' 3. Cruza os dados consolidados com base em campos comuns.
-#' 4. Gera um arquivo `.xlsx` com os dados cruzados na pasta "Extratos conciliados".
+#' 4. Se `xlsx = TRUE`, gera um arquivo `.xlsx` com os dados cruzados na pasta "Extratos conciliados".
 #'
 #' @return
 #' Retorna um tibble com os dados cruzados dos extratos da CEF e relatórios CMF_CN.
@@ -22,7 +24,12 @@
 #' \dontrun{
 #' f_caminho.pasta.extratos_c <- "caminho/para/a/pasta/Relatorios - Extratos"
 #' f_caminho.pasta.ciweb_c <- "caminho/para/a/pasta/Relatorios - CIWEB"
+#'
+#' # Apenas retornar os dados cruzados
 #' resultado <- r_xcef(f_caminho.pasta.extratos_c, f_caminho.pasta.ciweb_c)
+#'
+#' # Retornar os dados e gerar arquivo Excel
+#' resultado <- r_xcef(f_caminho.pasta.extratos_c, f_caminho.pasta.ciweb_c, xlsx = TRUE)
 #' print(resultado)
 #' }
 #'
@@ -38,7 +45,7 @@
 #' @export
 
 r_xcef <-
-  function(f_caminho.pasta.extratos_c, f_caminho.pasta.ciweb_c) {
+  function(f_caminho.pasta.extratos_c, f_caminho.pasta.ciweb_c, xlsx = FALSE) {
     # Consolida os dados dos extratos da CEF na pasta "Relatorios - Extratos"
     extratos_t <- e_cef_xcefs() %>%
       mutate(
@@ -110,13 +117,14 @@ r_xcef <-
 
     # Salvando num xlsx -------------------------------------------------------
 
-    # Definindo o nome do arquivo dinamicamente
-    nome.xlsx_c <-
-      paste0(
-        "extratos_cruzados-",
-        format(Sys.time(), "%Y_%m_%d_%H_%M_%S"),
-        ".xlsx"
-      )
+    if (xlsx) {
+      # Definindo o nome do arquivo dinamicamente
+      nome.xlsx_c <-
+        paste0(
+          "extratos_cruzados-",
+          format(Sys.time(), "%Y_%m_%d_%H_%M_%S"),
+          ".xlsx"
+        )
     #  # Criando uma cópia de "Template.xlsx"
     #  file.copy(
     #    here::here("dados", "cef", "inadimplentes", "formatados", "Template.xlsx"),
@@ -577,6 +585,8 @@ r_xcef <-
       file.path(caminho_pasta_extratos_cruzados, nome.xlsx_c),
       overwrite = TRUE
     )
+  }
+
     #  # Caminho da planilha na pasta local
     #  caminho.xlsx_c <-
     #    paste0("C:/Users/Ampla/Documents/", nome.xlsx_c) %>%
