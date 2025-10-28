@@ -134,19 +134,14 @@ e_cef_xcefs<-
           TRUE ~ empresa
           # TRUE ~ NA_character_
         ),
-        repasse = if_else(
+        natureza = case_when(
+          ((descricao == "CR DESBLOQ") | (descricao == "CRE D IMOB")) &
+            (documento %in% contratos_pj) ~ "pj",
           (((descricao == "CR DESBLOQ") | (descricao == "CRE D IMOB")) &
             !(documento %in% contratos_pj)) |
             (descricao == "DESB CR CX") |
-            (descricao == "DESBL.SALD"),
-          TRUE,
-          FALSE
-        ),
-        pj = if_else(
-          ((descricao == "CR DESBLOQ") | (descricao == "CRE D IMOB")) &
-            (documento %in% contratos_pj),
-          TRUE,
-          FALSE
+            (descricao == "DESBL.SALD") ~ "repasse",
+          TRUE ~ NA_character_
         ),
         contrato.6 =
           documento %>% str_pad(width = 6, side = "left", pad = "0"),
@@ -157,7 +152,7 @@ e_cef_xcefs<-
       as_tibble() %>%
       select(
         data.lancamento, data.movimentacao, documento, descricao, valor, saldo,
-        repasse, pj, conta.interno, conta, agencia, produto, cnpj, empresa,
+        natureza, conta.interno, conta, agencia, produto, cnpj, empresa,
         periodo.inicio, periodo.fim, data.consulta, contrato.6, arquivo,
         arquivo.subtipo, arquivo.tabela.tipo, arquivo.tipo, arquivo.fonte,
         cpf.cnpj, nome.razao
