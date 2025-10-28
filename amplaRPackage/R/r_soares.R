@@ -135,6 +135,8 @@ r_soares <- function(xlsx = FALSE) {
     )
   # Extratos da CEF
   in.xcef <- e_cef_xcefs()
+  # Extratos CEF cruzados com CMF_CN
+  in.cmfcn_xcef <- r_xcef()
   # Totais por natureza que devem virar colunas
   totais <- in.rec %>%
     dplyr::filter(natureza %in% c("parcela.cef.total.ik", "parcela.cef.assinar", "taxa.extra")) %>%
@@ -262,6 +264,7 @@ if (xlsx) {
       in.xcef = in.xcef,
       ## Inputs combinados
       in.cef = in.cef,
+      in.cmfcn_xcef = in.cmfcn_xcef,
       in.rec = in.rec
     ),
     save = list(
@@ -286,6 +289,7 @@ if (xlsx) {
     in.xcef = in.xcef,
     # Inputs combinados
     in.cef = in.cef,
+    in.cmfcn_xcef = in.cmfcn_xcef,
     in.rec = in.rec,
     natureza = natureza
   )
