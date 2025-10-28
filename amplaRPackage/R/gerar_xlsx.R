@@ -16,6 +16,7 @@
 #'   (ex: "red", "blue", "purple") ou códigos hexadecimais. Se NULL, não aplica cores.
 #' @param col_width_def Largura padrão das colunas (valor numérico). Padrão: 18
 #' @param col_width_spec Vetor nomeado com larguras específicas para colunas por nome
+#' @param col_width_auto Vetor com nomes de colunas que devem ter largura ajustada automaticamente ao conteúdo
 #' @param col_monetary Vetor com nomes de colunas que devem ser formatadas como valores monetários (com decimais).
 #'   Se NULL, infere automaticamente baseado no tipo das colunas (numeric, excluindo integer)
 #' @param col_dates Vetor com nomes de colunas que devem ser formatadas como datas.
@@ -38,6 +39,7 @@ gerar_xlsx <- function(data,
                        tab_colours = NULL,
                        col_width_def = 18,
                        col_width_spec = NULL,
+                       col_width_auto = NULL,
                        col_monetary = NULL,
                        col_dates = NULL,
                        col_clip = NULL,
@@ -274,6 +276,21 @@ gerar_xlsx <- function(data,
             sheet = nome_aba,
             cols = col_pos,
             widths = col_width_spec[nome_coluna]
+          )
+        }
+      }
+    }
+
+    # Larguras automáticas (força auto-ajuste para colunas específicas)
+    if (!is.null(col_width_auto)) {
+      for (nome_coluna in col_width_auto) {
+        if (nome_coluna %in% colnames(df_dados)) {
+          col_pos <- which(colnames(df_dados) == nome_coluna)
+          openxlsx::setColWidths(
+            wb,
+            sheet = nome_aba,
+            cols = col_pos,
+            widths = "auto"
           )
         }
       }

@@ -269,7 +269,7 @@ if (xlsx) {
     ),
     tab_colours = c(
       natureza.uni = "darkblue",
-      ps.uni = "lightblue",
+      ps.uni = "blue",
       in.car = "white",
       in.cmfcns = "white",
       in.cmfcns.mensal = "white",
@@ -281,6 +281,29 @@ if (xlsx) {
       in.cef = "darkgray",
       in.cmfcn_xcef = "darkgray",
       in.rec = "darkgray"
+    ),
+    col_dates = c(
+      "data", "data.emissao", "data.lancamento", "data.movimentacao",
+      "data.movimento", "data.pagamento", "data.venda", "data.vencimento",
+      "periodo.inicio", "periodo.fim"
+    ),
+    col_monetary = c(
+      "amortizacao.pj", "desconto", "desconto.subsidio", "encargos", "fgts",
+      "financiamento", "juros", "juros.contrato", "juros.mora", "multa",
+      "parcela.cef.incorrido", "parcela.cef.total", "principal",
+      "recursos.proprios", "reajuste", "remuneracao.terreno",
+      "remuneracao.venda", "repasse.cef.obra", "repasse.cef.terreno", "saldo",
+      "seguro", "soma.meses", "total", "valor", "valor.c.d", "valor.imovel",
+      "valor.liberado.obra", "valor.liberado.terreno", "valor.venda"
+    ),
+    col_width_auto = c(
+      "cliente", "conta.sidec/nsgd", "corretor", "descricao", "edificacao",
+      "imobiliaria", "lancamentos", "nome.razao", "obs.situacao", "pavimento",
+      "setor"
+    ),
+    col_width_spec = c(
+      empreendimento = 30,
+      id = 22
     ),
     save = list(
       nome_arquivo = sprintf("soares-%s.xlsx", format(Sys.time(), "%Y%m%d_%H%M%S")),
