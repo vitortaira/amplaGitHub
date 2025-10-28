@@ -29,6 +29,26 @@ r_soares <- function(xlsx = FALSE) {
         ),
       by = "contrato.cef",
       suffix = c(".ecns", ".cmfcns")
+    ) %>%
+    mutate(
+      cef.obra = if_else(
+        valor.liberado.obra == repasse.cef.obra,
+        TRUE,
+        FALSE
+      ),
+      cef.terreno = if_else(
+        valor.liberado.terreno == repasse.cef.terreno,
+        TRUE,
+        FALSE
+      )
+    ) %>%
+    select(
+      contrato.cef, parcela.cef.total, parcela.cef.incorrido,
+      parcela.cef.a.incorrer, financiamento, desconto.subsidio, fgts,
+      recursos.proprios, valor.liberado.terreno, repasse.cef.terreno,
+      cef.terreno, valor.liberado.obra, repasse.cef.obra, cef.obra,
+      amortizacao.pj, remuneracao.terreno, remuneracao.venda, arquivo.ecns,
+      arquivo.cmfcns
     )
   # Contratos
   in.contr <-
@@ -302,7 +322,10 @@ if (xlsx) {
         remuneracao.terreno = list(colour = "lightblue"),
         remuneracao.venda = list(colour = "lightblue"),
         repasse.cef.obra = list(colour = "lightblue"),
-        repasse.cef.terreno = list(colour = "lightblue")
+        repasse.cef.terreno = list(colour = "lightblue"),
+        # Checagem de contratos recentimente registrados na CEF
+        cef.obra = list(colour = "yellow"),
+        cef.terreno = list(colour = "yellow")
       )
     ),
     col_dates = c(
