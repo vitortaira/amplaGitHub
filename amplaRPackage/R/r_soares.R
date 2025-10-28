@@ -7,10 +7,10 @@ r_soares <- function(xlsx = FALSE) {
     rename(contrato.cef = contrato) %>%
     mutate(
       contrato.cef = str_remove_all(contrato.cef, "-") %>%
-        if_else(str_length(.) == 13, str_sub(., 1, 12), .),
-      parcela.cef.total = financiamento + desconto.subsidio + fgts + recursos.proprios,
-      parcela.cef.incorrido = valor.liberado.terreno + valor.liberado.obra,
-      parcela.cef.a.incorrer = parcela.cef.total - parcela.cef.incorrido
+      if_else(str_length(.) == 13, str_sub(., 1, 12), .),
+      parcela.cef.total = round(financiamento + desconto.subsidio + fgts + recursos.proprios, 2),
+      parcela.cef.incorrido = round(valor.liberado.terreno + valor.liberado.obra, 2),
+      parcela.cef.a.incorrer = round(parcela.cef.total - parcela.cef.incorrido, 2)
     ) %>%
     dplyr::select(
       contrato.cef, parcela.cef.total, parcela.cef.incorrido,
@@ -120,6 +120,7 @@ r_soares <- function(xlsx = FALSE) {
   in.unis <- e_ik_unis() %>%
     rename(unidade = numero) %>%
     mutate(
+      data = as.Date(data),
       empresa = str_sub(empreendimento, 1, 3),
       especie = case_when(
         str_detect(unidade, "(?i)moto") ~ "Moto",
@@ -148,7 +149,7 @@ r_soares <- function(xlsx = FALSE) {
       values_fill = 0
     )
 
-    natureza <- in.unis %>%
+  natureza <- in.unis %>%
     left_join(
       in.rec,
       by = "id",
@@ -225,9 +226,9 @@ r_soares <- function(xlsx = FALSE) {
     ungroup() %>%
     # Organizar colunas com meses ordenados cronologicamente
     select(
-      id, empresa, especie, unidade, natureza, pavimento, cliente, situacao,
-      data.venda, contrato, contrato.cef, valor.venda,
-      parcela.cef.total, parcela.cef.incorrido, checar, soma.meses,
+      id, empresa, especie, unidade, cliente, contrato, contrato.cef, pavimento,
+      situacao, data.venda, valor.venda, parcela.cef.total,
+      parcela.cef.incorrido, checar, natureza, soma.meses,
       any_of(sort(names(.)[str_detect(names(.), "^\\d{4}-\\d{2}-\\d{2}$")]))
     ) %>%
     arrange(id, natureza)
@@ -289,19 +290,19 @@ if (xlsx) {
         desconto.subsidio = list(colour = "blue", font_colour = "white"),
         fgts = list(colour = "blue", font_colour = "white"),
         financiamento = list(colour = "blue", font_colour = "white"),
-        parcela.cef.a.incorrer = list(colour = "blue", font_colour = "white"),
+        parcela.cef.a.incorrer = list(colour = "white"),
         parcela.cef.incorrido = list(colour = "blue", font_colour = "white"),
         parcela.cef.total = list(colour = "blue", font_colour = "white"),
         recursos.proprios = list(colour = "blue", font_colour = "white"),
         valor.liberado.obra = list(colour = "blue", font_colour = "white"),
         valor.liberado.terreno = list(colour = "blue", font_colour = "white"),
         # CMF_CNs (lightblue)
-        arquivo.cmfcns = list(colour = "lightblue", font_colour = "white"),
-        amortizacao.pj = list(colour = "lightblue", font_colour = "white"),
-        remuneracao.terreno = list(colour = "lightblue", font_colour = "white"),
-        remuneracao.venda = list(colour = "lightblue", font_colour = "white"),
-        repasse.cef.obra = list(colour = "lightblue", font_colour = "white"),
-        repasse.cef.terreno = list(colour = "lightblue", font_colour = "white")
+        arquivo.cmfcns = list(colour = "lightblue"),
+        amortizacao.pj = list(colour = "lightblue"),
+        remuneracao.terreno = list(colour = "lightblue"),
+        remuneracao.venda = list(colour = "lightblue"),
+        repasse.cef.obra = list(colour = "lightblue"),
+        repasse.cef.terreno = list(colour = "lightblue")
       )
     ),
     col_dates = c(
@@ -309,13 +310,20 @@ if (xlsx) {
       "data.movimento", "data.pagamento", "data.venda", "data.vencimento",
       "periodo.inicio", "periodo.fim"
     ),
+    col_groups = list(
+      natureza.uni = list(
+        list(
+          cols = c("cliente", "contrato", "contrato.cef", "pavimento")
+        )
+      )
+    ),
     col_monetary = c(
       "amortizacao.pj", "desconto", "desconto.subsidio", "encargos", "fgts",
       "financiamento", "juros", "juros.contrato", "juros.mora", "multa",
-      "parcela.cef.incorrido", "parcela.cef.total", "principal",
-      "recursos.proprios", "reajuste", "remuneracao.terreno",
-      "remuneracao.venda", "repasse.cef.obra", "repasse.cef.terreno", "saldo",
-      "seguro", "soma.meses", "total", "valor", "valor.c.d", "valor.imovel",
+      "parcela.cef.a.incorrer", "parcela.cef.incorrido", "parcela.cef.total",
+      "principal", "recursos.proprios", "reajuste", "remuneracao.venda",
+      "repasse.cef.obra", "repasse.cef.terreno", "saldo", "seguro",
+      "soma.meses", "total", "valor", "valor.c.d", "valor.imovel",
       "valor.liberado.obra", "valor.liberado.terreno", "valor.venda"
     ),
     col_width_auto = c(
@@ -325,7 +333,11 @@ if (xlsx) {
     ),
     col_width_spec = c(
       empreendimento = 30,
-      id = 22
+      id = 22,
+      parcela.cef.a.incorrer = 22,
+      parcela.cef.incorrido = 22,
+      remuneracao.terreno = 22,
+      valor.liberado.terreno = 22
     ),
     save = list(
       nome_arquivo = sprintf("soares-%s.xlsx", format(Sys.time(), "%Y%m%d_%H%M%S")),
