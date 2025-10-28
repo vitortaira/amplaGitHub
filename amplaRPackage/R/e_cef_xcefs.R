@@ -158,9 +158,9 @@ e_cef_xcefs<-
       select(
         data.lancamento, data.movimentacao, documento, descricao, valor, saldo,
         natureza, conta.interno, conta, agencia, produto, cnpj, empresa,
-        periodo.inicio, periodo.fim, data.consulta, contrato.6, arquivo,
-        arquivo.subtipo, arquivo.tabela.tipo, arquivo.tipo, arquivo.fonte,
-        cpf.cnpj, nome.razao
+        periodo.inicio, periodo.fim, data.consulta, contrato.6, contrato.5,
+        arquivo, arquivo.subtipo, arquivo.tabela.tipo, arquivo.tipo,
+        arquivo.fonte, cpf.cnpj, nome.razao
       )
     return(extratos_t)
   }
