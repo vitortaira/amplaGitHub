@@ -64,41 +64,44 @@ r_xcef <-
       )
 
     # Consolida os dados dos relatórios CMF_CN na pasta "Relatorios - CIWEB"
-    cmfcns_t <- e_cef_cmfcns()
+    cmfcns_t <- e_cef_cmfcns() %>%
+      mutate(
+        contrato.5 = str_sub(contrato.6, start = -5, end = -1)
+      )
     # Cruza os dados consolidados
     extratos.cruzados_t <-
       inner_join(
         extratos_t,
         cmfcns_t,
-        by = c("data.movimentacao" = "data.movimento", "contrato.6", "valor")
+        by = c("data.movimentacao" = "data.movimento", "contrato.5", "valor")
       ) %>%
       select(
         # Interseção
-        contrato.6, valor,
+        contrato.5, valor,
         # Incluir todas as outras colunas
         everything()
       ) %>%
       mutate(
         id_xcef = paste0(
           # Interseção
-          contrato.6, valor
+          contrato.5, valor
         ),
         id_cmfcn = paste0(
           # Interseção
-          contrato.6, valor
+          contrato.5, valor
         )
       )
     # Colunas que identificam linhas cruzadas em extratos_t e cmfcns_t
     extratos_t %<>% mutate(
       cruzada = if_else(
-        paste0(contrato.6, valor) %in% paste0(extratos.cruzados_t$contrato.6, extratos.cruzados_t$valor),
+        paste0(contrato.5, valor) %in% paste0(extratos.cruzados_t$contrato.5, extratos.cruzados_t$valor),
         "sim",
         "não"
       )
     )
     cmfcns_t %<>% mutate(
       cruzada = if_else(
-        paste0(contrato.6, valor) %in% paste0(extratos.cruzados_t$contrato.6, extratos.cruzados_t$valor),
+        paste0(contrato.5, valor) %in% paste0(extratos.cruzados_t$contrato.5, extratos.cruzados_t$valor),
         "sim",
         "não"
       )
