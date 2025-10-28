@@ -32,12 +32,14 @@ r_soares <- function(xlsx = FALSE) {
     ) %>%
     mutate(
       cef.obra = if_else(
-        valor.liberado.obra == repasse.cef.obra,
+        (abs(valor.liberado.obra - repasse.cef.obra) < 1e-3) &
+          !is.na(repasse.cef.obra),
         TRUE,
         FALSE
       ),
       cef.terreno = if_else(
-        valor.liberado.terreno == repasse.cef.terreno,
+        (abs(valor.liberado.terreno - repasse.cef.terreno) < 1e-3) &
+          !is.na(repasse.cef.terreno),
         TRUE,
         FALSE
       )
@@ -274,6 +276,10 @@ if (xlsx) {
       ps.uni = ps.uni,
       # tx.uni = tx.uni,
       # Inputs
+      ## Inputs combinados
+      in.cef = in.cef,
+      in.cmfcn_xcef = in.cmfcn_xcef,
+      in.rec = in.rec,
       ## Inputs originais
       in.car = in.car,
       in.cmfcns = e_cef_cmfcns(),
@@ -282,15 +288,14 @@ if (xlsx) {
       in.cr = in.cr,
       in.ecns = in.ecns,
       in.unis = in.unis,
-      in.xcef = in.xcef,
-      ## Inputs combinados
-      in.cef = in.cef,
-      in.cmfcn_xcef = in.cmfcn_xcef,
-      in.rec = in.rec
+      in.xcef = in.xcef
     ),
     tab_colours = c(
       natureza.uni = "darkblue",
       ps.uni = "blue",
+      in.cef = "darkgray",
+      in.cmfcn_xcef = "darkgray",
+      in.rec = "darkgray",
       in.car = "white",
       in.cmfcns = "white",
       in.cmfcns.mensal = "white",
@@ -298,10 +303,7 @@ if (xlsx) {
       in.cr = "white",
       in.ecns = "white",
       in.unis = "white",
-      in.xcef = "white",
-      in.cef = "darkgray",
-      in.cmfcn_xcef = "darkgray",
-      in.rec = "darkgray"
+      in.xcef = "white"
     ),
     col_headers = list(
       natureza.uni = list(
@@ -389,6 +391,11 @@ if (xlsx) {
     # Outputs
     ps.uni = ps.uni,
     # Inputs
+    # Inputs combinados
+    in.cef = in.cef,
+    in.cmfcn_xcef = in.cmfcn_xcef,
+    in.rec = in.rec,
+    natureza = natureza,
     # Inputs originais
     in.car = in.car,
     in.cmfcns = e_cef_cmfcns(),
@@ -397,11 +404,6 @@ if (xlsx) {
     in.cr = in.cr,
     in.ecns = in.ecns,
     in.unis = in.unis,
-    in.xcef = in.xcef,
-    # Inputs combinados
-    in.cef = in.cef,
-    in.cmfcn_xcef = in.cmfcn_xcef,
-    in.rec = in.rec,
-    natureza = natureza
+    in.xcef = in.xcef
   )
 }
