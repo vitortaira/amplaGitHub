@@ -842,7 +842,7 @@ e_extratos <- function(xlsx = FALSE) {
 
       # Calcular repasses
       df_repasse <- dadosCef %>%
-        dplyr::filter(.data$repasse == TRUE) %>%
+        dplyr::filter(.data$natureza == "repasse") %>%
         dplyr::group_by(
           mes = lubridate::floor_date(.data$data.movimentacao, "month"),
           .data$empresa
@@ -854,7 +854,7 @@ e_extratos <- function(xlsx = FALSE) {
 
       # Calcular PJ
       df_pj <- dadosCef %>%
-        dplyr::filter(.data$pj == TRUE) %>%
+        dplyr::filter(.data$natureza == "pj") %>%
         dplyr::group_by(
           mes = lubridate::floor_date(.data$data.movimentacao, "month"),
           .data$empresa
