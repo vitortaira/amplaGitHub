@@ -32,6 +32,28 @@
 #' @export
 
 e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
+  # Extrai o número dos contratos dos empreendimentos com a CEF
+  contratos.empreendimentos.cef <- dplyr::select(
+    e_cef_ecns()$ecn_e, empreendimento,  contrato
+  ) %>%
+    distinct() %>%
+    mutate(
+      contrato = str_sub(contrato, 1,12),
+      empresa = case_when(
+        str_detect(empreendimento, "(?i)up\\s?jardim\\s?prud") ~ "AMP",
+        str_detect(empreendimento, "(?i)up\\s?vila\\s?sonia") ~ "AVS",
+        str_detect(empreendimento, "(?i)up\\s?select\\s?vila") ~ "GRA",
+        str_detect(empreendimento, "(?i)up\\s?esta[cç][aã]o\\s?vila") ~ "SN2",
+        TRUE ~ NA_character_
+      )
+    ) %>%
+    select(-empreendimento)
+
+  # Criar lookup de contrato -> empresa
+  contratos.lookup <- setNames(
+    contratos.empreendimentos.cef$empresa,
+    contratos.empreendimentos.cef$contrato
+  )
   # Consolida os dados dos relatórios CMF_CN na pasta "Relatorios - CIWEB"
   caminhos.cmfcn_c <-
     dir_ls(f_caminho.pasta.ciweb_c, recurse = TRUE, type = "file") %>%
@@ -107,13 +129,14 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
         desbloqueio,
         str_replace(last(natureza[!desbloqueio]), "^bloqueio - ", ""),
         natureza
-      )
+      ),
+      empresa = contratos.lookup[str_extract(arquivo, "\\d{12}")]
     ) %>%
     ungroup() %>%
     dplyr::filter(!bloqueio) %>%
     select(-desbloqueio, -tem.desbloqueio, -bloqueio) %>%
     select(
-      contrato, data.lancamento, data.movimento, lancamentos, np,
+      empresa, contrato, data.lancamento, data.movimento, lancamentos, np,
       `conta.sidec/nsgd`, valor, situacao, mot, contrato.6, natureza, arquivo,
       arquivo.tipo, arquivo.tabela.tipo, arquivo.fonte
     )
