@@ -169,6 +169,12 @@ r_soares <- function(xlsx = FALSE) {
   in.xcef <- e_cef_xcefs()
   # Extratos CEF cruzados com CMF_CN
   in.cmfcn_xcef <- r_xcef()
+  # Extratos CEF cruzados com CMF_CN mensalizados por contrato
+  in.cmfcn.xcef.mensal <-
+  # Extratos da CEF
+  in.xcef <- e_cef_xcefs()
+  # Extratos CEF cruzados com CMF_CN
+  in.cmfcn.xcef <- r_xcef()
   # Totais por natureza que devem virar colunas
   totais <- in.rec %>%
     dplyr::filter(natureza %in% c("parcela.cef.total.ik", "parcela.cef.assinar", "taxa.extra")) %>%
@@ -272,7 +278,7 @@ if (xlsx) {
       # Inputs
       ## Inputs combinados
       in.cef = in.cef,
-      in.cmfcn_xcef = in.cmfcn_xcef,
+      in.cmfcn.xcef = in.cmfcn.xcef,
       in.rec = in.rec,
       ## Inputs originais
       in.car = in.car,
@@ -287,7 +293,7 @@ if (xlsx) {
     tab_colours = c(
       rec.uni = "darkblue",
       in.cef = "darkgray",
-      in.cmfcn_xcef = "darkgray",
+      in.cmfcn.xcef = "darkgray",
       in.rec = "darkgray",
       in.car = "white",
       in.cmfcns = "white",
@@ -387,7 +393,7 @@ if (xlsx) {
     # Inputs
     # Inputs combinados
     in.cef = in.cef,
-    in.cmfcn_xcef = in.cmfcn_xcef,
+    in.cmfcn.xcef = in.cmfcn.xcef,
     in.rec = in.rec,
     # Inputs originais
     in.car = in.car,
