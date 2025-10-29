@@ -168,13 +168,27 @@ r_soares <- function(xlsx = FALSE) {
   # Extratos da CEF
   in.xcef <- e_cef_xcefs()
   # Extratos CEF cruzados com CMF_CN
-  in.cmfcn_xcef <- r_xcef()
-  # Extratos CEF cruzados com CMF_CN mensalizados por contrato
-  in.cmfcn.xcef.mensal <-
-  # Extratos da CEF
-  in.xcef <- e_cef_xcefs()
-  # Extratos CEF cruzados com CMF_CN
   in.cmfcn.xcef <- r_xcef()
+  # Extratos CEF cruzados com CMF_CN mensalizados por contrato
+  in.cmfcn.xcef.mensal <- in.cmfcn.xcef %>%
+    mutate(mes = floor_date(data.movimentacao, "month")) %>%
+    group_by(empresa, contrato.5, natureza.cmfcn, mes) %>%
+    summarise(valor = sum(valor, na.rm = TRUE), .groups = "drop") %>%
+    pivot_wider(
+      names_from = mes,
+      values_from = valor,
+      values_fill = 0
+    ) %>%
+    rowwise() %>%
+    mutate(
+      total = sum(c_across(where(is.numeric)), na.rm = TRUE)
+    ) %>%
+    ungroup() %>%
+    rename(contrato.cef.5 = contrato.5) %>%
+    select(
+      contrato.cef.5, natureza.cmfcn, total,
+      any_of(sort(names(.)[!names(.) %in% c("contrato.cef.5", "natureza", "total")]))
+    )
   # Totais por natureza que devem virar colunas
   totais <- in.rec %>%
     dplyr::filter(natureza %in% c("parcela.cef.total.ik", "parcela.cef.assinar", "taxa.extra")) %>%
@@ -279,6 +293,7 @@ if (xlsx) {
       ## Inputs combinados
       in.cef = in.cef,
       in.cmfcn.xcef = in.cmfcn.xcef,
+      in.cmfcn.xcef.mensal = in.cmfcn.xcef.mensal,
       in.rec = in.rec,
       ## Inputs originais
       in.car = in.car,
@@ -294,6 +309,7 @@ if (xlsx) {
       rec.uni = "darkblue",
       in.cef = "darkgray",
       in.cmfcn.xcef = "darkgray",
+      in.cmfcn.xcef.mensal = "darkgray",
       in.rec = "darkgray",
       in.car = "white",
       in.cmfcns = "white",
@@ -394,6 +410,7 @@ if (xlsx) {
     # Inputs combinados
     in.cef = in.cef,
     in.cmfcn.xcef = in.cmfcn.xcef,
+    in.cmfcn.xcef.mensal = in.cmfcn.xcef.mensal,
     in.rec = in.rec,
     # Inputs originais
     in.car = in.car,
