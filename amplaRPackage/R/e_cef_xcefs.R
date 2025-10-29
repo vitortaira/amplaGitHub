@@ -136,11 +136,11 @@ e_cef_xcefs<-
         ),
         natureza = case_when(
           ((descricao == "CR DESBLOQ") | (descricao == "CRE D IMOB")) &
-            (documento %in% contratos_pj) ~ "pj",
+            (documento %in% contratos_pj) ~ "entrada.pj",
           (((descricao == "CR DESBLOQ") | (descricao == "CRE D IMOB")) &
             !(documento %in% contratos_pj)) |
             (descricao == "DESB CR CX") |
-            (descricao == "DESBL.SALD") ~ "repasse",
+            (descricao == "DESBL.SALD") ~ "repasse.cef",
           TRUE ~ NA_character_
         ),
         contrato.6 =
