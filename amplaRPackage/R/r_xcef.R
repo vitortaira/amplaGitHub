@@ -80,11 +80,15 @@ r_xcef <-
       inner_join(
         extratos_t,
         cmfcns_t,
-        by = c("data.movimentacao" = "data.movimento", "contrato.5", "valor")
+        by = c(
+          "data.movimentacao" = "data.movimento", "empresa", "contrato.5",
+          "valor"
+        ),
+        suffix = c(".xcef", ".cmfcn")
       ) %>%
       select(
         # Interseção
-        contrato.5, valor,
+        data.movimentacao, empresa, contrato.5, valor,
         # Incluir todas as outras colunas
         everything()
       ) %>%
