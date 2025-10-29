@@ -4,18 +4,27 @@ r_soares <- function(xlsx = FALSE) {
     rename(contrato.cef = contrato)
   # ECNs
   in.ecns <- e_cef_ecns()$ecn_u %>%
-    rename(contrato.cef = contrato) %>%
+    rename(
+      contrato.cef = contrato,
+      repasse.cef.fin = financiamento,
+      repasse.cef.desc.subs = desconto.subsidio,
+      repasse.cef.fgts = fgts,
+      repasse.cef.rec.prop = recursos.proprios,
+      repasse.cef.obra.acum = valor.liberado.obra,
+      repasse.cef.terreno.acum = valor.liberado.terreno
+    ) %>%
     mutate(
       contrato.cef = str_remove_all(contrato.cef, "-") %>%
       if_else(str_length(.) == 13, str_sub(., 1, 12), .),
-      parcela.cef.total = round(financiamento + desconto.subsidio + fgts + recursos.proprios, 2),
-      parcela.cef.incorrido = round(valor.liberado.terreno + valor.liberado.obra, 2),
-      parcela.cef.a.incorrer = round(parcela.cef.total - parcela.cef.incorrido, 2)
+      repasse.cef.total = round(repasse.cef.fin + repasse.cef.desc.subs + repasse.cef.fgts + repasse.cef.rec.prop, 2),
+      repasse.cef.incorrido = round(repasse.cef.terreno.acum + repasse.cef.obra.acum, 2),
+      repasse.cef.a.incorrer = round(repasse.cef.total - repasse.cef.incorrido, 2)
     ) %>%
     dplyr::select(
-      contrato.cef, parcela.cef.total, parcela.cef.incorrido,
-      parcela.cef.a.incorrer, financiamento, desconto.subsidio, fgts,
-      recursos.proprios, valor.liberado.terreno, valor.liberado.obra, arquivo
+      contrato.cef, repasse.cef.total, repasse.cef.incorrido,
+      repasse.cef.a.incorrer, repasse.cef.fin, repasse.cef.desc.subs,
+      repasse.cef.fgts, repasse.cef.rec.prop, repasse.cef.terreno.acum,
+      repasse.cef.obra.acum, arquivo
     )
   # cef: cmfcns + ecns
   in.cef <- in.ecns %>%
@@ -32,23 +41,23 @@ r_soares <- function(xlsx = FALSE) {
     ) %>%
     mutate(
       cef.obra = if_else(
-        (abs(valor.liberado.obra - repasse.cef.obra) < 1e-3) &
+        (abs(repasse.cef.obra.acum - repasse.cef.obra) < 1e-3) &
           !is.na(repasse.cef.obra),
         TRUE,
         FALSE
       ),
       cef.terreno = if_else(
-        (abs(valor.liberado.terreno - repasse.cef.terreno) < 1e-3) &
+        (abs(repasse.cef.terreno.acum - repasse.cef.terreno) < 1e-3) &
           !is.na(repasse.cef.terreno),
         TRUE,
         FALSE
       )
     ) %>%
     select(
-      contrato.cef, parcela.cef.total, parcela.cef.incorrido,
-      parcela.cef.a.incorrer, financiamento, desconto.subsidio, fgts,
-      recursos.proprios, valor.liberado.terreno, repasse.cef.terreno,
-      cef.terreno, valor.liberado.obra, repasse.cef.obra, cef.obra,
+      contrato.cef, repasse.cef.total, repasse.cef.incorrido,
+      repasse.cef.a.incorrer, repasse.cef.fin, repasse.cef.desc.subs, repasse.cef.fgts,
+      repasse.cef.rec.prop, repasse.cef.terreno.acum, repasse.cef.terreno,
+      cef.terreno, repasse.cef.obra.acum, repasse.cef.obra, cef.obra,
       amortizacao.pj, remuneracao.terreno, remuneracao.venda, arquivo.ecns,
       arquivo.cmfcns
     )
@@ -171,7 +180,7 @@ r_soares <- function(xlsx = FALSE) {
       values_fill = 0
     )
 
-  natureza <- in.unis %>%
+  rec.uni <- in.unis %>%
     left_join(
       in.rec,
       by = "id",
@@ -231,7 +240,7 @@ r_soares <- function(xlsx = FALSE) {
     # Adicionar dados ECN
     left_join(in.ecns, by = "contrato.cef") %>%
     mutate(
-      checar = !is.na(contrato.cef) & is.na(parcela.cef.total),
+      checar = !is.na(contrato.cef) & is.na(repasse.cef.total),
       contrato.comeco = str_sub(contrato, 1, 4),
       contrato.fim = str_sub(contrato, -1) %>% as.integer()
     ) %>%
@@ -249,32 +258,17 @@ r_soares <- function(xlsx = FALSE) {
     # Organizar colunas com meses ordenados cronologicamente
     select(
       id, empresa, especie, unidade, cliente, contrato, contrato.cef, pavimento,
-      situacao, data.venda, valor.venda, parcela.cef.total,
-      parcela.cef.incorrido, checar, natureza, soma.meses,
+      situacao, data.venda, valor.venda, repasse.cef.total, checar, natureza,
+      soma.meses,
       any_of(sort(names(.)[str_detect(names(.), "^\\d{4}-\\d{2}-\\d{2}$")]))
     ) %>%
     arrange(id, natureza)
-
-
-  # Pró soluto por unidade
-  ps.uni <- natureza %>%
-    dplyr::filter(natureza == "pro.soluto" | is.na(natureza)) %>%
-    # Organizar colunas com meses ordenados cronologicamente
-    select(
-      id, empresa, especie, pavimento, unidade, cliente, situacao, data.venda,
-      contrato, contrato.cef, valor.venda, soma.meses,
-      any_of(sort(names(.)[str_detect(names(.), "^\\d{4}-\\d{2}-\\d{2}$")]))
-    ) %>%
-    arrange(id)
 
 if (xlsx) {
   gerar_xlsx(
     data = list(
       # Outputs
-      # cef.uni = cef.uni,
-      natureza.uni = natureza,
-      ps.uni = ps.uni,
-      # tx.uni = tx.uni,
+      rec.uni = rec.uni,
       # Inputs
       ## Inputs combinados
       in.cef = in.cef,
@@ -291,8 +285,7 @@ if (xlsx) {
       in.xcef = in.xcef
     ),
     tab_colours = c(
-      natureza.uni = "darkblue",
-      ps.uni = "blue",
+      rec.uni = "darkblue",
       in.cef = "darkgray",
       in.cmfcn_xcef = "darkgray",
       in.rec = "darkgray",
@@ -306,21 +299,22 @@ if (xlsx) {
       in.xcef = "white"
     ),
     col_headers = list(
-      natureza.uni = list(
-        checar = list(colour = "yellow")
+      rec.uni = list(
+        checar = list(colour = "yellow"),
+        repasse.cef.total = list(colour = "blue", font_colour = "white")
       ),
       in.cef = list(
         # ECNs (blue)
         arquivo.ecns = list(colour = "blue", font_colour = "white"),
-        desconto.subsidio = list(colour = "blue", font_colour = "white"),
-        fgts = list(colour = "blue", font_colour = "white"),
-        financiamento = list(colour = "blue", font_colour = "white"),
-        parcela.cef.a.incorrer = list(colour = "white"),
-        parcela.cef.incorrido = list(colour = "blue", font_colour = "white"),
-        parcela.cef.total = list(colour = "blue", font_colour = "white"),
-        recursos.proprios = list(colour = "blue", font_colour = "white"),
-        valor.liberado.obra = list(colour = "blue", font_colour = "white"),
-        valor.liberado.terreno = list(colour = "blue", font_colour = "white"),
+        repasse.cef.desc.subs = list(colour = "blue", font_colour = "white"),
+        repasse.cef.fgts = list(colour = "blue", font_colour = "white"),
+        repasse.cef.fin = list(colour = "blue", font_colour = "white"),
+        repasse.cef.a.incorrer = list(colour = "white"),
+        repasse.cef.incorrido = list(colour = "blue", font_colour = "white"),
+        repasse.cef.total = list(colour = "blue", font_colour = "white"),
+        repasse.cef.rec.prop = list(colour = "blue", font_colour = "white"),
+        repasse.cef.obra.acum = list(colour = "blue", font_colour = "white"),
+        repasse.cef.terreno.acum = list(colour = "blue", font_colour = "white"),
         # CMF_CNs (lightblue)
         arquivo.cmfcns = list(colour = "lightblue"),
         amortizacao.pj = list(colour = "lightblue"),
@@ -339,7 +333,7 @@ if (xlsx) {
       "periodo.inicio", "periodo.fim"
     ),
     col_groups = list(
-      natureza.uni = list(
+      rec.uni = list(
         list(
           cols = c(
             "empresa", "especie", "unidade", "cliente", "contrato",
@@ -350,17 +344,17 @@ if (xlsx) {
       )
     ),
     tab_freeze = c(
-      natureza.uni = "situacao",
+      rec.uni = "situacao",
       in.cef = "contrato.cef"
     ),
     col_monetary = c(
-      "amortizacao.pj", "desconto", "desconto.subsidio", "encargos", "fgts",
-      "financiamento", "juros", "juros.contrato", "juros.mora", "multa",
-      "parcela.cef.a.incorrer", "parcela.cef.incorrido", "parcela.cef.total",
-      "principal", "recursos.proprios", "reajuste", "remuneracao.venda",
-      "repasse.cef.obra", "repasse.cef.terreno", "saldo", "seguro",
-      "soma.meses", "total", "valor", "valor.c.d", "valor.imovel",
-      "valor.liberado.obra", "valor.liberado.terreno", "valor.venda"
+      "amortizacao.pj", "desconto", "encargos", "juros", "juros.contrato",
+      "juros.mora", "multa", "principal", "reajuste", "remuneracao.venda",
+      "repasse.cef.a.incorrer", "repasse.cef.desc.subs", "repasse.cef.fgts",
+      "repasse.cef.fin", "repasse.cef.incorrido", "repasse.cef.obra",
+      "repasse.cef.obra.acum", "repasse.cef.rec.prop", "repasse.cef.terreno",
+      "repasse.cef.terreno.acum", "repasse.cef.total", "saldo", "seguro",
+      "soma.meses", "total", "valor", "valor.c.d", "valor.imovel", "valor.venda"
     ),
     col_width_auto = c(
       "cliente", "conta.sidec/nsgd", "corretor", "descricao", "edificacao",
@@ -372,10 +366,10 @@ if (xlsx) {
       cef.terreno = 15,
       empreendimento = 30,
       id = 22,
-      parcela.cef.a.incorrer = 22,
-      parcela.cef.incorrido = 22,
-      remuneracao.terreno = 22,
-      valor.liberado.terreno = 22
+      repasse.cef.a.incorrer = 22,
+      repasse.cef.incorrido = 22,
+      repasse.cef.terreno.acum = 22,
+      remuneracao.terreno = 22
     ),
     save = list(
       nome_arquivo = sprintf("soares-%s.xlsx", format(Sys.time(), "%Y%m%d_%H%M%S")),
@@ -389,13 +383,12 @@ if (xlsx) {
 
   list(
     # Outputs
-    ps.uni = ps.uni,
+    rec.uni = rec.uni,
     # Inputs
     # Inputs combinados
     in.cef = in.cef,
     in.cmfcn_xcef = in.cmfcn_xcef,
     in.rec = in.rec,
-    natureza = natureza,
     # Inputs originais
     in.car = in.car,
     in.cmfcns = e_cef_cmfcns(),
