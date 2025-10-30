@@ -118,8 +118,7 @@ r_xcef <-
       )
     )
     extratos.cruzados_t %<>%
-      select(-id_xcef, -id_cmfcn) %>%
-      rename(natureza = natureza.cmfcn)
+      select(-id_xcef, -id_cmfcn)
 
     # Salvando num xlsx -------------------------------------------------------
 

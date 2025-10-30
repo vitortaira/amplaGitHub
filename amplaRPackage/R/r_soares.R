@@ -18,10 +18,10 @@ r_soares <- function(xlsx = FALSE) {
     ungroup() %>%
     mutate(contrato.cef.5 = str_sub(contrato, -5)) %>%
     select(
-      empresa, contrato.cef.5, natureza, arquivo, total,
-      any_of(sort(names(.)[!names(.) %in% c("empresa", "contrato.cef.5", "natureza", "arquivo", "total")]))
+      empresa, contrato.cef.5, arquivo, natureza, total,
+      any_of(sort(names(.)[!names(.) %in% c("empresa", "contrato.cef.5", "arquivo", "natureza", "total")]))
     )
-  # ECNs
+    # ECNs
   in.ecns <- e_cef_ecns()$ecn_u %>%
     rename(
       contrato.cef = contrato,
@@ -209,11 +209,12 @@ r_soares <- function(xlsx = FALSE) {
       any_of(sort(names(.)[!names(.) %in% c("empresa", "contrato.cef.5", "natureza", "total")]))
     )
   # Extratos CEF cruzados com CMF_CN
-  in.cmfcn.xcef <- r_xcef()
+  in.cmfcn.xcef <- r_xcef() %>%
+    rename(natureza = natureza.cmfcn)
   # Extratos CEF cruzados com CMF_CN mensalizados por contrato
   in.cmfcn.xcef.mensal <- in.cmfcn.xcef %>%
     mutate(mes = floor_date(data.movimentacao, "month")) %>%
-    group_by(empresa, contrato.5, natureza.cmfcn, mes) %>%
+    group_by(empresa, contrato.5, natureza, mes) %>%
     summarise(valor = sum(valor, na.rm = TRUE), .groups = "drop") %>%
     pivot_wider(
       names_from = mes,
@@ -227,8 +228,8 @@ r_soares <- function(xlsx = FALSE) {
     ungroup() %>%
     rename(contrato.cef.5 = contrato.5) %>%
     select(
-      empresa, contrato.cef.5, natureza.cmfcn, total,
-      any_of(sort(names(.)[!names(.) %in% c("empresa", "contrato.cef.5", "natureza.cmfcn", "total")]))
+      empresa, contrato.cef.5, natureza, total,
+      any_of(sort(names(.)[!names(.) %in% c("empresa", "contrato.cef.5", "natureza", "total")]))
     )
   # Totais por natureza que devem virar colunas
   totais <- in.rec %>%
