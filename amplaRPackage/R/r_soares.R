@@ -167,6 +167,27 @@ r_soares <- function(xlsx = FALSE) {
     )
   # Extratos da CEF
   in.xcef <- e_cef_xcefs()
+  # Extratos da CEF mensalizados por contrato
+  in.xcef.mensal <- in.xcef %>%
+    dplyr::filter(!is.na(valor)) %>%
+    mutate(mes = floor_date(data.movimentacao, "month")) %>%
+    group_by(empresa, contrato.5, natureza, mes) %>%
+    summarise(valor = sum(valor, na.rm = TRUE), .groups = "drop") %>%
+    pivot_wider(
+      names_from = mes,
+      values_from = valor,
+      values_fill = 0
+    ) %>%
+    rowwise() %>%
+    mutate(
+      total = sum(c_across(where(is.numeric)), na.rm = TRUE)
+    ) %>%
+    ungroup() %>%
+    rename(contrato.cef.5 = contrato.5) %>%
+    select(
+      empresa, contrato.cef.5, natureza, total,
+      any_of(sort(names(.)[!names(.) %in% c("empresa", "contrato.cef.5", "natureza", "total")]))
+    )
   # Extratos CEF cruzados com CMF_CN
   in.cmfcn.xcef <- r_xcef()
   # Extratos CEF cruzados com CMF_CN mensalizados por contrato
@@ -186,8 +207,8 @@ r_soares <- function(xlsx = FALSE) {
     ungroup() %>%
     rename(contrato.cef.5 = contrato.5) %>%
     select(
-      contrato.cef.5, natureza.cmfcn, total,
-      any_of(sort(names(.)[!names(.) %in% c("contrato.cef.5", "natureza", "total")]))
+      empresa, contrato.cef.5, natureza.cmfcn, total,
+      any_of(sort(names(.)[!names(.) %in% c("empresa", "contrato.cef.5", "natureza.cmfcn", "total")]))
     )
   # Totais por natureza que devem virar colunas
   totais <- in.rec %>%
@@ -303,7 +324,8 @@ if (xlsx) {
       in.cr = in.cr,
       in.ecns = in.ecns,
       in.unis = in.unis,
-      in.xcef = in.xcef
+      in.xcef = in.xcef,
+      in.xcef.mensal = in.xcef.mensal
     ),
     tab_colours = c(
       rec.uni = "darkblue",
@@ -318,7 +340,8 @@ if (xlsx) {
       in.cr = "white",
       in.ecns = "white",
       in.unis = "white",
-      in.xcef = "white"
+      in.xcef = "white",
+      in.xcef.mensal = "white"
     ),
     col_headers = list(
       rec.uni = list(
@@ -420,6 +443,7 @@ if (xlsx) {
     in.cr = in.cr,
     in.ecns = in.ecns,
     in.unis = in.unis,
-    in.xcef = in.xcef
+    in.xcef = in.xcef,
+    in.xcef.mensal = in.xcef.mensal
   )
 }
