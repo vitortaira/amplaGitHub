@@ -1,7 +1,26 @@
 r_soares <- function(xlsx = FALSE) {
   # CMF_CN
-  in.cmfcns.mensal <- e_cef_cmfcns_mensal() %>%
-    rename(contrato.cef = contrato)
+  in.cmfcns <- e_cef_cmfcns()
+  in.cmfcns.mensal <- in.cmfcns %>%
+    dplyr::filter(!is.na(valor)) %>%
+    mutate(mes = floor_date(data.movimento, "month")) %>%
+    group_by(empresa, contrato, natureza, arquivo, mes) %>%
+    summarise(valor = sum(valor, na.rm = TRUE), .groups = "drop") %>%
+    pivot_wider(
+      names_from = mes,
+      values_from = valor,
+      values_fill = 0
+    ) %>%
+    rowwise() %>%
+    mutate(
+      total = sum(c_across(where(is.numeric)), na.rm = TRUE)
+    ) %>%
+    ungroup() %>%
+    mutate(contrato.cef.5 = str_sub(contrato, -5)) %>%
+    select(
+      empresa, contrato.cef.5, natureza, arquivo, total,
+      any_of(sort(names(.)[!names(.) %in% c("empresa", "contrato.cef.5", "natureza", "arquivo", "total")]))
+    )
   # ECNs
   in.ecns <- e_cef_ecns()$ecn_u %>%
     rename(
@@ -16,12 +35,13 @@ r_soares <- function(xlsx = FALSE) {
     mutate(
       contrato.cef = str_remove_all(contrato.cef, "-") %>%
       if_else(str_length(.) == 13, str_sub(., 1, 12), .),
+      contrato.cef.5 = str_sub(contrato.cef, -5, -1),
       repasse.cef.total = round(repasse.cef.fin + repasse.cef.desc.subs + repasse.cef.fgts + repasse.cef.rec.prop, 2),
       repasse.cef.incorrido = round(repasse.cef.terreno.acum + repasse.cef.obra.acum, 2),
       repasse.cef.a.incorrer = round(repasse.cef.total - repasse.cef.incorrido, 2)
     ) %>%
     dplyr::select(
-      contrato.cef, repasse.cef.total, repasse.cef.incorrido,
+      contrato.cef.5, repasse.cef.total, repasse.cef.incorrido,
       repasse.cef.a.incorrer, repasse.cef.fin, repasse.cef.desc.subs,
       repasse.cef.fgts, repasse.cef.rec.prop, repasse.cef.terreno.acum,
       repasse.cef.obra.acum, arquivo
@@ -30,13 +50,13 @@ r_soares <- function(xlsx = FALSE) {
   in.cef <- in.ecns %>%
     left_join(
       in.cmfcns.mensal %>%
-        select(contrato.cef, natureza, total, arquivo) %>%
+        select(contrato.cef.5, natureza, total, arquivo) %>%
         tidyr::pivot_wider(
           names_from = natureza,
           values_from = total,
           values_fill = 0
         ),
-      by = "contrato.cef",
+      by = "contrato.cef.5",
       suffix = c(".ecns", ".cmfcns")
     ) %>%
     mutate(
@@ -54,7 +74,7 @@ r_soares <- function(xlsx = FALSE) {
       )
     ) %>%
     select(
-      contrato.cef, repasse.cef.total, repasse.cef.incorrido,
+      contrato.cef.5, repasse.cef.total, repasse.cef.incorrido,
       repasse.cef.a.incorrer, repasse.cef.fin, repasse.cef.desc.subs, repasse.cef.fgts,
       repasse.cef.rec.prop, repasse.cef.terreno.acum, repasse.cef.terreno,
       cef.terreno, repasse.cef.obra.acum, repasse.cef.obra, cef.obra,
@@ -273,15 +293,16 @@ r_soares <- function(xlsx = FALSE) {
     # Normalizar contrato.cef (13 → 12 caracteres)
     mutate(
       contrato.cef = if_else(
-      str_length(contrato.cef) == 13,
-      str_sub(contrato.cef, 1, 12),
-      contrato.cef
-      )
+        str_length(contrato.cef) == 13,
+        str_sub(contrato.cef, 1, 12),
+        contrato.cef
+      ),
+      contrato.cef.5 = str_sub(contrato.cef, -5, -1)
     ) %>%
     # Adicionar dados ECN
-    left_join(in.ecns, by = "contrato.cef") %>%
+    left_join(in.ecns, by = "contrato.cef.5") %>%
     mutate(
-      checar = !is.na(contrato.cef) & is.na(repasse.cef.total),
+      checar = !is.na(contrato.cef.5) & is.na(repasse.cef.total),
       contrato.comeco = str_sub(contrato, 1, 4),
       contrato.fim = str_sub(contrato, -1) %>% as.integer()
     ) %>%
@@ -399,7 +420,9 @@ if (xlsx) {
       "repasse.cef.fin", "repasse.cef.incorrido", "repasse.cef.obra",
       "repasse.cef.obra.acum", "repasse.cef.rec.prop", "repasse.cef.terreno",
       "repasse.cef.terreno.acum", "repasse.cef.total", "saldo", "seguro",
-      "soma.meses", "total", "valor", "valor.c.d", "valor.imovel", "valor.venda"
+      "soma.meses", "total", "valor", "valor.c.d", "valor.imovel", "valor.venda",
+      # Colunas de meses (YYYY-MM-DD)
+      names(rec.uni)[str_detect(names(rec.uni), "^\\d{4}-\\d{2}-\\d{2}$")]
     ),
     col_width_auto = c(
       "cliente", "conta.sidec/nsgd", "corretor", "descricao", "edificacao",
@@ -437,7 +460,7 @@ if (xlsx) {
     in.rec = in.rec,
     # Inputs originais
     in.car = in.car,
-    in.cmfcns = e_cef_cmfcns(),
+    in.cmfcns = in.cmfcns,
     in.cmfcns.mensal = in.cmfcns.mensal,
     in.contr = in.contr,
     in.cr = in.cr,
