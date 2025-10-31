@@ -14,7 +14,7 @@ r_soares <- function(xlsx = FALSE) {
     ) %>%
     mutate(
       contrato.cef = str_remove_all(contrato.cef, "-") %>%
-      if_else(str_length(.) == 13, str_sub(., 1, 12), .),
+        if_else(str_length(.) == 13, str_sub(., 1, 12), .),
       contrato.cef.5 = str_sub(contrato.cef, -5, -1),
       repasse.cef.total = round(repasse.cef.fin + repasse.cef.desc.subs + repasse.cef.fgts + repasse.cef.rec.prop, 2),
       repasse.cef.incorrido = round(repasse.cef.terreno.acum + repasse.cef.obra.acum, 2),
@@ -144,11 +144,16 @@ r_soares <- function(xlsx = FALSE) {
     floor_date(in.cmfcn.xcef$data.movimentacao, "month")
   ) %>%
     .[!is.na(.)] %>%
-    {seq(min(.), max(.), by = "month")}
+    {
+      seq(min(.), max(.), by = "month")
+    }
 
   # Extratos da CEF mensalizados por contrato
   in.xcef.mensal <- in.xcef %>%
-    dplyr::filter(!is.na(valor)) %>%
+    dplyr::filter(
+      !is.na(natureza) &
+        contrato.5 %in% in.ecns$contrato.cef.5
+    ) %>%
     mutate(mes = floor_date(data.movimentacao, "month")) %>%
     group_by(empresa, contrato.5, natureza, mes) %>%
     summarise(valor = sum(valor, na.rm = TRUE), .groups = "drop") %>%
@@ -197,7 +202,8 @@ r_soares <- function(xlsx = FALSE) {
     group_by(empresa, contrato, natureza, mes) %>%
     summarise(valor = sum(valor, na.rm = TRUE), .groups = "drop") %>%
     complete(
-      empresa, contrato, natureza, mes = meses.cef, fill = list(valor = 0)
+      empresa, contrato, natureza,
+      mes = meses.cef, fill = list(valor = 0)
     ) %>%
     pivot_wider(
       names_from = mes,
@@ -254,20 +260,10 @@ r_soares <- function(xlsx = FALSE) {
 
   # Consolidar todos em in.cef.mensal
   in.cef.mensal <- bind_rows(
-    in.cmfcns.mensal %>%
-      mutate(fonte = "cmfcns"),
-    in.xcef.mensal %>%
-      mutate(
-        fonte = "xcef"
-      ),
-    in.cmfcn.xcef.mensal %>%
-      mutate(
-        fonte = "cmfcn.xcef"
-      )
-  ) %>%
-    group_by(empresa, contrato.cef.5, natureza, fonte) %>%
-    summarise(total = sum(total, na.rm = TRUE), .groups = "drop") %>%
-    dplyr::filter(!is.na(natureza))
+    in.cmfcns.mensal,
+    in.xcef.mensal,
+    in.cmfcn.xcef.mensal
+  )
 
 
   # Totais por natureza que devem virar colunas
@@ -302,9 +298,9 @@ r_soares <- function(xlsx = FALSE) {
       contrato.cef = coalesce(contrato.cef.contr, contrato.cef),
       data.mes = floor_date(coalesce(data.pagamento, data.vencimento), "month"),
       cruzada = case_when(
-      is.na(empresa.rec) ~ "in.unis",
-      is.na(empresa.unis) ~ "in.rec",
-      TRUE ~ "ambos"
+        is.na(empresa.rec) ~ "in.unis",
+        is.na(empresa.unis) ~ "in.rec",
+        TRUE ~ "ambos"
       )
     ) %>%
     # Agregar por id, mês e natureza
@@ -366,130 +362,154 @@ r_soares <- function(xlsx = FALSE) {
     ) %>%
     arrange(id, natureza)
 
-if (xlsx) {
-  gerar_xlsx(
-    data = list(
-      # Outputs
-      rec.uni = rec.uni,
-      # Inputs
-      ## Inputs combinados
-      in.cef = in.cef,
-      in.cef.mensal = in.cef.mensal,
-      in.cmfcn.xcef = in.cmfcn.xcef,
-      in.cmfcn.xcef.mensal = in.cmfcn.xcef.mensal,
-      in.rec = in.rec,
-      ## Inputs originais
-      in.car = in.car,
-      in.cmfcns = e_cef_cmfcns(),
-      in.cmfcns.mensal = in.cmfcns.mensal,
-      in.contr = in.contr,
-      in.cr = in.cr,
-      in.ecns = in.ecns,
-      in.unis = in.unis,
-      in.xcef = in.xcef,
-      in.xcef.mensal = in.xcef.mensal
-    ),
-    tab_colours = c(
-      rec.uni = "darkblue",
-      in.cef = "darkgray",
-      in.cef.mensal = "darkgray",
-      in.cmfcn.xcef = "darkgray",
-      in.cmfcn.xcef.mensal = "darkgray",
-      in.rec = "darkgray",
-      in.car = "white",
-      in.cmfcns = "white",
-      in.cmfcns.mensal = "white",
-      in.contr = "white",
-      in.cr = "white",
-      in.ecns = "white",
-      in.unis = "white",
-      in.xcef = "white",
-      in.xcef.mensal = "white"
-    ),
-    col_headers = list(
-      rec.uni = list(
-        checar = list(colour = "yellow"),
-        repasse.cef.total = list(colour = "blue", font_colour = "white")
+
+  rec.uni.reduzido <- rec.uni %>%
+    select(
+      id, empresa, especie, unidade, cliente, contrato, contrato.cef,
+      pavimento, situacao, data.venda, valor.venda, repasse.cef.total, checar
+    ) %>%
+    mutate(contrato.cef.5 = str_sub(contrato.cef, -5, -1)) %>%
+    distinct()
+
+  in.cef.detalhado <- left_join(
+    in.cef.mensal,
+    rec.uni.reduzido,
+    by = c("empresa", "contrato.cef.5")
+  ) %>%
+    select(
+      id, empresa, especie, unidade, cliente, contrato, contrato.cef, pavimento,
+      situacao, data.venda, valor.venda, repasse.cef.total, checar, natureza,
+      total,
+      any_of(sort(names(.)[str_detect(names(.), "^\\d{4}-\\d{2}-\\d{2}$")]))
+    ) %>%
+    arrange(empresa, contrato, natureza) %>%
+    rename(soma.meses = total)
+
+
+  if (xlsx) {
+    gerar_xlsx(
+      data = list(
+        # Outputs
+        rec.uni = rec.uni,
+        # Inputs
+        ## Inputs combinados
+        in.cef = in.cef,
+        in.cef.mensal = in.cef.mensal,
+        in.cmfcn.xcef = in.cmfcn.xcef,
+        in.cmfcn.xcef.mensal = in.cmfcn.xcef.mensal,
+        in.rec = in.rec,
+        ## Inputs originais
+        in.car = in.car,
+        in.cmfcns = e_cef_cmfcns(),
+        in.cmfcns.mensal = in.cmfcns.mensal,
+        in.contr = in.contr,
+        in.cr = in.cr,
+        in.ecns = in.ecns,
+        in.unis = in.unis,
+        in.xcef = in.xcef,
+        in.xcef.mensal = in.xcef.mensal
       ),
-      in.cef = list(
-        # ECNs (blue)
-        arquivo.ecns = list(colour = "blue", font_colour = "white"),
-        repasse.cef.desc.subs = list(colour = "blue", font_colour = "white"),
-        repasse.cef.fgts = list(colour = "blue", font_colour = "white"),
-        repasse.cef.fin = list(colour = "blue", font_colour = "white"),
-        repasse.cef.a.incorrer = list(colour = "white"),
-        repasse.cef.incorrido = list(colour = "blue", font_colour = "white"),
-        repasse.cef.total = list(colour = "blue", font_colour = "white"),
-        repasse.cef.rec.prop = list(colour = "blue", font_colour = "white"),
-        repasse.cef.obra.acum = list(colour = "blue", font_colour = "white"),
-        repasse.cef.terreno.acum = list(colour = "blue", font_colour = "white"),
-        # CMF_CNs (lightblue)
-        arquivo.cmfcns = list(colour = "lightblue"),
-        amortizacao.pj = list(colour = "lightblue"),
-        remuneracao.terreno = list(colour = "lightblue"),
-        remuneracao.venda = list(colour = "lightblue"),
-        repasse.cef.obra = list(colour = "lightblue"),
-        repasse.cef.terreno = list(colour = "lightblue"),
-        # Checagem de contratos recentimente registrados na CEF
-        cef.obra = list(colour = "yellow"),
-        cef.terreno = list(colour = "yellow")
-      )
-    ),
-    col_dates = c(
-      "data", "data.emissao", "data.lancamento", "data.movimentacao",
-      "data.movimento", "data.pagamento", "data.venda", "data.vencimento",
-      "periodo.inicio", "periodo.fim"
-    ),
-    col_groups = list(
-      rec.uni = list(
-        list(
-          cols = c(
-            "empresa", "especie", "unidade", "cliente", "contrato",
-            "contrato.cef", "pavimento"
-          ),
-          hidden = TRUE
+      tab_colours = c(
+        rec.uni = "darkblue",
+        in.cef = "darkgray",
+        in.cef.mensal = "darkgray",
+        in.cmfcn.xcef = "darkgray",
+        in.cmfcn.xcef.mensal = "darkgray",
+        in.rec = "darkgray",
+        in.car = "white",
+        in.cmfcns = "white",
+        in.cmfcns.mensal = "white",
+        in.contr = "white",
+        in.cr = "white",
+        in.ecns = "white",
+        in.unis = "white",
+        in.xcef = "white",
+        in.xcef.mensal = "white"
+      ),
+      col_headers = list(
+        rec.uni = list(
+          checar = list(colour = "yellow"),
+          repasse.cef.total = list(colour = "blue", font_colour = "white")
+        ),
+        in.cef = list(
+          # ECNs (blue)
+          arquivo.ecns = list(colour = "blue", font_colour = "white"),
+          repasse.cef.desc.subs = list(colour = "blue", font_colour = "white"),
+          repasse.cef.fgts = list(colour = "blue", font_colour = "white"),
+          repasse.cef.fin = list(colour = "blue", font_colour = "white"),
+          repasse.cef.a.incorrer = list(colour = "white"),
+          repasse.cef.incorrido = list(colour = "blue", font_colour = "white"),
+          repasse.cef.total = list(colour = "blue", font_colour = "white"),
+          repasse.cef.rec.prop = list(colour = "blue", font_colour = "white"),
+          repasse.cef.obra.acum = list(colour = "blue", font_colour = "white"),
+          repasse.cef.terreno.acum = list(colour = "blue", font_colour = "white"),
+          # CMF_CNs (lightblue)
+          arquivo.cmfcns = list(colour = "lightblue"),
+          amortizacao.pj = list(colour = "lightblue"),
+          remuneracao.terreno = list(colour = "lightblue"),
+          remuneracao.venda = list(colour = "lightblue"),
+          repasse.cef.obra = list(colour = "lightblue"),
+          repasse.cef.terreno = list(colour = "lightblue"),
+          # Checagem de contratos recentimente registrados na CEF
+          cef.obra = list(colour = "yellow"),
+          cef.terreno = list(colour = "yellow")
+        )
+      ),
+      col_dates = c(
+        "data", "data.emissao", "data.lancamento", "data.movimentacao",
+        "data.movimento", "data.pagamento", "data.venda", "data.vencimento",
+        "periodo.inicio", "periodo.fim"
+      ),
+      col_groups = list(
+        rec.uni = list(
+          list(
+            cols = c(
+              "empresa", "especie", "unidade", "cliente", "contrato",
+              "contrato.cef", "pavimento"
+            ),
+            hidden = TRUE
+          )
+        )
+      ),
+      tab_freeze = c(
+        rec.uni = "situacao",
+        in.cef = "contrato.cef"
+      ),
+      col_monetary = c(
+        "amortizacao.pj", "desconto", "encargos", "juros", "juros.contrato",
+        "juros.mora", "multa", "principal", "reajuste", "remuneracao.venda",
+        "repasse.cef.a.incorrer", "repasse.cef.desc.subs", "repasse.cef.fgts",
+        "repasse.cef.fin", "repasse.cef.incorrido", "repasse.cef.obra",
+        "repasse.cef.obra.acum", "repasse.cef.rec.prop", "repasse.cef.terreno",
+        "repasse.cef.terreno.acum", "repasse.cef.total", "saldo", "seguro",
+        "soma.meses", "total", "valor", "valor.c.d", "valor.imovel", "valor.venda",
+        # Colunas de meses (YYYY-MM-DD)
+        names(rec.uni)[str_detect(names(rec.uni), "^\\d{4}-\\d{2}-\\d{2}$")]
+      ),
+      col_width_auto = c(
+        "cliente", "conta.sidec/nsgd", "corretor", "descricao", "edificacao",
+        "imobiliaria", "lancamentos", "nome.razao", "obs.situacao", "pavimento",
+        "setor"
+      ),
+      col_width_spec = c(
+        cef.obra = 15,
+        cef.terreno = 15,
+        empreendimento = 30,
+        id = 22,
+        repasse.cef.a.incorrer = 22,
+        repasse.cef.incorrido = 22,
+        repasse.cef.terreno.acum = 22,
+        remuneracao.terreno = 22
+      ),
+      save = list(
+        nome_arquivo = sprintf("soares-%s.xlsx", format(Sys.time(), "%Y%m%d_%H%M%S")),
+        caminho_destino = normalizePath(
+          file.path(Sys.getenv("USERPROFILE"), "Downloads"),
+          winslash = "\\", mustWork = FALSE
         )
       )
-    ),
-    tab_freeze = c(
-      rec.uni = "situacao",
-      in.cef = "contrato.cef"
-    ),
-    col_monetary = c(
-      "amortizacao.pj", "desconto", "encargos", "juros", "juros.contrato",
-      "juros.mora", "multa", "principal", "reajuste", "remuneracao.venda",
-      "repasse.cef.a.incorrer", "repasse.cef.desc.subs", "repasse.cef.fgts",
-      "repasse.cef.fin", "repasse.cef.incorrido", "repasse.cef.obra",
-      "repasse.cef.obra.acum", "repasse.cef.rec.prop", "repasse.cef.terreno",
-      "repasse.cef.terreno.acum", "repasse.cef.total", "saldo", "seguro",
-      "soma.meses", "total", "valor", "valor.c.d", "valor.imovel", "valor.venda",
-      # Colunas de meses (YYYY-MM-DD)
-      names(rec.uni)[str_detect(names(rec.uni), "^\\d{4}-\\d{2}-\\d{2}$")]
-    ),
-    col_width_auto = c(
-      "cliente", "conta.sidec/nsgd", "corretor", "descricao", "edificacao",
-      "imobiliaria", "lancamentos", "nome.razao", "obs.situacao", "pavimento",
-      "setor"
-    ),
-    col_width_spec = c(
-      cef.obra = 15,
-      cef.terreno = 15,
-      empreendimento = 30,
-      id = 22,
-      repasse.cef.a.incorrer = 22,
-      repasse.cef.incorrido = 22,
-      repasse.cef.terreno.acum = 22,
-      remuneracao.terreno = 22
-    ),
-    save = list(
-      nome_arquivo = sprintf("soares-%s.xlsx", format(Sys.time(), "%Y%m%d_%H%M%S")),
-      caminho_destino = normalizePath(
-        file.path(Sys.getenv("USERPROFILE"), "Downloads"),
-        winslash = "\\", mustWork = FALSE
-      )
     )
-  )
-}
+  }
 
   list(
     # Outputs
