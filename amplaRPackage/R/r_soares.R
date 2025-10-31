@@ -1,27 +1,7 @@
 r_soares <- function(xlsx = FALSE) {
   # CMF_CN
   in.cmfcns <- e_cef_cmfcns()
-  in.cmfcns.mensal <- in.cmfcns %>%
-    dplyr::filter(!is.na(valor)) %>%
-    mutate(mes = floor_date(data.movimento, "month")) %>%
-    group_by(empresa, contrato, natureza, arquivo, mes) %>%
-    summarise(valor = sum(valor, na.rm = TRUE), .groups = "drop") %>%
-    pivot_wider(
-      names_from = mes,
-      values_from = valor,
-      values_fill = 0
-    ) %>%
-    rowwise() %>%
-    mutate(
-      total = sum(c_across(where(is.numeric)), na.rm = TRUE)
-    ) %>%
-    ungroup() %>%
-    mutate(contrato.cef.5 = str_sub(contrato, -5)) %>%
-    select(
-      empresa, contrato.cef.5, arquivo, natureza, total,
-      any_of(sort(names(.)[!names(.) %in% c("empresa", "contrato.cef.5", "arquivo", "natureza", "total")]))
-    )
-    # ECNs
+  # ECNs
   in.ecns <- e_cef_ecns()$ecn_u %>%
     rename(
       contrato.cef = contrato,
@@ -41,45 +21,10 @@ r_soares <- function(xlsx = FALSE) {
       repasse.cef.a.incorrer = round(repasse.cef.total - repasse.cef.incorrido, 2)
     ) %>%
     dplyr::select(
-      contrato.cef.5, repasse.cef.total, repasse.cef.incorrido,
+      empresa, contrato.cef.5, repasse.cef.total, repasse.cef.incorrido,
       repasse.cef.a.incorrer, repasse.cef.fin, repasse.cef.desc.subs,
       repasse.cef.fgts, repasse.cef.rec.prop, repasse.cef.terreno.acum,
       repasse.cef.obra.acum, arquivo
-    )
-  # cef: cmfcns + ecns
-  in.cef <- in.ecns %>%
-    left_join(
-      in.cmfcns.mensal %>%
-        select(contrato.cef.5, natureza, total, arquivo) %>%
-        tidyr::pivot_wider(
-          names_from = natureza,
-          values_from = total,
-          values_fill = 0
-        ),
-      by = "contrato.cef.5",
-      suffix = c(".ecns", ".cmfcns")
-    ) %>%
-    mutate(
-      cef.obra = if_else(
-        (abs(repasse.cef.obra.acum - repasse.cef.obra) < 1e-3) &
-          !is.na(repasse.cef.obra),
-        TRUE,
-        FALSE
-      ),
-      cef.terreno = if_else(
-        (abs(repasse.cef.terreno.acum - repasse.cef.terreno) < 1e-3) &
-          !is.na(repasse.cef.terreno),
-        TRUE,
-        FALSE
-      )
-    ) %>%
-    select(
-      contrato.cef.5, repasse.cef.total, repasse.cef.incorrido,
-      repasse.cef.a.incorrer, repasse.cef.fin, repasse.cef.desc.subs, repasse.cef.fgts,
-      repasse.cef.rec.prop, repasse.cef.terreno.acum, repasse.cef.terreno,
-      cef.terreno, repasse.cef.obra.acum, repasse.cef.obra, cef.obra,
-      amortizacao.pj, remuneracao.terreno, remuneracao.venda, arquivo.ecns,
-      arquivo.cmfcns
     )
   # Contratos
   in.contr <-
@@ -185,14 +130,29 @@ r_soares <- function(xlsx = FALSE) {
       empresa %in% c("AMP", "AVS", "GRA", "LUC", "POM", "SN2", "SN4") &
         !str_detect(empreendimento, "Sicília")
     )
+
   # Extratos da CEF
   in.xcef <- e_cef_xcefs()
+  # Extratos CEF cruzados com CMF_CN
+  in.cmfcn.xcef <- r_xcef() %>%
+    rename(natureza = natureza.cmfcn)
+
+  # Determinar sequência completa de meses para todos os tibbles CEF
+  meses.cef <- c(
+    floor_date(in.cmfcns$data.movimento, "month"),
+    floor_date(in.xcef$data.movimentacao, "month"),
+    floor_date(in.cmfcn.xcef$data.movimentacao, "month")
+  ) %>%
+    .[!is.na(.)] %>%
+    {seq(min(.), max(.), by = "month")}
+
   # Extratos da CEF mensalizados por contrato
   in.xcef.mensal <- in.xcef %>%
     dplyr::filter(!is.na(valor)) %>%
     mutate(mes = floor_date(data.movimentacao, "month")) %>%
     group_by(empresa, contrato.5, natureza, mes) %>%
     summarise(valor = sum(valor, na.rm = TRUE), .groups = "drop") %>%
+    complete(empresa, contrato.5, natureza, mes = meses.cef, fill = list(valor = 0)) %>%
     pivot_wider(
       names_from = mes,
       values_from = valor,
@@ -206,16 +166,14 @@ r_soares <- function(xlsx = FALSE) {
     rename(contrato.cef.5 = contrato.5) %>%
     select(
       empresa, contrato.cef.5, natureza, total,
-      any_of(sort(names(.)[!names(.) %in% c("empresa", "contrato.cef.5", "natureza", "total")]))
+      any_of(as.character(sort(meses.cef)))
     )
-  # Extratos CEF cruzados com CMF_CN
-  in.cmfcn.xcef <- r_xcef() %>%
-    rename(natureza = natureza.cmfcn)
   # Extratos CEF cruzados com CMF_CN mensalizados por contrato
   in.cmfcn.xcef.mensal <- in.cmfcn.xcef %>%
     mutate(mes = floor_date(data.movimentacao, "month")) %>%
     group_by(empresa, contrato.5, natureza, mes) %>%
     summarise(valor = sum(valor, na.rm = TRUE), .groups = "drop") %>%
+    complete(empresa, contrato.5, natureza, mes = meses.cef, fill = list(valor = 0)) %>%
     pivot_wider(
       names_from = mes,
       values_from = valor,
@@ -229,8 +187,89 @@ r_soares <- function(xlsx = FALSE) {
     rename(contrato.cef.5 = contrato.5) %>%
     select(
       empresa, contrato.cef.5, natureza, total,
-      any_of(sort(names(.)[!names(.) %in% c("empresa", "contrato.cef.5", "natureza", "total")]))
+      any_of(as.character(sort(meses.cef)))
     )
+
+  # CMF_CN mensalizado (ajustado para mesma estrutura)
+  in.cmfcns.mensal <- in.cmfcns %>%
+    dplyr::filter(!is.na(valor)) %>%
+    mutate(mes = floor_date(data.movimento, "month")) %>%
+    group_by(empresa, contrato, natureza, mes) %>%
+    summarise(valor = sum(valor, na.rm = TRUE), .groups = "drop") %>%
+    complete(
+      empresa, contrato, natureza, mes = meses.cef, fill = list(valor = 0)
+    ) %>%
+    pivot_wider(
+      names_from = mes,
+      values_from = valor,
+      values_fill = 0
+    ) %>%
+    rowwise() %>%
+    mutate(
+      total = sum(c_across(where(is.numeric)), na.rm = TRUE)
+    ) %>%
+    ungroup() %>%
+    mutate(contrato.cef.5 = str_sub(contrato, -5)) %>%
+    select(
+      empresa, contrato.cef.5, natureza, total,
+      any_of(as.character(sort(meses.cef)))
+    )
+
+  # cef: cmfcns + ecns
+  in.cef <- in.ecns %>%
+    left_join(
+      in.cmfcns.mensal %>%
+        group_by(empresa, contrato.cef.5, natureza) %>%
+        summarise(total = sum(total, na.rm = TRUE), .groups = "drop") %>%
+        tidyr::pivot_wider(
+          names_from = natureza,
+          values_from = total,
+          values_fill = 0
+        ),
+      by = "contrato.cef.5",
+      suffix = c(".ecns", ".cmfcns")
+    ) %>%
+    mutate(
+      cef.obra = if_else(
+        (abs(repasse.cef.obra.acum - repasse.cef.obra) < 1e-3) &
+          !is.na(repasse.cef.obra),
+        TRUE,
+        FALSE
+      ),
+      cef.terreno = if_else(
+        (abs(repasse.cef.terreno.acum - repasse.cef.terreno) < 1e-3) &
+          !is.na(repasse.cef.terreno),
+        TRUE,
+        FALSE
+      )
+    ) %>%
+    select(
+      contrato.cef.5, repasse.cef.total, repasse.cef.incorrido,
+      repasse.cef.a.incorrer, repasse.cef.fin, repasse.cef.desc.subs,
+      repasse.cef.fgts, repasse.cef.rec.prop, repasse.cef.terreno.acum,
+      repasse.cef.terreno, cef.terreno, repasse.cef.obra.acum,
+      repasse.cef.obra, cef.obra, amortizacao.pj, remuneracao.terreno,
+      remuneracao.venda
+    )
+
+  # Consolidar todos em in.cef.mensal
+  in.cef.mensal <- bind_rows(
+    in.cmfcns.mensal %>%
+      mutate(fonte = "cmfcns"),
+    in.xcef.mensal %>%
+      mutate(
+        fonte = "xcef"
+      ),
+    in.cmfcn.xcef.mensal %>%
+      mutate(
+        fonte = "cmfcn.xcef"
+      )
+  ) %>%
+    group_by(empresa, contrato.cef.5, natureza, fonte) %>%
+    summarise(total = sum(total, na.rm = TRUE), .groups = "drop") %>%
+    dplyr::filter(!is.na(natureza))
+
+
   # Totais por natureza que devem virar colunas
   totais <- in.rec %>%
     dplyr::filter(natureza %in% c("parcela.cef.total.ik", "parcela.cef.assinar", "taxa.extra")) %>%
@@ -301,7 +340,7 @@ r_soares <- function(xlsx = FALSE) {
       contrato.cef.5 = str_sub(contrato.cef, -5, -1)
     ) %>%
     # Adicionar dados ECN
-    left_join(in.ecns, by = "contrato.cef.5") %>%
+    left_join(in.ecns, by = c("empresa", "contrato.cef.5")) %>%
     mutate(
       checar = !is.na(contrato.cef.5) & is.na(repasse.cef.total),
       contrato.comeco = str_sub(contrato, 1, 4),
@@ -335,6 +374,7 @@ if (xlsx) {
       # Inputs
       ## Inputs combinados
       in.cef = in.cef,
+      in.cef.mensal = in.cef.mensal,
       in.cmfcn.xcef = in.cmfcn.xcef,
       in.cmfcn.xcef.mensal = in.cmfcn.xcef.mensal,
       in.rec = in.rec,
@@ -352,6 +392,7 @@ if (xlsx) {
     tab_colours = c(
       rec.uni = "darkblue",
       in.cef = "darkgray",
+      in.cef.mensal = "darkgray",
       in.cmfcn.xcef = "darkgray",
       in.cmfcn.xcef.mensal = "darkgray",
       in.rec = "darkgray",
@@ -456,6 +497,7 @@ if (xlsx) {
     # Inputs
     # Inputs combinados
     in.cef = in.cef,
+    in.cef.mensal = in.cef.mensal,
     in.cmfcn.xcef = in.cmfcn.xcef,
     in.cmfcn.xcef.mensal = in.cmfcn.xcef.mensal,
     in.rec = in.rec,
