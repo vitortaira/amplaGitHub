@@ -193,7 +193,8 @@ r_soares <- function(xlsx = FALSE) {
     select(
       empresa, contrato.cef.5, natureza, total,
       any_of(as.character(sort(meses.cef)))
-    )
+    ) %>%
+    mutate(natureza = str_to_sentence(natureza))
 
   # CMF_CN mensalizado (ajustado para mesma estrutura)
   in.cmfcns.mensal <- in.cmfcns %>%
@@ -263,7 +264,8 @@ r_soares <- function(xlsx = FALSE) {
     in.cmfcns.mensal,
     in.xcef.mensal,
     in.cmfcn.xcef.mensal
-  )
+  ) %>%
+    dplyr::filter(total > 1e-3)
 
 
   # Totais por natureza que devem virar colunas
