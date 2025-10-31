@@ -148,10 +148,17 @@ e_cef_ecn <-
       ### Garantindo que as colunas sejam da classe adequada
       mutate(
         empreendimento = empreendimento_c,
+        empresa = case_when(
+          str_detect(empreendimento, "(?i)up\\s?jardim\\s?prud") ~ "AMP",
+          str_detect(empreendimento, "(?i)up\\s?vila\\s?sonia") ~ "AVS",
+          str_detect(empreendimento, "(?i)up\\s?select\\s?vila") ~ "GRA",
+          str_detect(empreendimento, "(?i)up\\s?esta[cç][aã]o\\s?vila") ~ "SN2",
+        TRUE ~ NA_character_
+        ),
         data.consulta = data_consulta_p,
         arquivo = f_caminho.arquivo_c
       ) %>%
-      select(empreendimento, everything(), data.consulta, arquivo) %>%
+      select(empresa, empreendimento, everything(), data.consulta, arquivo) %>%
       mutate(
         valor.aporte =
           valor.aporte %>%
@@ -376,9 +383,17 @@ e_cef_ecn <-
           as.numeric(),
         empreendimento = empreendimento_c,
         data.consulta = data_consulta_p,
-        arquivo = f_caminho.arquivo_c
+        arquivo = f_caminho.arquivo_c,
+        empresa = case_when(
+          str_detect(empreendimento, "(?i)up\\s?jardim\\s?prud") ~ "AMP",
+          str_detect(empreendimento, "(?i)up\\s?vila\\s?sonia") ~ "AVS",
+          str_detect(empreendimento, "(?i)up\\s?select\\s?vila") ~ "GRA",
+          str_detect(empreendimento, "(?i)up\\s?esta[cç][aã]o\\s?vila") ~ "SN2",
+          TRUE ~ NA_character_
+        )
       ) %>%
       select(
+        empresa,
         empreendimento,
         everything(),
         data.consulta,
