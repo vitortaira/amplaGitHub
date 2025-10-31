@@ -385,6 +385,10 @@ r_soares <- function(xlsx = FALSE) {
     arrange(empresa, contrato, natureza) %>%
     rename(soma.meses = total)
 
+  rec.uni %<>% bind_rows(
+    in.cef.detalhado %>%
+      arrange(empresa, id, natureza)
+  )
 
   if (xlsx) {
     gerar_xlsx(
@@ -394,6 +398,7 @@ r_soares <- function(xlsx = FALSE) {
         # Inputs
         ## Inputs combinados
         in.cef = in.cef,
+        in.cef.detalhado = in.cef.detalhado,
         in.cef.mensal = in.cef.mensal,
         in.cmfcn.xcef = in.cmfcn.xcef,
         in.cmfcn.xcef.mensal = in.cmfcn.xcef.mensal,
@@ -412,6 +417,7 @@ r_soares <- function(xlsx = FALSE) {
       tab_colours = c(
         rec.uni = "darkblue",
         in.cef = "darkgray",
+        in.cef.detalhado = "darkgray",
         in.cef.mensal = "darkgray",
         in.cmfcn.xcef = "darkgray",
         in.cmfcn.xcef.mensal = "darkgray",
@@ -517,6 +523,7 @@ r_soares <- function(xlsx = FALSE) {
     # Inputs
     # Inputs combinados
     in.cef = in.cef,
+    in.cef.detalhado = in.cef.detalhado,
     in.cef.mensal = in.cef.mensal,
     in.cmfcn.xcef = in.cmfcn.xcef,
     in.cmfcn.xcef.mensal = in.cmfcn.xcef.mensal,
