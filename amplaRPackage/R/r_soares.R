@@ -220,7 +220,8 @@ r_soares <- function(xlsx = FALSE) {
     select(
       empresa, contrato.cef.5, natureza, total,
       any_of(as.character(sort(meses.cef)))
-    )
+    ) %>%
+    dplyr::filter(total > 1e-3)
 
   # cef: cmfcns + ecns
   in.cef <- in.ecns %>%
