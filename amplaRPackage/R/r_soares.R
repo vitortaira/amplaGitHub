@@ -194,7 +194,7 @@ r_soares <- function(xlsx = FALSE) {
       empresa, contrato.cef.5, natureza, total,
       any_of(as.character(sort(meses.cef)))
     ) %>%
-    mutate(natureza = str_to_sentence(natureza))
+    mutate(natureza = str_c(natureza, " (cruzado)"))
 
   # CMF_CN mensalizado (ajustado para mesma estrutura)
   in.cmfcns.mensal <- in.cmfcns %>%
@@ -379,6 +379,7 @@ r_soares <- function(xlsx = FALSE) {
     rec.uni.reduzido,
     by = c("empresa", "contrato.cef.5")
   ) %>%
+    dplyr::filter(!is.na(id)) %>%
     select(
       id, empresa, especie, unidade, cliente, contrato, contrato.cef, pavimento,
       situacao, data.venda, valor.venda, repasse.cef.total, checar, natureza,
