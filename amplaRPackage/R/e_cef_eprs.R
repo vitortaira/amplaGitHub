@@ -37,24 +37,18 @@ e_cef_eprs <-
       dir_ls(f_caminho.pasta.ciweb_c, recurse = TRUE, type = "file") %>%
       keep(~ str_ends(.x, "CONTRATOS_EMPREEND.pdf"))
     # Identifica o arquivo mais recente de cada empreendimento
-    contratos.empreendimentos.12.primeiros_c <-
-      caminhos.epr_c %>%
-      str_extract("\\d{12}") %>%
-      unique()
-    caminhos.epr.recentes_c <- map(
-      contratos.empreendimentos.12.primeiros_c,
-      ~ {
-        i <- caminhos.epr_c %>%
-          str_subset(.x) %>%
-          path_file() %>%
-          str_extract("^\\d{8}") %>%
-          ymd() %>%
-          which.max()
-        caminhos.epr_c[i]
-      }
-    ) %>%
-      flatten_chr() %>%
-      unname()
+    caminhos.epr.recentes_c <- tibble::tibble(caminho = caminhos.epr_c) %>%
+      mutate(
+        contrato = stringr::str_extract(caminho, "\\d{12}"),
+        data_arquivo = lubridate::ymd(stringr::str_extract(fs::path_file(caminho), "^\\d{8}"))
+      ) %>%
+      # Remove arquivos onde o contrato ou a data não puderam ser extraídos
+      dplyr::filter(!is.na(contrato) & !is.na(data_arquivo)) %>%
+      # Para cada contrato, encontra o arquivo mais recente
+      dplyr::group_by(contrato) %>%
+      dplyr::slice_max(order_by = data_arquivo, n = 1, with_ties = FALSE) %>%
+      dplyr::ungroup() %>%
+      dplyr::pull(caminho)
     eprs_l <- list()
     eprs_t <- data.frame()
     for (
