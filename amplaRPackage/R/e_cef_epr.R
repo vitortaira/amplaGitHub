@@ -58,6 +58,21 @@ e_cef_epr <-
           str_squish() %>%
           discard(~ .x == "")
       )
+    empresa <- paginas_l[[1]] %>%
+      keep(~ str_detect(.x, "(?i)nome\\s?empr\\.?")) %>%
+      str_squish() %>%
+      str_remove("^.*(?i)\\s?nome\\s?empr\\.?\\s?:?\\s?") %>%
+      str_remove("(?i)un\\.?\\s?fin.*$") %>%
+      str_squish() %>%
+      {
+        case_when(
+          str_detect(., "(?i)up\\s?jardim\\s?prud") ~ "AMP",
+          str_detect(., "(?i)up\\s?vila\\s?sonia") ~ "AVS",
+          str_detect(., "(?i)up\\s?select\\s?vila") ~ "GRA",
+          str_detect(., "(?i)up\\s?esta[cç][aã]o\\s?vila") ~ "SN2",
+          TRUE ~ NA_character_
+        )
+      }
     # Define linhas_c
     epr_t <-
       paginas_l %>%
