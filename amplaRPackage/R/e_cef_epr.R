@@ -130,10 +130,11 @@ e_cef_epr <-
             NA_character_,
             linhas %>% as.character() %>% word(1)
           ),
-        arquivo = f_caminho.epr_c
+        arquivo = f_caminho.epr_c,
+        empresa = empresa
       ) %>%
       select(
-        contrato, nome.mutuario, uno, orr, to, cod, data.assinatura,
+        empresa, contrato, nome.mutuario, uno, orr, to, cod, data.assinatura,
         tipo.unidade, gar.aut, data.inc.ctr, data.inc.reg, valor.retido,
         valor.amortiz, amo, arquivo
       )
