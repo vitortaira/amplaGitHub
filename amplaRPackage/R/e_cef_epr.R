@@ -66,7 +66,7 @@ e_cef_epr <-
       str_squish() %>%
       {
         case_when(
-          str_detect(., "(?i)up\\s?jardim\\s?prud") ~ "AMP",
+          str_detect(., "(?i)up\\s?jardim\\s?pru") ~ "AMP",
           str_detect(., "(?i)up\\s?vila\\s?sonia") ~ "AVS",
           str_detect(., "(?i)up\\s?select\\s?vila") ~ "GRA",
           str_detect(., "(?i)up\\s?esta[cç][aã]o\\s?vila") ~ "SN2",

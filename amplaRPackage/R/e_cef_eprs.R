@@ -35,7 +35,7 @@ e_cef_eprs <-
     # Consolida os dados dos relatórios EPR da CEF na pasta "Relatorios - CIWEB"
     caminhos.epr_c <-
       dir_ls(f_caminho.pasta.ciweb_c, recurse = TRUE, type = "file") %>%
-      keep(~ str_ends(.x, "CONTRATOS_EMPREEND.pdf"))
+      keep(~ str_ends(.x, "(?i)contratos_empreend\\.pdf"))
     # Identifica o arquivo mais recente de cada empreendimento
     caminhos.epr.recentes_c <- tibble::tibble(caminho = caminhos.epr_c) %>%
       mutate(
