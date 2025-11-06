@@ -19,7 +19,7 @@ r_xcef_nomeados <- function(mes, ano) {
     data = list(
       "Extratos nomeados" = xcefn,
       EPRs = e_cef_eprs() %>%
-      select(-arquivo.tabela.tipo, -arquivo.tipo, -arquivo.fonte)
+        select(-arquivo.tabela.tipo, -arquivo.tipo, -arquivo.fonte)
     ),
     tab_colours = c(
       `Extratos nomeados` = "darkblue",
@@ -28,9 +28,16 @@ r_xcef_nomeados <- function(mes, ano) {
     col_dates = c(
       "data.lancamento", "data.movimentacao", "periodo.inicio", "periodo.fim"
     ),
-    col_headers =
+    col_headers = list(
+      `Extratos nomeados` = list(
+        arquivo = list(colour = "blue", font_colour = "black"),
+        conta.interno = list(colour = "blue", font_colour = "black"),
+        empresa = list(colour = "blue", font_colour = "black"),
+        nome.mutuario = list(colour = "blue", font_colour = "black")
+      )
+    ),
     col_monetary = c("valor", "saldo"),
-    col_width_auto = c("descricao", "nome.mutuario"),
+    col_width_auto = c("descricao"),
     col_width_spec = c("nome.mutuario" = 30),
     save = list(
       nome_arquivo = sprintf(
