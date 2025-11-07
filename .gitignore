@@ -1,0 +1,39 @@
+# R-specific
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+.httr-oauth
+.DS_Store
+rsconnect/
+
+# Python-specific
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS-specific
+Thumbs.db
+.DS_Store
+
+# Dados sensíveis (se aplicável)
+# dados/confidencial/

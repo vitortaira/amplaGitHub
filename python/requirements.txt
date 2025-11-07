@@ -1,0 +1,18 @@
+# Dependências Python para o projeto Ampla
+#
+# Para instalar: pip install -r requirements.txt
+# Para atualizar: pip freeze > requirements.txt
+
+# Análise de dados
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Manipulação de arquivos
+openpyxl>=3.1.0  # Excel
+xlrd>=2.0.0      # Excel legado
+
+# Automação web
+playwright>=1.40.0
+
+# Utilitários
+python-dateutil>=2.8.0
