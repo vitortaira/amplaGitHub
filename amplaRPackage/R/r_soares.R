@@ -392,7 +392,14 @@ r_soares <- function(xlsx = FALSE) {
   rec.uni %<>% bind_rows(
     in.cef.detalhado %>%
       arrange(empresa, id, natureza)
-  )
+  ) %>%
+    # Reordenar colunas para garantir que meses estejam em ordem cronológica
+    select(
+      id, empresa, especie, unidade, cliente, contrato, contrato.cef, pavimento,
+      situacao, data.venda, valor.venda, repasse.cef.total, checar, natureza,
+      soma.meses,
+      any_of(sort(names(.)[str_detect(names(.), "^\\d{4}-\\d{2}-\\d{2}$")]))
+    )
 
   if (xlsx) {
     gerar_xlsx(
