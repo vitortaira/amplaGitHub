@@ -76,7 +76,7 @@ e_cef_cmfcn <-
       pull(linhas)
     # Lançamentos
     lancamentos_t <-
-      tibble(linhas = linhas_c %>% head(str_which(linhas_c, "^TOTAIS")[1])) %>%
+      tibble(linhas = linhas_c %>% head(str_which(linhas_c, "^(?i)totais")[1])) %>%
       dplyr::filter(str_detect(linhas, "^[0-9]{12}")) %>%
       mutate(
         contrato = linhas %>% str_extract("^[0-9]{12}"),
