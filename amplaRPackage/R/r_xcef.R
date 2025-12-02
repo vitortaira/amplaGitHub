@@ -115,8 +115,18 @@ r_xcef <-
       )
     )
     extratos.cruzados_t %<>%
-      select(-id_xcef, -id_cmfcn)
-
+      rename(
+        arquivo.extrato = arquivo.xcef,
+        data.lancamento.extrato = data.lancamento.xcef,
+        natureza.extrato = natureza.xcef
+      ) %>%
+      select(
+        contrato.5, data.movimentacao, valor, empresa, natureza.extrato,
+        conta.interno, data.lancamento.extrato, documento, descricao, saldo,
+        conta, agencia, produto, periodo.inicio, periodo.fim, data.consulta,
+        arquivo.extrato, contrato, data.lancamento.cmfcn, lancamentos,
+        natureza.cmfcn, np, `conta.sidec/nsgd`, situacao, mot, arquivo.cmfcn
+      )
     # Salvando num xlsx -------------------------------------------------------
 
     if (xlsx) {
@@ -166,22 +176,47 @@ r_xcef <-
       )
 
       # Configuração de colunas monetárias
-      colunas_monetarias <- c("Valor", "Saldo")
+      colunas_monetarias <- c("valor", "saldo")
 
       # Configuração de colunas de data
       colunas_datas <- c(
-        "Data de lançamento",
-        "Data de movimento",
-        "Periodoinício",
-        "Periodoinícifiofim",
-        "DT. LANCTO"
+        "data.movimentacao",
+        "data.lancamento.extrato",
+        "periodo.inicio",
+        "periodo.fim",
+        "data.lancamento.cmfcn",
+        "data.movimento"
       )
 
-      # Configuração de cabeçalhos customizados por aba
-      # Cores de fundo personalizadas para cada aba
+      # Configuração de cabeçalhos customizados por aba com cores específicas por coluna
+      # Aba "Cruzados": purple para algumas colunas, red para outras, blue para outras
       col_headers_config <- list(
         Cruzados = list(
-          all = list(colour = "darkgray", font_size = 12)
+          # Purple headers (sem quebra de texto)
+          "contrato.5" = list(colour = "purple", font_size = 12, wrapText = FALSE),
+          "data.movimentacao" = list(colour = "purple", font_size = 12, wrapText = FALSE),
+          "valor" = list(colour = "purple", font_size = 12, wrapText = FALSE),
+          # Red headers (sem quebra de texto)
+          "data.lancamento.extrato" = list(colour = "red", font_size = 12, wrapText = FALSE),
+          "documento" = list(colour = "red", font_size = 12, wrapText = FALSE),
+          "descricao" = list(colour = "red", font_size = 12, wrapText = FALSE),
+          "saldo" = list(colour = "red", font_size = 12, wrapText = FALSE),
+          "conta" = list(colour = "red", font_size = 12, wrapText = FALSE),
+          "agencia" = list(colour = "red", font_size = 12, wrapText = FALSE),
+          "produto" = list(colour = "red", font_size = 12, wrapText = FALSE),
+          "periodo.inicio" = list(colour = "red", font_size = 12, wrapText = FALSE),
+          "periodo.fim" = list(colour = "red", font_size = 12, wrapText = FALSE),
+          "data.consulta" = list(colour = "red", font_size = 12, wrapText = FALSE),
+          "arquivo.xcef" = list(colour = "red", font_size = 12, wrapText = FALSE),
+          # Blue headers (sem quebra de texto)
+          "contrato" = list(colour = "blue", font_size = 12, wrapText = FALSE),
+          "data.lancamento.cmfcn" = list(colour = "blue", font_size = 12, wrapText = FALSE),
+          "lancamentos" = list(colour = "blue", font_size = 12, wrapText = FALSE),
+          "np" = list(colour = "blue", font_size = 12, wrapText = FALSE),
+          "conta.sidec/nsgd" = list(colour = "blue", font_size = 12, wrapText = FALSE),
+          "situacao" = list(colour = "blue", font_size = 12, wrapText = FALSE),
+          "mot" = list(colour = "blue", font_size = 12, wrapText = FALSE),
+          "arquivo.cmfcn" = list(colour = "blue", font_size = 12, wrapText = FALSE)
         ),
         Extratos = list(
           all = list(colour = "red", font_size = 12)
@@ -192,12 +227,16 @@ r_xcef <-
       )
 
       # Aplicar a configuração de cores para todos os cabeçalhos de cada aba
-      for (aba in names(col_headers_config)) {
-        df_aba <- dados_xlsx[[aba]]
-        for (col in colnames(df_aba)) {
-          col_headers_config[[aba]][[col]] <- col_headers_config[[aba]][["all"]]
+      # Para Extratos e CMF_CNs, aplicar a cor padrão a todas as colunas
+      for (aba in c("Extratos", "CMF_CNs")) {
+        if (aba %in% names(col_headers_config)) {
+          df_aba <- dados_xlsx[[aba]]
+          cor_padrao <- col_headers_config[[aba]][["all"]]
+          col_headers_config[[aba]] <- list()
+          for (col in colnames(df_aba)) {
+            col_headers_config[[aba]][[col]] <- cor_padrao
+          }
         }
-        col_headers_config[[aba]][["all"]] <- NULL
       }
 
       # Gerar a planilha usando gerar_xlsx

@@ -17,7 +17,9 @@
 #' @param col_width_def Largura padrão das colunas (valor numérico). Padrão: 18
 #' @param col_width_spec Vetor nomeado com larguras específicas para colunas por nome
 #' @param col_width_auto Vetor com nomes de colunas que devem ter largura ajustada automaticamente ao conteúdo
-#' @param col_headers Lista customizando estilos de cabeçalhos por aba e coluna. Formato: list(aba = list(coluna = list(colour = "cor", font_colour = "cor", font_size = tam)))
+#' @param col_headers Lista customizando estilos de cabeçalhos por aba e coluna.
+#'   Formato: list(aba = list(coluna = list(colour = "cor", font_colour = "cor", font_size = tam, wrapText = TRUE/FALSE))).
+#'   Propriedades suportadas: colour (cor de fundo), font_colour (cor da fonte), font_size (tamanho da fonte), wrapText (quebra de texto)
 #' @param col_groups Lista definindo grupos de colunas por aba. Formato: list(aba = list(list(cols = c("col1", "col2"), hidden = FALSE, level = 1)))
 #' @param tab_freeze Vetor nomeado definindo onde congelar painéis por aba. Formato: c(aba = "nome_coluna"). A coluna especificada será a última congelada.
 #' @param col_monetary Vetor com nomes de colunas que devem ser formatadas como valores monetários (com decimais).
@@ -228,6 +230,13 @@ gerar_xlsx <- function(data,
           cor_fonte <- if (!is.null(config$font_colour)) config$font_colour else NULL
           tamanho_fonte <- if (!is.null(config$font_size)) config$font_size else 11
 
+          # Determinar wrap text para este cabeçalho
+          wrap_padrao <- TRUE
+          # Verificar se está no config do cabeçalho
+          if (!is.null(config$wrapText)) {
+            wrap_padrao <- config$wrapText
+          }
+
           # Criar estilo com ou sem cor de fonte
           estilo_params <- list(
             border = "TopBottomLeftRight",
@@ -236,7 +245,7 @@ gerar_xlsx <- function(data,
             valign = "center",
             textDecoration = "bold",
             fgFill = cor_fundo,
-            wrapText = TRUE
+            wrapText = wrap_padrao
           )
 
           if (!is.null(cor_fonte)) {
