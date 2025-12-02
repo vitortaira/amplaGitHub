@@ -135,10 +135,15 @@ e_cef_xcefs<-
           # TRUE ~ NA_character_
         ),
         natureza = case_when(
-          ((descricao == "CR DESBLOQ") | (descricao == "CRE D IMOB")) &
+          # Condições conjuntas (descricao e documento)
+          ((descricao == "CR DESBLOQ") | (descricao == "CRE D IMOB") |
+            (str_detect(descricao, "(?i)cred.*hab\\s?desbloq"))) &
             (documento %in% contratos_pj) ~ "entrada.pj",
-          (((descricao == "CR DESBLOQ") | (descricao == "CRE D IMOB")) &
-            !(documento %in% contratos_pj)) |
+          # Condições conjuntas (descricao e documento)
+          ((descricao == "CR DESBLOQ") | (descricao == "CRE D IMOB") |
+            (str_detect(descricao, "(?i)cred.*hab\\s?desbloq"))) &
+            !(documento %in% contratos_pj) |
+          # Condições simples (descricao)
             (descricao == "DESB CR CX") |
             (descricao == "DESBL.SALD") ~ "repasse.cef",
           TRUE ~ NA_character_
