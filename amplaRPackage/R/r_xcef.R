@@ -36,9 +36,6 @@
 #' @importFrom fs dir_ls
 #' @importFrom here here
 #' @importFrom magrittr %>%
-#' @importFrom openxlsx createWorkbook addWorksheet writeData addStyle
-#' @importFrom openxlsx setColWidths addFilter freezePane saveWorkbook
-#' @importFrom pdftools pdf_text
 #' @importFrom dplyr mutate rename bind_rows inner_join
 #' @importFrom stringr str_detect str_ends str_pad str_sub
 #'
@@ -130,465 +127,91 @@ r_xcef <-
           format(Sys.time(), "%Y_%m_%d_%H_%M_%S"),
           ".xlsx"
         )
-      #  # Criando uma cópia de "Template.xlsx"
-      #  file.copy(
-      #    here::here("dados", "cef", "inadimplentes", "formatados", "Template.xlsx"),
-      #    #here::here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c),
-      #    paste0("C:/Users/Ampla/Documents/", nome.xlsx_c),
-      #    overwrite = T
-      #  )
-      # Definir o workbook ativo
-      xlsx <-
-        createWorkbook()
-      # Aba "Cruzados"
-      addWorksheet(
-        xlsx,
-        sheetName = "Cruzados",
-        gridLines = FALSE,
-        tabColour = "purple"
-      )
-      # Popular a aba "Cruzados"
-      writeData(
-        xlsx,
-        sheet = "Cruzados",
-        extratos.cruzados_t
-      )
-      # Formatação geral da tabela
-      addStyle(
-        xlsx,
-        sheet = "Cruzados",
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "center",
-            valign = "center"
-          ),
-        rows = 1:(nrow(extratos.cruzados_t) + 1),
-        cols = 1:ncol(extratos.cruzados_t),
-        gridExpand = T
-      )
-      # Formatar largura das colunas da tabela
-      setColWidths(
-        xlsx,
-        sheet = "Cruzados",
-        cols = 1:ncol(extratos.cruzados_t),
-        widths = 18
-      )
-      # Adicionar filtro à tabela
-      addFilter(
-        xlsx,
-        sheet = "Cruzados",
-        rows = 1,
-        cols = 1:ncol(extratos.cruzados_t)
-      )
-      # Formatar cabeçalho
-      addStyle(
-        xlsx,
-        sheet = "Cruzados",
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            fontSize = 12,
-            halign = "center",
-            valign = "center",
-            textDecoration = "bold",
-            fgFill = "darkgray",
-            wrapText = T
-          ),
-        rows = 1,
-        cols = 1:ncol(extratos.cruzados_t),
-        gridExpand = T
-      )
-      # Formatar "Cliente", "LANCAMENTOS" e "CONTA SIDEC/NSGD"
-      addStyle(
-        xlsx,
-        sheet = "Cruzados",
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "left",
-            valign = "center"
-          ),
-        rows = 2:(nrow(extratos.cruzados_t) + 1),
-        cols =
-          which(
-            colnames(extratos.cruzados_t) %in%
-              c("Cliente", "LANCAMENTOS", "CONTA SIDEC/NSGD")
-          ),
-        gridExpand = T
-      )
-      setColWidths(
-        xlsx,
-        sheet = "Cruzados",
-        cols = which(colnames(extratos.cruzados_t) == "CONTA SIDEC/NSGD"),
-        widths = 25
-      )
-      setColWidths(
-        xlsx,
-        sheet = "Cruzados",
-        cols =
-          which(
-            colnames(extratos.cruzados_t) %in%
-              c("Cliente", "LANCAMENTOS")
-          ),
-        widths = 45
-      )
-      # Formatar datas
-      addStyle(
-        xlsx,
-        sheet = "Cruzados",
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "center",
-            valign = "center",
-            numFmt = "DD/MM/YYYY"
-          ),
-        rows = 2:(nrow(extratos.cruzados_t) + 1),
-        cols =
-          which(
-            colnames(extratos.cruzados_t) %in%
-              c(
-                "Data de lan\u00e7amento", "Data de movimento", "Periodoin\u00edcio",
-                "Periodoin\u00edciofim", "DT. LANCTO"
-              )
-          ),
-        gridExpand = T
-      )
-      # Formatar data-hora
-      addStyle(
-        xlsx,
-        sheet = "Cruzados",
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "center",
-            valign = "center",
-            numFmt = "YYYY-MM-DD HH:MM"
-          ),
-        rows = 2:(nrow(extratos.cruzados_t) + 1),
-        cols = which(colnames(extratos.cruzados_t) == "data.consulta"),
-        gridExpand = T
-      )
-      # Formatar valores monetários
-      addStyle(
-        xlsx,
-        sheet = "Cruzados",
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "center",
-            valign = "center",
-            numFmt = "#,##0.00"
-          ),
-        rows = 1:nrow(extratos.cruzados_t) + 1,
-        cols =
-          which(
-            colnames(extratos.cruzados_t) %in%
-              c("Valor", "Saldo")
-          ),
-        gridExpand = T
-      )
-      # Congelar a primeira linha
-      freezePane(xlsx, sheet = "Cruzados", firstRow = T, firstActiveRow = 2)
-      # Aba "Extratos"
-      addWorksheet(
-        xlsx,
-        sheetName = "Extratos",
-        gridLines = FALSE,
-        tabColour = "red"
-      )
-      # Popular a aba "Extratos"
-      writeData(
-        xlsx,
-        sheet = "Extratos",
-        extratos_t
-      )
-      # Formatação geral da tabela
-      addStyle(
-        xlsx,
-        sheet = "Extratos",
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "center",
-            valign = "center"
-          ),
-        rows = 1:(nrow(extratos_t) + 1),
-        cols = 1:ncol(extratos_t),
-        gridExpand = T
-      )
-      # Formatar largura das colunas da tabela
-      setColWidths(
-        xlsx,
-        sheet = "Extratos",
-        cols = 1:ncol(extratos_t),
-        widths = 18
-      )
-      # Adicionar filtro à tabela
-      addFilter(
-        xlsx,
-        sheet = "Extratos",
-        rows = 1,
-        cols = 1:ncol(extratos_t)
-      )
-      # Formatar cabeçalho
-      addStyle(
-        xlsx,
-        sheet = "Extratos",
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            fontSize = 12,
-            halign = "center",
-            valign = "center",
-            textDecoration = "bold",
-            fgFill = "red",
-            wrapText = T
-          ),
-        rows = 1,
-        cols = 1:ncol(extratos_t),
-        gridExpand = T
-      )
-      # Formatar "Cliente"
-      addStyle(
-        xlsx,
-        sheet = "Extratos",
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "left",
-            valign = "center"
-          ),
-        rows = 2:(nrow(extratos_t) + 1),
-        cols =
-          which(
-            colnames(extratos_t) %in%
-              c("Cliente")
-          ),
-        gridExpand = T
-      )
-      setColWidths(
-        xlsx,
-        sheet = "Extratos",
-        cols = which(colnames(extratos_t) == "Hist\u00f3rico"),
-        widths = 25
-      )
-      setColWidths(
-        xlsx,
-        sheet = "Extratos",
-        cols =
-          which(
-            colnames(extratos_t) %in%
-              c("Cliente")
-          ),
-        widths = 45
-      )
-      # Formatar datas
-      addStyle(
-        xlsx,
-        sheet = "Extratos",
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "center",
-            valign = "center",
-            numFmt = "DD/MM/YYYY"
-          ),
-        rows = 2:(nrow(extratos_t) + 1),
-        cols =
-          which(
-            colnames(extratos_t) %in%
-              c(
-                "Data de lan\u00e7amento", "Data de movimento", "Periodoin\u00edcio",
-                "Periodoin\u00edciofim"
-              )
-          ),
-        gridExpand = TRUE
-      )
-      # Formatar data-hora
-      addStyle(
-        xlsx,
-        sheet = "Extratos",
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "center",
-            valign = "center",
-            numFmt = "YYYY-MM-DD HH:MM"
-          ),
-        rows = 2:(nrow(extratos_t) + 1),
-        cols = which(colnames(extratos_t) == "data.consulta"),
-        gridExpand = T
-      )
-      # Formatar valores monetários
-      addStyle(
-        xlsx,
-        sheet = "Extratos",
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "center",
-            valign = "center",
-            numFmt = "#,##0.00"
-          ),
-        rows = 1:nrow(extratos_t) + 1,
-        cols =
-          which(
-            colnames(extratos_t) %in%
-              c("Valor", "Saldo")
-          ),
-        gridExpand = T
-      )
-      # Congelar a primeira linha
-      freezePane(xlsx, sheet = "Extratos", firstRow = T, firstActiveRow = 2)
-      # Aba "CMF_CNs"
-      addWorksheet(
-        xlsx,
-        sheetName = "CMF_CNs",
-        gridLines = FALSE,
-        tabColour = "blue"
-      )
-      # Popular a aba "CMF_CNs"
-      writeData(
-        xlsx,
-        sheet = "CMF_CNs",
-        cmfcns_t
-      )
-      # Formatação geral da tabela
-      addStyle(
-        xlsx,
-        sheet = "CMF_CNs",
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "center",
-            valign = "center"
-          ),
-        rows = 1:(nrow(cmfcns_t) + 1),
-        cols = 1:ncol(cmfcns_t),
-        gridExpand = T
-      )
-      # Formatar largura das colunas da tabela
-      setColWidths(
-        xlsx,
-        sheet = "CMF_CNs",
-        cols = 1:ncol(cmfcns_t),
-        widths = 18
-      )
-      # Adicionar filtro à tabela
-      addFilter(
-        xlsx,
-        sheet = "CMF_CNs",
-        rows = 1,
-        cols = 1:ncol(cmfcns_t)
-      )
-      # Formatar cabeçalho
-      addStyle(
-        xlsx,
-        sheet = "CMF_CNs",
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            fontSize = 12,
-            halign = "center",
-            valign = "center",
-            textDecoration = "bold",
-            fgFill = "blue",
-            wrapText = T
-          ),
-        rows = 1,
-        cols = 1:ncol(cmfcns_t),
-        gridExpand = T
-      )
-      # Formatar "LANCAMENTOS" e "CONTA SIDEC/NSGD"
-      addStyle(
-        xlsx,
-        sheet = "CMF_CNs",
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "left",
-            valign = "center"
-          ),
-        rows = 2:(nrow(cmfcns_t) + 1),
-        cols =
-          which(
-            colnames(cmfcns_t) %in%
-              c("LANCAMENTOS", "CONTA SIDEC/NSGD")
-          ),
-        gridExpand = T
-      )
-      setColWidths(
-        xlsx,
-        sheet = "CMF_CNs",
-        cols = which(colnames(cmfcns_t) == "CONTA SIDEC/NSGD"),
-        widths = 25
-      )
-      setColWidths(
-        xlsx,
-        sheet = "CMF_CNs",
-        cols =
-          which(
-            colnames(cmfcns_t) %in%
-              c("LANCAMENTOS")
-          ),
-        widths = 45
-      )
-      # Formatar datas
-      addStyle(
-        xlsx,
-        sheet = "CMF_CNs",
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "center",
-            valign = "center",
-            numFmt = "DD/MM/YYYY"
-          ),
-        rows = 2:(nrow(cmfcns_t) + 1),
-        cols =
-          which(
-            colnames(cmfcns_t) %in%
-              c("DT. LANCTO", "Data de movimento")
-          ),
-        gridExpand = TRUE
-      )
-      # Formatar valores monetários
-      addStyle(
-        xlsx,
-        sheet = "CMF_CNs",
-        style =
-          createStyle(
-            border = "TopBottomLeftRight",
-            halign = "center",
-            valign = "center",
-            numFmt = "#,##0.00"
-          ),
-        rows = 1:nrow(cmfcns_t) + 1,
-        cols =
-          which(
-            colnames(cmfcns_t) %in%
-              c("Valor")
-          ),
-        gridExpand = T
-      )
-      # Congelar a primeira linha
-      freezePane(xlsx, sheet = "CMF_CNs", firstRow = T, firstActiveRow = 2)
-      # Salvar a planilha localmente
+
+      # Caminho da pasta de destino
       caminho_pasta_extratos_cruzados <- file.path(
         "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Relatórios - Documentos/Relatorios - Extratos/Extratos cruzados"
       )
 
-      # Criar pasta se não existir
-      if (!dir.exists(caminho_pasta_extratos_cruzados)) {
-        dir.create(caminho_pasta_extratos_cruzados, recursive = TRUE)
+      # Preparar dados para as três abas
+      dados_xlsx <- list(
+        Cruzados = extratos.cruzados_t,
+        Extratos = extratos_t,
+        CMF_CNs = cmfcns_t
+      )
+
+      # Cores das abas
+      cores_abas <- c(
+        Cruzados = "purple",
+        Extratos = "red",
+        CMF_CNs = "blue"
+      )
+
+      # Configuração de larguras específicas por coluna
+      # Todas as abas têm CONTA SIDEC/NSGD com 25, Cliente/LANCAMENTOS com 45
+      larguras_spec <- c(
+        "CONTA SIDEC/NSGD" = 25,
+        "Cliente" = 45,
+        "LANCAMENTOS" = 45,
+        "Histórico" = 25
+      )
+
+      # Configuração de alinhamento específico por coluna
+      # Cliente, LANCAMENTOS e CONTA SIDEC/NSGD são alinhados à esquerda
+      alinhas_spec <- c(
+        "Cliente" = "left",
+        "LANCAMENTOS" = "left",
+        "CONTA SIDEC/NSGD" = "left",
+        "Histórico" = "left"
+      )
+
+      # Configuração de colunas monetárias
+      colunas_monetarias <- c("Valor", "Saldo")
+
+      # Configuração de colunas de data
+      colunas_datas <- c(
+        "Data de lançamento",
+        "Data de movimento",
+        "Periodoinício",
+        "Periodoinícifiofim",
+        "DT. LANCTO"
+      )
+
+      # Configuração de cabeçalhos customizados por aba
+      # Cores de fundo personalizadas para cada aba
+      col_headers_config <- list(
+        Cruzados = list(
+          all = list(colour = "darkgray", font_size = 12)
+        ),
+        Extratos = list(
+          all = list(colour = "red", font_size = 12)
+        ),
+        CMF_CNs = list(
+          all = list(colour = "blue", font_size = 12)
+        )
+      )
+
+      # Aplicar a configuração de cores para todos os cabeçalhos de cada aba
+      for (aba in names(col_headers_config)) {
+        df_aba <- dados_xlsx[[aba]]
+        for (col in colnames(df_aba)) {
+          col_headers_config[[aba]][[col]] <- col_headers_config[[aba]][["all"]]
+        }
+        col_headers_config[[aba]][["all"]] <- NULL
       }
 
-      saveWorkbook(
-        xlsx,
-        file.path(caminho_pasta_extratos_cruzados, nome.xlsx_c),
-        overwrite = TRUE
+      # Gerar a planilha usando gerar_xlsx
+      gerar_xlsx(
+        data = dados_xlsx,
+        tab_names = names(dados_xlsx),
+        tab_colours = cores_abas,
+        col_width_def = 18,
+        col_width_spec = larguras_spec,
+        col_headers = col_headers_config,
+        col_monetary = colunas_monetarias,
+        col_dates = colunas_datas,
+        col_align = alinhas_spec,
+        save = list(nome.xlsx_c, caminho_pasta_extratos_cruzados)
       )
     }
 

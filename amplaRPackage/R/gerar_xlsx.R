@@ -25,6 +25,9 @@
 #' @param col_dates Vetor com nomes de colunas que devem ser formatadas como datas.
 #'   Se NULL, infere automaticamente baseado no tipo das colunas (Date)
 #' @param col_clip Vetor com nomes de colunas de texto que devem ter quebra de texto habilitada
+#' @param col_align Lista nomeada especificando alinhamento horizontal por coluna.
+#'   Formato: c(col1 = "left", col2 = "center", col3 = "right").
+#'   Se NULL, usa alinhamento padrão (center para numéricos, left para texto).
 #' @param save Lista com 2 elementos: (1) nome do arquivo, (2) caminho de destino.
 #'   Se NULL, salva automaticamente no diretório Downloads com nome "xlsx-YYYY_MM_DD-HH_MM_SS.xlsx"
 #'
@@ -50,6 +53,7 @@ gerar_xlsx <- function(data,
                        col_monetary = NULL,
                        col_dates = NULL,
                        col_clip = NULL,
+                       col_align = NULL,
                        save = NULL) {
   # Validação e preparação dos dados
   if (is.data.frame(data)) {
@@ -329,6 +333,26 @@ gerar_xlsx <- function(data,
         gridExpand = TRUE,
         stack = TRUE
       )
+    }
+
+    # Alinhamento customizado por coluna (aplicado por último para sobrescrever padrões)
+    if (!is.null(col_align)) {
+      for (nome_coluna in names(col_align)) {
+        if (nome_coluna %in% colnames(df_dados)) {
+          col_pos <- which(colnames(df_dados) == nome_coluna)
+          align_tipo <- col_align[[nome_coluna]]
+
+          openxlsx::addStyle(
+            wb,
+            sheet = nome_aba,
+            style = openxlsx::createStyle(halign = align_tipo, valign = "center"),
+            rows = 2:(nrow(df_dados) + 1),
+            cols = col_pos,
+            gridExpand = TRUE,
+            stack = TRUE
+          )
+        }
+      }
     }
 
     # Larguras específicas (aplicadas por último para garantir precedência)
