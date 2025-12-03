@@ -19,7 +19,8 @@
 #' @param col_width_auto Vetor com nomes de colunas que devem ter largura ajustada automaticamente ao conteúdo
 #' @param col_headers Lista customizando estilos de cabeçalhos por aba e coluna.
 #'   Formato: list(aba = list(coluna = list(colour = "cor", font_colour = "cor", font_size = tam, wrapText = TRUE/FALSE))).
-#'   Propriedades suportadas: colour (cor de fundo), font_colour (cor da fonte), font_size (tamanho da fonte), wrapText (quebra de texto)
+#'   Propriedades suportadas: colour (cor de fundo), font_colour (cor da fonte), font_size (tamanho da fonte),
+#'   wrapText (quebra de texto, padrão FALSE)
 #' @param col_groups Lista definindo grupos de colunas por aba. Formato: list(aba = list(list(cols = c("col1", "col2"), hidden = FALSE, level = 1)))
 #' @param tab_freeze Vetor nomeado definindo onde congelar painéis por aba. Formato: c(aba = "nome_coluna"). A coluna especificada será a última congelada.
 #' @param col_monetary Vetor com nomes de colunas que devem ser formatadas como valores monetários (com decimais).
@@ -30,6 +31,9 @@
 #' @param col_align Lista nomeada especificando alinhamento horizontal por coluna.
 #'   Formato: c(col1 = "left", col2 = "center", col3 = "right").
 #'   Se NULL, usa alinhamento padrão (center para numéricos, left para texto).
+#' @param tab_zoom Vetor nomeado com nível de zoom (em porcentagem) para cada aba.
+#'   Formato: c(aba1 = 80, aba2 = 100). Se NULL, usa zoom de 80% como padrão para todas as abas.
+#'   Valores devem estar entre 10 e 400.
 #' @param save Lista com 2 elementos: (1) nome do arquivo, (2) caminho de destino.
 #'   Se NULL, salva automaticamente no diretório Downloads com nome "xlsx-YYYY_MM_DD-HH_MM_SS.xlsx"
 #'
@@ -56,6 +60,7 @@ gerar_xlsx <- function(data,
                        col_dates = NULL,
                        col_clip = NULL,
                        col_align = NULL,
+                       tab_zoom = NULL,
                        save = NULL) {
   # Validação e preparação dos dados
   if (is.data.frame(data)) {
@@ -199,25 +204,38 @@ gerar_xlsx <- function(data,
       gridExpand = TRUE
     )
 
-    # Estilo do cabeçalho
-    openxlsx::addStyle(
-      wb,
-      sheet = nome_aba,
-      style = openxlsx::createStyle(
-        border = "TopBottomLeftRight",
-        fontSize = 11,
-        halign = "center",
-        valign = "center",
-        textDecoration = "bold",
-        fgFill = "lightgray", # Cor mais suave
-        wrapText = TRUE
-      ),
-      rows = 1,
-      cols = seq_len(ncol(df_dados)),
-      gridExpand = TRUE
-    )
+    # Estilo do cabeçalho (padrão para colunas sem estilo customizado)
+    # Primeiro, identificar quais colunas têm estilos customizados
+    colunas_com_estilo_custom <- c()
+    if (!is.null(col_headers) && nome_aba %in% names(col_headers)) {
+      colunas_com_estilo_custom <- intersect(
+        names(col_headers[[nome_aba]]),
+        colnames(df_dados)
+      )
+    }
 
-    # Estilos customizados para cabeçalhos específicos
+    # Aplicar estilo padrão apenas às colunas sem customização
+    colunas_padrao <- which(!(colnames(df_dados) %in% colunas_com_estilo_custom))
+    if (length(colunas_padrao) > 0) {
+      openxlsx::addStyle(
+        wb,
+        sheet = nome_aba,
+        style = openxlsx::createStyle(
+          border = "TopBottomLeftRight",
+          fontSize = 11,
+          halign = "center",
+          valign = "center",
+          textDecoration = "bold",
+          fgFill = "lightgray",
+          wrapText = FALSE
+        ),
+        rows = 1,
+        cols = colunas_padrao,
+        gridExpand = TRUE
+      )
+    }
+
+    # Estilos customizados para cabeçalhos específicos (aplicados DEPOIS do padrão)
     if (!is.null(col_headers) && nome_aba %in% names(col_headers)) {
       headers_aba <- col_headers[[nome_aba]]
       for (nome_coluna in names(headers_aba)) {
@@ -231,7 +249,7 @@ gerar_xlsx <- function(data,
           tamanho_fonte <- if (!is.null(config$font_size)) config$font_size else 11
 
           # Determinar wrap text para este cabeçalho
-          wrap_padrao <- TRUE
+          wrap_padrao <- FALSE
           # Verificar se está no config do cabeçalho
           if (!is.null(config$wrapText)) {
             wrap_padrao <- config$wrapText
@@ -497,6 +515,53 @@ gerar_xlsx <- function(data,
             level = nivel
           )
         }
+      }
+    }
+  }
+
+  # Aplicar zoom às abas
+  # Se tab_zoom não for especificado, usar 80% como padrão
+  for (i in seq_along(tab_names)) {
+    nome_aba <- tab_names[i]
+
+    # Determinar o zoom para esta aba
+    zoom_valor <- 80 # Padrão
+    if (!is.null(tab_zoom)) {
+      if (nome_aba %in% names(tab_zoom)) {
+        zoom_valor <- tab_zoom[nome_aba]
+      } else if (length(tab_zoom) == 1 && is.null(names(tab_zoom))) {
+        # Se tab_zoom é um vetor sem nomes com um único valor, aplicar a todas
+        zoom_valor <- tab_zoom[1]
+      }
+    }
+
+    # Validar zoom (deve estar entre 10 e 400)
+    zoom_valor <- max(10, min(400, as.numeric(zoom_valor)))
+
+    # Aplicar zoom à aba usando o XML da worksheet
+    sheet_idx <- which(tab_names == nome_aba)
+    # Acessar a worksheet pelo índice
+    ws <- wb$worksheets[[sheet_idx]]
+
+    # Modifica o XML da sheetView para definir o zoom
+    if (!is.null(ws)) {
+      # Criar ou modificar o atributo zoomScale no sheetView
+      # Usando XML::xmlSetAttr se disponível, ou direct assignment
+      if (is.character(ws)) {
+        # Se for string, precisamos processar como XML
+        ws <- sub(
+          'zoomScale="[0-9]+"',
+          paste0('zoomScale="', zoom_valor, '"'),
+          ws
+        )
+        if (!grepl("zoomScale", ws)) {
+          ws <- sub(
+            "<sheetView",
+            paste0('<sheetView zoomScale="', zoom_valor, '"'),
+            ws
+          )
+        }
+        wb$worksheets[[sheet_idx]] <- ws
       }
     }
   }
