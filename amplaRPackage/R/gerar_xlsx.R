@@ -538,31 +538,32 @@ gerar_xlsx <- function(data,
     # Validar zoom (deve estar entre 10 e 400)
     zoom_valor <- max(10, min(400, as.numeric(zoom_valor)))
 
-    # Aplicar zoom à aba usando o XML da worksheet
-    sheet_idx <- which(tab_names == nome_aba)
-    # Acessar a worksheet pelo índice
-    ws <- wb$worksheets[[sheet_idx]]
+    # Aplicar zoom à aba modificando o XML sheetView
+    ws <- wb$worksheets[[i]]
 
-    # Modifica o XML da sheetView para definir o zoom
-    if (!is.null(ws)) {
-      # Criar ou modificar o atributo zoomScale no sheetView
-      # Usando XML::xmlSetAttr se disponível, ou direct assignment
-      if (is.character(ws)) {
-        # Se for string, precisamos processar como XML
-        ws <- sub(
+    if (!is.null(ws) && !is.null(ws$sheetViews)) {
+      # sheetViews é uma string XML
+      sheetViews_str <- ws$sheetViews
+
+      # Substituir ou adicionar zoomScale
+      if (grepl('zoomScale="[0-9]+"', sheetViews_str)) {
+        # Substituir valor existente
+        sheetViews_str <- sub(
           'zoomScale="[0-9]+"',
           paste0('zoomScale="', zoom_valor, '"'),
-          ws
+          sheetViews_str
         )
-        if (!grepl("zoomScale", ws)) {
-          ws <- sub(
-            "<sheetView",
-            paste0('<sheetView zoomScale="', zoom_valor, '"'),
-            ws
-          )
-        }
-        wb$worksheets[[sheet_idx]] <- ws
+      } else {
+        # Adicionar zoomScale após workbookViewId
+        sheetViews_str <- sub(
+          'workbookViewId="[0-9]+"',
+          paste0('workbookViewId="0" zoomScale="', zoom_valor, '"'),
+          sheetViews_str
+        )
       }
+
+      # Atualizar a worksheet
+      ws$sheetViews <- sheetViews_str
     }
   }
 
