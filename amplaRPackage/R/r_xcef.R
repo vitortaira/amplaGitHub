@@ -106,14 +106,25 @@ r_xcef <-
         "sim",
         "não"
       )
-    )
+    ) %>%
+      select(
+        contrato.5, data.movimentacao, valor, empresa, natureza, conta.interno,
+        cruzada, data.lancamento, documento, descricao, saldo, conta, agencia,
+        produto, cnpj, cpf.cnpj, nome.razao, periodo.inicio, periodo.fim,
+        data.consulta, arquivo
+      )
     cmfcns_t %<>% mutate(
       cruzada = if_else(
         paste0(contrato.5, valor) %in% paste0(extratos.cruzados_t$contrato.5, extratos.cruzados_t$valor),
         "sim",
         "não"
       )
-    )
+    ) %>%
+      select(
+        contrato.5, data.movimento, valor, empresa, natureza, cruzada,
+        data.lancamento, contrato, lancamentos, np, `conta.sidec/nsgd`,
+        situacao, mot, arquivo
+      )
     extratos.cruzados_t %<>%
       rename(
         arquivo.extrato = arquivo.xcef,
@@ -124,8 +135,8 @@ r_xcef <-
         contrato.5, data.movimentacao, valor, empresa, natureza.extrato,
         conta.interno, data.lancamento.extrato, documento, descricao, saldo,
         conta, agencia, produto, periodo.inicio, periodo.fim, data.consulta,
-        arquivo.extrato, contrato, data.lancamento.cmfcn, lancamentos,
-        natureza.cmfcn, np, `conta.sidec/nsgd`, situacao, mot, arquivo.cmfcn
+        arquivo.extrato, natureza.cmfcn, contrato, data.lancamento.cmfcn,
+        lancamentos, np, `conta.sidec/nsgd`, situacao, mot, arquivo.cmfcn
       )
     # Salvando num xlsx -------------------------------------------------------
 
@@ -158,12 +169,20 @@ r_xcef <-
       )
 
       # Configuração de larguras específicas por coluna
-      # Todas as abas têm CONTA SIDEC/NSGD com 25, Cliente/LANCAMENTOS com 45
+      # Todas as abas têm Cliente com 45
       larguras_spec <- c(
-        "CONTA SIDEC/NSGD" = 25,
         "Cliente" = 45,
-        "LANCAMENTOS" = 45,
         "Histórico" = 25
+      )
+
+      # Colunas com largura automática ajustada ao conteúdo
+      colunas_auto <- c(
+        "data.movimentacao",
+        "data.lancamento.extrato",
+        "descricao",
+        "data.lancamento.cmfcn",
+        "lancamentos",
+        "conta.sidec/nsgd"
       )
 
       # Configuração de alinhamento específico por coluna
@@ -180,49 +199,69 @@ r_xcef <-
 
       # Configuração de colunas de data
       colunas_datas <- c(
-        "data.movimentacao",
-        "data.lancamento.extrato",
-        "periodo.inicio",
-        "periodo.fim",
+        "data.lancamento",
         "data.lancamento.cmfcn",
-        "data.movimento"
+        "data.lancamento.extrato",
+        "data.movimentacao",
+        "data.movimento",
+        "periodo.fim",
+        "periodo.inicio"
       )
 
       # Configuração de cabeçalhos customizados por aba com cores específicas por coluna
       # Aba "Cruzados": purple para algumas colunas, red para outras, blue para outras
       col_headers_config <- list(
         Cruzados = list(
-          # Purple headers (sem quebra de texto)
-          "contrato.5" = list(colour = "purple", font_size = 12, wrapText = FALSE),
-          "data.movimentacao" = list(colour = "purple", font_size = 12, wrapText = FALSE),
-          "valor" = list(colour = "purple", font_size = 12, wrapText = FALSE),
-          # Red headers (sem quebra de texto)
-          "data.lancamento.extrato" = list(colour = "red", font_size = 12, wrapText = FALSE),
-          "documento" = list(colour = "red", font_size = 12, wrapText = FALSE),
-          "descricao" = list(colour = "red", font_size = 12, wrapText = FALSE),
-          "saldo" = list(colour = "red", font_size = 12, wrapText = FALSE),
-          "conta" = list(colour = "red", font_size = 12, wrapText = FALSE),
-          "agencia" = list(colour = "red", font_size = 12, wrapText = FALSE),
-          "produto" = list(colour = "red", font_size = 12, wrapText = FALSE),
-          "periodo.inicio" = list(colour = "red", font_size = 12, wrapText = FALSE),
-          "periodo.fim" = list(colour = "red", font_size = 12, wrapText = FALSE),
-          "data.consulta" = list(colour = "red", font_size = 12, wrapText = FALSE),
-          "arquivo.xcef" = list(colour = "red", font_size = 12, wrapText = FALSE),
-          # Blue headers (sem quebra de texto)
-          "contrato" = list(colour = "blue", font_size = 12, wrapText = FALSE),
-          "data.lancamento.cmfcn" = list(colour = "blue", font_size = 12, wrapText = FALSE),
-          "lancamentos" = list(colour = "blue", font_size = 12, wrapText = FALSE),
-          "np" = list(colour = "blue", font_size = 12, wrapText = FALSE),
-          "conta.sidec/nsgd" = list(colour = "blue", font_size = 12, wrapText = FALSE),
-          "situacao" = list(colour = "blue", font_size = 12, wrapText = FALSE),
-          "mot" = list(colour = "blue", font_size = 12, wrapText = FALSE),
-          "arquivo.cmfcn" = list(colour = "blue", font_size = 12, wrapText = FALSE)
+          # Purple headers with white font
+          "contrato.5" = list(colour = "purple", font_colour = "white", font_size = 12),
+          "data.movimentacao" = list(colour = "purple", font_colour = "white", font_size = 12),
+          "valor" = list(colour = "purple", font_colour = "white", font_size = 12),
+          # Red headers with white font
+          "data.lancamento.extrato" = list(colour = "red", font_colour = "white", font_size = 12),
+          "documento" = list(colour = "red", font_colour = "white", font_size = 12),
+          "descricao" = list(colour = "red", font_colour = "white", font_size = 12),
+          "saldo" = list(colour = "red", font_colour = "white", font_size = 12),
+          "conta" = list(colour = "red", font_colour = "white", font_size = 12),
+          "agencia" = list(colour = "red", font_colour = "white", font_size = 12),
+          "produto" = list(colour = "red", font_colour = "white", font_size = 12),
+          "periodo.inicio" = list(colour = "red", font_colour = "white", font_size = 12),
+          "periodo.fim" = list(colour = "red", font_colour = "white", font_size = 12),
+          "data.consulta" = list(colour = "red", font_colour = "white", font_size = 12),
+          "arquivo.extrato" = list(colour = "red", font_colour = "white", font_size = 12),
+          # Blue headers with white font
+          "contrato" = list(colour = "blue", font_colour = "white", font_size = 12),
+          "data.lancamento.cmfcn" = list(colour = "blue", font_colour = "white", font_size = 12),
+          "lancamentos" = list(colour = "blue", font_colour = "white", font_size = 12),
+          "np" = list(colour = "blue", font_colour = "white", font_size = 12),
+          "conta.sidec/nsgd" = list(colour = "blue", font_colour = "white", font_size = 12),
+          "situacao" = list(colour = "blue", font_colour = "white", font_size = 12),
+          "mot" = list(colour = "blue", font_colour = "white", font_size = 12),
+          "arquivo.cmfcn" = list(colour = "blue", font_colour = "white", font_size = 12)
         ),
         Extratos = list(
-          all = list(colour = "red", font_size = 12)
+          # Purple headers with white font
+          "contrato.5" = list(colour = "purple", font_colour = "white", font_size = 12),
+          "data.movimentacao" = list(colour = "purple", font_colour = "white", font_size = 12),
+          "valor" = list(colour = "purple", font_colour = "white", font_size = 12),
+          # Gray headers with black font (default)
+          "empresa" = list(colour = "lightgray", font_size = 12),
+          "natureza" = list(colour = "lightgray", font_size = 12),
+          "conta.interno" = list(colour = "lightgray", font_size = 12),
+          "cruzada" = list(colour = "lightgray", font_size = 12),
+          # Red headers with white font (default for other columns)
+          all = list(colour = "red", font_colour = "white", font_size = 12)
         ),
         CMF_CNs = list(
-          all = list(colour = "blue", font_size = 12)
+          # Purple headers with white font
+          "contrato.5" = list(colour = "purple", font_colour = "white", font_size = 12),
+          "data.movimentacao" = list(colour = "purple", font_colour = "white", font_size = 12),
+          "valor" = list(colour = "purple", font_colour = "white", font_size = 12),
+          # Gray headers with black font (default)
+          "empresa" = list(colour = "lightgray", font_size = 12),
+          "natureza" = list(colour = "lightgray", font_size = 12),
+          "cruzada" = list(colour = "lightgray", font_size = 12),
+          # Blue headers with white font (default for other columns)
+          all = list(colour = "blue", font_colour = "white", font_size = 12)
         )
       )
 
@@ -231,10 +270,16 @@ r_xcef <-
       for (aba in c("Extratos", "CMF_CNs")) {
         if (aba %in% names(col_headers_config)) {
           df_aba <- dados_xlsx[[aba]]
-          cor_padrao <- col_headers_config[[aba]][["all"]]
+          config_aba <- col_headers_config[[aba]]
+          cor_padrao <- config_aba[["all"]]
           col_headers_config[[aba]] <- list()
           for (col in colnames(df_aba)) {
-            col_headers_config[[aba]][[col]] <- cor_padrao
+            # Se a coluna tem configuração específica, usar; senão usar a padrão
+            if (col %in% names(config_aba) && col != "all") {
+              col_headers_config[[aba]][[col]] <- config_aba[[col]]
+            } else {
+              col_headers_config[[aba]][[col]] <- cor_padrao
+            }
           }
         }
       }
@@ -246,6 +291,7 @@ r_xcef <-
         tab_colours = cores_abas,
         col_width_def = 18,
         col_width_spec = larguras_spec,
+        col_width_auto = colunas_auto,
         col_headers = col_headers_config,
         col_monetary = colunas_monetarias,
         col_dates = colunas_datas,
