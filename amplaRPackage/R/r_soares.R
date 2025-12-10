@@ -402,6 +402,13 @@ r_soares <- function(xlsx = FALSE) {
       situacao, data.venda, valor.venda, repasse.cef.total, checar, natureza,
       soma.meses,
       any_of(sort(names(.)[str_detect(names(.), "^\\d{4}-\\d{2}-\\d{2}$")]))
+    ) %>%
+    # Adicionar colunas do R9 (Ana)
+    left_join(
+      in.unis.cruzado %>%
+        select(id, Status, `Preço de venda`) %>%
+        distinct(),
+      by = "id"
     )
 
   if (xlsx) {
