@@ -56,6 +56,7 @@ e_ana_r9 <- function(
   # Lê o arquivo Excel (col_types = "text" evita warnings de tipos mistos)
   r9_t <- readxl::read_excel(caminho.arquivo.r9_c, col_types = "text") %>%
     dplyr::slice(-n()) %>%
+    rename(valor.venda = `Preço de venda`) %>%
     mutate(
       Unidade = str_remove_all(Unidade, "\\s+"),
       empresa = case_when(
@@ -76,6 +77,7 @@ e_ana_r9 <- function(
         TRUE ~ NA_character_
       ),
       unidade = str_extract(Unidade, "\\d+") %>% as.integer(),
+      valor.venda = as.numeric(valor.venda),
       id = str_c(empresa, especie, unidade, sep = "-"),
       arquivo = caminho.arquivo.r9_c,
       arquivo.tipo = "r9",
