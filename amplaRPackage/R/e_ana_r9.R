@@ -71,7 +71,7 @@ e_ana_r9 <- function(
       ),
       especie = case_when(
         str_sub(Unidade, 1, 1) == "U" ~ "Apartamento",
-        str_sub(Unidade, 1, 2) == "LJ" ~ "Loja",
+        str_sub(Unidade, 1, 1) == "L" ~ "Loja",
         str_sub(Unidade, 1, 2) == "VG" ~ "Garagem",
         TRUE ~ NA_character_
       ),
