@@ -134,7 +134,7 @@ r_soares <- function(xlsx = FALSE) {
     )
 
   # Unidades consolidadas (Informakon + Ana R9)
-  in.unis <- full_join(in.unis, in.r9, by = "id", suffix = c(".ik", ".r9"))
+  in.unis.cruzado <- full_join(in.unis, in.r9, by = "id", suffix = c(".ik", ".r9"))
 
   # Extratos da CEF
   in.xcef <- e_cef_xcefs()
@@ -542,7 +542,7 @@ r_soares <- function(xlsx = FALSE) {
     in.cmfcn.xcef = in.cmfcn.xcef,
     in.cmfcn.xcef.mensal = in.cmfcn.xcef.mensal,
     in.rec = in.rec,
-    in.unis = in.unis,
+    in.unis.cruzado = in.unis.cruzado,
     # Inputs originais
     in.car = in.car,
     in.cmfcns = in.cmfcns,
@@ -551,6 +551,7 @@ r_soares <- function(xlsx = FALSE) {
     in.cr = in.cr,
     in.ecns = in.ecns,
     in.r9 = in.r9,
+    in.unis = in.unis,
     in.xcef = in.xcef,
     in.xcef.mensal = in.xcef.mensal
   )
