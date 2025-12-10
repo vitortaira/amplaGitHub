@@ -268,7 +268,6 @@ r_soares <- function(xlsx = FALSE) {
   ) %>%
     dplyr::filter(total > 1e-3)
 
-
   # Totais por natureza que devem virar colunas
   totais <- in.rec %>%
     dplyr::filter(natureza %in% c("parcela.cef.total.ik", "parcela.cef.assinar", "taxa.extra")) %>%
@@ -345,14 +344,13 @@ r_soares <- function(xlsx = FALSE) {
       contrato.comeco = str_sub(contrato, 1, 4),
       contrato.fim = str_sub(contrato, -1) %>% as.integer()
     ) %>%
-    # Priorizar contrato mais recente dentro de cada série
+    # Somar valores mensais por (id, natureza, contrato.comeco) e manter contrato mais recente
     group_by(id, natureza, contrato.comeco) %>%
+    mutate(across(matches("^\\d{4}-\\d{2}-\\d{2}$"), ~ sum(.x, na.rm = TRUE))) %>%
     slice_max(contrato.fim, n = 1, with_ties = FALSE) %>%
     ungroup() %>%
     # Priorizar contrato com maior soma mensal
-    rowwise() %>%
-    mutate(soma.meses = sum(c_across(matches("^\\d{4}-\\d{2}-\\d{2}$")), na.rm = TRUE)) %>%
-    ungroup() %>%
+    mutate(soma.meses = rowSums(across(matches("^\\d{4}-\\d{2}-\\d{2}$")), na.rm = TRUE)) %>%
     group_by(id, natureza) %>%
     slice_max(soma.meses, n = 1, with_ties = FALSE) %>%
     ungroup() %>%
