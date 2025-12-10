@@ -58,6 +58,7 @@ e_ana_r9 <- function(
     dplyr::slice(-n()) %>%
     rename(valor.venda = `Preço de venda`) %>%
     mutate(
+      `Preço Tab.` = as.numeric(`Preço Tab.`),
       Unidade = str_remove_all(Unidade, "\\s+"),
       empresa = case_when(
         str_detect(Empreendimento, "(?i)jardim\\s?prud") ~ "AMP",

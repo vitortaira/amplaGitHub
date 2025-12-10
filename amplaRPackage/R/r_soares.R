@@ -134,7 +134,7 @@ r_soares <- function(xlsx = FALSE) {
     )
 
   # Unidades consolidadas (Informakon + Ana R9)
-  in.unis.cruzado <- full_join(in.unis, in.r9, by = "id", suffix = c(".ik", ".r9"))
+  in.unis.cruzado <- full_join(in.unis, in.r9, by = "id", suffix = c(".ik", ".ana"))
 
   # Extratos da CEF
   in.xcef <- e_cef_xcefs()
@@ -396,19 +396,27 @@ r_soares <- function(xlsx = FALSE) {
     in.cef.detalhado %>%
       arrange(empresa, id, natureza)
   ) %>%
-    # Reordenar colunas para garantir que meses estejam em ordem cronológica
-    select(
-      id, empresa, especie, unidade, cliente, contrato, contrato.cef, pavimento,
-      situacao, data.venda, valor.venda, repasse.cef.total, checar, natureza,
-      soma.meses,
-      any_of(sort(names(.)[str_detect(names(.), "^\\d{4}-\\d{2}-\\d{2}$")]))
-    ) %>%
     # Adicionar colunas do R9 (Ana)
     left_join(
       in.unis.cruzado %>%
-        select(id, Status, `Preço de venda`) %>%
+        rename(
+          preco.tabela = `Preço Tab.`,
+          situacao.ana = Status
+        ) %>%
+        select(id, situacao.ana, valor.venda.ana, preco.tabela) %>%
         distinct(),
       by = "id"
+    ) %>%
+    rename(
+      situacao.ik = situacao,
+      valor.venda.ik = valor.venda
+    ) %>%
+    # Reordenar colunas para garantir que meses estejam em ordem cronológica
+    select(
+      id, empresa, especie, unidade, cliente, contrato, contrato.cef, pavimento,
+      situacao.ana, situacao.ik, data.venda, preco.tabela, valor.venda.ana,
+      valor.venda.ik, repasse.cef.total, checar, natureza, soma.meses,
+      any_of(sort(names(.)[str_detect(names(.), "^\\d{4}-\\d{2}-\\d{2}$")]))
     )
 
   if (xlsx) {
@@ -508,12 +516,13 @@ r_soares <- function(xlsx = FALSE) {
       ),
       col_monetary = c(
         "amortizacao.pj", "desconto", "encargos", "juros", "juros.contrato",
-        "juros.mora", "multa", "principal", "reajuste", "remuneracao.venda",
-        "repasse.cef.a.incorrer", "repasse.cef.desc.subs", "repasse.cef.fgts",
-        "repasse.cef.fin", "repasse.cef.incorrido", "repasse.cef.obra",
-        "repasse.cef.obra.acum", "repasse.cef.rec.prop", "repasse.cef.terreno",
-        "repasse.cef.terreno.acum", "repasse.cef.total", "saldo", "seguro",
-        "soma.meses", "total", "valor", "valor.c.d", "valor.imovel", "valor.venda",
+        "juros.mora", "multa", "preco.tabela", "principal", "reajuste",
+        "remuneracao.venda", "repasse.cef.a.incorrer", "repasse.cef.desc.subs",
+        "repasse.cef.fgts", "repasse.cef.fin", "repasse.cef.incorrido",
+        "repasse.cef.obra", "repasse.cef.obra.acum", "repasse.cef.rec.prop",
+        "repasse.cef.terreno", "repasse.cef.terreno.acum", "repasse.cef.total",
+        "saldo", "seguro", "soma.meses", "total", "valor", "valor.c.d",
+        "valor.imovel", "valor.venda.ana", "valor.venda.ik",
         # Colunas de meses (YYYY-MM-DD)
         names(rec.uni)[str_detect(names(rec.uni), "^\\d{4}-\\d{2}-\\d{2}$")]
       ),
