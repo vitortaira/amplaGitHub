@@ -1,4 +1,6 @@
 r_soares <- function(xlsx = FALSE) {
+  # R9 (Ana)
+  in.r9 <- e_ana_r9()
   # CMF_CN
   in.cmfcns <- e_cef_cmfcns()
   # ECNs
@@ -130,6 +132,9 @@ r_soares <- function(xlsx = FALSE) {
       empresa %in% c("AMP", "AVS", "GRA", "LUC", "POM", "SN2", "SN4") &
         !str_detect(empreendimento, "Sicília")
     )
+
+  # Unidades consolidadas (Informakon + Ana R9)
+  in.unis <- full_join(in.unis, in.r9, by = "id", suffix = c(".ik", ".r9"))
 
   # Extratos da CEF
   in.xcef <- e_cef_xcefs()
@@ -537,6 +542,7 @@ r_soares <- function(xlsx = FALSE) {
     in.cmfcn.xcef = in.cmfcn.xcef,
     in.cmfcn.xcef.mensal = in.cmfcn.xcef.mensal,
     in.rec = in.rec,
+    in.unis = in.unis,
     # Inputs originais
     in.car = in.car,
     in.cmfcns = in.cmfcns,
@@ -544,7 +550,7 @@ r_soares <- function(xlsx = FALSE) {
     in.contr = in.contr,
     in.cr = in.cr,
     in.ecns = in.ecns,
-    in.unis = in.unis,
+    in.r9 = in.r9,
     in.xcef = in.xcef,
     in.xcef.mensal = in.xcef.mensal
   )
