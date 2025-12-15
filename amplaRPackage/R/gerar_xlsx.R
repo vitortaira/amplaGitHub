@@ -34,13 +34,14 @@
 #' @param tab_zoom Vetor nomeado com nível de zoom (em porcentagem) para cada aba.
 #'   Formato: c(aba1 = 80, aba2 = 100). Se NULL, usa zoom de 80% como padrão para todas as abas.
 #'   Valores devem estar entre 10 e 400.
+#' @param table Booleano. Se TRUE, converte os dados em tabelas Excel. Padrão: TRUE.
 #' @param save Lista com 2 elementos: (1) nome do arquivo, (2) caminho de destino.
 #'   Se NULL, salva automaticamente no diretório Downloads com nome "xlsx-YYYY_MM_DD-HH_MM_SS.xlsx"
 #'
 #' @return Caminho do arquivo salvo
 #' @importFrom dplyr bind_rows mutate select rename case_when if_else arrange all_of
 #' @importFrom stringr str_c
-#' @importFrom openxlsx createWorkbook loadWorkbook addWorksheet writeData addStyle createStyle
+#' @importFrom openxlsx createWorkbook loadWorkbook addWorksheet writeData writeDataTable addStyle createStyle
 #' @importFrom openxlsx saveWorkbook setColWidths addFilter freezePane createNamedRegion deleteNamedRegion getNamedRegions showGridLines
 #' @importFrom openxlsx groupColumns
 #' @importFrom purrr walk2
@@ -61,6 +62,7 @@ gerar_xlsx <- function(data,
                        col_clip = NULL,
                        col_align = NULL,
                        tab_zoom = NULL,
+                       table = TRUE,
                        save = NULL) {
   # Validação e preparação dos dados
   if (is.data.frame(data)) {
@@ -168,74 +170,95 @@ gerar_xlsx <- function(data,
 
     # Deletar região nomeada antiga, se existir (apenas para novos workbooks)
     if (is.null(wb_load)) {
-      nome_regiao <- tolower(nome_aba)
-      if (nome_regiao %in% openxlsx::getNamedRegions(wb)) {
-        openxlsx::deleteNamedRegion(wb, name = nome_regiao)
+      nome_regiao_lower <- tolower(nome_aba)
+      regioes <- openxlsx::getNamedRegions(wb)
+      if (nome_regiao_lower %in% regioes) {
+        openxlsx::deleteNamedRegion(wb, name = nome_regiao_lower)
+      }
+      if (nome_aba %in% regioes) {
+        openxlsx::deleteNamedRegion(wb, name = nome_aba)
       }
     }
 
     # Escrever os dados
-    openxlsx::writeData(wb, sheet = nome_aba, x = df_dados)
-
-    # Criar nova região nomeada (apenas para novos workbooks)
-    if (is.null(wb_load)) {
-      nome_regiao <- tolower(nome_aba)
-      openxlsx::createNamedRegion(
+    if (table) {
+      # Nome da tabela não pode conter caracteres especiais (substituir por _)
+      nome_tabela <- gsub("[^a-zA-Z0-9]", "_", nome_aba)
+      openxlsx::writeDataTable(
         wb,
         sheet = nome_aba,
-        name = nome_regiao,
-        rows = 1:(nrow(df_dados) + 1),
-        cols = seq_len(ncol(df_dados))
+        x = df_dados,
+        tableName = nome_tabela,
+        tableStyle = "TableStyleMedium2",
+        withFilter = TRUE
       )
+    } else {
+      openxlsx::writeData(wb, sheet = nome_aba, x = df_dados)
+
+      # Criar nova região nomeada (apenas para novos workbooks e sem tabela)
+      if (is.null(wb_load)) {
+        nome_regiao <- tolower(nome_aba)
+        openxlsx::createNamedRegion(
+          wb,
+          sheet = nome_aba,
+          name = nome_regiao,
+          rows = 1:(nrow(df_dados) + 1),
+          cols = seq_len(ncol(df_dados))
+        )
+      }
     }
 
-    # Estilo geral (bordas e alinhamento)
-    openxlsx::addStyle(
-      wb,
-      sheet = nome_aba,
-      style = openxlsx::createStyle(
-        border = "TopBottomLeftRight",
-        halign = "center",
-        valign = "center",
-        wrapText = FALSE # Evitar wrap text por padrão
-      ),
-      rows = 1:(nrow(df_dados) + 1),
-      cols = seq_len(ncol(df_dados)),
-      gridExpand = TRUE
-    )
-
-    # Estilo do cabeçalho (padrão para colunas sem estilo customizado)
-    # Primeiro, identificar quais colunas têm estilos customizados
-    colunas_com_estilo_custom <- c()
-    if (!is.null(col_headers) && nome_aba %in% names(col_headers)) {
-      colunas_com_estilo_custom <- intersect(
-        names(col_headers[[nome_aba]]),
-        colnames(df_dados)
-      )
-    }
-
-    # Aplicar estilo padrão apenas às colunas sem customização
-    colunas_padrao <- which(!(colnames(df_dados) %in% colunas_com_estilo_custom))
-    if (length(colunas_padrao) > 0) {
+    # Aplicar estilos básicos apenas se não for tabela (tabelas têm seu próprio styling básico)
+    if (!table) {
+      # Estilo geral (bordas e alinhamento)
       openxlsx::addStyle(
         wb,
         sheet = nome_aba,
         style = openxlsx::createStyle(
           border = "TopBottomLeftRight",
-          fontSize = 11,
           halign = "center",
           valign = "center",
-          textDecoration = "bold",
-          fgFill = "lightgray",
-          wrapText = FALSE
+          wrapText = FALSE # Evitar wrap text por padrão
         ),
-        rows = 1,
-        cols = colunas_padrao,
+        rows = 1:(nrow(df_dados) + 1),
+        cols = seq_len(ncol(df_dados)),
         gridExpand = TRUE
       )
+
+      # Estilo do cabeçalho padrão (apenas para colunas sem estilo customizado)
+      colunas_com_estilo_custom <- c()
+      if (!is.null(col_headers) && nome_aba %in% names(col_headers)) {
+        colunas_com_estilo_custom <- intersect(
+          names(col_headers[[nome_aba]]),
+          colnames(df_dados)
+        )
+      }
+
+      colunas_padrao <- which(!(colnames(df_dados) %in% colunas_com_estilo_custom))
+      if (length(colunas_padrao) > 0) {
+        openxlsx::addStyle(
+          wb,
+          sheet = nome_aba,
+          style = openxlsx::createStyle(
+            border = "TopBottomLeftRight",
+            fontSize = 11,
+            halign = "center",
+            valign = "center",
+            textDecoration = "bold",
+            fgFill = "lightgray",
+            wrapText = FALSE
+          ),
+          rows = 1,
+          cols = colunas_padrao,
+          gridExpand = TRUE
+        )
+      }
+
+      # Adicionar filtro (não necessário para tabelas)
+      openxlsx::addFilter(wb, sheet = nome_aba, rows = 1, cols = seq_len(ncol(df_dados)))
     }
 
-    # Estilos customizados para cabeçalhos específicos (aplicados DEPOIS do padrão)
+    # Estilos customizados para cabeçalhos específicos (aplicar sempre, mesmo com tabela)
     if (!is.null(col_headers) && nome_aba %in% names(col_headers)) {
       headers_aba <- col_headers[[nome_aba]]
       for (nome_coluna in names(headers_aba)) {
@@ -250,7 +273,6 @@ gerar_xlsx <- function(data,
 
           # Determinar wrap text para este cabeçalho
           wrap_padrao <- FALSE
-          # Verificar se está no config do cabeçalho
           if (!is.null(config$wrapText)) {
             wrap_padrao <- config$wrapText
           }
@@ -283,10 +305,7 @@ gerar_xlsx <- function(data,
       }
     }
 
-    # Adicionar filtro e congelar painel
-    openxlsx::addFilter(wb, sheet = nome_aba, rows = 1, cols = seq_len(ncol(df_dados)))
-
-    # Congelar painel baseado em tab_freeze ou padrão (apenas primeira linha)
+    # Congelar painel (aplicar sempre)
     if (!is.null(tab_freeze) && nome_aba %in% names(tab_freeze)) {
       col_congelar <- tab_freeze[[nome_aba]]
       if (col_congelar %in% colnames(df_dados)) {
@@ -304,51 +323,45 @@ gerar_xlsx <- function(data,
       openxlsx::freezePane(wb, sheet = nome_aba, firstRow = TRUE, firstActiveRow = 2)
     }
 
-    # Ajustar larguras automaticamente baseado no conteúdo
-    # Para colunas de texto muito longas, limitar a largura máxima
+    # Ajustar larguras automaticamente baseado no conteúdo (aplicar sempre)
     larguras_calculadas <- sapply(seq_len(ncol(df_dados)), function(col_idx) {
       col_data <- df_dados[[col_idx]]
       col_name <- names(df_dados)[col_idx]
 
-      # Calcular largura baseada no nome da coluna e dados
       max_nome <- nchar(col_name)
 
-      # Calcular largura dos dados, lidando com colunas completamente NA
       if (is.character(col_data) || is.factor(col_data)) {
-        # Para colunas de texto/fator
         valores_nao_na <- as.character(col_data)[!is.na(col_data)]
         if (length(valores_nao_na) > 0) {
           max_dados <- max(nchar(valores_nao_na), na.rm = TRUE)
         } else {
-          max_dados <- 0 # Coluna totalmente NA
+          max_dados <- 0
         }
       } else {
-        # Para colunas numéricas/outras
         valores_nao_na <- col_data[!is.na(col_data)]
         if (length(valores_nao_na) > 0) {
           max_dados <- max(nchar(format(valores_nao_na)), na.rm = TRUE)
         } else {
-          max_dados <- 0 # Coluna totalmente NA
+          max_dados <- 0
         }
       }
 
       largura_sugerida <- max(max_nome, max_dados, na.rm = TRUE)
 
-      # Limitar larguras muito grandes (colunas de texto extenso)
       if (is.infinite(largura_sugerida) || largura_sugerida == 0) {
-        max_nome + 2 # Usar apenas o nome da coluna se não houver dados válidos
+        max_nome + 2
       } else if (largura_sugerida > 50) {
-        30 # Largura máxima para colunas muito longas
+        30
       } else if (largura_sugerida < 8) {
-        10 # Largura mínima
+        10
       } else {
-        min(largura_sugerida + 2, col_width_def) # Adicionar padding
+        min(largura_sugerida + 2, col_width_def)
       }
     })
 
     openxlsx::setColWidths(wb, sheet = nome_aba, cols = seq_len(ncol(df_dados)), widths = larguras_calculadas)
 
-    # Colunas de texto (alinhamento à esquerda, sem quebra de texto)
+    # Colunas de texto (alinhamento à esquerda) - aplicar sempre
     colunas_texto <- which(sapply(df_dados, function(x) is.character(x) | is.factor(x)))
     if (length(colunas_texto) > 0) {
       openxlsx::addStyle(
@@ -362,7 +375,7 @@ gerar_xlsx <- function(data,
       )
     }
 
-    # Alinhamento customizado por coluna (aplicado por último para sobrescrever padrões)
+    # Alinhamento customizado por coluna (aplicar sempre)
     if (!is.null(col_align)) {
       for (nome_coluna in names(col_align)) {
         if (nome_coluna %in% colnames(df_dados)) {
@@ -382,7 +395,7 @@ gerar_xlsx <- function(data,
       }
     }
 
-    # Larguras específicas (aplicadas por último para garantir precedência)
+    # Larguras específicas (aplicar sempre)
     if (!is.null(col_width_spec)) {
       for (nome_coluna in names(col_width_spec)) {
         if (nome_coluna %in% colnames(df_dados)) {
@@ -397,7 +410,7 @@ gerar_xlsx <- function(data,
       }
     }
 
-    # Larguras automáticas (força auto-ajuste para colunas específicas)
+    # Larguras automáticas (aplicar sempre)
     if (!is.null(col_width_auto)) {
       for (nome_coluna in col_width_auto) {
         if (nome_coluna %in% colnames(df_dados)) {
@@ -412,7 +425,7 @@ gerar_xlsx <- function(data,
       }
     }
 
-    # Estilo para valores monetários (real numbers - com decimais)
+    # Estilo para valores monetários (aplicar sempre)
     if (!is.null(col_monetary) && length(col_monetary) > 0) {
       colunas_monetarias <- which(colnames(df_dados) %in% col_monetary)
       if (length(colunas_monetarias) > 0) {
@@ -428,7 +441,7 @@ gerar_xlsx <- function(data,
       }
     }
 
-    # Estilo para valores inteiros (sem decimais)
+    # Estilo para valores inteiros (aplicar sempre)
     colunas_inteiras <- which(sapply(df_dados, is.integer))
     if (length(colunas_inteiras) > 0) {
       openxlsx::addStyle(
@@ -442,7 +455,7 @@ gerar_xlsx <- function(data,
       )
     }
 
-    # Estilo para datas (baseado no argumento 'col_dates' ou inferido)
+    # Estilo para datas (aplicar sempre)
     if (!is.null(col_dates) && length(col_dates) > 0) {
       colunas_data <- which(colnames(df_dados) %in% col_dates)
       if (length(colunas_data) > 0) {
@@ -458,7 +471,7 @@ gerar_xlsx <- function(data,
       }
     }
 
-    # Estilo para data e hora (baseado no tipo da coluna)
+    # Estilo para data e hora (aplicar sempre)
     colunas_datetime <- which(sapply(df_dados, function(x) inherits(x, "POSIXct") | inherits(x, "POSIXt")))
     if (length(colunas_datetime) > 0) {
       openxlsx::addStyle(
@@ -472,7 +485,7 @@ gerar_xlsx <- function(data,
       )
     }
 
-    # Estilo específico para colunas com quebra de texto (baseado no argumento 'col_clip')
+    # Estilo específico para colunas com quebra de texto (aplicar sempre)
     if (!is.null(col_clip)) {
       colunas_clip <- which(colnames(df_dados) %in% col_clip)
       if (length(colunas_clip) > 0) {
