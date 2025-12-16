@@ -164,25 +164,37 @@ gerar_xlsx <- function(data,
 
       openxlsx::addWorksheet(wb, nome_aba, gridLines = FALSE, tabColour = cor_aba)
     } else {
-      # Remover gridlines de worksheet existente
-      openxlsx::showGridLines(wb, sheet = nome_aba, showGridLines = FALSE)
-
-      # Remover tabelas existentes na aba (para evitar erro de sobreposição)
-      tabelas_existentes <- openxlsx::getTables(wb, sheet = nome_aba)
-      if (length(tabelas_existentes) > 0) {
-        for (tabela in tabelas_existentes) {
-          openxlsx::removeTable(wb, sheet = nome_aba, table = tabela)
+      # Verificar se a aba existe no template, se não, criar
+      abas_existentes <- names(wb)
+      if (!(nome_aba %in% abas_existentes)) {
+        # Criar nova aba com cor especificada (se houver)
+        cor_aba <- if (!is.null(tab_colours) && nome_aba %in% names(tab_colours)) {
+          tab_colours[nome_aba]
+        } else {
+          NULL
         }
-      }
+        openxlsx::addWorksheet(wb, nome_aba, gridLines = FALSE, tabColour = cor_aba)
+      } else {
+        # Remover gridlines de worksheet existente
+        openxlsx::showGridLines(wb, sheet = nome_aba, showGridLines = FALSE)
 
-      # Remover regiões nomeadas que possam conflitar com a nova tabela
-      regioes <- openxlsx::getNamedRegions(wb)
-      nome_regiao_lower <- tolower(nome_aba)
-      if (nome_regiao_lower %in% regioes) {
-        openxlsx::deleteNamedRegion(wb, name = nome_regiao_lower)
-      }
-      if (nome_aba %in% regioes) {
-        openxlsx::deleteNamedRegion(wb, name = nome_aba)
+        # Remover tabelas existentes na aba (para evitar erro de sobreposição)
+        tabelas_existentes <- openxlsx::getTables(wb, sheet = nome_aba)
+        if (length(tabelas_existentes) > 0) {
+          for (tabela in tabelas_existentes) {
+            openxlsx::removeTable(wb, sheet = nome_aba, table = tabela)
+          }
+        }
+
+        # Remover regiões nomeadas que possam conflitar com a nova tabela
+        regioes <- openxlsx::getNamedRegions(wb)
+        nome_regiao_lower <- tolower(nome_aba)
+        if (nome_regiao_lower %in% regioes) {
+          openxlsx::deleteNamedRegion(wb, name = nome_regiao_lower)
+        }
+        if (nome_aba %in% regioes) {
+          openxlsx::deleteNamedRegion(wb, name = nome_aba)
+        }
       }
     }
 

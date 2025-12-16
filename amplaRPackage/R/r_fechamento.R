@@ -445,6 +445,7 @@ r_fechamento <- function(xlsx = FALSE) {
         in.xcef = in.xcef,
         in.xcef.mensal = in.xcef.mensal
       ),
+      wb_load = str_c(caminhos_pastas("templates"), "/Template-Fechamento.xlsx"),
       tab_colours = c(
         rec.uni = "darkblue",
         in.cef = "darkgray",

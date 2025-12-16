@@ -92,7 +92,7 @@ r_inad <- function() {
 
   # Caminho do template
   caminho.template_c <- str_c(
-    caminhos_pastas("github"), "/templates/Template-Inadimplencia.xlsx"
+    caminhos_pastas("templates"), "/Template-Inadimplencia.xlsx"
   )
 
   # Caminho de destino
