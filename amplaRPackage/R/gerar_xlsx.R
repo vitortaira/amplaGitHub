@@ -166,6 +166,24 @@ gerar_xlsx <- function(data,
     } else {
       # Remover gridlines de worksheet existente
       openxlsx::showGridLines(wb, sheet = nome_aba, showGridLines = FALSE)
+
+      # Remover tabelas existentes na aba (para evitar erro de sobreposição)
+      tabelas_existentes <- openxlsx::getTables(wb, sheet = nome_aba)
+      if (length(tabelas_existentes) > 0) {
+        for (tabela in tabelas_existentes) {
+          openxlsx::removeTable(wb, sheet = nome_aba, table = tabela)
+        }
+      }
+
+      # Remover regiões nomeadas que possam conflitar com a nova tabela
+      regioes <- openxlsx::getNamedRegions(wb)
+      nome_regiao_lower <- tolower(nome_aba)
+      if (nome_regiao_lower %in% regioes) {
+        openxlsx::deleteNamedRegion(wb, name = nome_regiao_lower)
+      }
+      if (nome_aba %in% regioes) {
+        openxlsx::deleteNamedRegion(wb, name = nome_aba)
+      }
     }
 
     # Deletar região nomeada antiga, se existir (apenas para novos workbooks)
@@ -189,7 +207,7 @@ gerar_xlsx <- function(data,
         sheet = nome_aba,
         x = df_dados,
         tableName = nome_tabela,
-        tableStyle = "TableStyleMedium2",
+        tableStyle = "TableStyleLight1",
         withFilter = TRUE
       )
     } else {
