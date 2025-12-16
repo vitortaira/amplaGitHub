@@ -4,6 +4,9 @@ suppressWarnings(Sys.setlocale("LC_ALL", "pt_BR.UTF-8"))
 # options(encoding = "UTF-8", tidyverse.quiet = TRUE)
 options(warn = 0)
 
+# Desabilitar ativação automática do conda no terminal R
+Sys.setenv(CONDA_AUTO_ACTIVATE_BASE = "false")
+
 # Define a helper function to safely load packages
 load_pkg <- function(f_pkg) {
   if (!suppressWarnings(suppressPackageStartupMessages(
