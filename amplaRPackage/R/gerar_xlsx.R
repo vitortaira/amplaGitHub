@@ -198,6 +198,23 @@ gerar_xlsx <- function(data,
       }
     }
 
+    # Garantir que os nomes das colunas sejam únicos (case-insensitive para Excel)
+    nomes_colunas <- colnames(df_dados)
+    nomes_lower <- tolower(nomes_colunas)
+    if (anyDuplicated(nomes_lower)) {
+      # Encontrar duplicatas case-insensitive e renomear
+      nomes_unicos <- make.unique(nomes_lower, sep = "_")
+      # Preservar case original onde possível, adicionar sufixo onde necessário
+      for (j in seq_along(nomes_colunas)) {
+        if (nomes_lower[j] != nomes_unicos[j]) {
+          # Extrair o sufixo adicionado por make.unique
+          sufixo <- sub(nomes_lower[j], "", nomes_unicos[j])
+          nomes_colunas[j] <- paste0(nomes_colunas[j], sufixo)
+        }
+      }
+      colnames(df_dados) <- nomes_colunas
+    }
+
     # Escrever os dados
     if (table) {
       # Nome da tabela não pode conter caracteres especiais (substituir por _)
