@@ -143,17 +143,19 @@ gerar_xlsx <- function(data,
     df_dados <- dados_lista[[i]]
     nome_aba <- names(dados_lista)[i]
 
-    # Inferir colunas monetárias (apenas numeric, não integer) se não especificadas
-    if (is.null(col_monetary)) {
-      col_monetary <- colnames(df_dados)[sapply(df_dados, function(x) is.numeric(x) & !is.integer(x))]
-    }
-
-    # Inferir colunas de data se não especificadas
-    if (is.null(col_dates)) {
-      col_dates <- colnames(df_dados)[sapply(df_dados, function(x) inherits(x, "Date"))]
-    }
+    # Inferir formatação baseada na classe das colunas (para colunas não especificadas)
+    # Colunas monetárias: numeric não-integer não listadas em outros argumentos
+    colunas_numericas <- colnames(df_dados)[sapply(df_dados, function(x) is.numeric(x) & !is.integer(x))]
+    col_monetary <- unique(c(col_monetary, setdiff(colunas_numericas, c(col_dates, col_clip))))
+    
+    # Colunas de data: Date não listadas em outros argumentos
+    colunas_data <- colnames(df_dados)[sapply(df_dados, inherits, "Date")]
+    col_dates <- unique(c(col_dates, setdiff(colunas_data, c(col_monetary, col_clip))))
 
     # Adicionar worksheet se necessário (para novos workbooks)
+    # Inicializar variáveis de controle
+    nome_tabela_original <- NULL
+
     if (is.null(wb_load)) {
       # Verificar se há cor especificada para esta aba
       cor_aba <- if (!is.null(tab_colours) && nome_aba %in% names(tab_colours)) {
@@ -166,35 +168,49 @@ gerar_xlsx <- function(data,
     } else {
       # Verificar se a aba existe no template, se não, criar
       abas_existentes <- names(wb)
-      if (!(nome_aba %in% abas_existentes)) {
-        # Criar nova aba com cor especificada (se houver)
+      
+      # Tentar encontrar aba correspondente no template (permitir variação . vs _)
+      # Normalizar nomes para comparação (substituir . e _ por espaço)
+      nome_aba_normalizado <- stringr::str_remove_all(tolower(nome_aba), "[._]")
+      abas_normalizadas <- stringr::str_remove_all(tolower(abas_existentes), "[._]")
+      
+      # Encontrar correspondência
+      indice_match <- match(nome_aba_normalizado, abas_normalizadas)
+      
+      if (!is.na(indice_match)) {
+        # Encontrou aba correspondente no template - usar nome exato do template
+        nome_aba_template <- abas_existentes[indice_match]
+        
+        # Renomear a aba no dados se necessário para combinar com o template
+        if (nome_aba != nome_aba_template) {
+          # Usar o nome do template
+          nome_aba <- nome_aba_template
+        }
+        
+        # Remover gridlines de worksheet existente
+        openxlsx::showGridLines(wb, sheet = nome_aba, showGridLines = FALSE)
+
+        # Verificar se existe tabela na aba para preservar nome e recriar
+        tabelas_existentes <- openxlsx::getTables(wb, sheet = nome_aba)
+        if (length(tabelas_existentes) > 0) {
+          # Salvar nome da tabela original
+          nome_tabela_original <- as.character(tabelas_existentes[1])
+          # Remover tabela (será recriada com mesmo nome após escrever dados)
+          for (tabela in tabelas_existentes) {
+            openxlsx::removeTable(wb, sheet = nome_aba, table = as.character(tabela))
+          }
+        } else {
+          nome_tabela_original <- NULL
+        }
+      } else {
+        # Aba não existe no template - criar nova
+        nome_tabela_original <- NULL
         cor_aba <- if (!is.null(tab_colours) && nome_aba %in% names(tab_colours)) {
           tab_colours[nome_aba]
         } else {
           NULL
         }
         openxlsx::addWorksheet(wb, nome_aba, gridLines = FALSE, tabColour = cor_aba)
-      } else {
-        # Remover gridlines de worksheet existente
-        openxlsx::showGridLines(wb, sheet = nome_aba, showGridLines = FALSE)
-
-        # Remover tabelas existentes na aba (para evitar erro de sobreposição)
-        tabelas_existentes <- openxlsx::getTables(wb, sheet = nome_aba)
-        if (length(tabelas_existentes) > 0) {
-          for (tabela in tabelas_existentes) {
-            openxlsx::removeTable(wb, sheet = nome_aba, table = tabela)
-          }
-        }
-
-        # Remover regiões nomeadas que possam conflitar com a nova tabela
-        regioes <- openxlsx::getNamedRegions(wb)
-        nome_regiao_lower <- tolower(nome_aba)
-        if (nome_regiao_lower %in% regioes) {
-          openxlsx::deleteNamedRegion(wb, name = nome_regiao_lower)
-        }
-        if (nome_aba %in% regioes) {
-          openxlsx::deleteNamedRegion(wb, name = nome_aba)
-        }
       }
     }
 
@@ -229,8 +245,12 @@ gerar_xlsx <- function(data,
 
     # Escrever os dados
     if (table) {
-      # Nome da tabela não pode conter caracteres especiais (substituir por _)
-      nome_tabela <- gsub("[^a-zA-Z0-9]", "_", nome_aba)
+      # Usar nome original da tabela do template se disponível, senão usar nome da aba
+      nome_tabela <- if (!is.null(nome_tabela_original)) {
+        nome_tabela_original
+      } else {
+        nome_aba
+      }
       openxlsx::writeDataTable(
         wb,
         sheet = nome_aba,
