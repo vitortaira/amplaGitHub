@@ -97,23 +97,27 @@ r_fechamento <- function(xlsx = FALSE) {
     dplyr::filter(empreendimento != "AMP.01.0001") %>%
     mutate(
       cruzada = TRUE,
-      data = coalesce(data.pagamento, data.vencimento),
+      data.base = coalesce(data.pagamento, data.vencimento),
       especie = if_else(
         str_detect(especie, "(?i)garagens"), "Garagem", especie
       ),
       id = str_c(empresa, especie, unidade, sep = "-"),
       natureza = case_when(
-        ele == "TAX" ~ "taxa.extra",
         ele %in% c("CEF", "FGT", "FIB", "FIN") &
           !empresa %in% c("POM", "SAU") &
           repassado == "Não" ~ "parcela.cef.assinar",
         ele %in% c("CEF", "FGT", "FIB", "FIN") &
-          !empresa %in% c("POM", "SAU") &
-          repassado == "Sim" ~ "parcela.cef.total.ik",
+          !empresa %in% c("POM", "SAU") ~ "parcela.cef.total.ik",
+        ele %in% c("CEF", "FGT", "FIB", "FIN") &
+          empresa %in% c("POM", "SAU") ~ "parcela.fin.total.ik",
+        ele == "TAX" ~ "taxa.extra",
         TRUE ~ "pro.soluto"
       )
+    ) %>%
+    select(
+      id, empresa, especie, unidade, total, data.vencimento, data.pagamento,
+      data.base, natureza, everything()
     )
-  # dplyr::filter(id != "AVS-Apartamento-2")
   # Unidades
   in.unis <- e_ik_unis() %>%
     rename(unidade = numero) %>%
@@ -303,7 +307,7 @@ r_fechamento <- function(xlsx = FALSE) {
       pavimento = coalesce(pavimento.unis, pavimento.rec),
       unidade = coalesce(unidade.unis, unidade.rec),
       contrato.cef = coalesce(contrato.cef.contr, contrato.cef),
-      data.mes = floor_date(coalesce(data.pagamento, data.vencimento), "month"),
+      data.mes = floor_date(data.base, "month"),
       cruzada = case_when(
         is.na(empresa.rec) ~ "in.unis",
         is.na(empresa.unis) ~ "in.rec",
@@ -318,7 +322,7 @@ r_fechamento <- function(xlsx = FALSE) {
       pavimento = first(pavimento),
       unidade = first(unidade),
       cliente = first(cliente.unis),
-      data.venda = first(data.unis),
+      data.venda = first(data),
       situacao = first(situacao),
       valor.venda = first(valor.venda),
       contrato = first(contrato),
