@@ -147,7 +147,7 @@ gerar_xlsx <- function(data,
     # Colunas monetárias: numeric não-integer não listadas em outros argumentos
     colunas_numericas <- colnames(df_dados)[sapply(df_dados, function(x) is.numeric(x) & !is.integer(x))]
     col_monetary <- unique(c(col_monetary, setdiff(colunas_numericas, c(col_dates, col_clip))))
-    
+
     # Colunas de data: Date não listadas em outros argumentos
     colunas_data <- colnames(df_dados)[sapply(df_dados, inherits, "Date")]
     col_dates <- unique(c(col_dates, setdiff(colunas_data, c(col_monetary, col_clip))))
@@ -168,25 +168,25 @@ gerar_xlsx <- function(data,
     } else {
       # Verificar se a aba existe no template, se não, criar
       abas_existentes <- names(wb)
-      
+
       # Tentar encontrar aba correspondente no template (permitir variação . vs _)
       # Normalizar nomes para comparação (substituir . e _ por espaço)
       nome_aba_normalizado <- stringr::str_remove_all(tolower(nome_aba), "[._]")
       abas_normalizadas <- stringr::str_remove_all(tolower(abas_existentes), "[._]")
-      
+
       # Encontrar correspondência
       indice_match <- match(nome_aba_normalizado, abas_normalizadas)
-      
+
       if (!is.na(indice_match)) {
         # Encontrou aba correspondente no template - usar nome exato do template
         nome_aba_template <- abas_existentes[indice_match]
-        
+
         # Renomear a aba no dados se necessário para combinar com o template
         if (nome_aba != nome_aba_template) {
           # Usar o nome do template
           nome_aba <- nome_aba_template
         }
-        
+
         # Remover gridlines de worksheet existente
         openxlsx::showGridLines(wb, sheet = nome_aba, showGridLines = FALSE)
 

@@ -56,10 +56,29 @@ e_ana_r9 <- function(
   # Lê o arquivo Excel (col_types = "text" evita warnings de tipos mistos)
   r9_t <- readxl::read_excel(caminho.arquivo.r9_c, col_types = "text") %>%
     dplyr::slice(-n()) %>%
-    rename(valor.venda = `Preço de venda`) %>%
+    rename(
+      unidade.r9 = Unidade,
+      valor.venda = `Preço de venda`
+    ) %>%
     mutate(
+      `Área total` = as.numeric(`Área total`),
+      `Área privativa` = as.numeric(`Área privativa`),
+      `Data da venda / reserva` = lubridate::as_datetime(
+        as.numeric(`Data da venda / reserva`) * 86400,
+        origin = "1899-12-30"
+      ),
+      `Data de recebimento` = as.Date(
+        as.numeric(`Data de recebimento`),
+        origin = "1899-12-30"
+      ),
+      `Data do pedido` = as.Date(as.numeric(`Data do pedido`), origin = "1899-12-30"),
+      `Fração ideal` = as.numeric(`Fração ideal`),
       `Preço Tab.` = as.numeric(`Preço Tab.`),
-      Unidade = str_remove_all(Unidade, "\\s+"),
+      `Preço Tab. com Desconto` = as.numeric(`Preço Tab. com Desconto`),
+      Quartos = as.integer(Quartos),
+      `Valor m2` = as.numeric(`Valor m2`),
+      `Valor m2 com Desconto` = as.numeric(`Valor m2 com Desconto`),
+      unidade.r9 = str_remove_all(unidade.r9, "\\s+"),
       empresa = case_when(
         str_detect(Empreendimento, "(?i)jardim\\s?prud") ~ "AMP",
         str_detect(Empreendimento, "(?i)up\\s?vila\\s?s[oô]nia") ~ "AVS",
@@ -72,12 +91,12 @@ e_ana_r9 <- function(
         TRUE ~ NA_character_
       ),
       especie = case_when(
-        str_sub(Unidade, 1, 1) == "U" ~ "Apartamento",
-        str_sub(Unidade, 1, 1) == "L" ~ "Loja",
-        str_sub(Unidade, 1, 2) == "VG" ~ "Garagem",
+        str_sub(unidade.r9, 1, 1) == "U" ~ "Apartamento",
+        str_sub(unidade.r9, 1, 1) == "L" ~ "Loja",
+        str_sub(unidade.r9, 1, 2) == "VG" ~ "Garagem",
         TRUE ~ NA_character_
       ),
-      unidade = str_extract(Unidade, "\\d+") %>% as.integer(),
+      unidade = str_extract(unidade.r9, "\\d+") %>% as.integer(),
       valor.venda = as.numeric(valor.venda),
       id = str_c(empresa, especie, unidade, sep = "-"),
       arquivo = caminho.arquivo.r9_c,
