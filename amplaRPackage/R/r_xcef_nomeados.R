@@ -17,19 +17,19 @@ r_xcef_nomeados <- function(mes, ano) {
     )
   gerar_xlsx(
     data = list(
-      "Extratos nomeados" = xcefn,
+      Extratos_nomeados = xcefn,
       EPRs = e_cef_eprs() %>%
         select(-arquivo.tabela.tipo, -arquivo.tipo, -arquivo.fonte)
     ),
     tab_colours = c(
-      `Extratos nomeados` = "darkblue",
+      Extratos_nomeados = "darkblue",
       EPRs = "blue"
     ),
     col_dates = c(
       "data.lancamento", "data.movimentacao", "periodo.inicio", "periodo.fim"
     ),
     col_headers = list(
-      `Extratos nomeados` = list(
+      Extratos_nomeados = list(
         arquivo = list(colour = "blue", font_colour = "black"),
         conta.interno = list(colour = "blue", font_colour = "black"),
         empresa = list(colour = "blue", font_colour = "black"),
