@@ -68,6 +68,8 @@ r_fechamento <- function(xlsx = FALSE) {
       seguro, desconto, cart, r.f, edificacao, especie, unidade, data.emissao,
       disp, pavimento, arquivo, arquivo.tipo, arquivo.tabela.tipo, arquivo.fonte
     )
+  # Despesas
+  in.desp <- e_ik_desp()
   # Contas a receber
   in.car <- e_ik_car()$car %>%
     rename(
@@ -443,6 +445,7 @@ r_fechamento <- function(xlsx = FALSE) {
         in.cmfcns.mensal = in.cmfcns.mensal,
         in.contr = in.contr,
         in.cr = in.cr,
+        in.desp = in.desp,
         in.ecns = in.ecns,
         in.r9 = in.r9,
         in.unis = in.unis,
@@ -464,6 +467,7 @@ r_fechamento <- function(xlsx = FALSE) {
         in.cmfcns.mensal = "white",
         in.contr = "white",
         in.cr = "white",
+        in.desp = "white",
         in.ecns = "white",
         in.r9 = "white",
         in.unis = "white",
@@ -574,6 +578,7 @@ r_fechamento <- function(xlsx = FALSE) {
     in.cmfcns.mensal = in.cmfcns.mensal,
     in.contr = in.contr,
     in.cr = in.cr,
+    in.desp = in.desp,
     in.ecns = in.ecns,
     in.r9 = in.r9,
     in.unis = in.unis,
