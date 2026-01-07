@@ -4,15 +4,15 @@
 #'
 #' @description
 #' A função **e_ik()** consolida e retorna dados de diversos relatórios
-#' (Despesas e Receitas) da Informakon em um só objeto (lista).
+#' (Despesas e Contas a Receber) da Informakon em um só objeto (lista).
 #'
 #' @details
-#' Internamente chama as funções \code{e_ik_desp()} e \code{e_ik_rec()} e
+#' Internamente chama as funções \code{e_ik_desp()} e \code{e_ik_cr()} e
 #' reúne tudo em um único objeto.
 #'
 #' @return
 #' Retorna uma lista contendo todos os dados extraídos das várias fontes:
-#' Despesas e Receitas.
+#' Despesas e Contas a Receber.
 #'
 #' @examples
 #' \dontrun{
@@ -26,9 +26,9 @@
 e_ik <- function() {
   dados.ik_l <- list(
     contr = e_ik_contrs(),
+    cr = e_ik_cr(),
     desp = e_ik_desp(),
-    inad = e_ik_inads(),
-    rec = e_ik_rec()
+    inad = e_ik_inads()
   )
   return(dados.ik_l)
 }

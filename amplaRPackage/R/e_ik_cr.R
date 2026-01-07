@@ -1,22 +1,21 @@
-# filepath: c:\Users\Ampla\AMPLA INCORPORADORA LTDA\Controladoria - Documentos\amplaGitHub\amplaRPackage\R\e_ik_rec.R
-#' @title Extração de Receitas Informakon
+#' @title Extração de Contas a Receber Informakon
 #'
 #' @description
-#' A função e_ik_rec() extrai os dados de receitas dos arquivos na pasta
-#' "informakon", preenche-os em uma planilha xlsx (opcional) e os retorna em
+#' A função e_ik_cr() extrai os dados de contas a receber dos arquivos na pasta
+#' "soares_in", preenche-os em uma planilha xlsx (opcional) e os retorna em
 #' um data frame.
 #'
-#' @param f_caminho.pasta.ik_c String do caminho da pasta "informakon".
-#'   Valor padrão: \code{caminhos_pastas("informakon")}.
+#' @param f_caminho.pasta.ik_c String do caminho da pasta "soares_in".
+#'   Valor padrão: \code{caminhos_pastas("soares_in")}.
 #' @param xlsx Logical. Se \code{TRUE}, cria um arquivo xlsx com os dados extraídos.
 #'   Valor padrão: \code{FALSE}.
 #'
-#' @return Data frame com dados das receitas consolidadas.
+#' @return Data frame com dados das contas a receber consolidadas.
 #'
 #' @examples
 #' \dontrun{
 #' # Chamando a função
-#' receitas_df <- e_ik_rec()
+#' cr_df <- e_ik_cr()
 #' }
 #'
 #' @importFrom here here
@@ -25,37 +24,36 @@
 #' @importFrom stringr str_sub str_detect
 #' @importFrom lubridate floor_date
 #' @export
-e_ik_rec <- function(
-    f_caminho.pasta.ik_c = caminhos_pastas("informakon"),
+e_ik_cr <- function(
+    f_caminho.pasta.ik_c = caminhos_pastas("soares_in"),
     xlsx = FALSE) {
-  # Função interna para buscar o arquivo de receitas mais recente
-  obter_caminho_receitas <- function() {
+  # Função interna para buscar o arquivo de contas a receber mais recente
+  obter_caminho_cr <- function() {
     if (!dir.exists(f_caminho.pasta.ik_c)) {
-      stop("A pasta 'informakon' não foi encontrada.")
+      stop("A pasta 'soares_in' não foi encontrada.")
     }
-    # Busca arquivos que começam com "receitas_" e ignora os "Informakon"
-    caminhos_rec <- dir_ls(f_caminho.pasta.ik_c, recurse = TRUE, type = "file")
-    caminhos_rec <- caminhos_rec[
-      basename(caminhos_rec) %>% str_detect("^receitas") &
-        !basename(caminhos_rec) %>% str_detect("^Informakon")
+    # Busca arquivos que começam com "cr-"
+    caminhos_cr <- dir_ls(f_caminho.pasta.ik_c, recurse = TRUE, type = "file")
+    caminhos_cr <- caminhos_cr[
+      basename(caminhos_cr) %>% str_detect("^cr-")
     ]
-    if (length(caminhos_rec) == 0) {
-      stop("Nenhum arquivo de receitas encontrado na pasta informakon.")
+    if (length(caminhos_cr) == 0) {
+      stop("Nenhum arquivo de contas a receber encontrado na pasta soares_in.")
     }
-    # Determina a data final (YYYYMMDD) mais recente
-    data_final_por_arquivo <- sapply(caminhos_rec, function(path) {
+    # Determina a data final (YYYY_MM_DD) mais recente
+    # Padrão: cr-YYYY_MM_DD-YYYY_MM_DD.xlsx
+    data_final_por_arquivo <- sapply(caminhos_cr, function(path) {
       basename(path) %>%
-        str_extract("[^_]+$") %>%
-        str_remove("\\.xlsx$") %>%
-        as.Date(format = "%Y%m%d")
+        str_extract("\\d{4}_\\d{2}_\\d{2}(?=\\.xlsx$)") %>%
+        as.Date(format = "%Y_%m_%d")
     })
     indice_recente <- which.max(data_final_por_arquivo)
-    caminhos_rec[indice_recente]
+    caminhos_cr[indice_recente]
   }
 
-  # Carrega o arquivo de receitas mais recente
-  caminho_arquivo_receitas <- obter_caminho_receitas()
-  receitas_df <- read_excel(caminho_arquivo_receitas, skip = 3) %>%
+  # Carrega o arquivo de contas a receber mais recente
+  caminho_arquivo_cr <- obter_caminho_cr()
+  cr_df <- read_excel(caminho_arquivo_cr, skip = 3) %>%
     # Padroniza nomes
     rename(
       empreendimento = Empreendimento,
@@ -106,9 +104,9 @@ e_ik_rec <- function(
       torre = as.character(torre),
       total = as.numeric(total),
       vencimento = as.Date(vencimento),
-      arquivo = caminho_arquivo_receitas,
-      arquivo.tipo = "rec",
-      arquivo.tabela.tipo = "rec",
+      arquivo = caminho_arquivo_cr,
+      arquivo.tipo = "cr",
+      arquivo.tabela.tipo = "cr",
       arquivo.fonte = "ik"
     ) %>%
     select(
@@ -122,8 +120,8 @@ e_ik_rec <- function(
   # Se solicitado, salva em xlsx
   if (xlsx) {
     # Ajuste este caminho e nome de arquivo conforme necessário
-    writexl::write_xlsx(receitas_df, paste0(f_caminho.pasta.ik_c, "/receitas_consolidadas.xlsx"))
+    writexl::write_xlsx(cr_df, paste0(f_caminho.pasta.ik_c, "/cr_consolidadas.xlsx"))
   }
 
-  return(receitas_df)
+  return(cr_df)
 }

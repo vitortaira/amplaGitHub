@@ -12,10 +12,10 @@ Despesas e Receitas.
 }
 \description{
 A função \strong{e_ik()} consolida e retorna dados de diversos relatórios
-(Despesas e Receitas) da Informakon em um só objeto (lista).
+(Despesas e Contas a Receber) da Informakon em um só objeto (lista).
 }
 \details{
-Internamente chama as funções \code{e_ik_desp()} e \code{e_ik_rec()} e
+Internamente chama as funções \code{e_ik_desp()} e \code{e_ik_cr()} e
 reúne tudo em um único objeto.
 }
 \examples{
