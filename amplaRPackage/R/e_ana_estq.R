@@ -1,17 +1,17 @@
-#' @title Extração do Arquivo R9 Mais Recente
+#' @title Extração do Arquivo de Estoque Mais Recente
 #'
 #' @description
-#' A função e_ana_r9() identifica e extrai o arquivo R9 mais recente
+#' A função e_ana_estq() identifica e extrai o arquivo de estoque mais recente
 #' na pasta especificada.
 #'
 #' @param caminho.pasta.inputs_c String do caminho da pasta "Inputs".
 #'   Valor padrão: \code{caminhos_pastas("soares_in")}.
 #'
-#' @return Data frame com dados do arquivo R9 mais recente.
+#' @return Data frame com dados do arquivo de estoque mais recente.
 #'
 #' @examples
 #' \dontrun{
-#' r9_df <- e_ana_r9()
+#' estq_df <- e_ana_estq()
 #' }
 #'
 #' @importFrom fs dir_ls
@@ -19,26 +19,26 @@
 #' @importFrom readxl read_excel
 #' @importFrom dplyr mutate
 #' @export
-e_ana_r9 <- function(
+e_ana_estq <- function(
     caminho.pasta.inputs_c = caminhos_pastas("soares_in")) {
   if (!dir.exists(caminho.pasta.inputs_c)) {
     stop("A pasta 'Inputs' não foi encontrada: ", caminho.pasta.inputs_c)
   }
 
-  # Busca todos os arquivos r9 recursivamente
-  caminhos.r9_c <- fs::dir_ls(
+  # Busca todos os arquivos estq recursivamente
+  caminhos.estq_c <- fs::dir_ls(
     caminho.pasta.inputs_c,
     recurse = TRUE,
     type = "file",
-    regexp = "r9-\\d{4}_\\d{2}_\\d{2}\\.xlsx$"
+    regexp = "estq-\\d{4}_\\d{2}_\\d{2}\\.xlsx$"
   )
 
-  if (length(caminhos.r9_c) == 0) {
-    stop("Nenhum arquivo r9 encontrado na pasta Inputs.")
+  if (length(caminhos.estq_c) == 0) {
+    stop("Nenhum arquivo estq encontrado na pasta Inputs.")
   }
 
-  # Extrai as datas dos nomes dos arquivos (formato: r9-YYYY_MM_DD.xlsx)
-  datas.por.arquivo_d <- sapply(caminhos.r9_c, function(caminho_c) {
+  # Extrai as datas dos nomes dos arquivos (formato: estq-YYYY_MM_DD.xlsx)
+  datas.por.arquivo_d <- sapply(caminhos.estq_c, function(caminho_c) {
     basename(caminho_c) %>%
       stringr::str_extract("\\d{4}_\\d{2}_\\d{2}") %>%
       as.Date(format = "%Y_%m_%d")
@@ -48,16 +48,16 @@ e_ana_r9 <- function(
   indice.recente_i <- which.max(datas.por.arquivo_d)
 
   # Seleciona o caminho do arquivo mais recente
-  caminho.arquivo.r9_c <- caminhos.r9_c[indice.recente_i]
+  caminho.arquivo.estq_c <- caminhos.estq_c[indice.recente_i]
 
   # Mensagem informativa
-  message("Extraindo arquivo: ", basename(caminho.arquivo.r9_c))
+  message("Extraindo arquivo: ", basename(caminho.arquivo.estq_c))
 
   # Lê o arquivo Excel (col_types = "text" evita warnings de tipos mistos)
-  r9_t <- readxl::read_excel(caminho.arquivo.r9_c, col_types = "text") %>%
+  estq_t <- readxl::read_excel(caminho.arquivo.estq_c, col_types = "text") %>%
     dplyr::slice(-n()) %>%
     rename(
-      unidade.r9 = Unidade,
+      unidade.estq = Unidade,
       valor.venda = `Preço de venda`
     ) %>%
     mutate(
@@ -78,7 +78,7 @@ e_ana_r9 <- function(
       Quartos = as.integer(Quartos),
       `Valor m2` = as.numeric(`Valor m2`),
       `Valor m2 com Desconto` = as.numeric(`Valor m2 com Desconto`),
-      unidade.r9 = str_remove_all(unidade.r9, "\\s+"),
+      unidade.estq = str_remove_all(unidade.estq, "\\s+"),
       empresa = case_when(
         str_detect(Empreendimento, "(?i)jardim\\s?prud") ~ "AMP",
         str_detect(Empreendimento, "(?i)up\\s?vila\\s?s[oô]nia") ~ "AVS",
@@ -91,21 +91,21 @@ e_ana_r9 <- function(
         TRUE ~ NA_character_
       ),
       especie = case_when(
-        str_sub(unidade.r9, 1, 1) == "U" ~ "Apartamento",
-        str_sub(unidade.r9, 1, 1) == "L" ~ "Loja",
-        str_sub(unidade.r9, 1, 2) == "VG" ~ "Garagem",
+        str_sub(unidade.estq, 1, 1) == "U" ~ "Apartamento",
+        str_sub(unidade.estq, 1, 1) == "L" ~ "Loja",
+        str_sub(unidade.estq, 1, 2) == "VG" ~ "Garagem",
         TRUE ~ NA_character_
       ),
-      unidade = str_extract(unidade.r9, "\\d+") %>% as.integer(),
+      unidade = str_extract(unidade.estq, "\\d+") %>% as.integer(),
       valor.venda = as.numeric(valor.venda),
       id = str_c(empresa, especie, unidade, sep = "-"),
-      arquivo = caminho.arquivo.r9_c,
-      arquivo.tipo = "r9",
+      arquivo = caminho.arquivo.estq_c,
+      arquivo.tipo = "estq",
       arquivo.fonte = "ana"
     ) %>%
     select(
       id, empresa, especie, unidade, everything()
     )
 
-  return(r9_t)
+  return(estq_t)
 }
