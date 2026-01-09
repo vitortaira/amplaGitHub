@@ -1,6 +1,6 @@
 r_fechamento <- function(xlsx = FALSE) {
-  # R9 (Ana)
-  in.r9 <- e_ana_r9()
+  # Estoque (Ana)
+  in.estq <- e_ana_estq()
   # CMF_CN
   in.cmfcns <- e_cef_cmfcns()
   # ECNs
@@ -139,8 +139,8 @@ r_fechamento <- function(xlsx = FALSE) {
         !str_detect(empreendimento, "Sicília")
     )
 
-  # Unidades consolidadas (Informakon + Ana R9)
-  in.unis.cruzado <- full_join(in.unis, in.r9, by = "id", suffix = c(".ik", ".ana"))
+  # Unidades consolidadas (Informakon + Ana Estoque)
+  in.unis.cruzado <- full_join(in.unis, in.estq, by = "id", suffix = c(".ik", ".ana"))
 
   # Extratos da CEF
   in.xcef <- e_cef_xcefs()
@@ -432,54 +432,54 @@ r_fechamento <- function(xlsx = FALSE) {
         rec.uni = rec.uni,
         # Inputs
         ## Inputs combinados
-        in.cef = in.cef,
-        in.cef.detalhado = in.cef.detalhado,
-        in.cef.mensal = in.cef.mensal,
-        in.cmfcn.xcef = in.cmfcn.xcef,
-        in.cmfcn.xcef.mensal = in.cmfcn.xcef.mensal,
-        in.rec = in.rec,
-        in.unis.cruzado = in.unis.cruzado,
+        cef = in.cef,
+        cef.detalhado = in.cef.detalhado,
+        cef.mensal = in.cef.mensal,
+        cmfcn.xcef = in.cmfcn.xcef,
+        cmfcn.xcef.mensal = in.cmfcn.xcef.mensal,
+        rec = in.rec,
+        unis.cruzado = in.unis.cruzado,
         ## Inputs originais
-        in.car = in.car,
-        in.cmfcns = e_cef_cmfcns(),
-        in.cmfcns.mensal = in.cmfcns.mensal,
-        in.contr = in.contr,
-        in.cr = in.cr,
-        in.desp = in.desp,
-        in.ecns = in.ecns,
-        in.r9 = in.r9,
-        in.unis = in.unis,
-        in.xcef = in.xcef,
-        in.xcef.mensal = in.xcef.mensal
+        car = in.car,
+        cmfcns = e_cef_cmfcns(),
+        cmfcns.mensal = in.cmfcns.mensal,
+        contr = in.contr,
+        cr = in.cr,
+        desp = in.desp,
+        ecns = in.ecns,
+        estq = in.estq,
+        unis = in.unis,
+        xcef = in.xcef,
+        xcef.mensal = in.xcef.mensal
       ),
       wb_load = str_c(caminhos_pastas("templates"), "/Template-Fechamento.xlsx"),
       tab_colours = c(
         rec.uni = "darkblue",
-        in.cef = "darkgray",
-        in.cef.detalhado = "darkgray",
-        in.cef.mensal = "darkgray",
-        in.cmfcn.xcef = "darkgray",
-        in.cmfcn.xcef.mensal = "darkgray",
-        in.rec = "darkgray",
-        in.unis.cruzado = "darkgray",
-        in.car = "white",
-        in.cmfcns = "white",
-        in.cmfcns.mensal = "white",
-        in.contr = "white",
-        in.cr = "white",
-        in.desp = "white",
-        in.ecns = "white",
-        in.r9 = "white",
-        in.unis = "white",
-        in.xcef = "white",
-        in.xcef.mensal = "white"
+        cef = "darkgray",
+        cef.detalhado = "darkgray",
+        cef.mensal = "darkgray",
+        cmfcn.xcef = "darkgray",
+        cmfcn.xcef.mensal = "darkgray",
+        rec = "darkgray",
+        unis.cruzado = "darkgray",
+        car = "white",
+        cmfcns = "white",
+        cmfcns.mensal = "white",
+        contr = "white",
+        cr = "white",
+        desp = "white",
+        ecns = "white",
+        estq = "white",
+        unis = "white",
+        xcef = "white",
+        xcef.mensal = "white"
       ),
       col_headers = list(
         rec.uni = list(
           checar = list(colour = "yellow"),
           repasse.cef.total = list(colour = "blue", font_colour = "white")
         ),
-        in.cef = list(
+        cef = list(
           # ECNs (blue)
           arquivo.ecns = list(colour = "blue", font_colour = "white"),
           repasse.cef.desc.subs = list(colour = "blue", font_colour = "white"),
@@ -521,7 +521,7 @@ r_fechamento <- function(xlsx = FALSE) {
       ),
       tab_freeze = c(
         rec.uni = "situacao",
-        in.cef = "contrato.cef"
+        cef = "contrato.cef"
       ),
       col_monetary = c(
         "amortizacao.pj", "desconto", "encargos", "juros", "juros.contrato",
@@ -565,24 +565,24 @@ r_fechamento <- function(xlsx = FALSE) {
     rec.uni = rec.uni,
     # Inputs
     # Inputs combinados
-    in.cef = in.cef,
-    in.cef.detalhado = in.cef.detalhado,
-    in.cef.mensal = in.cef.mensal,
-    in.cmfcn.xcef = in.cmfcn.xcef,
-    in.cmfcn.xcef.mensal = in.cmfcn.xcef.mensal,
-    in.rec = in.rec,
-    in.unis.cruzado = in.unis.cruzado,
+    cef = in.cef,
+    cef.detalhado = in.cef.detalhado,
+    cef.mensal = in.cef.mensal,
+    cmfcn.xcef = in.cmfcn.xcef,
+    cmfcn.xcef.mensal = in.cmfcn.xcef.mensal,
+    rec = in.rec,
+    unis.cruzado = in.unis.cruzado,
     # Inputs originais
-    in.car = in.car,
-    in.cmfcns = in.cmfcns,
-    in.cmfcns.mensal = in.cmfcns.mensal,
-    in.contr = in.contr,
-    in.cr = in.cr,
-    in.desp = in.desp,
-    in.ecns = in.ecns,
-    in.r9 = in.r9,
-    in.unis = in.unis,
-    in.xcef = in.xcef,
-    in.xcef.mensal = in.xcef.mensal
+    car = in.car,
+    cmfcns = in.cmfcns,
+    cmfcns.mensal = in.cmfcns.mensal,
+    contr = in.contr,
+    cr = in.cr,
+    desp = in.desp,
+    ecns = in.ecns,
+    estq = in.estq,
+    unis = in.unis,
+    xcef = in.xcef,
+    xcef.mensal = in.xcef.mensal
   )
 }

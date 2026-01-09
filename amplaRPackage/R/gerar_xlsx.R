@@ -91,11 +91,11 @@ gerar_xlsx <- function(data,
   }
 
   # Criar ou carregar workbook
-  if (is.null(wb_load)) {
-    # Criar novo workbook
-    wb <- openxlsx::createWorkbook()
-  } else {
-    # Carregar template
+  # NOTA: Quando table=TRUE, ignoramos o template pois removeTable causa corrupção no Excel
+  usar_template <- !is.null(wb_load) && !table
+
+  if (usar_template) {
+    # Carregar template (apenas quando table=FALSE)
     if (!file.exists(wb_load)) {
       stop("Arquivo template não encontrado: ", wb_load)
     }
@@ -133,6 +133,9 @@ gerar_xlsx <- function(data,
       # Carregar template diretamente
       wb <- openxlsx::loadWorkbook(wb_load)
     }
+  } else {
+    # Criar novo workbook (quando table=TRUE ou sem template)
+    wb <- openxlsx::createWorkbook()
   }
 
   # Lista nomeada para processamento
@@ -152,59 +155,34 @@ gerar_xlsx <- function(data,
     colunas_data <- colnames(df_dados)[sapply(df_dados, inherits, "Date")]
     col_dates <- unique(c(col_dates, setdiff(colunas_data, c(col_monetary, col_clip))))
 
-    # Adicionar worksheet se necessário (para novos workbooks)
+    # Adicionar worksheet
     # Inicializar variáveis de controle
     nome_tabela_original <- NULL
+    aba_tem_tabela_existente <- FALSE
 
-    if (is.null(wb_load)) {
-      # Verificar se há cor especificada para esta aba
-      cor_aba <- if (!is.null(tab_colours) && nome_aba %in% names(tab_colours)) {
-        tab_colours[nome_aba]
-      } else {
-        NULL
-      }
-
-      openxlsx::addWorksheet(wb, nome_aba, gridLines = FALSE, tabColour = cor_aba)
-    } else {
-      # Verificar se a aba existe no template, se não, criar
+    if (usar_template) {
+      # Verificar se a aba existe no template
       abas_existentes <- names(wb)
-
-      # Tentar encontrar aba correspondente no template (permitir variação . vs _)
-      # Normalizar nomes para comparação (substituir . e _ por espaço)
       nome_aba_normalizado <- stringr::str_remove_all(tolower(nome_aba), "[._]")
       abas_normalizadas <- stringr::str_remove_all(tolower(abas_existentes), "[._]")
-
-      # Encontrar correspondência
       indice_match <- match(nome_aba_normalizado, abas_normalizadas)
 
       if (!is.na(indice_match)) {
-        # Encontrou aba correspondente no template - usar nome exato do template
         nome_aba_template <- abas_existentes[indice_match]
-
-        # Renomear a aba no dados se necessário para combinar com o template
         if (nome_aba != nome_aba_template) {
-          # Usar o nome do template
           nome_aba <- nome_aba_template
         }
-
-        # Remover gridlines de worksheet existente
         openxlsx::showGridLines(wb, sheet = nome_aba, showGridLines = FALSE)
 
-        # Verificar se existe tabela na aba para preservar nome e recriar
+        # Remover tabelas existentes (para table=FALSE não há problema)
         tabelas_existentes <- openxlsx::getTables(wb, sheet = nome_aba)
         if (length(tabelas_existentes) > 0) {
-          # Salvar nome da tabela original
-          nome_tabela_original <- as.character(tabelas_existentes[1])
-          # Remover tabela (será recriada com mesmo nome após escrever dados)
           for (tabela in tabelas_existentes) {
             openxlsx::removeTable(wb, sheet = nome_aba, table = as.character(tabela))
           }
-        } else {
-          nome_tabela_original <- NULL
         }
       } else {
         # Aba não existe no template - criar nova
-        nome_tabela_original <- NULL
         cor_aba <- if (!is.null(tab_colours) && nome_aba %in% names(tab_colours)) {
           tab_colours[nome_aba]
         } else {
@@ -212,18 +190,14 @@ gerar_xlsx <- function(data,
         }
         openxlsx::addWorksheet(wb, nome_aba, gridLines = FALSE, tabColour = cor_aba)
       }
-    }
-
-    # Deletar região nomeada antiga, se existir (apenas para novos workbooks)
-    if (is.null(wb_load)) {
-      nome_regiao_lower <- tolower(nome_aba)
-      regioes <- openxlsx::getNamedRegions(wb)
-      if (nome_regiao_lower %in% regioes) {
-        openxlsx::deleteNamedRegion(wb, name = nome_regiao_lower)
+    } else {
+      # Novo workbook - criar aba
+      cor_aba <- if (!is.null(tab_colours) && nome_aba %in% names(tab_colours)) {
+        tab_colours[nome_aba]
+      } else {
+        NULL
       }
-      if (nome_aba %in% regioes) {
-        openxlsx::deleteNamedRegion(wb, name = nome_aba)
-      }
+      openxlsx::addWorksheet(wb, nome_aba, gridLines = FALSE, tabColour = cor_aba)
     }
 
     # Garantir que os nomes das colunas sejam únicos (case-insensitive para Excel)
@@ -245,25 +219,25 @@ gerar_xlsx <- function(data,
 
     # Escrever os dados
     if (table) {
-      # Usar nome original da tabela do template se disponível, senão usar nome da aba
-      nome_tabela <- if (!is.null(nome_tabela_original)) {
-        nome_tabela_original
-      } else {
-        nome_aba
-      }
+      # Criar tabela Excel (table=TRUE implica que não estamos usando template)
+      # Adicionar prefixo "t_" para evitar conflito com referências de célula do Excel
+      nome_tabela <- paste0("t_", nome_aba)
       openxlsx::writeDataTable(
         wb,
         sheet = nome_aba,
         x = df_dados,
         tableName = nome_tabela,
         tableStyle = "TableStyleLight1",
-        withFilter = TRUE
+        withFilter = TRUE,
+        firstColumn = FALSE,
+        bandedRows = TRUE
       )
     } else {
+      # table=FALSE: usar writeData
       openxlsx::writeData(wb, sheet = nome_aba, x = df_dados)
 
-      # Criar nova região nomeada (apenas para novos workbooks e sem tabela)
-      if (is.null(wb_load)) {
+      # Criar região nomeada (apenas para novos workbooks sem template)
+      if (!usar_template) {
         nome_regiao <- tolower(nome_aba)
         openxlsx::createNamedRegion(
           wb,
@@ -275,7 +249,8 @@ gerar_xlsx <- function(data,
       }
     }
 
-    # Aplicar estilos básicos apenas se não for tabela (tabelas têm seu próprio styling básico)
+    # Aplicar estilos básicos apenas quando table=FALSE
+    # (tabelas Excel já têm seu próprio styling)
     if (!table) {
       # Estilo geral (bordas e alinhamento)
       openxlsx::addStyle(
@@ -320,9 +295,6 @@ gerar_xlsx <- function(data,
           gridExpand = TRUE
         )
       }
-
-      # Adicionar filtro (não necessário para tabelas)
-      openxlsx::addFilter(wb, sheet = nome_aba, rows = 1, cols = seq_len(ncol(df_dados)))
     }
 
     # Estilos customizados para cabeçalhos específicos (aplicar sempre, mesmo com tabela)
