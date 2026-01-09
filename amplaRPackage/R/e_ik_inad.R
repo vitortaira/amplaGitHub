@@ -103,6 +103,16 @@ e_ik_inad <-
       # str_remove("Imobiliaria/Corretor:") %>%
       # keep(~ .x != "") %>%
       str_trim() %>%
+      # Inserir NA quando a data de vencimento estiver ausente (12 campos -> 13)
+      sapply(function(x) {
+        campos <- str_split(x, " ")[[1]]
+        if (length(campos) == 12) {
+          # Data ausente: inserir NA após o 3º campo (ele)
+          paste(c(campos[1:3], NA, campos[4:12]), collapse = " ")
+        } else {
+          x
+        }
+      }) %>%
       as_tibble() %>%
       separate_wider_delim(
         cols = everything(),
