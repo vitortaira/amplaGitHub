@@ -91,11 +91,10 @@ gerar_xlsx <- function(data,
   }
 
   # Criar ou carregar workbook
-  # NOTA: Quando table=TRUE, ignoramos o template pois removeTable causa corrupção no Excel
-  usar_template <- !is.null(wb_load) && !table
+  usar_template <- !is.null(wb_load)
 
   if (usar_template) {
-    # Carregar template (apenas quando table=FALSE)
+    # Carregar template
     if (!file.exists(wb_load)) {
       stop("Arquivo template não encontrado: ", wb_load)
     }
@@ -172,14 +171,47 @@ gerar_xlsx <- function(data,
         if (nome_aba != nome_aba_template) {
           nome_aba <- nome_aba_template
         }
-        openxlsx::showGridLines(wb, sheet = nome_aba, showGridLines = FALSE)
 
-        # Remover tabelas existentes (para table=FALSE não há problema)
+        # Capturar nome da tabela existente antes de qualquer modificação
         tabelas_existentes <- openxlsx::getTables(wb, sheet = nome_aba)
         if (length(tabelas_existentes) > 0) {
+          nome_tabela_original <- as.character(tabelas_existentes[1])
+          aba_tem_tabela_existente <- TRUE
+        }
+
+        if (table && aba_tem_tabela_existente) {
+          # Para table=TRUE com tabela existente: remover aba e recriar
+          # (removeTable causa corrupção no Excel)
+          # Isso preserva referências de aba (rec.uni!A:A) mas não de tabela
+          posicao_aba <- which(abas_existentes == nome_aba_template)
+          openxlsx::removeWorksheet(wb, sheet = nome_aba_template)
+          cor_aba <- if (!is.null(tab_colours) && nome_aba %in% names(tab_colours)) {
+            tab_colours[nome_aba]
+          } else {
+            NULL
+          }
+          openxlsx::addWorksheet(wb, nome_aba, gridLines = FALSE, tabColour = cor_aba)
+          # Reordenar para manter posição original
+          ordem_atual <- seq_along(names(wb))
+          pos_nova <- which(names(wb) == nome_aba)
+          if (pos_nova != posicao_aba && posicao_aba <= length(ordem_atual)) {
+            ordem_sem_nova <- ordem_atual[ordem_atual != pos_nova]
+            nova_ordem <- c(
+              ordem_sem_nova[seq_len(posicao_aba - 1)],
+              pos_nova,
+              ordem_sem_nova[seq(posicao_aba, length(ordem_sem_nova))]
+            )
+            openxlsx::worksheetOrder(wb) <- nova_ordem
+          }
+        } else if (!table && aba_tem_tabela_existente) {
+          # Para table=FALSE com tabela existente: remover tabelas
+          openxlsx::showGridLines(wb, sheet = nome_aba, showGridLines = FALSE)
           for (tabela in tabelas_existentes) {
             openxlsx::removeTable(wb, sheet = nome_aba, table = as.character(tabela))
           }
+        } else {
+          # Aba existe mas sem tabela - apenas configurar
+          openxlsx::showGridLines(wb, sheet = nome_aba, showGridLines = FALSE)
         }
       } else {
         # Aba não existe no template - criar nova
@@ -219,9 +251,14 @@ gerar_xlsx <- function(data,
 
     # Escrever os dados
     if (table) {
-      # Criar tabela Excel (table=TRUE implica que não estamos usando template)
-      # Adicionar prefixo "t_" para evitar conflito com referências de célula do Excel
-      nome_tabela <- paste0("t_", nome_aba)
+      # Criar tabela Excel
+      # Usar nome da tabela original do template se existir, senão criar novo
+      if (!is.null(nome_tabela_original) && aba_tem_tabela_existente) {
+        nome_tabela <- nome_tabela_original
+      } else {
+        # Adicionar prefixo "t_" para evitar conflito com referências de célula
+        nome_tabela <- paste0("t_", nome_aba)
+      }
       openxlsx::writeDataTable(
         wb,
         sheet = nome_aba,
