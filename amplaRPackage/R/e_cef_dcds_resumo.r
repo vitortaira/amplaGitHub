@@ -28,7 +28,7 @@ e_cef_dcds_resumo <- function(
   # Consolida os dados dos relatórios DCDS da CEF na pasta "Relatorios - CIWEB"
   caminhos.dcds_c <-
     dir_ls(f_caminho.pasta.ciweb_c, recurse = TRUE, type = "file") %>%
-    keep(~ str_ends(.x, "(?i)demonst_cronograma.pdf"))
+    keep(~ str_ends(.x, "(?i)demonst_cronograma?.pdf"))
 
   dcds.resumo_t <-
     caminhos.dcds_c %>%

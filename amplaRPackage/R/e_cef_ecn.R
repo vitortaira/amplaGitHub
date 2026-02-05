@@ -152,8 +152,9 @@ e_cef_ecn <-
           str_detect(empreendimento, "(?i)up\\s?jardim\\s?prud") ~ "AMP",
           str_detect(empreendimento, "(?i)up\\s?vila\\s?sonia") ~ "AVS",
           str_detect(empreendimento, "(?i)up\\s?select\\s?vila") ~ "GRA",
+          str_detect(empreendimento, "(?i)up\\s?esta[cç][aã]o\\s?s[aã]o\\s?lucas") ~ "LUC",
           str_detect(empreendimento, "(?i)up\\s?esta[cç][aã]o\\s?vila") ~ "SN2",
-        TRUE ~ NA_character_
+          TRUE ~ NA_character_
         ),
         data.consulta = data_consulta_p,
         arquivo = f_caminho.arquivo_c
@@ -388,6 +389,7 @@ e_cef_ecn <-
           str_detect(empreendimento, "(?i)up\\s?jardim\\s?prud") ~ "AMP",
           str_detect(empreendimento, "(?i)up\\s?vila\\s?sonia") ~ "AVS",
           str_detect(empreendimento, "(?i)up\\s?select\\s?vila") ~ "GRA",
+          str_detect(empreendimento, "(?i)up\\s?esta[cç][aã]o\\s?s[aã]o\\s?lucas") ~ "LUC",
           str_detect(empreendimento, "(?i)up\\s?esta[cç][aã]o\\s?vila") ~ "SN2",
           TRUE ~ NA_character_
         )
