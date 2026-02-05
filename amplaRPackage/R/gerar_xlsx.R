@@ -132,9 +132,12 @@ gerar_xlsx <- function(data,
       # Carregar template diretamente
       wb <- openxlsx::loadWorkbook(wb_load)
     }
+    # Capturar ordem original do template para reordenação final
+    ordem_template <- names(wb)
   } else {
     # Criar novo workbook (quando table=TRUE ou sem template)
     wb <- openxlsx::createWorkbook()
+    ordem_template <- NULL
   }
 
   # Lista nomeada para processamento
@@ -653,6 +656,24 @@ gerar_xlsx <- function(data,
 
       # Atualizar a worksheet
       ws$sheetViews <- sheetViews_str
+    }
+  }
+
+  # Reordenar abas para manter ordem do template (abas novas ao final)
+  if (!is.null(ordem_template)) {
+    abas_atuais <- names(wb)
+    # Normalizar nomes para correspondência
+    normalizar <- function(x) stringr::str_remove_all(tolower(x), "[._]")
+    template_norm <- normalizar(ordem_template)
+    atuais_norm <- normalizar(abas_atuais)
+    # Ordenar: primeiro as do template (na ordem original), depois as novas
+    ordem_final <- c(
+      abas_atuais[match(template_norm, atuais_norm, nomatch = 0)],
+      abas_atuais[!atuais_norm %in% template_norm]
+    )
+    ordem_final <- ordem_final[ordem_final != 0 & !is.na(ordem_final)]
+    if (length(ordem_final) == length(abas_atuais)) {
+      openxlsx::worksheetOrder(wb) <- match(ordem_final, abas_atuais)
     }
   }
 

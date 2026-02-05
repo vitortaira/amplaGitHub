@@ -428,17 +428,16 @@ r_fechamento <- function(xlsx = FALSE) {
   if (xlsx) {
     gerar_xlsx(
       data = list(
-        # Outputs
-        rec.uni = rec.uni,
-        # Inputs
-        ## Inputs combinados
+        # Inputs combinados
         cef = in.cef,
         cef.detalhado = in.cef.detalhado,
         cef.mensal = in.cef.mensal,
         cmfcn.xcef = in.cmfcn.xcef,
         cmfcn.xcef.mensal = in.cmfcn.xcef.mensal,
         rec = in.rec,
+        rec.uni = rec.uni,
         unis.cruzado = in.unis.cruzado,
+        xcef.mensal = in.xcef.mensal,
         ## Inputs originais
         car = in.car,
         cmfcns = e_cef_cmfcns(),
@@ -449,18 +448,17 @@ r_fechamento <- function(xlsx = FALSE) {
         ecns = in.ecns,
         estq = in.estq,
         unis = in.unis,
-        xcef = in.xcef,
-        xcef.mensal = in.xcef.mensal
+        xcef = in.xcef
       ),
       wb_load = str_c(caminhos_pastas("templates"), "/Template-Fechamento.xlsx"),
       tab_colours = c(
-        rec.uni = "darkblue",
         cef = "darkgray",
         cef.detalhado = "darkgray",
         cef.mensal = "darkgray",
         cmfcn.xcef = "darkgray",
         cmfcn.xcef.mensal = "darkgray",
         rec = "darkgray",
+        rec.uni = "darkgray",
         unis.cruzado = "darkgray",
         car = "white",
         cmfcns = "white",
@@ -561,9 +559,6 @@ r_fechamento <- function(xlsx = FALSE) {
   }
 
   list(
-    # Outputs
-    rec.uni = rec.uni,
-    # Inputs
     # Inputs combinados
     cef = in.cef,
     cef.detalhado = in.cef.detalhado,
@@ -571,7 +566,9 @@ r_fechamento <- function(xlsx = FALSE) {
     cmfcn.xcef = in.cmfcn.xcef,
     cmfcn.xcef.mensal = in.cmfcn.xcef.mensal,
     rec = in.rec,
+    rec.uni = rec.uni,
     unis.cruzado = in.unis.cruzado,
+    xcef.mensal = in.xcef.mensal,
     # Inputs originais
     car = in.car,
     cmfcns = in.cmfcns,
@@ -582,7 +579,6 @@ r_fechamento <- function(xlsx = FALSE) {
     ecns = in.ecns,
     estq = in.estq,
     unis = in.unis,
-    xcef = in.xcef,
-    xcef.mensal = in.xcef.mensal
+    xcef = in.xcef
   )
 }
