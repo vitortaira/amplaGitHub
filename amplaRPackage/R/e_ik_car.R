@@ -1,8 +1,5 @@
 e_ik_car <- function() {
-  diretorio.base <- file.path(
-    "C:", "Users", "Ampla", "AMPLA INCORPORADORA LTDA",
-    "Relatórios - Documentos", "Dados", "Para o Soares", "Inputs"
-  )
+  diretorio.base <- caminhos_pastas("fechamento_in")
 
   # Buscar todas as pastas de data no diretório
   pastas.data <- fs::dir_ls(diretorio.base, type = "directory") %>%

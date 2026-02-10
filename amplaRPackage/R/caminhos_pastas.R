@@ -56,16 +56,16 @@ caminhos_pastas <- function(alias) {
     financeiro = fs::path(
       caminho.base_c, "Financeiro - Documentos"
     ),
-    soares = fs::path(
-      caminho.base_c, "Relatórios - Documentos", "Dados", "Para o Soares"
+    fechamento = fs::path(
+      caminho.base_c, "Relatórios - Documentos", "Dados", "Fechamento"
     ),
-    soares_in = fs::path(
+    fechamento_in = fs::path(
       caminho.base_c, "Relatórios - Documentos", "Dados",
-      "Para o Soares", "Inputs"
+      "Fechamento", "Inputs"
     ),
-    soares_out = fs::path(
+    fechamento_out = fs::path(
       caminho.base_c, "Relatórios - Documentos", "Dados",
-      "Para o Soares", "Outputs"
+      "Fechamento", "Outputs"
     ),
     temp = fs::path(
       "C:", "Users", "Ampla", "OneDrive - AMPLA INCORPORADORA LTDA",

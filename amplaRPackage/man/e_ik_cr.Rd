@@ -4,11 +4,11 @@
 \alias{e_ik_cr}
 \title{Extração de Contas a Receber Informakon}
 \usage{
-e_ik_cr(f_caminho.pasta.ik_c = caminhos_pastas("soares_in"), xlsx = FALSE)
+e_ik_cr(f_caminho.pasta.ik_c = caminhos_pastas("fechamento_in"), xlsx = FALSE)
 }
 \arguments{
-\item{f_caminho.pasta.ik_c}{String do caminho da pasta "soares_in".
-Valor padrão: \code{caminhos_pastas("soares_in")}.}
+\item{f_caminho.pasta.ik_c}{String do caminho da pasta "fechamento_in".
+Valor padrão: \code{caminhos_pastas("fechamento_in")}.}
 
 \item{xlsx}{Logical. Se \code{TRUE}, cria um arquivo xlsx com os dados extraídos.
 Valor padrão: \code{FALSE}.}
@@ -18,7 +18,7 @@ Data frame com dados das contas a receber consolidadas.
 }
 \description{
 A função e_ik_cr() extrai os dados de contas a receber dos arquivos na pasta
-"soares_in", preenche-os em uma planilha xlsx (opcional) e os retorna em
+"fechamento_in", preenche-os em uma planilha xlsx (opcional) e os retorna em
 um data frame.
 }
 \examples{

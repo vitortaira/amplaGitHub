@@ -4,8 +4,7 @@
 #' Extrai e organiza dados de unidades dos arquivos da Informakon.
 #'
 #' @param caminho.pasta String do caminho da pasta "Inputs".
-#'   Valor padrão: file.path("C:", "Users", "Ampla", "AMPLA INCORPORADORA LTDA",
-#'   "Relatórios - Documentos", "Dados", "Para o Soares", "Inputs").
+#'   Valor padrão: \code{caminhos_pastas("fechamento_in")}.
 #'
 #' @return
 #' Retorna uma tibble com os dados das unidades organizados.
@@ -18,7 +17,7 @@
 #'
 #' @export
 e_ik_unis <- function() {
-  caminho.pasta <- caminhos_pastas("soares_in")
+  caminho.pasta <- caminhos_pastas("fechamento_in")
 
   if (!dir.exists(caminho.pasta)) {
     stop("A pasta 'Inputs' não foi encontrada: ", caminho.pasta)

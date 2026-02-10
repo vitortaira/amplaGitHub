@@ -2,11 +2,11 @@
 #'
 #' @description
 #' A função e_ik_cr() extrai os dados de contas a receber dos arquivos na pasta
-#' "soares_in", preenche-os em uma planilha xlsx (opcional) e os retorna em
+#' "fechamento_in", preenche-os em uma planilha xlsx (opcional) e os retorna em
 #' um data frame.
 #'
-#' @param f_caminho.pasta.ik_c String do caminho da pasta "soares_in".
-#'   Valor padrão: \code{caminhos_pastas("soares_in")}.
+#' @param f_caminho.pasta.ik_c String do caminho da pasta "fechamento_in".
+#'   Valor padrão: \code{caminhos_pastas("fechamento_in")}.
 #' @param xlsx Logical. Se \code{TRUE}, cria um arquivo xlsx com os dados extraídos.
 #'   Valor padrão: \code{FALSE}.
 #'
@@ -25,12 +25,12 @@
 #' @importFrom lubridate floor_date
 #' @export
 e_ik_cr <- function(
-    f_caminho.pasta.ik_c = caminhos_pastas("soares_in"),
+    f_caminho.pasta.ik_c = caminhos_pastas("fechamento_in"),
     xlsx = FALSE) {
   # Função interna para buscar o arquivo de contas a receber mais recente
   obter_caminho_cr <- function() {
     if (!dir.exists(f_caminho.pasta.ik_c)) {
-      stop("A pasta 'soares_in' não foi encontrada.")
+      stop("A pasta 'fechamento_in' não foi encontrada.")
     }
     # Busca arquivos que começam com "cr-"
     caminhos_cr <- dir_ls(f_caminho.pasta.ik_c, recurse = TRUE, type = "file")
@@ -38,7 +38,7 @@ e_ik_cr <- function(
       basename(caminhos_cr) %>% str_detect("^cr-")
     ]
     if (length(caminhos_cr) == 0) {
-      stop("Nenhum arquivo de contas a receber encontrado na pasta soares_in.")
+      stop("Nenhum arquivo de contas a receber encontrado na pasta fechamento_in.")
     }
     # Determina a data final (YYYY_MM_DD) mais recente
     # Padrão: cr-YYYY_MM_DD-YYYY_MM_DD.xlsx

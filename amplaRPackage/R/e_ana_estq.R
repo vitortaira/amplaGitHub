@@ -5,7 +5,7 @@
 #' na pasta especificada.
 #'
 #' @param caminho.pasta.inputs_c String do caminho da pasta "Inputs".
-#'   Valor padrão: \code{caminhos_pastas("soares_in")}.
+#'   Valor padrão: \code{caminhos_pastas("fechamento_in")}.
 #'
 #' @return Data frame com dados do arquivo de estoque mais recente.
 #'
@@ -20,7 +20,7 @@
 #' @importFrom dplyr mutate
 #' @export
 e_ana_estq <- function(
-    caminho.pasta.inputs_c = caminhos_pastas("soares_in")) {
+    caminho.pasta.inputs_c = caminhos_pastas("fechamento_in")) {
   if (!dir.exists(caminho.pasta.inputs_c)) {
     stop("A pasta 'Inputs' não foi encontrada: ", caminho.pasta.inputs_c)
   }

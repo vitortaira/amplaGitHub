@@ -5,7 +5,7 @@
 #' (contr) mais recente na pasta especificada.
 #'
 #' @param caminho.pasta.inputs_c String do caminho da pasta "Inputs".
-#'   Valor padrão: \code{"C:\\Users\\Ampla\\AMPLA INCORPORADORA LTDA\\Relatórios - Documentos\\Dados\\Para o Soares\\Inputs"}.
+#'   Valor padrão: \code{caminhos_pastas("fechamento_in")}.
 #'
 #' @return Data frame com dados dos contratos do arquivo mais recente.
 #'
@@ -20,7 +20,7 @@
 #' @importFrom dplyr arrange desc
 #' @export
 e_ik_contrs <- function(
-    caminho.pasta.inputs_c = "C:\\Users\\Ampla\\AMPLA INCORPORADORA LTDA\\Relatórios - Documentos\\Dados\\Para o Soares\\Inputs") {
+    caminho.pasta.inputs_c = caminhos_pastas("fechamento_in")) {
   # Função interna para buscar o arquivo de contratos mais recente
   obterCaminhoContrMaisRecente <- function() {
     if (!dir.exists(caminho.pasta.inputs_c)) {

@@ -3,10 +3,10 @@
 #'
 #' @description
 #' A função e_ik_desp() extrai os dados de despesas dos arquivos na pasta
-#' "soares_in" e os retorna em um data frame.
+#' "fechamento_in" e os retorna em um data frame.
 #'
-#' @param f_caminho.pasta.ik_c String do caminho da pasta "soares_in".
-#'   Valor padrão: \code{caminhos_pastas("soares_in")}.
+#' @param f_caminho.pasta.ik_c String do caminho da pasta "fechamento_in".
+#'   Valor padrão: \code{caminhos_pastas("fechamento_in")}.
 #'
 #' @return Data frame com dados das despesas consolidadas.
 #'
@@ -23,11 +23,11 @@
 #' @importFrom lubridate floor_date
 #' @export
 e_ik_desp <- function(
-    f_caminho.pasta.ik_c = caminhos_pastas("soares_in")) {
+    f_caminho.pasta.ik_c = caminhos_pastas("fechamento_in")) {
   # Função interna para buscar o arquivo de despesas mais recente
   obter_caminho_despesas <- function() {
     if (!dir.exists(f_caminho.pasta.ik_c)) {
-      stop("A pasta 'soares_in' não foi encontrada.")
+      stop("A pasta 'fechamento_in' não foi encontrada.")
     }
     # Busca arquivos que começam com "desp-"
     caminhos_desp <- dir_ls(f_caminho.pasta.ik_c, recurse = TRUE, type = "file")
@@ -35,7 +35,7 @@ e_ik_desp <- function(
       basename(caminhos_desp) %>% str_detect("^desp-")
     ]
     if (length(caminhos_desp) == 0) {
-      stop("Nenhum arquivo de despesas encontrado na pasta soares_in.")
+      stop("Nenhum arquivo de despesas encontrado na pasta fechamento_in.")
     }
     # Determina a data final (YYYY_MM_DD) mais recente
     # Padrão: desp-YYYY_MM_DD-YYYY_MM_DD.xlsx
