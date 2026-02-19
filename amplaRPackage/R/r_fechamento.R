@@ -32,7 +32,8 @@ r_fechamento <- function(xlsx = FALSE) {
   in.contr <-
     e_ik_contrs() %>%
     rename(contrato = contrato.ampla) %>%
-    dplyr::select(id.contr, empresa, contrato, contrato.cef, repassado) %>%
+    dplyr::filter(sit %in% c("A", "L", "R")) %>%
+    # dplyr::select(id.contr, empresa, contrato, contrato.cef, repassado) %>%
     dplyr::filter(!is.na(empresa))
   # Contas recebidas
   in.cr <- e_ik_cr() %>%
