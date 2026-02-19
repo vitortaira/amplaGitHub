@@ -9,10 +9,15 @@ e_ik_contr <-
       skip = 0
     )) %>%
       as_tibble()
-    empreendimento_c <- contr_t[1, 1] %>%
-      str_remove("^.*\\:\\s?") %>%
-      str_sub(1, 3)
     contr_t %<>%
+      mutate(
+        empreendimento.c = if_else(
+          !is.na(`...1`),
+          `...1` %>% str_remove("^.*\\:\\s?") %>% str_sub(1, 3),
+          NA_character_
+        )
+      ) %>%
+      tidyr::fill(empreendimento.c, .direction = "down") %>%
       rename(
         contrato.ampla = "Nº Contrato",
         contrato.alternativo = "Nº Con. Alternativo",
@@ -51,12 +56,12 @@ e_ik_contr <-
         repassado = if_else(
           is.na(contrato.cef), "Não", "Sim"
         ) %>% as.factor(),
-        empreendimento = as.factor(empreendimento_c),
+        empreendimento.c = as.factor(empreendimento.c),
         arquivo = caminho.contr_c
       ) %>%
       select(
-        empreendimento, contrato.ampla, contrato.cef, repassado,
-        tipo.contrato, everything(), -`...1`
+        empreendimento.c, empreendimento, contrato.ampla, contrato.cef,
+        repassado, tipo.contrato, everything(), -`...1`
       )
     return(contr_t)
   }
