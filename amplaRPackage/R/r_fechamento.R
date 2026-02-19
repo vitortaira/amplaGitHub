@@ -58,10 +58,6 @@ r_fechamento <- function(xlsx = FALSE) {
       pavimento = NA_character_,
       repassado = NA_character_
     ) %>%
-    dplyr::filter(
-      empresa %in% c("AMP", "AVS", "GRA", "LUC", "POM", "SN2", "SN4") &
-        !str_detect(empreendimento, "(?i)sic[ií]lia")
-    ) %>%
     dplyr::select(
       empreendimento, empresa, total, data.vencimento, data.pagamento, cliente,
       contrato, contrato.cef, repassado, ele, esp, esp.con, agente, parcela,
@@ -107,12 +103,12 @@ r_fechamento <- function(xlsx = FALSE) {
       id = str_c(empresa, especie, unidade, sep = "-"),
       natureza = case_when(
         ele %in% c("CEF", "FGT", "FIB", "FIN") &
-          !empresa %in% c("POM", "SAU") &
+          !empresa %in% c("CBL", "POM", "SAU") &
           repassado == "Não" ~ "parcela.cef.assinar",
         ele %in% c("CEF", "FGT", "FIB", "FIN") &
-          !empresa %in% c("POM", "SAU") ~ "parcela.cef.total.ik",
+          !empresa %in% c("CBL", "POM", "SAU") ~ "parcela.cef.total.ik",
         ele %in% c("CEF", "FGT", "FIB", "FIN") &
-          empresa %in% c("POM", "SAU") ~ "parcela.fin.total.ik",
+          empresa %in% c("CBL", "POM", "SAU") ~ "parcela.fin.total.ik",
         ele == "TAX" ~ "taxa.extra",
         TRUE ~ "pro.soluto"
       )
@@ -134,10 +130,6 @@ r_fechamento <- function(xlsx = FALSE) {
       ),
       unidade = str_remove_all(unidade, "[^\\d]*") %>% as.integer(),
       id = str_c(empresa, especie, unidade, sep = "-")
-    ) %>%
-    dplyr::filter(
-      empresa %in% c("AMP", "AVS", "GRA", "LUC", "POM", "SN2", "SN4") &
-        !str_detect(empreendimento, "Sicília")
     )
 
   # Unidades consolidadas (Informakon + Ana Estoque)
