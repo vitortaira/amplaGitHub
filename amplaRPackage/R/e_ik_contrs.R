@@ -69,6 +69,7 @@ e_ik_contrs <- function(
         str_detect(identificacao.imovel, "(?i)select") ~ "GRA",
         str_detect(identificacao.imovel, "(?i)s[aã]o\\s?lucas") ~ "LUC",
         str_detect(identificacao.imovel, "(?i)pomp[eé]ia") ~ "POM",
+        str_detect(identificacao.imovel, "(?i)sa[uú]de") ~ "SAU",
         str_detect(identificacao.imovel, "(?i)esta[cç][aã]o\\s?vila") ~ "SN2",
         TRUE ~ NA_character_
       ),

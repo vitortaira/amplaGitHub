@@ -1,7 +1,7 @@
 #' @title Extração de Contas a Receber Informakon
 #'
 #' @description
-#' A função e_ik_cr() extrai os dados de contas a receber dos arquivos na pasta
+#' A função e_ik_cr() extrai os dados de contas recebidas dos arquivos na pasta
 #' "fechamento_in", preenche-os em uma planilha xlsx (opcional) e os retorna em
 #' um data frame.
 #'
@@ -10,7 +10,7 @@
 #' @param xlsx Logical. Se \code{TRUE}, cria um arquivo xlsx com os dados extraídos.
 #'   Valor padrão: \code{FALSE}.
 #'
-#' @return Data frame com dados das contas a receber consolidadas.
+#' @return Data frame com dados das contas recebidas consolidadas.
 #'
 #' @examples
 #' \dontrun{
@@ -27,7 +27,7 @@
 e_ik_cr <- function(
     f_caminho.pasta.ik_c = caminhos_pastas("fechamento_in"),
     xlsx = FALSE) {
-  # Função interna para buscar o arquivo de contas a receber mais recente
+  # Função interna para buscar o arquivo de contas recebidas mais recente
   obter_caminho_cr <- function() {
     if (!dir.exists(f_caminho.pasta.ik_c)) {
       stop("A pasta 'fechamento_in' não foi encontrada.")
@@ -38,7 +38,7 @@ e_ik_cr <- function(
       basename(caminhos_cr) %>% str_detect("^cr-")
     ]
     if (length(caminhos_cr) == 0) {
-      stop("Nenhum arquivo de contas a receber encontrado na pasta fechamento_in.")
+      stop("Nenhum arquivo de contas recebidas encontrado na pasta fechamento_in.")
     }
     # Determina a data final (YYYY_MM_DD) mais recente
     # Padrão: cr-YYYY_MM_DD-YYYY_MM_DD.xlsx
@@ -51,7 +51,7 @@ e_ik_cr <- function(
     caminhos_cr[indice_recente]
   }
 
-  # Carrega o arquivo de contas a receber mais recente
+  # Carrega o arquivo de contas recebidas mais recente
   caminho_arquivo_cr <- obter_caminho_cr()
   cr_df <- read_excel(caminho_arquivo_cr, skip = 3) %>%
     # Padroniza nomes
