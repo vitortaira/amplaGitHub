@@ -25,6 +25,7 @@ Imports:
   lubridate,
   magrittr,
   openxlsx,
+  openxlsx2,
   pdftools,
   plotly,
   purrr,
