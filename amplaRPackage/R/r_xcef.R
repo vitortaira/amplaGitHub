@@ -1,3 +1,82 @@
+# Funções auxiliares para cruzamento flexível ---------------------------------
+
+#' Encontra subconjunto de valores que soma ao alvo
+#'
+#' @param alvo Valor numérico alvo.
+#' @param valores Vetor numérico de valores candidatos.
+#' @return Vetor de índices cuja soma corresponde ao alvo,
+#'   ou \code{integer(0)} se nenhuma combinação for encontrada.
+#' @keywords internal
+encontrar_combinacao <- function(alvo, valores) {
+  if (is.na(alvo)) {
+    return(integer(0))
+  }
+  validos <- which(!is.na(valores))
+  n <- length(validos)
+  if (n == 0) {
+    return(integer(0))
+  }
+  for (k in seq_len(n)) {
+    combos <- utils::combn(n, k, simplify = FALSE)
+    for (combo in combos) {
+      if (abs(sum(valores[validos[combo]]) - alvo) < 0.005) {
+        return(validos[combo])
+      }
+    }
+  }
+  integer(0)
+}
+
+#' Cruza valores de extratos com cmfcns permitindo 1:N (subset-sum)
+#'
+#' Primeiro tenta correspondências exatas 1:1. Para valores restantes,
+#' busca subconjuntos de cmfcns cuja soma corresponde ao valor do extrato.
+#'
+#' @param ext_vals Vetor numérico de valores dos extratos.
+#' @param cmf_vals Vetor numérico de valores dos CMF_CNs.
+#' @return Lista de listas com campos \code{ext} (índice do extrato),
+#'   \code{cmf} (índice do cmfcn) e \code{tipo} ("exato" ou "combinado").
+#' @keywords internal
+cruzar_grupo <- function(ext_vals, cmf_vals) {
+  n_ext <- length(ext_vals)
+  n_cmf <- length(cmf_vals)
+  ext_usado <- logical(n_ext)
+  cmf_usado <- logical(n_cmf)
+  pares <- list()
+
+  # Passo 1: correspondências exatas 1:1
+  for (i in seq_len(n_ext)) {
+    for (j in seq_len(n_cmf)) {
+      if (!ext_usado[i] && !cmf_usado[j] &&
+        !is.na(ext_vals[i]) && !is.na(cmf_vals[j]) &&
+        abs(ext_vals[i] - cmf_vals[j]) < 0.005) {
+        ext_usado[i] <- TRUE
+        cmf_usado[j] <- TRUE
+        pares <- c(pares, list(list(ext = i, cmf = j, tipo = "exato")))
+        break
+      }
+    }
+  }
+
+  # Passo 2: combinações (subset-sum) para restantes
+  cmf_livres <- which(!cmf_usado)
+  for (i in which(!ext_usado)) {
+    if (length(cmf_livres) == 0) break
+    idx <- encontrar_combinacao(ext_vals[i], cmf_vals[cmf_livres])
+    if (length(idx) > 0) {
+      cmf_sel <- cmf_livres[idx]
+      for (j in cmf_sel) {
+        pares <- c(pares, list(list(ext = i, cmf = j, tipo = "combinado")))
+      }
+      ext_usado[i] <- TRUE
+      cmf_usado[cmf_sel] <- TRUE
+      cmf_livres <- setdiff(cmf_livres, cmf_sel)
+    }
+  }
+
+  pares
+}
+
 #' @title Cruzamento de dados dos extratos da CEF e relatórios CMF_CN
 #'
 #' @description
@@ -36,7 +115,7 @@
 #' @importFrom fs dir_ls
 #' @importFrom here here
 #' @importFrom magrittr %>%
-#' @importFrom dplyr mutate rename bind_rows inner_join
+#' @importFrom dplyr mutate rename bind_rows bind_cols
 #' @importFrom stringr str_detect str_ends str_pad str_sub
 #'
 #' @export
@@ -72,40 +151,84 @@ r_xcef <-
       mutate(
         contrato.5 = str_sub(contrato.6, start = -5, end = -1)
       )
-    # Cruza os dados consolidados
-    extratos.cruzados_t <-
-      inner_join(
-        extratos_t,
-        cmfcns_t,
-        by = c(
-          "data.movimentacao" = "data.movimento", "empresa", "contrato.5",
-          "valor"
-        ),
-        suffix = c(".xcef", ".cmfcn")
+    # Cruzamento flexível (permite 1:N via subset-sum) ----------------------
+    extratos_t$.id_ext <- seq_len(nrow(extratos_t))
+    cmfcns_t$.id_cmf <- seq_len(nrow(cmfcns_t))
+
+    # Chave de agrupamento (empresa + contrato + data)
+    chave_ext <- ifelse(
+      is.na(extratos_t$empresa) | is.na(extratos_t$contrato.5) |
+        is.na(extratos_t$data.movimentacao),
+      NA_character_,
+      paste(extratos_t$empresa, extratos_t$contrato.5,
+        extratos_t$data.movimentacao,
+        sep = "|"
+      )
+    )
+    chave_cmf <- ifelse(
+      is.na(cmfcns_t$empresa) | is.na(cmfcns_t$contrato.5) |
+        is.na(cmfcns_t$data.movimento),
+      NA_character_,
+      paste(cmfcns_t$empresa, cmfcns_t$contrato.5,
+        cmfcns_t$data.movimento,
+        sep = "|"
+      )
+    )
+
+    # Encontrar pares por grupo
+    grupos_comuns <- intersect(
+      unique(na.omit(chave_ext)),
+      unique(na.omit(chave_cmf))
+    )
+    pares_t <- lapply(grupos_comuns, function(g) {
+      ext_idx <- which(chave_ext == g)
+      cmf_idx <- which(chave_cmf == g)
+      matches <- cruzar_grupo(
+        extratos_t$valor[ext_idx],
+        cmfcns_t$valor[cmf_idx]
+      )
+      if (length(matches) == 0) {
+        return(NULL)
+      }
+      tibble(
+        .id_ext = vapply(matches, \(m) ext_idx[m$ext], integer(1)),
+        .id_cmf = vapply(matches, \(m) cmf_idx[m$cmf], integer(1)),
+        tipo.cruzamento = vapply(matches, \(m) m$tipo, character(1))
+      )
+    }) %>% bind_rows()
+
+    # Montar tabela cruzada
+    if (nrow(pares_t) > 0) {
+      cols_sufixo <- c("natureza", "data.lancamento", "arquivo", "valor")
+      ext_parte <- extratos_t[pares_t$.id_ext, ]
+      cmf_parte <- cmfcns_t[pares_t$.id_cmf, ] %>%
+        select(-empresa, -contrato.5, -data.movimento, -.id_cmf)
+      names(ext_parte) <- ifelse(
+        names(ext_parte) %in% cols_sufixo,
+        paste0(names(ext_parte), ".xcef"),
+        names(ext_parte)
+      )
+      names(cmf_parte) <- ifelse(
+        names(cmf_parte) %in% cols_sufixo,
+        paste0(names(cmf_parte), ".cmfcn"),
+        names(cmf_parte)
+      )
+      extratos.cruzados_t <- bind_cols(
+        pares_t %>% select(tipo.cruzamento),
+        ext_parte,
+        cmf_parte
       ) %>%
-      select(
-        # Interseção
-        data.movimentacao, empresa, contrato.5, valor,
-        # Incluir todas as outras colunas
-        everything()
-      ) %>%
-      mutate(
-        id_xcef = paste0(
-          # Interseção
-          contrato.5, valor
-        ),
-        id_cmfcn = paste0(
-          # Interseção
-          contrato.5, valor
+        select(
+          data.movimentacao, empresa, contrato.5,
+          valor.xcef, valor.cmfcn, tipo.cruzamento,
+          everything(), -.id_ext
         )
-      )
-    # Colunas que identificam linhas cruzadas em extratos_t e cmfcns_t
+    } else {
+      extratos.cruzados_t <- tibble()
+    }
+    # Marcar linhas cruzadas em extratos_t e cmfcns_t
     extratos_t %<>% mutate(
-      cruzada = if_else(
-        paste0(contrato.5, valor) %in% paste0(extratos.cruzados_t$contrato.5, extratos.cruzados_t$valor),
-        "sim",
-        "não"
-      )
+      cruzada = if_else(.id_ext %in% pares_t$.id_ext, "sim", "não")
     ) %>%
       select(
         contrato.5, data.movimentacao, valor, empresa, natureza, conta.interno,
@@ -114,11 +237,7 @@ r_xcef <-
         data.consulta, arquivo
       )
     cmfcns_t %<>% mutate(
-      cruzada = if_else(
-        paste0(contrato.5, valor) %in% paste0(extratos.cruzados_t$contrato.5, extratos.cruzados_t$valor),
-        "sim",
-        "não"
-      )
+      cruzada = if_else(.id_cmf %in% pares_t$.id_cmf, "sim", "não")
     ) %>%
       select(
         contrato.5, data.movimento, valor, empresa, natureza, cruzada,
@@ -127,16 +246,18 @@ r_xcef <-
       )
     extratos.cruzados_t %<>%
       rename(
+        valor.extrato = valor.xcef,
         arquivo.extrato = arquivo.xcef,
         data.lancamento.extrato = data.lancamento.xcef,
         natureza.extrato = natureza.xcef
       ) %>%
       select(
-        contrato.5, data.movimentacao, valor, empresa, natureza.extrato,
-        conta.interno, data.lancamento.extrato, documento, descricao, saldo,
-        conta, agencia, produto, periodo.inicio, periodo.fim, data.consulta,
-        arquivo.extrato, natureza.cmfcn, contrato, data.lancamento.cmfcn,
-        lancamentos, np, `conta.sidec/nsgd`, situacao, mot, arquivo.cmfcn
+        contrato.5, data.movimentacao, valor.extrato, valor.cmfcn, empresa,
+        tipo.cruzamento, natureza.extrato, conta.interno,
+        data.lancamento.extrato, documento, descricao, saldo, conta, agencia,
+        produto, periodo.inicio, periodo.fim, data.consulta, arquivo.extrato,
+        natureza.cmfcn, contrato, data.lancamento.cmfcn, lancamentos, np,
+        `conta.sidec/nsgd`, situacao, mot, arquivo.cmfcn
       )
     # Salvando num xlsx -------------------------------------------------------
 
@@ -195,7 +316,7 @@ r_xcef <-
       )
 
       # Configuração de colunas monetárias
-      colunas_monetarias <- c("valor", "saldo")
+      colunas_monetarias <- c("valor", "valor.extrato", "valor.cmfcn", "saldo")
 
       # Configuração de colunas de data
       colunas_datas <- c(
@@ -215,7 +336,9 @@ r_xcef <-
           # Purple headers with white font
           "contrato.5" = list(colour = "purple", font_colour = "white", font_size = 12),
           "data.movimentacao" = list(colour = "purple", font_colour = "white", font_size = 12),
-          "valor" = list(colour = "purple", font_colour = "white", font_size = 12),
+          "valor.extrato" = list(colour = "purple", font_colour = "white", font_size = 12),
+          "valor.cmfcn" = list(colour = "purple", font_colour = "white", font_size = 12),
+          "tipo.cruzamento" = list(colour = "purple", font_colour = "white", font_size = 12),
           # Red headers with white font
           "data.lancamento.extrato" = list(colour = "red", font_colour = "white", font_size = 12),
           "documento" = list(colour = "red", font_colour = "white", font_size = 12),
