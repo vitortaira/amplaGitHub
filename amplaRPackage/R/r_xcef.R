@@ -115,7 +115,8 @@ cruzar_grupo <- function(ext_vals, cmf_vals) {
 #' @importFrom fs dir_ls
 #' @importFrom here here
 #' @importFrom magrittr %>%
-#' @importFrom dplyr mutate rename bind_rows bind_cols
+#' @importFrom dplyr mutate rename bind_rows bind_cols filter group_by
+#'   summarise left_join select
 #' @importFrom stringr str_detect str_ends str_pad str_sub
 #'
 #' @export
@@ -226,6 +227,37 @@ r_xcef <-
     } else {
       extratos.cruzados_t <- tibble()
     }
+    # Somas de repasse do ano corrente por (contrato, empresa)
+    ano_atual <- format(Sys.Date(), "%Y")
+    col_soma_xcef <- paste0("soma.repasse.", ano_atual, ".xcef")
+    col_soma_cmfcn <- paste0("soma.repasse.", ano_atual, ".cmfcn")
+
+    soma_repasse_xcef <- extratos_t %>%
+      filter(
+        natureza == "repasse.cef",
+        !is.na(data.movimentacao),
+        format(data.movimentacao, "%Y") == ano_atual
+      ) %>%
+      group_by(contrato.5, empresa) %>%
+      summarise(!!col_soma_xcef := sum(valor, na.rm = TRUE),
+        .groups = "drop"
+      )
+    soma_repasse_cmfcn <- cmfcns_t %>%
+      filter(
+        natureza %in% c(
+          "repasse.cef.obra",
+          "repasse.cef.terreno",
+          "remuneracao.terreno",
+          "remuneracao.venda"
+        ),
+        !is.na(data.movimento),
+        format(data.movimento, "%Y") == ano_atual
+      ) %>%
+      group_by(contrato.5, empresa) %>%
+      summarise(!!col_soma_cmfcn := sum(valor, na.rm = TRUE),
+        .groups = "drop"
+      )
+
     # Marcar linhas cruzadas em extratos_t e cmfcns_t
     extratos_t %<>% mutate(
       cruzada = if_else(.id_ext %in% pares_t$.id_ext, "sim", "não")
@@ -251,9 +283,31 @@ r_xcef <-
         data.lancamento.extrato = data.lancamento.xcef,
         natureza.extrato = natureza.xcef
       ) %>%
+      left_join(soma_repasse_xcef, by = c("contrato.5", "empresa")) %>%
+      left_join(soma_repasse_cmfcn, by = c("contrato.5", "empresa")) %>%
+      mutate(
+        across(
+          all_of(c(col_soma_xcef, col_soma_cmfcn)),
+          \(x) replace(x, is.na(x), 0)
+        ),
+        checar = {
+          v1 <- .data[[col_soma_xcef]]
+          v2 <- .data[[col_soma_cmfcn]]
+          contratos_pj <- c(
+            e_cef_nplpjs()$contrato.6.ultimo,
+            e_cef_nplpjs()$contrato.6.penultimo
+          )
+          contratos_pj5 <- str_sub(contratos_pj, start = -5, end = -1)
+          denom <- pmax(abs(v1), abs(v2), 1e-10)
+          proximo <- abs(v1 - v2) / denom < 0.001
+          eh_pj <- contrato.5 %in% contratos_pj5
+          if_else(proximo | eh_pj, "ok", "diverge")
+        }
+      ) %>%
       select(
         contrato.5, data.movimentacao, valor.extrato, valor.cmfcn, empresa,
         tipo.cruzamento, natureza.extrato, conta.interno,
+        all_of(c(col_soma_xcef, col_soma_cmfcn)), checar,
         data.lancamento.extrato, documento, descricao, saldo, conta, agencia,
         produto, periodo.inicio, periodo.fim, data.consulta, arquivo.extrato,
         natureza.cmfcn, contrato, data.lancamento.cmfcn, lancamentos, np,
@@ -316,7 +370,10 @@ r_xcef <-
       )
 
       # Configuração de colunas monetárias
-      colunas_monetarias <- c("valor", "valor.extrato", "valor.cmfcn", "saldo")
+      colunas_monetarias <- c(
+        "valor", "valor.extrato", "valor.cmfcn", "saldo",
+        col_soma_xcef, col_soma_cmfcn
+      )
 
       # Configuração de colunas de data
       colunas_datas <- c(
@@ -338,7 +395,14 @@ r_xcef <-
           "data.movimentacao" = list(colour = "purple", font_colour = "white", font_size = 12),
           "valor.extrato" = list(colour = "purple", font_colour = "white", font_size = 12),
           "valor.cmfcn" = list(colour = "purple", font_colour = "white", font_size = 12),
-          "tipo.cruzamento" = list(colour = "purple", font_colour = "white", font_size = 12),
+          # Gray headers
+          "empresa" = list(colour = "lightgray", font_size = 12),
+          "natureza.extrato" = list(colour = "lightgray", font_size = 12),
+          "conta.interno" = list(colour = "lightgray", font_size = 12),
+          "tipo.cruzamento" = list(colour = "lightgray", font_size = 12),
+          "arquivo.extrato" = list(colour = "lightgray", font_size = 12),
+          "arquivo.cmfcn" = list(colour = "lightgray", font_size = 12),
+          "natureza.cmfcn" = list(colour = "lightgray", font_size = 12),
           # Red headers with white font
           "data.lancamento.extrato" = list(colour = "red", font_colour = "white", font_size = 12),
           "documento" = list(colour = "red", font_colour = "white", font_size = 12),
@@ -350,7 +414,6 @@ r_xcef <-
           "periodo.inicio" = list(colour = "red", font_colour = "white", font_size = 12),
           "periodo.fim" = list(colour = "red", font_colour = "white", font_size = 12),
           "data.consulta" = list(colour = "red", font_colour = "white", font_size = 12),
-          "arquivo.extrato" = list(colour = "red", font_colour = "white", font_size = 12),
           # Blue headers with white font
           "contrato" = list(colour = "blue", font_colour = "white", font_size = 12),
           "data.lancamento.cmfcn" = list(colour = "blue", font_colour = "white", font_size = 12),
@@ -358,35 +421,43 @@ r_xcef <-
           "np" = list(colour = "blue", font_colour = "white", font_size = 12),
           "conta.sidec/nsgd" = list(colour = "blue", font_colour = "white", font_size = 12),
           "situacao" = list(colour = "blue", font_colour = "white", font_size = 12),
-          "mot" = list(colour = "blue", font_colour = "white", font_size = 12),
-          "arquivo.cmfcn" = list(colour = "blue", font_colour = "white", font_size = 12)
+          "mot" = list(colour = "blue", font_colour = "white", font_size = 12)
         ),
         Extratos = list(
           # Purple headers with white font
           "contrato.5" = list(colour = "purple", font_colour = "white", font_size = 12),
           "data.movimentacao" = list(colour = "purple", font_colour = "white", font_size = 12),
           "valor" = list(colour = "purple", font_colour = "white", font_size = 12),
-          # Gray headers with black font (default)
+          # Gray headers
           "empresa" = list(colour = "lightgray", font_size = 12),
           "natureza" = list(colour = "lightgray", font_size = 12),
           "conta.interno" = list(colour = "lightgray", font_size = 12),
           "cruzada" = list(colour = "lightgray", font_size = 12),
+          "arquivo" = list(colour = "lightgray", font_size = 12),
           # Red headers with white font (default for other columns)
           all = list(colour = "red", font_colour = "white", font_size = 12)
         ),
         CMF_CNs = list(
           # Purple headers with white font
           "contrato.5" = list(colour = "purple", font_colour = "white", font_size = 12),
-          "data.movimentacao" = list(colour = "purple", font_colour = "white", font_size = 12),
+          "data.movimento" = list(colour = "purple", font_colour = "white", font_size = 12),
           "valor" = list(colour = "purple", font_colour = "white", font_size = 12),
-          # Gray headers with black font (default)
+          # Gray headers
           "empresa" = list(colour = "lightgray", font_size = 12),
           "natureza" = list(colour = "lightgray", font_size = 12),
           "cruzada" = list(colour = "lightgray", font_size = 12),
+          "arquivo" = list(colour = "lightgray", font_size = 12),
           # Blue headers with white font (default for other columns)
           all = list(colour = "blue", font_colour = "white", font_size = 12)
         )
       )
+      # Headers dinâmicos das somas de repasse (nome depende do ano)
+      col_headers_config$Cruzados[[col_soma_xcef]] <-
+        list(colour = "lightgray", font_size = 12)
+      col_headers_config$Cruzados[[col_soma_cmfcn]] <-
+        list(colour = "lightgray", font_size = 12)
+      col_headers_config$Cruzados[["checar"]] <-
+        list(colour = "lightgray", font_size = 12)
 
       # Aplicar a configuração de cores para todos os cabeçalhos de cada aba
       # Para Extratos e CMF_CNs, aplicar a cor padrão a todas as colunas

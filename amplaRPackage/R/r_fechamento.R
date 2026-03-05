@@ -181,7 +181,7 @@ r_fechamento <- function(xlsx = FALSE) {
   in.cmfcn.xcef.mensal <- in.cmfcn.xcef %>%
     mutate(mes = floor_date(data.movimentacao, "month")) %>%
     group_by(empresa, contrato.5, natureza, mes) %>%
-    summarise(valor = sum(valor, na.rm = TRUE), .groups = "drop") %>%
+    summarise(valor = sum(valor.cmfcn, na.rm = TRUE), .groups = "drop") %>%
     complete(empresa, contrato.5, natureza, mes = meses.cef, fill = list(valor = 0)) %>%
     pivot_wider(
       names_from = mes,
