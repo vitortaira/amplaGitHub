@@ -31,7 +31,7 @@ r_inad <- function() {
       contrs_t %>%
         dplyr::filter(arquivo %in% caminhos.contrs.recentes_t$caminho) %>%
         select(-"cliente"),
-      by = c("contrato.ampla", "empreendimento"),
+      by = c("contrato.ampla", "empreendimento" = "empreendimento.c"),
       suffix = c(".inad", ".contr")
     ) %>%
     mutate(

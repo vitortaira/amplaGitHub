@@ -9,21 +9,41 @@
 
 e_ik_inad <-
   function(caminho_arquivo_inadimplentes.c) {
+    # Leitura bruta do arquivo
+    dados_brutos <- suppressMessages(
+      read_excel(caminho_arquivo_inadimplentes.c, col_names = FALSE)
+    )
+    # Arquivo vazio (sem linhas ou sem colunas): retorna NULL
+    if (nrow(dados_brutos) == 0 || ncol(dados_brutos) == 0) {
+      message(
+        caminho_arquivo_inadimplentes.c,
+        ": arquivo vazio, ignorado."
+      )
+      return(NULL)
+    }
     # Extraindo o vetor de linhas
     linhas_vc <-
-      read_excel(caminho_arquivo_inadimplentes.c, col_names = F) %>%
+      dados_brutos %>%
       unite("linhas", everything(), sep = " ", remove = T) %>%
       unlist() %>%
       str_remove_all("(?<![[:alnum:][:punct:]])NA(?![A-Za-z])") %>%
       str_replace_all("^NA$", "") %>%
-      str_trim() %>%
-      suppressMessages()
+      str_trim()
     linhas_vc <-
       linhas_vc[linhas_vc != ""] %>%
       sapply(function(x) str_replace_all(x, "\\s+", " ")) %>%
       unlist() %>%
       str_trim() %>%
       unname()
+    # Nenhum cliente inadimplente encontrado: retorna NULL
+    if (length(linhas_vc) == 0 ||
+      length(str_which(linhas_vc, "^(?i)cliente: ")) == 0) {
+      message(
+        caminho_arquivo_inadimplentes.c,
+        ": nenhum cliente inadimplente encontrado, ignorado."
+      )
+      return(NULL)
+    }
     # Fora da tabela
     empreendimento_c <-
       linhas_vc %>%
