@@ -515,51 +515,5 @@ r_xcef <-
         save = list(nome.xlsx_c, caminho_pasta_extratos_cruzados)
       )
     }
-
-    #  # Caminho da planilha na pasta local
-    #  caminho.xlsx_c <-
-    #    paste0("C:/Users/Ampla/Documents/", nome.xlsx_c) %>%
-    #    normalizePath(winslash = "/", mustWork = F)
-    #  # Comando no PowerShell para clicar em "Atualizar tudo" na planilha
-    #  ps_cmd <-
-    #    paste0(
-    #      "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8;",
-    #      "$excel = New-Object -ComObject Excel.Application;",
-    #      "Start-Sleep -Seconds 2;",
-    #      # Repare que o caminho está entre aspas simples
-    #      "$wb = $excel.Workbooks.Open('", caminho.xlsx_c, "');",
-    #      "$wb.RefreshAll();",
-    #      "Start-Sleep -Seconds 3;",
-    #      "$wb.Save();",
-    #      "$wb.Close();",
-    #      "$excel.Quit();",
-    #      "[System.Runtime.Interopservices.Marshal]::ReleaseComObject($wb) | Out-Null;",
-    #      "[System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel) | Out-Null;"
-    #    )
-    #  # Executar o comando do PowerShell pelo R
-    #  system2("powershell", args = c("-Command", ps_cmd))
-    #  # Movendo a planilha da pasta local para o OneDrive
-    #  file.rename(
-    #    caminho.xlsx_c,
-    #    here::here("dados", "cef", "inadimplentes", "formatados", nome.xlsx_c)
-    #  )
     return(extratos.cruzados_t)
   }
-
-# Teste -------------------------------------------------------------------
-
-# r_xcef()
-# f_caminho.arquivo.extrato_cef_c <-
-#   here::here(
-#     "..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
-#     "Estação", "Fevereiro 2025", "CAIXA -  2419 - FEVEREIRO.pdf"
-#   )
-# f_caminho.arquivo.extrato_cef_c <-
-#   here::here(
-#     "..", "..", "Relatórios - Documentos", "Relatorios - Extratos",
-#     "Matriz - Prudencia", "Fevereiro 2025", "EXTRATO 2429 - FEVEREIRO.pdf"
-#   )
-# View(extrair_dados_arquivo_extrato_cef(caminhos.extratos.cef_c[2])$Dados)
-# extrato <- extrair_dados_arquivo_extrato_cef(f_caminho.arquivo.extrato_cef_c)
-# teste <- extrair_dados_arquivo_extrato_cef(f_caminho.arquivo.extrato_cef_c)
-# shell.exec(f_caminho.arquivo.extrato_cef_c)

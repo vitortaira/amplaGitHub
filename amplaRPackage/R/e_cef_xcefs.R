@@ -62,13 +62,6 @@ e_cef_xcefs<-
       e_cef_nplpjs()$contrato.6.ultimo, e_cef_nplpjs()$contrato.6.penultimo
     )
 
-    # Mensagem informando o número de extratos identificados
-    # n_extratos <- length(caminhos.extratos.cef_c)
-    # message(sprintf(
-    #   "%d extratos da CEF foram identificados na rede.",
-    #   n_extratos
-    # ))
-
     extratos_l <- list()
     extratos_t <- data.frame()
     for (
