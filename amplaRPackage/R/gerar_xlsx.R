@@ -243,9 +243,12 @@ gerar_xlsx <- function(data,
         }
 
         # Capturar tabelas existentes
-        tabelas_info <- openxlsx2::wb_get_tables(
-          wb,
-          sheet = nome_aba
+        tabelas_info <- tryCatch(
+          openxlsx2::wb_get_tables(
+            wb,
+            sheet = nome_aba
+          ),
+          error = function(e) NULL
         )
         if (is.data.frame(tabelas_info) &&
           nrow(tabelas_info) > 0) {
@@ -255,45 +258,72 @@ gerar_xlsx <- function(data,
         }
 
         if (table && aba_tem_tabela_existente) {
-          # Remover aba e recriar para evitar corrupção
-          posicao_aba <- which(
-            abas_existentes == nome_aba_template
-          )
-          wb <- openxlsx2::wb_remove_worksheet(
-            wb,
-            sheet = nome_aba_template
-          )
-          cor_aba <- if (!is.null(tab_colours) &&
-            nome_aba %in% names(tab_colours)) {
-            tab_colours[nome_aba]
-          } else {
-            NULL
-          }
-          wb <- openxlsx2::wb_add_worksheet(
-            wb,
-            sheet = nome_aba,
-            grid_lines = FALSE, tab_color = cor_aba
-          )
-          # Reordenar para posição original
-          abas_atuais <- unname(
-            openxlsx2::wb_get_sheet_names(wb)
-          )
-          ordem_atual <- seq_along(abas_atuais)
-          pos_nova <- which(abas_atuais == nome_aba)
-          if (pos_nova != posicao_aba &&
-            posicao_aba <= length(ordem_atual)) {
-            ordem_sem_nova <- ordem_atual[
-              ordem_atual != pos_nova
-            ]
-            nova_ordem <- c(
-              ordem_sem_nova[seq_len(posicao_aba - 1)],
-              pos_nova,
-              ordem_sem_nova[
-                seq(posicao_aba, length(ordem_sem_nova))
-              ]
+          # Remover tabelas existentes sem recriar a aba
+          # (evita corrupcao de XML no workbook)
+          for (tabela in tabelas_existentes) {
+            wb <- openxlsx2::wb_remove_tables(
+              wb,
+              sheet = nome_aba, table = tabela
             )
-            wb <- openxlsx2::wb_set_order(wb, nova_ordem)
           }
+          # Limpar named regions desta aba para evitar
+          # conflito com a nova tabela Excel
+          tryCatch(
+            {
+              nrs <- openxlsx2::wb_get_named_regions(wb)
+              if (is.data.frame(nrs) && nrow(nrs) > 0) {
+                nrs_aba <- character(0)
+                if ("sheet" %in% names(nrs)) {
+                  nrs_aba <- nrs$name[
+                    !is.na(nrs$sheet) &
+                      nrs$sheet == nome_aba
+                  ]
+                }
+                for (nr in nrs_aba) {
+                  wb <- openxlsx2::wb_remove_named_region(
+                    wb,
+                    name = nr
+                  )
+                }
+              }
+            },
+            error = function(e) NULL
+          )
+          wb <- openxlsx2::wb_set_grid_lines(
+            wb,
+            sheet = nome_aba, show = FALSE
+          )
+        } else if (table && !aba_tem_tabela_existente) {
+          # Aba sem tabelas (pode ter named regions do
+          # template antigo): limpar named regions para
+          # evitar conflito com a nova tabela Excel,
+          # sem remover a aba (evita corrupção de XML)
+          tryCatch(
+            {
+              nrs <- openxlsx2::wb_get_named_regions(wb)
+              if (is.data.frame(nrs) && nrow(nrs) > 0) {
+                # Filtrar named regions desta aba
+                nrs_aba <- character(0)
+                if ("sheet" %in% names(nrs)) {
+                  nrs_aba <- nrs$name[
+                    !is.na(nrs$sheet) &
+                      nrs$sheet == nome_aba
+                  ]
+                }
+                for (nr in nrs_aba) {
+                  wb <- openxlsx2::wb_remove_named_region(
+                    wb,
+                    name = nr
+                  )
+                }
+              }
+            },
+            error = function(e) NULL
+          )
+          wb <- openxlsx2::wb_set_grid_lines(
+            wb,
+            sheet = nome_aba, show = FALSE
+          )
         } else if (!table && aba_tem_tabela_existente) {
           # Remover tabelas mas manter aba
           wb <- openxlsx2::wb_set_grid_lines(
@@ -969,23 +999,52 @@ gerar_xlsx <- function(data,
           writeLines(c(
             "Add-Type -AssemblyName System.IO.Compression.FileSystem",
             sprintf(
-              "$s = [System.IO.Compression.ZipFile]::OpenRead(\"%s\")",
+              "$src = [System.IO.Compression.ZipFile]::OpenRead(\"%s\")",
               template_path
             ),
             sprintf(
-              "$d = [System.IO.Compression.ZipFile]::Open(\"%s\", 'Update')",
+              "$dst = [System.IO.Compression.ZipFile]::Open(\"%s\", 'Update')",
               output_path
             ),
-            "foreach ($e in $s.Entries) {",
+            # Copiar arquivos customXml do template
+            "foreach ($e in $src.Entries) {",
             "  if ($e.FullName -like 'customXml/*' -and $e.Length -gt 0) {",
-            "    $x = $d.GetEntry($e.FullName)",
+            "    $x = $dst.GetEntry($e.FullName)",
             "    if ($x) { $x.Delete() }",
-            "    $n = $d.CreateEntry($e.FullName)",
+            "    $n = $dst.CreateEntry($e.FullName)",
             "    $r = $e.Open(); $w = $n.Open()",
             "    $r.CopyTo($w); $w.Close(); $r.Close()",
             "  }",
             "}",
-            "$s.Dispose(); $d.Dispose()"
+            # Atualizar [Content_Types].xml com entradas customXml
+            "$ctS = $src.GetEntry('[Content_Types].xml')",
+            "$ctD = $dst.GetEntry('[Content_Types].xml')",
+            "if ($ctS -and $ctD) {",
+            "  $r1 = New-Object System.IO.StreamReader($ctS.Open()); [xml]$xS = $r1.ReadToEnd(); $r1.Close()",
+            "  $r2 = New-Object System.IO.StreamReader($ctD.Open()); [xml]$xD = $r2.ReadToEnd(); $r2.Close()",
+            "  $ns = $xD.DocumentElement.NamespaceURI; $mod = $false",
+            "  foreach ($nd in $xS.DocumentElement.ChildNodes) {",
+            "    if ($nd.LocalName -eq 'Override' -and $nd.GetAttribute('PartName') -like '/customXml/*') {",
+            "      $pn = $nd.GetAttribute('PartName'); $dup = $false",
+            "      foreach ($ex in $xD.DocumentElement.ChildNodes) {",
+            "        if ($ex.LocalName -eq 'Override' -and $ex.GetAttribute('PartName') -eq $pn) { $dup = $true; break }",
+            "      }",
+            "      if (-not $dup) {",
+            "        $el = $xD.CreateElement('Override', $ns)",
+            "        $el.SetAttribute('PartName', $pn)",
+            "        $el.SetAttribute('ContentType', $nd.GetAttribute('ContentType'))",
+            "        $xD.DocumentElement.AppendChild($el) | Out-Null; $mod = $true",
+            "      }",
+            "    }",
+            "  }",
+            "  if ($mod) {",
+            "    $ctD.Delete(); $ctN = $dst.CreateEntry('[Content_Types].xml')",
+            "    $enc = New-Object System.Text.UTF8Encoding($false)",
+            "    $wr = New-Object System.IO.StreamWriter($ctN.Open(), $enc)",
+            "    $xD.Save($wr); $wr.Close()",
+            "  }",
+            "}",
+            "$src.Dispose(); $dst.Dispose()"
           ), ps_file)
 
           system2(
