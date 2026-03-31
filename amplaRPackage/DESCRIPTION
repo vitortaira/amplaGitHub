@@ -26,6 +26,7 @@ Imports:
   magrittr,
   openxlsx,
   openxlsx2,
+  parallelly,
   pdftools,
   plotly,
   purrr,

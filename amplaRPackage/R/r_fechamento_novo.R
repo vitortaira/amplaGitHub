@@ -1,0 +1,674 @@
+#' @title Fechamento otimizado
+#'
+#' @description
+#' Versao otimizada de \code{\link{r_fechamento}} que produz resultados
+#' identicos, porem executa significativamente mais rapido gracas ao
+#' carregamento paralelo de dados e eliminacao de chamadas duplicadas.
+#'
+#' @details
+#' Otimizacoes aplicadas:
+#' \enumerate{
+#'   \item \strong{Paralelismo (Fase 1)}: Nove fontes de dados independentes
+#'     sao carregadas simultaneamente via \code{future::multisession}.
+#'   \item \strong{Paralelismo com cache (Fase 2)}: Funcoes que dependem de
+#'     dados ja carregados (\code{e_cef_cmfcns} e \code{e_ik_car}) rodam em
+#'     paralelo, com sub-dependencias injetadas nos workers.
+#'   \item \strong{Cache via environment (Fase 3)}: \code{r_xcef()} roda com
+#'     uma copia cujo environment contem as sub-dependencias em cache,
+#'     evitando re-leitura de PDFs sem alterar o namespace do pacote.
+#'   \item \strong{rowSums vetorizado}: Substituicao de
+#'     \code{rowwise() + c_across()} por \code{rowSums(pick(...))}.
+#'   \item \strong{Eliminacao de duplicatas}: A chamada duplicada a
+#'     \code{e_cef_cmfcns()} dentro de \code{gerar_xlsx()} foi removida.
+#' }
+#'
+#' @param xlsx Logico. Se \code{TRUE}, gera arquivo Excel (.xlsx) com os
+#'   dados no template de fechamento. Padrao: \code{FALSE}.
+#'
+#' @return Lista identica a retornada por \code{\link{r_fechamento}}.
+#'
+#' @seealso \code{\link{r_fechamento}}
+#'
+#' @examples
+#' \dontrun{
+#' resultado <- r_fechamento_novo()
+#' resultado <- r_fechamento_novo(xlsx = TRUE)
+#' }
+#'
+#' @importFrom future future value plan multisession
+#' @importFrom dplyr rename mutate select filter group_by summarise left_join
+#'   full_join bind_rows distinct arrange across slice_max ungroup any_of
+#'   everything first coalesce pick
+#' @importFrom tidyr complete pivot_wider
+#' @importFrom tidyselect where
+#' @importFrom stringr str_remove_all str_length str_sub str_detect str_c
+#'   str_replace word
+#' @importFrom lubridate floor_date ymd
+#' @importFrom magrittr %>% %<>%
+#'
+#' @export
+r_fechamento_novo <- function(xlsx = FALSE) {
+  t0 <- Sys.time()
+  msg <- function(txt) {
+    d <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+    message(sprintf("[%5.1fs] %s", d, txt))
+  }
+
+  # ── Fase 1: carregamento de dados independentes em paralelo ────────────────
+  msg("Fase 1: Carregando dados independentes em paralelo...")
+  .rprofile_caminho <- normalizePath(
+    here::here(".Rprofile"), winslash = "/", mustWork = FALSE
+  )
+  cl <- parallelly::makeClusterPSOCK(
+    parallelly::availableCores(),
+    rscript_args = "--no-init-file",
+    rscript_startup = bquote({
+      invisible(capture.output(suppressMessages(suppressWarnings(
+        source(.(.rprofile_caminho), local = TRUE)
+      )), type = "output"))
+    })
+  )
+  planoAnterior <- future::plan(future::cluster, workers = cl)
+  on.exit({
+    future::plan(planoAnterior)
+    parallel::stopCluster(cl)
+  }, add = TRUE)
+
+  fut_estq   <- future::future({ e_ana_estq() },   seed = TRUE)
+  fut_ecns   <- future::future({ e_cef_ecns() },   seed = TRUE)
+  fut_contrs <- future::future({ e_ik_contrs() },  seed = TRUE)
+  fut_cr     <- future::future({ e_ik_cr() },      seed = TRUE)
+  fut_desp   <- future::future({ e_ik_desp() },    seed = TRUE)
+  fut_unis   <- future::future({ e_ik_unis() },    seed = TRUE)
+  fut_xcefs  <- future::future({ e_cef_xcefs() },  seed = TRUE)
+  fut_eprs   <- future::future({ e_cef_eprs() },   seed = TRUE)
+  fut_nplpjs <- future::future({ e_cef_nplpjs() }, seed = TRUE)
+
+  in.estq        <- future::value(fut_estq)
+  .cache_ecns    <- future::value(fut_ecns)
+  .cache_contrs  <- future::value(fut_contrs)
+  .cache_cr      <- future::value(fut_cr)
+  in.desp        <- future::value(fut_desp)
+  .cache_unis    <- future::value(fut_unis)
+  .cache_xcefs   <- future::value(fut_xcefs)
+  .cache_eprs    <- future::value(fut_eprs)
+  .cache_nplpjs  <- future::value(fut_nplpjs)
+
+  msg("Fase 1 concluida.")
+
+  # ── Fase 2: carregamento de dados dependentes em paralelo ──────────────────
+  msg("Fase 2: Carregando dados dependentes em paralelo...")
+
+  # e_cef_cmfcns() chama e_cef_ecns() internamente — injetar cache no worker
+  fut_cmfcns <- future::future({
+    ns <- asNamespace("amplaRPackage")
+    tryCatch(unlockBinding("e_cef_ecns", ns), error = function(e) NULL)
+    assign("e_cef_ecns", function(...) .inj_ecns, envir = ns)
+    e_cef_cmfcns()
+  }, globals = list(.inj_ecns = .cache_ecns), seed = TRUE)
+
+  # e_ik_car() chama e_ik_contrs() internamente — injetar cache no worker
+  fut_car <- future::future({
+    ns <- asNamespace("amplaRPackage")
+    tryCatch(unlockBinding("e_ik_contrs", ns), error = function(e) NULL)
+    assign("e_ik_contrs", function(...) .inj_contrs, envir = ns)
+    e_ik_car()
+  }, globals = list(.inj_contrs = .cache_contrs), seed = TRUE)
+
+  .cache_cmfcns <- future::value(fut_cmfcns)
+  .cache_car    <- future::value(fut_car)
+
+  msg("Fase 2 concluida.")
+
+  # ── Fase 3: r_xcef() com todas sub-dependencias em cache ──────────────────
+  # Usa override de environment para que r_xcef resolva as funcoes pesadas
+  # a partir do cache, sem modificar o namespace do pacote.
+  msg("Fase 3: Cruzamento CEF (r_xcef)...")
+
+  r_xcef_fn <- get("r_xcef", envir = asNamespace("amplaRPackage"))
+  envCache <- new.env(parent = environment(r_xcef_fn))
+  envCache$e_cef_eprs   <- function(...) .cache_eprs
+  envCache$e_cef_cmfcns <- function(...) .cache_cmfcns
+  envCache$e_cef_xcefs  <- function(...) .cache_xcefs
+  envCache$e_cef_nplpjs <- function(...) .cache_nplpjs
+
+  r_xcef_com_cache <- r_xcef_fn
+  environment(r_xcef_com_cache) <- envCache
+
+  in.cmfcn.xcef_bruto <- r_xcef_com_cache()
+
+  msg("Fase 3 concluida.")
+
+  # ── Fase 4: processamento (logica identica ao r_fechamento) ────────────────
+  msg("Fase 4: Processando dados...")
+
+  # Estoque (Ana)
+  # in.estq ja carregado na Fase 1
+
+  # CMF_CN
+  in.cmfcns <- .cache_cmfcns
+
+  # ECNs
+  in.ecns <- .cache_ecns$ecn_u %>%
+    rename(
+      contrato.cef = contrato,
+      repasse.cef.fin = financiamento,
+      repasse.cef.desc.subs = desconto.subsidio,
+      repasse.cef.fgts = fgts,
+      repasse.cef.rec.prop = recursos.proprios,
+      repasse.cef.obra.acum = valor.liberado.obra,
+      repasse.cef.terreno.acum = valor.liberado.terreno
+    ) %>%
+    mutate(
+      contrato.cef = str_remove_all(contrato.cef, "-") %>%
+        if_else(str_length(.) == 13, str_sub(., 1, 12), .),
+      contrato.cef.5 = str_sub(contrato.cef, -5, -1),
+      repasse.cef.total = round(repasse.cef.fin + repasse.cef.desc.subs + repasse.cef.fgts + repasse.cef.rec.prop, 2),
+      repasse.cef.incorrido = round(repasse.cef.terreno.acum + repasse.cef.obra.acum, 2),
+      repasse.cef.a.incorrer = round(repasse.cef.total - repasse.cef.incorrido, 2)
+    ) %>%
+    dplyr::select(
+      empresa, contrato.cef.5, repasse.cef.total, repasse.cef.incorrido,
+      repasse.cef.a.incorrer, repasse.cef.fin, repasse.cef.desc.subs,
+      repasse.cef.fgts, repasse.cef.rec.prop, repasse.cef.terreno.acum,
+      repasse.cef.obra.acum, arquivo
+    )
+
+  # Contratos
+  in.contr <-
+    .cache_contrs %>%
+    rename(contrato = contrato.ampla) %>%
+    dplyr::filter(sit %in% c("A", "L", "R")) %>%
+    dplyr::filter(!is.na(empresa))
+
+  # Contas recebidas
+  in.cr <- .cache_cr %>%
+    rename(
+      data.vencimento = vencimento,
+      edificacao = torre,
+      ele = elemento,
+      r.f = `r/f`,
+      unidade = apto
+    ) %>%
+    mutate(
+      empreendimento = word(empreendimento),
+      especie = if_else(str_detect(edificacao, "^(?i)vaga"),
+        "Garagem",
+        "Apartamento"
+      ),
+      contrato.cef = NA_character_,
+      data.emissao = NA_Date_,
+      disp = NA_character_,
+      esp.con = NA_character_,
+      juros.contrato = NA_real_,
+      pavimento = NA_character_,
+      repassado = NA_character_
+    ) %>%
+    dplyr::select(
+      empreendimento, empresa, total, data.vencimento, data.pagamento, cliente,
+      contrato, contrato.cef, repassado, ele, esp, esp.con, agente, parcela,
+      principal, juros, juros.contrato, juros.mora, reajuste, encargos, multa,
+      seguro, desconto, cart, r.f, edificacao, especie, unidade, data.emissao,
+      disp, pavimento, arquivo, arquivo.tipo, arquivo.tabela.tipo, arquivo.fonte
+    )
+
+  # Despesas
+  # in.desp ja carregado na Fase 1
+
+  # Contas a receber
+  in.car <- .cache_car$car %>%
+    rename(
+      data.emissao = emissao,
+      seguro = seguros,
+      total = valor.atualizado
+    ) %>%
+    mutate(
+      data.pagamento = NA_Date_,
+      juros.mora = NA_real_,
+      desconto = NA_real_,
+      r.f = NA_character_,
+      edificacao = NA_character_
+    ) %>%
+    dplyr::filter(
+      empresa %in% c("AMP", "AVS", "GRA", "LUC", "POM", "SN2", "SN4")
+    ) %>%
+    dplyr::select(
+      empreendimento, empresa, total, data.vencimento, data.pagamento, cliente,
+      contrato, contrato.cef, repassado, ele, esp, esp.con, agente, parcela,
+      principal, juros, juros.contrato, juros.mora, reajuste, encargos, multa,
+      seguro, desconto, cart, r.f, edificacao, especie, unidade, data.emissao,
+      disp, pavimento, arquivo, arquivo.tipo, arquivo.tabela.tipo, arquivo.fonte
+    )
+
+  # Receitas: cr + car
+  in.rec <- bind_rows(in.cr, in.car) %>%
+    dplyr::filter(empreendimento != "AMP.01.0001") %>%
+    mutate(
+      cruzada = TRUE,
+      data.base = coalesce(data.pagamento, data.vencimento),
+      especie = if_else(
+        str_detect(especie, "(?i)garagens"), "Garagem", especie
+      ),
+      id = str_c(empresa, especie, unidade, sep = "-"),
+      natureza = case_when(
+        ele %in% c("CEF", "FGT", "FIB", "FIN") &
+          !empresa %in% c("CBL", "POM", "SAU") &
+          repassado == "Não" ~ "parcela.cef.assinar",
+        ele %in% c("CEF", "FGT", "FIB", "FIN") &
+          !empresa %in% c("CBL", "POM", "SAU") ~ "parcela.cef.total.ik",
+        ele %in% c("CEF", "FGT", "FIB", "FIN") &
+          empresa %in% c("CBL", "POM", "SAU") ~ "parcela.fin.total.ik",
+        ele == "TAX" ~ "taxa.extra",
+        TRUE ~ "pro.soluto"
+      )
+    ) %>%
+    select(
+      id, empresa, especie, unidade, total, data.vencimento, data.pagamento,
+      data.base, natureza, everything()
+    )
+
+  # Unidades
+  in.unis <- .cache_unis %>%
+    rename(unidade = numero) %>%
+    mutate(
+      data = as.Date(data),
+      empresa = str_sub(empreendimento, 1, 3),
+      especie = case_when(
+        str_detect(unidade, "(?i)moto") ~ "Moto",
+        str_detect(especie, "(?i)garagens") ~ "Garagem",
+        TRUE ~ especie
+      ),
+      unidade = str_remove_all(unidade, "[^\\d]*") %>% as.integer(),
+      id = str_c(empresa, especie, unidade, sep = "-")
+    )
+
+  # Unidades consolidadas (Informakon + Ana Estoque)
+  in.unis.cruzado <- full_join(in.unis, in.estq, by = "id", suffix = c(".ik", ".ana"))
+
+  # Extratos da CEF
+  in.xcef <- .cache_xcefs
+
+  # Extratos CEF cruzados com CMF_CN
+  in.cmfcn.xcef <- in.cmfcn.xcef_bruto %>%
+    rename(natureza = natureza.cmfcn)
+
+  # Determinar sequencia completa de meses para todos os tibbles CEF
+  meses.cef <- c(
+    floor_date(in.cmfcns$data.movimento, "month"),
+    floor_date(in.xcef$data.movimentacao, "month"),
+    floor_date(in.cmfcn.xcef$data.movimentacao, "month")
+  ) %>%
+    .[!is.na(.)] %>%
+    {
+      seq(min(.), max(.), by = "month")
+    }
+
+  # Extratos da CEF mensalizados por contrato
+  in.xcef.mensal <- in.xcef %>%
+    dplyr::filter(
+      !is.na(natureza) &
+        contrato.5 %in% in.ecns$contrato.cef.5
+    ) %>%
+    mutate(mes = floor_date(data.movimentacao, "month")) %>%
+    group_by(empresa, contrato.5, natureza, mes) %>%
+    summarise(valor = sum(valor, na.rm = TRUE), .groups = "drop") %>%
+    complete(empresa, contrato.5, natureza, mes = meses.cef, fill = list(valor = 0)) %>%
+    pivot_wider(
+      names_from = mes,
+      values_from = valor,
+      values_fill = 0
+    ) %>%
+    mutate(
+      total = rowSums(pick(where(is.numeric)), na.rm = TRUE)
+    ) %>%
+    rename(contrato.cef.5 = contrato.5) %>%
+    select(
+      empresa, contrato.cef.5, natureza, total,
+      any_of(as.character(sort(meses.cef)))
+    )
+
+  # Extratos CEF cruzados com CMF_CN mensalizados por contrato
+  in.cmfcn.xcef.mensal <- in.cmfcn.xcef %>%
+    mutate(mes = floor_date(data.movimentacao, "month")) %>%
+    group_by(empresa, contrato.5, natureza, mes) %>%
+    summarise(valor = sum(valor.cmfcn, na.rm = TRUE), .groups = "drop") %>%
+    complete(empresa, contrato.5, natureza, mes = meses.cef, fill = list(valor = 0)) %>%
+    pivot_wider(
+      names_from = mes,
+      values_from = valor,
+      values_fill = 0
+    ) %>%
+    mutate(
+      total = rowSums(pick(where(is.numeric)), na.rm = TRUE)
+    ) %>%
+    rename(contrato.cef.5 = contrato.5) %>%
+    select(
+      empresa, contrato.cef.5, natureza, total,
+      any_of(as.character(sort(meses.cef)))
+    ) %>%
+    mutate(natureza = str_c(natureza, " (cruzado)"))
+
+  # CMF_CN mensalizado (ajustado para mesma estrutura)
+  in.cmfcns.mensal <- in.cmfcns %>%
+    dplyr::filter(!is.na(valor)) %>%
+    mutate(mes = floor_date(data.movimento, "month")) %>%
+    group_by(empresa, contrato, natureza, mes) %>%
+    summarise(valor = sum(valor, na.rm = TRUE), .groups = "drop") %>%
+    complete(
+      empresa, contrato, natureza,
+      mes = meses.cef, fill = list(valor = 0)
+    ) %>%
+    pivot_wider(
+      names_from = mes,
+      values_from = valor,
+      values_fill = 0
+    ) %>%
+    mutate(
+      total = rowSums(pick(where(is.numeric)), na.rm = TRUE)
+    ) %>%
+    mutate(contrato.cef.5 = str_sub(contrato, -5)) %>%
+    select(
+      empresa, contrato.cef.5, natureza, total,
+      any_of(as.character(sort(meses.cef)))
+    ) %>%
+    dplyr::filter(total > 1e-3)
+
+  # cef: cmfcns + ecns
+  in.cef <- in.ecns %>%
+    left_join(
+      in.cmfcns.mensal %>%
+        group_by(empresa, contrato.cef.5, natureza) %>%
+        summarise(total = sum(total, na.rm = TRUE), .groups = "drop") %>%
+        tidyr::pivot_wider(
+          names_from = natureza,
+          values_from = total,
+          values_fill = 0
+        ),
+      by = "contrato.cef.5",
+      suffix = c(".ecns", ".cmfcns")
+    ) %>%
+    mutate(
+      cef.obra = if_else(
+        (abs(repasse.cef.obra.acum - repasse.cef.obra) < 1e-3) &
+          !is.na(repasse.cef.obra),
+        TRUE,
+        FALSE
+      ),
+      cef.terreno = if_else(
+        (abs(repasse.cef.terreno.acum - repasse.cef.terreno) < 1e-3) &
+          !is.na(repasse.cef.terreno),
+        TRUE,
+        FALSE
+      )
+    ) %>%
+    select(
+      contrato.cef.5, repasse.cef.total, repasse.cef.incorrido,
+      repasse.cef.a.incorrer, repasse.cef.fin, repasse.cef.desc.subs,
+      repasse.cef.fgts, repasse.cef.rec.prop, repasse.cef.terreno.acum,
+      repasse.cef.terreno, cef.terreno, repasse.cef.obra.acum,
+      repasse.cef.obra, cef.obra, amortizacao.pj, remuneracao.terreno,
+      remuneracao.venda
+    )
+
+  # Consolidar todos em in.cef.mensal
+  in.cef.mensal <- bind_rows(
+    in.cmfcns.mensal,
+    in.xcef.mensal,
+    in.cmfcn.xcef.mensal
+  ) %>%
+    dplyr::filter(total > 1e-3)
+
+  # Totais por natureza que devem virar colunas
+  totais <- in.rec %>%
+    dplyr::filter(natureza %in% c("parcela.cef.total.ik", "parcela.cef.assinar", "taxa.extra")) %>%
+    group_by(id, natureza) %>%
+    summarise(total = sum(total, na.rm = TRUE), .groups = "drop") %>%
+    tidyr::pivot_wider(
+      names_from = natureza,
+      values_from = total,
+      values_fill = 0
+    )
+
+  rec.uni <- in.unis %>%
+    left_join(
+      in.rec,
+      by = "id",
+      suffix = c(".unis", ".rec")
+    ) %>%
+    # Adicionar contrato.cef via in.contr
+    left_join(
+      in.contr %>% select(empresa, contrato, contrato.cef),
+      by = c("empresa.unis" = "empresa", "contrato" = "contrato"),
+      suffix = c("", ".contr")
+    ) %>%
+    # Consolidar colunas e identificar origem dos dados
+    mutate(
+      empresa = coalesce(empresa.unis, empresa.rec),
+      especie = coalesce(especie.unis, especie.rec),
+      pavimento = coalesce(pavimento.unis, pavimento.rec),
+      unidade = coalesce(unidade.unis, unidade.rec),
+      contrato.cef = coalesce(contrato.cef.contr, contrato.cef),
+      data.mes = floor_date(data.base, "month"),
+      cruzada = case_when(
+        is.na(empresa.rec) ~ "in.unis",
+        is.na(empresa.unis) ~ "in.rec",
+        TRUE ~ "ambos"
+      )
+    ) %>%
+    # Agregar por id, mes e natureza
+    group_by(id, data.mes, natureza) %>%
+    summarise(
+      empresa = first(empresa),
+      especie = first(especie),
+      pavimento = first(pavimento),
+      unidade = first(unidade),
+      cliente = first(cliente.unis),
+      data.venda = first(data),
+      situacao = first(situacao),
+      valor.venda = first(valor.venda),
+      contrato = first(contrato),
+      contrato.cef = first(contrato.cef),
+      total = sum(total, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    # Pivotar meses para colunas
+    pivot_wider(
+      names_from = data.mes,
+      values_from = total,
+      values_fill = 0,
+      values_fn = sum
+    ) %>%
+    # Normalizar contrato.cef (13 -> 12 caracteres)
+    mutate(
+      contrato.cef = if_else(
+        str_length(contrato.cef) == 13,
+        str_sub(contrato.cef, 1, 12),
+        contrato.cef
+      ),
+      contrato.cef.5 = str_sub(contrato.cef, -5, -1)
+    ) %>%
+    # Adicionar dados ECN
+    left_join(in.ecns, by = c("empresa", "contrato.cef.5")) %>%
+    mutate(
+      checar = !is.na(contrato.cef.5) & is.na(repasse.cef.total),
+      contrato.comeco = str_sub(contrato, 1, 4),
+      contrato.fim = str_sub(contrato, -1) %>% as.integer()
+    ) %>%
+    # Somar valores mensais por (id, natureza, contrato.comeco) e manter contrato mais recente
+    group_by(id, natureza, contrato.comeco) %>%
+    mutate(across(matches("^\\d{4}-\\d{2}-\\d{2}$"), ~ sum(.x, na.rm = TRUE))) %>%
+    slice_max(contrato.fim, n = 1, with_ties = FALSE) %>%
+    ungroup() %>%
+    # Priorizar contrato com maior soma mensal
+    mutate(soma.meses = rowSums(across(matches("^\\d{4}-\\d{2}-\\d{2}$")), na.rm = TRUE)) %>%
+    group_by(id, natureza) %>%
+    slice_max(soma.meses, n = 1, with_ties = FALSE) %>%
+    ungroup() %>%
+    # Organizar colunas com meses em ordem cronologica
+    select(
+      id, empresa, especie, unidade, cliente, contrato, contrato.cef, pavimento,
+      situacao, data.venda, valor.venda, repasse.cef.total, checar, natureza,
+      soma.meses,
+      any_of(sort(names(.)[str_detect(names(.), "^\\d{4}-\\d{2}-\\d{2}$")]))
+    ) %>%
+    arrange(id, natureza)
+
+  rec.uni.reduzido <- rec.uni %>%
+    select(
+      id, empresa, especie, unidade, cliente, contrato, contrato.cef,
+      pavimento, situacao, data.venda, valor.venda, repasse.cef.total, checar
+    ) %>%
+    mutate(contrato.cef.5 = str_sub(contrato.cef, -5, -1)) %>%
+    distinct()
+
+  in.cef.detalhado <- left_join(
+    in.cef.mensal,
+    rec.uni.reduzido,
+    by = c("empresa", "contrato.cef.5")
+  ) %>%
+    dplyr::filter(!is.na(id)) %>%
+    select(
+      id, empresa, especie, unidade, cliente, contrato, contrato.cef, pavimento,
+      situacao, data.venda, valor.venda, repasse.cef.total, checar, natureza,
+      total,
+      any_of(sort(names(.)[str_detect(names(.), "^\\d{4}-\\d{2}-\\d{2}$")]))
+    ) %>%
+    arrange(empresa, contrato, natureza) %>%
+    rename(soma.meses = total)
+
+  rec.uni %<>% bind_rows(
+    in.cef.detalhado %>%
+      arrange(empresa, id, natureza)
+  ) %>%
+    # Adicionar colunas do R9 (Ana)
+    left_join(
+      in.unis.cruzado %>%
+        rename(
+          preco.tabela = `Preço Tab.`,
+          situacao.ana = Status
+        ) %>%
+        select(id, situacao.ana, valor.venda.ana, preco.tabela) %>%
+        distinct(),
+      by = "id"
+    ) %>%
+    rename(
+      situacao.ik = situacao,
+      valor.venda.ik = valor.venda
+    ) %>%
+    # Reordenar colunas para garantir que meses estejam em ordem cronologica
+    select(
+      id, empresa, especie, unidade, cliente, contrato, contrato.cef, pavimento,
+      situacao.ana, situacao.ik, data.venda, preco.tabela, valor.venda.ana,
+      valor.venda.ik, repasse.cef.total, checar, natureza, soma.meses,
+      any_of(sort(names(.)[str_detect(names(.), "^\\d{4}-\\d{2}-\\d{2}$")]))
+    )
+
+  msg("Fase 4 concluida.")
+
+  if (xlsx) {
+    msg("Gerando arquivo Excel...")
+    gerar_xlsx(
+      data = list(
+        rec = in.rec,
+        rec.uni = rec.uni,
+        unis.cruzado = in.unis.cruzado,
+        contr = in.contr,
+        desp = in.desp,
+        ecns = in.ecns,
+        estq = in.estq,
+        unis = in.unis
+      ),
+      wb_load = str_c(caminhos_pastas("templates"), "/Template-Fechamento.xlsx"),
+      tab_colours = c(
+        rec = "darkgray",
+        rec.uni = "darkgray",
+        unis.cruzado = "darkgray",
+        contr = "white",
+        desp = "white",
+        ecns = "white",
+        estq = "white",
+        unis = "white"
+      ),
+      col_headers = list(
+        rec.uni = list(
+          checar = list(colour = "yellow"),
+          repasse.cef.total = list(colour = "blue", font_colour = "white")
+        )
+      ),
+      col_dates = c(
+        "data", "data.emissao", "data.lancamento", "data.movimentacao",
+        "data.movimento", "data.pagamento", "data.venda", "data.vencimento",
+        "periodo.inicio", "periodo.fim"
+      ),
+      col_groups = list(
+        rec.uni = list(
+          list(
+            cols = c(
+              "empresa", "especie", "unidade", "cliente", "contrato",
+              "contrato.cef", "pavimento"
+            ),
+            hidden = TRUE
+          )
+        )
+      ),
+      tab_freeze = c(
+        rec.uni = "situacao"
+      ),
+      col_monetary = c(
+        "amortizacao.pj", "desconto", "encargos", "juros", "juros.contrato",
+        "juros.mora", "multa", "preco.tabela", "principal", "reajuste",
+        "remuneracao.venda", "repasse.cef.a.incorrer", "repasse.cef.desc.subs",
+        "repasse.cef.fgts", "repasse.cef.fin", "repasse.cef.incorrido",
+        "repasse.cef.obra", "repasse.cef.obra.acum", "repasse.cef.rec.prop",
+        "repasse.cef.terreno", "repasse.cef.terreno.acum", "repasse.cef.total",
+        "saldo", "seguro", "soma.meses", "total", "valor", "valor.c.d",
+        "valor.imovel", "valor.venda.ana", "valor.venda.ik",
+        # Colunas de meses (YYYY-MM-DD)
+        names(rec.uni)[str_detect(names(rec.uni), "^\\d{4}-\\d{2}-\\d{2}$")]
+      ),
+      col_width_auto = c(
+        "cliente", "conta.sidec/nsgd", "corretor", "descricao", "edificacao",
+        "imobiliaria", "lancamentos", "nome.razao", "obs.situacao", "pavimento",
+        "setor"
+      ),
+      col_width_spec = c(
+        empreendimento = 30,
+        id = 22
+      ),
+      save = list(
+        nome_arquivo = sprintf("Fechamento-%s.xlsx", format(Sys.time(), "%Y%m%d_%H%M%S")),
+        caminho_destino = normalizePath(
+          file.path(Sys.getenv("USERPROFILE"), "Downloads"),
+          winslash = "\\", mustWork = FALSE
+        )
+      )
+    )
+    msg("Excel gerado.")
+  }
+
+  msg("Concluido!")
+
+  list(
+    # Inputs combinados
+    cef = in.cef,
+    cef.detalhado = in.cef.detalhado,
+    cef.mensal = in.cef.mensal,
+    cmfcn.xcef = in.cmfcn.xcef,
+    cmfcn.xcef.mensal = in.cmfcn.xcef.mensal,
+    rec = in.rec,
+    rec.uni = rec.uni,
+    unis.cruzado = in.unis.cruzado,
+    xcef.mensal = in.xcef.mensal,
+    # Inputs originais
+    car = in.car,
+    cmfcns = in.cmfcns,
+    cmfcns.mensal = in.cmfcns.mensal,
+    contr = in.contr,
+    cr = in.cr,
+    desp = in.desp,
+    ecns = in.ecns,
+    estq = in.estq,
+    unis = in.unis,
+    xcef = in.xcef
+  )
+}
