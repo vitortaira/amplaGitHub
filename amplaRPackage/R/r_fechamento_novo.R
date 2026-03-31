@@ -57,7 +57,8 @@ r_fechamento_novo <- function(xlsx = FALSE) {
   # ── Fase 1: carregamento de dados independentes em paralelo ────────────────
   msg("Fase 1: Carregando dados independentes em paralelo...")
   .rprofile_caminho <- normalizePath(
-    here::here(".Rprofile"), winslash = "/", mustWork = FALSE
+    here::here(".Rprofile"),
+    winslash = "/", mustWork = FALSE
   )
   cl <- parallelly::makeClusterPSOCK(
     parallelly::availableCores(),
@@ -69,30 +70,78 @@ r_fechamento_novo <- function(xlsx = FALSE) {
     })
   )
   planoAnterior <- future::plan(future::cluster, workers = cl)
-  on.exit({
-    future::plan(planoAnterior)
-    parallel::stopCluster(cl)
-  }, add = TRUE)
+  on.exit(
+    {
+      future::plan(planoAnterior)
+      parallel::stopCluster(cl)
+    },
+    add = TRUE
+  )
 
-  fut_estq   <- future::future({ e_ana_estq() },   seed = TRUE)
-  fut_ecns   <- future::future({ e_cef_ecns() },   seed = TRUE)
-  fut_contrs <- future::future({ e_ik_contrs() },  seed = TRUE)
-  fut_cr     <- future::future({ e_ik_cr() },      seed = TRUE)
-  fut_desp   <- future::future({ e_ik_desp() },    seed = TRUE)
-  fut_unis   <- future::future({ e_ik_unis() },    seed = TRUE)
-  fut_xcefs  <- future::future({ e_cef_xcefs() },  seed = TRUE)
-  fut_eprs   <- future::future({ e_cef_eprs() },   seed = TRUE)
-  fut_nplpjs <- future::future({ e_cef_nplpjs() }, seed = TRUE)
+  fut_estq <- future::future(
+    {
+      e_ana_estq()
+    },
+    seed = TRUE
+  )
+  fut_ecns <- future::future(
+    {
+      e_cef_ecns()
+    },
+    seed = TRUE
+  )
+  fut_contrs <- future::future(
+    {
+      e_ik_contrs()
+    },
+    seed = TRUE
+  )
+  fut_cr <- future::future(
+    {
+      e_ik_cr()
+    },
+    seed = TRUE
+  )
+  fut_desp <- future::future(
+    {
+      e_ik_desp()
+    },
+    seed = TRUE
+  )
+  fut_unis <- future::future(
+    {
+      e_ik_unis()
+    },
+    seed = TRUE
+  )
+  fut_xcefs <- future::future(
+    {
+      e_cef_xcefs()
+    },
+    seed = TRUE
+  )
+  fut_eprs <- future::future(
+    {
+      e_cef_eprs()
+    },
+    seed = TRUE
+  )
+  fut_nplpjs <- future::future(
+    {
+      e_cef_nplpjs()
+    },
+    seed = TRUE
+  )
 
-  in.estq        <- future::value(fut_estq)
-  .cache_ecns    <- future::value(fut_ecns)
-  .cache_contrs  <- future::value(fut_contrs)
-  .cache_cr      <- future::value(fut_cr)
-  in.desp        <- future::value(fut_desp)
-  .cache_unis    <- future::value(fut_unis)
-  .cache_xcefs   <- future::value(fut_xcefs)
-  .cache_eprs    <- future::value(fut_eprs)
-  .cache_nplpjs  <- future::value(fut_nplpjs)
+  in.estq <- future::value(fut_estq)
+  .cache_ecns <- future::value(fut_ecns)
+  .cache_contrs <- future::value(fut_contrs)
+  .cache_cr <- future::value(fut_cr)
+  in.desp <- future::value(fut_desp)
+  .cache_unis <- future::value(fut_unis)
+  .cache_xcefs <- future::value(fut_xcefs)
+  .cache_eprs <- future::value(fut_eprs)
+  .cache_nplpjs <- future::value(fut_nplpjs)
 
   msg("Fase 1 concluida.")
 
@@ -100,23 +149,31 @@ r_fechamento_novo <- function(xlsx = FALSE) {
   msg("Fase 2: Carregando dados dependentes em paralelo...")
 
   # e_cef_cmfcns() chama e_cef_ecns() internamente — injetar cache no worker
-  fut_cmfcns <- future::future({
-    ns <- asNamespace("amplaRPackage")
-    tryCatch(unlockBinding("e_cef_ecns", ns), error = function(e) NULL)
-    assign("e_cef_ecns", function(...) .inj_ecns, envir = ns)
-    e_cef_cmfcns()
-  }, globals = list(.inj_ecns = .cache_ecns), seed = TRUE)
+  fut_cmfcns <- future::future(
+    {
+      ns <- asNamespace("amplaRPackage")
+      tryCatch(unlockBinding("e_cef_ecns", ns), error = function(e) NULL)
+      assign("e_cef_ecns", function(...) .inj_ecns, envir = ns)
+      e_cef_cmfcns()
+    },
+    globals = list(.inj_ecns = .cache_ecns),
+    seed = TRUE
+  )
 
   # e_ik_car() chama e_ik_contrs() internamente — injetar cache no worker
-  fut_car <- future::future({
-    ns <- asNamespace("amplaRPackage")
-    tryCatch(unlockBinding("e_ik_contrs", ns), error = function(e) NULL)
-    assign("e_ik_contrs", function(...) .inj_contrs, envir = ns)
-    e_ik_car()
-  }, globals = list(.inj_contrs = .cache_contrs), seed = TRUE)
+  fut_car <- future::future(
+    {
+      ns <- asNamespace("amplaRPackage")
+      tryCatch(unlockBinding("e_ik_contrs", ns), error = function(e) NULL)
+      assign("e_ik_contrs", function(...) .inj_contrs, envir = ns)
+      e_ik_car()
+    },
+    globals = list(.inj_contrs = .cache_contrs),
+    seed = TRUE
+  )
 
   .cache_cmfcns <- future::value(fut_cmfcns)
-  .cache_car    <- future::value(fut_car)
+  .cache_car <- future::value(fut_car)
 
   msg("Fase 2 concluida.")
 
@@ -127,9 +184,9 @@ r_fechamento_novo <- function(xlsx = FALSE) {
 
   r_xcef_fn <- get("r_xcef", envir = asNamespace("amplaRPackage"))
   envCache <- new.env(parent = environment(r_xcef_fn))
-  envCache$e_cef_eprs   <- function(...) .cache_eprs
+  envCache$e_cef_eprs <- function(...) .cache_eprs
   envCache$e_cef_cmfcns <- function(...) .cache_cmfcns
-  envCache$e_cef_xcefs  <- function(...) .cache_xcefs
+  envCache$e_cef_xcefs <- function(...) .cache_xcefs
   envCache$e_cef_nplpjs <- function(...) .cache_nplpjs
 
   r_xcef_com_cache <- r_xcef_fn
