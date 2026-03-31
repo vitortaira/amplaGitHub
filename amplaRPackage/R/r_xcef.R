@@ -123,8 +123,17 @@ cruzar_grupo <- function(ext_vals, cmf_vals) {
 
 r_xcef <-
   function(f_caminho.pasta.extratos_c, f_caminho.pasta.ciweb_c, xlsx = FALSE) {
+    # EPRs para enriquecer extratos com nome do mutuário
+    eprs_t <- e_cef_eprs()
+    eprs_join_t <- eprs_t %>%
+      mutate(contrato = str_sub(contrato, -5, -1)) %>%
+      rename(contrato.5 = contrato, arquivo.epr = arquivo) %>%
+      dplyr::select(empresa, contrato.5, nome.mutuario, arquivo.epr) %>%
+      distinct()
+
     # Consolida os dados dos extratos da CEF na pasta "Relatorios - Extratos"
     extratos_t <- e_cef_xcefs() %>%
+      left_join(eprs_join_t, by = c("empresa", "contrato.5")) %>%
       mutate(
         # Corrigir conversões de data problemáticas
         data.lancamento = tryCatch(
@@ -306,12 +315,12 @@ r_xcef <-
       ) %>%
       select(
         contrato.5, data.movimentacao, valor.extrato, valor.cmfcn, empresa,
-        tipo.cruzamento, natureza.extrato, conta.interno,
+        nome.mutuario, tipo.cruzamento, natureza.extrato, conta.interno,
         all_of(c(col_soma_xcef, col_soma_cmfcn)), checar,
         data.lancamento.extrato, documento, descricao, saldo, conta, agencia,
         produto, periodo.inicio, periodo.fim, data.consulta, arquivo.extrato,
         natureza.cmfcn, contrato, data.lancamento.cmfcn, lancamentos, np,
-        `conta.sidec/nsgd`, situacao, mot, arquivo.cmfcn
+        `conta.sidec/nsgd`, situacao, mot, arquivo.cmfcn, arquivo.epr
       )
     # Salvando num xlsx -------------------------------------------------------
 
@@ -333,21 +342,25 @@ r_xcef <-
       dados_xlsx <- list(
         Cruzados = extratos.cruzados_t,
         Extratos = extratos_t,
-        CMF_CNs = cmfcns_t
+        CMF_CNs = cmfcns_t,
+        EPRs = eprs_t %>%
+          select(-arquivo.tabela.tipo, -arquivo.tipo, -arquivo.fonte)
       )
 
       # Cores das abas
       cores_abas <- c(
         Cruzados = "purple",
         Extratos = "red",
-        CMF_CNs = "blue"
+        CMF_CNs = "darkblue",
+        EPRs = "lightblue"
       )
 
       # Configuração de larguras específicas por coluna
       # Todas as abas têm Cliente com 45
       larguras_spec <- c(
         "Cliente" = 45,
-        "Histórico" = 25
+        "Histórico" = 25,
+        "nome.mutuario" = 30
       )
 
       # Colunas com largura automática ajustada ao conteúdo
@@ -397,11 +410,13 @@ r_xcef <-
           "valor.cmfcn" = list(colour = "purple", font_colour = "white", font_size = 12),
           # Gray headers
           "empresa" = list(colour = "lightgray", font_size = 12),
+          "nome.mutuario" = list(colour = "lightblue", font_size = 12),
           "natureza.extrato" = list(colour = "lightgray", font_size = 12),
           "conta.interno" = list(colour = "lightgray", font_size = 12),
           "tipo.cruzamento" = list(colour = "lightgray", font_size = 12),
           "arquivo.extrato" = list(colour = "lightgray", font_size = 12),
           "arquivo.cmfcn" = list(colour = "lightgray", font_size = 12),
+          "arquivo.epr" = list(colour = "lightgray", font_size = 12),
           "natureza.cmfcn" = list(colour = "lightgray", font_size = 12),
           # Red headers with white font
           "data.lancamento.extrato" = list(colour = "red", font_colour = "white", font_size = 12),
@@ -459,9 +474,16 @@ r_xcef <-
       col_headers_config$Cruzados[["checar"]] <-
         list(colour = "lightgray", font_size = 12)
 
+      # EPRs headers: lightgray para empresa e arquivo, lightblue para demais
+      col_headers_config$EPRs <- list(
+        "empresa" = list(colour = "lightgray", font_size = 12),
+        "arquivo" = list(colour = "lightgray", font_size = 12),
+        all = list(colour = "lightblue", font_size = 12)
+      )
+
       # Aplicar a configuração de cores para todos os cabeçalhos de cada aba
-      # Para Extratos e CMF_CNs, aplicar a cor padrão a todas as colunas
-      for (aba in c("Extratos", "CMF_CNs")) {
+      # Para abas com 'all', expandir a cor padrão a todas as colunas
+      for (aba in c("Extratos", "CMF_CNs", "EPRs")) {
         if (aba %in% names(col_headers_config)) {
           df_aba <- dados_xlsx[[aba]]
           config_aba <- col_headers_config[[aba]]
