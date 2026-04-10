@@ -271,6 +271,18 @@ r_fechamento_novo <- function(xlsx = FALSE) {
 
   # Despesas
   # in.desp ja carregado na Fase 1
+  in.desp <- in.desp %>%
+    mutate(categoria = NA_character_) %>%
+    select(
+      nucleo, nucleo.num, empresa, centro.negocio, categoria,
+      n.siban, origem, tipo.entrada, documento, parcela,
+      data.vencimento, data.pagamento, valor, `a/c`,
+      documento.pagto, credor, classe, assunto.titulo,
+      grupo.titulo, subgrupo.titulo, classificacao, `d/c`,
+      cod.grupo.nuc, grupo.nucleo, cod.grupo.cen, grupo.centro,
+      cod.classe.cen, classe.centro, arquivo, arquivo.tabela.tipo,
+      arquivo.tipo, arquivo.fonte
+    )
 
   # Contas a receber
   in.car <- .cache_car$car %>%
@@ -687,6 +699,11 @@ r_fechamento_novo <- function(xlsx = FALSE) {
         "cliente", "conta.sidec/nsgd", "corretor", "descricao", "edificacao",
         "imobiliaria", "lancamentos", "nome.razao", "obs.situacao", "pavimento",
         "setor"
+      ),
+      col_formulas = list(
+        desp = list(
+          categoria = "VLOOKUP([@[centro.negocio]],ik_viab,2)"
+        )
       ),
       col_width_spec = c(
         empreendimento = 30,

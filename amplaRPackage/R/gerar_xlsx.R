@@ -49,6 +49,10 @@
 #' @param tab_zoom Vetor nomeado com nível de zoom (em porcentagem) para
 #'   cada aba. Formato: c(aba1 = 80, aba2 = 100). Se NULL, usa zoom de
 #'   80% como padrão para todas as abas. Valores entre 10 e 400.
+#' @param col_formulas Lista nomeada por aba, contendo listas nomeadas
+#'   por coluna com a formula Excel (em notacao inglesa, sem '=').
+#'   Formato: list(aba = list(coluna = "VLOOKUP(...)")).
+#'   As formulas substituem os valores da coluna no Excel.
 #' @param table Booleano. Se TRUE, converte os dados em tabelas Excel.
 #'   Padrão: TRUE.
 #' @param save Lista com 2 elementos: (1) nome do arquivo, (2) caminho
@@ -60,7 +64,8 @@
 #'   arrange all_of
 #' @importFrom stringr str_c
 #' @importFrom openxlsx2 wb_workbook wb_load wb_add_worksheet wb_add_data
-#' @importFrom openxlsx2 wb_add_data_table wb_save wb_set_col_widths
+#' @importFrom openxlsx2 wb_add_data_table wb_add_formula wb_save
+#' @importFrom openxlsx2 wb_set_col_widths
 #' @importFrom openxlsx2 wb_freeze_pane wb_add_named_region
 #' @importFrom openxlsx2 wb_set_grid_lines wb_group_cols
 #' @importFrom openxlsx2 wb_get_tables wb_remove_tables
@@ -86,6 +91,7 @@ gerar_xlsx <- function(data,
                        col_clip = NULL,
                        col_align = NULL,
                        tab_zoom = NULL,
+                       col_formulas = NULL,
                        table = TRUE,
                        save = NULL) {
   # Helper: converter cor (nome ou hex) para wb_color
@@ -189,6 +195,9 @@ gerar_xlsx <- function(data,
   message(sprintf(
     "gerar_xlsx: Processando %d abas...", length(dados_lista)
   ))
+
+  # Colunas calculadas para pos-processamento
+  formulas_calculadas <- list()
 
   # Processar cada aba ----
   for (i in seq_along(dados_lista)) {
@@ -405,6 +414,29 @@ gerar_xlsx <- function(data,
       }
     }
 
+    # Guardar info de formulas para aplicar APOS escrever dados ----
+    # (injetar formulas inline causa t="str" no XML, que
+    #  Excel considera corrupto e dispara reparo)
+    formulas_pendentes <- list()
+    if (!is.null(col_formulas) &&
+      nome_aba %in% names(col_formulas)) {
+      formulas_aba <- col_formulas[[nome_aba]]
+      for (nome_coluna in names(formulas_aba)) {
+        if (nome_coluna %in% colnames(df_dados) &&
+          nrow(df_dados) > 0) {
+          col_pos <- which(
+            colnames(df_dados) == nome_coluna
+          )
+          formulas_pendentes[[nome_coluna]] <- list(
+            col = col_pos,
+            formula = formulas_aba[[nome_coluna]]
+          )
+          # Limpar coluna para evitar conflito no XML
+          df_dados[[nome_coluna]] <- NA_character_
+        }
+      }
+    }
+
     n_linhas <- nrow(df_dados)
     n_colunas <- ncol(df_dados)
     message(sprintf(
@@ -450,6 +482,62 @@ gerar_xlsx <- function(data,
           sheet = nome_aba,
           dims = dims_regiao, name = nome_regiao
         )
+      }
+    }
+    # Formulas de colunas calculadas ----
+    # Estrategia: (1) wb_add_formula() para escrever <f> nas
+    # celulas, (2) remover t="str" do XML interno (openxlsx2
+    # sempre gera t="str" em formulas, mas sem <v> isso e
+    # invalido e dispara reparo no Excel), (3) pos-save:
+    # injetar <calculatedColumnFormula> no table XML.
+    if (table && length(formulas_pendentes) > 0 &&
+      n_linhas > 0) {
+      sheet_idx <- which(
+        wb$get_sheet_names() == nome_aba
+      )
+      for (nome_coluna in names(formulas_pendentes)) {
+        info <- formulas_pendentes[[nome_coluna]]
+        col_letra <- openxlsx2::int2col(info$col)
+        # Converter [@[col]] -> tabela[[#This Row],[col]]
+        # (o atalho @ nao e valido no XML do OOXML, apenas
+        # na interface do Excel)
+        formula_xml <- gsub(
+          "\\[@",
+          paste0(nome_tabela, "[[#This Row],"),
+          info$formula,
+          perl = TRUE
+        )
+        # Registrar para calculatedColumnFormula (pos-save)
+        formulas_calculadas <- c(
+          formulas_calculadas,
+          list(list(
+            tabela = nome_tabela,
+            coluna = nome_coluna,
+            formula = info$formula
+          ))
+        )
+        # Aplicar formula nas celulas
+        dims_formula <- sprintf(
+          "%s2:%s%d",
+          col_letra, col_letra, n_linhas + 1
+        )
+        wb <- openxlsx2::wb_add_formula(
+          wb,
+          sheet = nome_aba,
+          x = rep(formula_xml, n_linhas),
+          dims = dims_formula
+        )
+      }
+      # Corrigir t="str" gerado por wb_add_formula
+      # (celula com <f> sem <v> nao deve ter t="str")
+      cc <- wb$worksheets[[sheet_idx]]$sheet_data$cc
+      idx_fix <- which(
+        !is.na(cc$f) & nchar(cc$f) > 0 &
+          (is.na(cc$v) | nchar(cc$v) == 0)
+      )
+      if (length(idx_fix) > 0) {
+        cc$c_t[idx_fix] <- ""
+        wb$worksheets[[sheet_idx]]$sheet_data$cc <- cc
       }
     }
     # Estilos básicos quando table=FALSE ----
@@ -964,6 +1052,9 @@ gerar_xlsx <- function(data,
     showWarnings = FALSE, recursive = TRUE
   )
 
+  # Forcar recalculo completo ao abrir (necessario para formulas injetadas)
+  wb$workbook$calcPr <- '<calcPr calcId="191029" fullCalcOnLoad="1"/>'
+
   message("Salvando arquivo...")
   suppressWarnings(
     openxlsx2::wb_save(wb, caminho_completo, overwrite = TRUE)
@@ -1061,6 +1152,119 @@ gerar_xlsx <- function(data,
       error = function(e) {
         warning(
           "Nao foi possivel restaurar customXml: ",
+          conditionMessage(e)
+        )
+      }
+    )
+  }
+
+  # Pos-processamento: injetar calculatedColumnFormula ----
+  # openxlsx2 nao suporta colunas calculadas em tabelas Excel.
+  # As celulas ja tem <f> correto (sem t="str") graças ao
+  # wb_add_formula + correcao de c_t. Falta apenas adicionar
+  # <calculatedColumnFormula> na definicao da coluna no
+  # table XML para que Excel reconheca como coluna calculada.
+  if (length(formulas_calculadas) > 0) {
+    tryCatch(
+      {
+        ps_file_f <- tempfile(fileext = ".ps1")
+        on.exit(unlink(ps_file_f), add = TRUE)
+
+        output_path_f <- normalizePath(
+          caminho_completo,
+          winslash = "\\"
+        )
+
+        ps_lines <- c(
+          "Add-Type -AssemblyName System.IO.Compression.FileSystem",
+          sprintf(
+            "$zip = [System.IO.Compression.ZipFile]::Open('%s', 'Update')",
+            output_path_f
+          ),
+          ""
+        )
+
+        for (fix in formulas_calculadas) {
+          tbl <- fix$tabela
+          col <- fix$coluna
+          frm <- fix$formula
+          # Converter [@[col]] -> tabela[[#This Row],[col]]
+          frm <- gsub(
+            "\\[@",
+            paste0(tbl, "[[#This Row],"),
+            frm,
+            perl = TRUE
+          )
+          # Escapar XML especial na formula
+          frm_xml <- gsub("&", "&amp;", frm, fixed = TRUE)
+          frm_xml <- gsub("<", "&lt;", frm_xml, fixed = TRUE)
+          frm_xml <- gsub(">", "&gt;", frm_xml, fixed = TRUE)
+
+          ps_lines <- c(
+            ps_lines,
+            sprintf(
+              "# --- Tabela: %s, Coluna: %s ---", tbl, col
+            ),
+            "foreach ($e in @($zip.Entries)) {",
+            paste0(
+              "  if ($e.FullName -match ",
+              "'^xl/tables/table\\d+\\.xml$') {"
+            ),
+            "    $sr = New-Object System.IO.StreamReader(",
+            "      $e.Open())",
+            "    $xml = $sr.ReadToEnd(); $sr.Close()",
+            sprintf(
+              "    if ($xml -match 'displayName=\"%s\"') {",
+              tbl
+            ),
+            sprintf(
+              paste0(
+                "      $newXml = $xml -replace ",
+                "'(<tableColumn[^>]*name=\"%s\"[^/]*)\\s*/>',",
+                " ('$1><calculatedColumnFormula>%s",
+                "</calculatedColumnFormula></tableColumn>')"
+              ),
+              col, frm_xml
+            ),
+            "      if ($newXml -ne $xml) {",
+            "        $fn = $e.FullName; $e.Delete()",
+            "        $ne = $zip.CreateEntry($fn)",
+            paste0(
+              "        $enc = New-Object ",
+              "System.Text.UTF8Encoding($false)"
+            ),
+            paste0(
+              "        $w = New-Object ",
+              "System.IO.StreamWriter($ne.Open(), $enc)"
+            ),
+            "        $w.Write($newXml); $w.Close()",
+            "      }",
+            "      break",
+            "    }",
+            "  }",
+            "}",
+            ""
+          )
+        }
+
+        ps_lines <- c(ps_lines, "$zip.Dispose()")
+        writeLines(ps_lines, ps_file_f)
+
+        system2(
+          "powershell",
+          args = c(
+            "-NoProfile", "-ExecutionPolicy", "Bypass",
+            "-File", ps_file_f
+          ),
+          stdout = FALSE, stderr = FALSE
+        )
+        message(
+          "  calculatedColumnFormula injetada no table XML."
+        )
+      },
+      error = function(e) {
+        warning(
+          "Nao foi possivel injetar formulas nas tabelas: ",
           conditionMessage(e)
         )
       }
