@@ -82,7 +82,12 @@ e_ik_desp <- function(
       cod.grupo.nuc, grupo.nucleo, cod.grupo.cen, grupo.centro,
       cod.classe.cen, classe.centro, arquivo, arquivo.tabela.tipo,
       arquivo.tipo, arquivo.fonte
-    )
+    ) %>%
+    # Remove linha totalizadora (soma no final da tabela do arquivo bruto)
+    filter(!(!is.na(valor) & if_all(
+      c(n.siban, centro.negocio, nucleo, classe),
+      is.na
+    )))
 
   return(desp)
 }
