@@ -299,7 +299,7 @@ r_fechamento_novo <- function(xlsx = FALSE) {
       edificacao = NA_character_
     ) %>%
     dplyr::filter(
-      empresa %in% c("AMP", "AVS", "GRA", "LUC", "POM", "SN2", "SN4")
+      empresa %in% c("AMP", "AVS", "CBL", "GRA", "LUC", "POM", "SAU", "SN2", "SN4")
     ) %>%
     dplyr::select(
       empreendimento, empresa, total, data.vencimento, data.pagamento, cliente,
