@@ -154,6 +154,19 @@ e_viab_flx <- function(f_caminho_arquivo_c) {
         list(header = "(?i)^p[óo]s-?obra$"),
         list(header = "(?i)^taxa\\s?adm$")
       )
+    ),
+    "Incorporação" = list(
+      components = list(
+        list(header = "(?i)^projeto$"),
+        list(header = "(?i)^dec\\s?[áa]rea\\s?c$"),
+        list(header = "(?i)^statera$|(?i)^assessorias$"),
+        list(header = "(?i)^incorp$"),
+        list(
+          header = "^(0?\\.\\d+|\\d+(\\.\\d+)?[eE][+-]?\\d+)$",
+          after  = "(?i)^incorp$",
+          before = "(?i)^p[óo]s-?obra$"
+        )
+      )
     )
   )
 
@@ -167,7 +180,7 @@ e_viab_flx <- function(f_caminho_arquivo_c) {
   ))
 
   cell_eq <- function(x, padrao_c) {
-    !is.na(x) & str_detect(x, padrao_c)
+    !is.na(x) & str_detect(stringr::str_trim(x), padrao_c)
   }
 
   # Locate the header row: the first row containing "Mes/Mês" and at least
@@ -201,6 +214,21 @@ e_viab_flx <- function(f_caminho_arquivo_c) {
   }
 
   linha_header_v <- as.character(unlist(fluxo.bruto_t[linha_header_n, ]))
+  # Fill vertically-merged headers: when a column's header cell on the
+  # header row is NA, take the closest non-NA value from the rows above
+  # (readxl returns NA for non-leading cells of a vertical merge).
+  if (linha_header_n > 1) {
+    na_cols_n <- which(is.na(linha_header_v) | !nzchar(linha_header_v))
+    for (col_n in na_cols_n) {
+      acima_v <- as.character(unlist(
+        fluxo.bruto_t[seq_len(linha_header_n - 1), col_n]
+      ))
+      acima_v <- acima_v[!is.na(acima_v) & nzchar(acima_v)]
+      if (length(acima_v) > 0) {
+        linha_header_v[col_n] <- acima_v[length(acima_v)]
+      }
+    }
+  }
   col_mes_n <- which(cell_eq(linha_header_v, "(?i)^m[eê]s$"))[1]
 
   # Locate the subtotal row (first occurrence after the header).
@@ -289,8 +317,13 @@ e_viab_flx <- function(f_caminho_arquivo_c) {
   }
 
   # Helper: given a sub-spec with $header (and optional $after/$before/$above),
-  # returns the matching column index in `linha_header_v`, or NA.
-  achar_coluna <- function(sub_spec_l) {
+  # returns the matching column index in `linha_header_v`, or NA. The
+  # optional `excluir_n` vector lists columns already claimed by previous
+  # components (within the same multi-column variable); those are skipped
+  # so that overlapping alternations like `^statera$|^incorp$` paired with
+  # `^statera$|^assessorias$` resolve to distinct columns when both names
+  # coexist in the spreadsheet.
+  achar_coluna <- function(sub_spec_l, excluir_n = integer()) {
     candidatos_n <- which(cell_eq(linha_header_v, sub_spec_l$header))
     if (length(candidatos_n) > 1 && !is.null(sub_spec_l$after)) {
       pos_after_n <- which(cell_eq(linha_header_v, sub_spec_l$after))
@@ -314,7 +347,17 @@ e_viab_flx <- function(f_caminho_arquivo_c) {
       }, logical(1))
       candidatos_n <- candidatos_n[bate_v]
     }
-    if (length(candidatos_n) == 0) NA_integer_ else candidatos_n[1]
+    # Prefer unclaimed candidates, but fall back to any candidate (so a
+    # single shared column - e.g. when only "Statera" exists - can still
+    # be picked up at least once).
+    nao_claimed_n <- setdiff(candidatos_n, excluir_n)
+    if (length(nao_claimed_n) > 0) {
+      nao_claimed_n[1]
+    } else if (length(candidatos_n) == 0) {
+      NA_integer_
+    } else {
+      candidatos_n[1]
+    }
   }
 
   # Helper: read a single data column as numeric (length = number of data rows)
@@ -330,8 +373,15 @@ e_viab_flx <- function(f_caminho_arquivo_c) {
 
     # Single-column variable vs. multi-column (sum) variable.
     if (!is.null(spec_l$components)) {
-      cols_n <- vapply(spec_l$components, achar_coluna, integer(1))
-      cols_n <- cols_n[!is.na(cols_n)]
+      # Claim columns one component at a time, excluding columns already
+      # picked by earlier components so overlapping alternations resolve
+      # to distinct columns when the spreadsheet has both names.
+      cols_n <- integer(0)
+      for (sub_l in spec_l$components) {
+        c_n <- achar_coluna(sub_l, excluir_n = cols_n)
+        if (!is.na(c_n)) cols_n <- c(cols_n, c_n)
+      }
+      cols_n <- unique(cols_n)
       if (length(cols_n) == 0) {
         return(vazio_t)
       }
