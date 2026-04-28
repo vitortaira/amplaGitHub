@@ -14,10 +14,10 @@ Valor padrão: \code{caminhos_pastas("fechamento_in")}.}
 Valor padrão: \code{FALSE}.}
 }
 \value{
-Data frame com dados das contas a receber consolidadas.
+Data frame com dados das contas recebidas consolidadas.
 }
 \description{
-A função e_ik_cr() extrai os dados de contas a receber dos arquivos na pasta
+A função e_ik_cr() extrai os dados de contas recebidas dos arquivos na pasta
 "fechamento_in", preenche-os em uma planilha xlsx (opcional) e os retorna em
 um data frame.
 }

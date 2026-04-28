@@ -49,49 +49,70 @@ e_viab_def <- function(f_caminho_arquivo_c) {
       mutate(across(everything(), ~ str_squish(as.character(.))))
   ))
 
-  vgv_n <- viab.original_t %>%
-    filter(str_starts(`_3`, "(?i)vgv\\s?fluxo")) %>%
-    pull(`_4`) %>%
-    as.numeric()
-
-  despesas.obra_n <- viab.original_t %>%
+  Construção <- viab.original_t %>%
     filter(str_detect(`_1`, "(?i)constru[cç][aã]o")) %>%
     pull(`_7`) %>%
-    as.numeric()
+    as.numeric() %>%
+    round(2)
 
-  impostos.lucro_n <- viab.original_t %>%
-    filter(str_starts(`_3`, "(?i)vgv\\s?para\\s?venda")) %>%
-    pull(`_10`) %>%
-    as.numeric()
+  `Despesas financeiras` <- viab.original_t %>%
+    filter(str_detect(`_3`, "(?i)juros/desp\\s?com\\s?fin.*")) %>%
+    pull(`_7`) %>%
+    as.numeric() %>%
+    round(2)
 
-  impostos.receita_n <- viab.original_t %>%
-    filter(str_starts(`_3`, "(?i)vgv\\s?para\\s?venda")) %>%
-    pull(`_10`) %>%
-    as.numeric()
+  Incorporação <- viab.original_t %>%
+    filter(str_detect(`_1`, "(?i)incorpora[cç][aã]o")) %>%
+    pull(`_7`) %>%
+    as.numeric() %>%
+    round(2)
 
-  lucro.liq_n <- viab.original_t %>%
+  lucro.liquido <- viab.original_t %>%
     filter(str_starts(`_1`, "(?i)lucro\\s?l[ií]quido")) %>%
     pull(`_7`) %>%
-    as.numeric()
+    as.numeric() %>%
+    round(2)
 
-  terreno.permuta.fisica_n <- viab.original_t %>%
+  `Novos negócios` <- viab.original_t %>%
+    filter(str_detect(`_1`, "(?i)novos\\s?neg[óo]cios")) %>%
+    pull(`_7`) %>%
+    as.numeric() %>%
+    round(2)
+
+  terreno.permuta.fisica <- viab.original_t %>%
     filter(str_starts(`_3`, "(?i)terreno\\s?permuta\\s?f[ií]sica")) %>%
     pull(`_7`) %>%
-    as.numeric()
+    as.numeric() %>%
+    round(2)
 
-  unidades.venda_n <- viab.original_t %>%
+  `Unidades vendidas` <- viab.original_t %>%
     filter(str_starts(`_3`, "(?i)vgv\\s?fluxo")) %>%
     pull(`_5`) %>%
-    as.numeric()
+    as.numeric() %>%
+    round(0)
+
+  Vendas <- viab.original_t %>%
+    filter(str_detect(`_1`, "(?i)^vendas$")) %>%
+    pull(`_7`) %>%
+    as.numeric() %>%
+    round(2)
+
+  vgv <- viab.original_t %>%
+    filter(str_starts(`_3`, "(?i)vgv\\s?fluxo")) %>%
+    pull(`_4`) %>%
+    as.numeric() %>%
+    round(2)
 
   tibble(
-    vgv = vgv_n,
-    despesas.obra = despesas.obra_n,
-    impostos.lucro = impostos.lucro_n,
-    impostos.receita = impostos.receita_n,
-    lucro.liquido = lucro.liq_n,
-    terreno.permuta.fisica = terreno.permuta.fisica_n,
-    unidades.venda = unidades.venda_n
+    "Construção" = Construção,
+    "Despesas financeiras" = `Despesas financeiras`,
+    "Incorporação" = Incorporação,
+    lucro.liquido = lucro.liquido,
+    "Novos negócios" = `Novos negócios`,
+    terreno.permuta.fisica = terreno.permuta.fisica,
+    "Unidades vendidas" = `Unidades vendidas`,
+    "Vendas" = Vendas,
+    vgv = vgv
   )
 }
 

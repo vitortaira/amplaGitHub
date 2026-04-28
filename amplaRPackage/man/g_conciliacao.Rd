@@ -4,24 +4,11 @@
 \alias{g_conciliacao}
 \title{Gráficos de Conciliação Bancária vs CMF/IK}
 \usage{
-g_conciliacao(
-  dadosFluxos,
-  filtroContas = NULL,
-  periodoInicio = NULL,
-  periodoFim = NULL
-)
+g_conciliacao(dadosFluxos = NULL)
 }
 \arguments{
 \item{dadosFluxos}{Tibble com dados de fluxos por conta e mês.
-Estrutura esperada: mes, identificacao.conta, entradas, entradas.ik,
-saidas, saidas.ik, saldo.liquido, saldo.liquido.ik}
-
-\item{filtroContas}{Vetor de caracteres com identificações de contas a incluir.
-Se NULL (padrão), inclui todas as contas.}
-
-\item{periodoInicio}{Data de início do período. Se NULL, usa o mínimo dos dados.}
-
-\item{periodoFim}{Data de fim do período. Se NULL, usa o máximo dos dados.}
+Se NULL (padrão), extrai automaticamente usando e_extratos()$fluxosContaMes}
 }
 \value{
 Lista com três objetos plotly:
@@ -35,26 +22,4 @@ Lista com três objetos plotly:
 Função para criar gráficos de linha comparando trajetórias de entradas,
 saídas e saldos líquidos entre dados bancários (extratos) e CMF/IK.
 Gera três gráficos plotly: entradas, saídas e saldos líquidos.
-}
-\examples{
-\dontrun{
-# Obter dados de extratos
-dadosExtratos <- e_extratos()
-
-# Criar gráficos de conciliação
-graficos <- g_conciliacao(dadosExtratos$fluxosContaMes)
-
-# Visualizar gráficos individuais
-graficos$graficoEntradas
-graficos$graficoSaidas
-graficos$graficoSaldos
-
-# Filtrar por contas específicas
-contasSelecionadas <- c("AMP - CEF - 0001", "AVS - Itau - 0002")
-graficos <- g_conciliacao(
-  dadosFluxos = dadosExtratos$fluxosContaMes,
-  filtroContas = contasSelecionadas
-)
-}
-
 }

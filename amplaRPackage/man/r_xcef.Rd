@@ -4,12 +4,15 @@
 \alias{r_xcef}
 \title{Cruzamento de dados dos extratos da CEF e relatórios CMF_CN}
 \usage{
-r_xcef(f_caminho.pasta.extratos_c, f_caminho.pasta.ciweb_c)
+r_xcef(f_caminho.pasta.extratos_c, f_caminho.pasta.ciweb_c, xlsx = FALSE)
 }
 \arguments{
 \item{f_caminho.pasta.extratos_c}{Caminho para a pasta "Relatorios - Extratos".}
 
 \item{f_caminho.pasta.ciweb_c}{Caminho para a pasta "Relatorios - CIWEB".}
+
+\item{xlsx}{Lógico. Se TRUE, gera um arquivo Excel (.xlsx) com os dados cruzados.
+Valor padrão: FALSE.}
 }
 \value{
 Retorna um tibble com os dados cruzados dos extratos da CEF e relatórios CMF_CN.
@@ -25,14 +28,19 @@ A função executa as seguintes etapas:
 \item Consolida os dados dos extratos da CEF na pasta "Relatorios - Extratos".
 \item Consolida os dados dos relatórios CMF_CN na pasta "Relatorios - CIWEB".
 \item Cruza os dados consolidados com base em campos comuns.
-\item Gera um arquivo \code{.xlsx} com os dados cruzados na pasta "Extratos conciliados".
+\item Se \code{xlsx = TRUE}, gera um arquivo \code{.xlsx} com os dados cruzados na pasta "Extratos conciliados".
 }
 }
 \examples{
 \dontrun{
 f_caminho.pasta.extratos_c <- "caminho/para/a/pasta/Relatorios - Extratos"
 f_caminho.pasta.ciweb_c <- "caminho/para/a/pasta/Relatorios - CIWEB"
+
+# Apenas retornar os dados cruzados
 resultado <- r_xcef(f_caminho.pasta.extratos_c, f_caminho.pasta.ciweb_c)
+
+# Retornar os dados e gerar arquivo Excel
+resultado <- r_xcef(f_caminho.pasta.extratos_c, f_caminho.pasta.ciweb_c, xlsx = TRUE)
 print(resultado)
 }
 

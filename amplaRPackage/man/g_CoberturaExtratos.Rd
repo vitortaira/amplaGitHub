@@ -10,7 +10,7 @@ g_coberturaExtratos(cobertura_t = e_cobertura_extratos())
 \item{cobertura_t}{Tibble with columns: arquivo, empresa, periodo.inicio, periodo.fim, arquivo.tipo, id}
 }
 \value{
-Plotly heatmap object
+Plotly heatmap object. Also saves the plot as PNG in the relatorios folder.
 }
 \description{
 Plot temporal coverage heatmap for extratos

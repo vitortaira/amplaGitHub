@@ -8,7 +8,7 @@ e_ik()
 }
 \value{
 Retorna uma lista contendo todos os dados extraídos das várias fontes:
-Despesas e Receitas.
+Despesas e Contas a Receber.
 }
 \description{
 A função \strong{e_ik()} consolida e retorna dados de diversos relatórios

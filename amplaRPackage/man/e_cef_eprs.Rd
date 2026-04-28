@@ -4,11 +4,7 @@
 \alias{e_cef_eprs}
 \title{Extração e Consolidação de Relatórios EPR da CEF}
 \usage{
-e_cef_eprs(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb"))
-}
-\arguments{
-\item{f_caminho.pasta.ciweb_c}{Caminho para a pasta "Relatorios - CIWEB".
-Padrão: \code{file.path(dirname(dirname(here())), "Relatórios - Documentos", "Relatorios - CIWEB")}.}
+e_cef_eprs()
 }
 \value{
 Retorna um \code{tibble} contendo as informações extraídas dos relatórios EPR.
@@ -23,11 +19,7 @@ dos dados e consolida em um único \code{tibble}.
 }
 \examples{
 \dontrun{
-# Usando o caminho padrão
 e_cef_eprs()
-
-# Fornecendo um caminho específico:
-e_cef_eprs("C:/caminho/personalizado/Relatorios - CIWEB")
 }
 
 }

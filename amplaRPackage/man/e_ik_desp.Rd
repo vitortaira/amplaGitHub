@@ -4,27 +4,23 @@
 \alias{e_ik_desp}
 \title{Extração de Despesas Informakon}
 \usage{
-e_ik_desp(f_caminho.pasta.ik_c = caminhos_pastas("informakon"), xlsx = FALSE)
+e_ik_desp(f_caminho.pasta.ik_c = caminhos_pastas("fechamento_in"))
 }
 \arguments{
-\item{f_caminho.pasta.ik_c}{String do caminho da pasta "informakon".
-Valor padrão: \code{caminhos_pastas("informakon")}.}
-
-\item{xlsx}{Logical. Se \code{TRUE}, cria um arquivo xlsx com os dados extraídos.
-Valor padrão: \code{FALSE}.}
+\item{f_caminho.pasta.ik_c}{String do caminho da pasta "fechamento_in".
+Valor padrão: \code{caminhos_pastas("fechamento_in")}.}
 }
 \value{
 Data frame com dados das despesas consolidadas.
 }
 \description{
 A função e_ik_desp() extrai os dados de despesas dos arquivos na pasta
-"informakon", preenche-os em uma planilha xlsx (opcional) e os retorna em
-um data frame.
+"fechamento_in" e os retorna em um data frame.
 }
 \examples{
 \dontrun{
 # Chamando a função
-despesas_df <- e_ik_desp()
+desp <- e_ik_desp()
 }
 
 }

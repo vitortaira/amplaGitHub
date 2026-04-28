@@ -25,9 +25,13 @@
 #'
 #' @return
 #' Retorna uma lista nomeada de tibbles, com um elemento por aba extraida
-#' (atualmente: \code{def} e \code{flx}). Cada tibble consolida os dados
+#' (atualmente: \code{def} e \code{flx}) e mais um tibble \code{check} com
+#' a conferência entre as duas abas. Cada tibble consolida os dados
 #' correspondentes de todos os arquivos encontrados, com a coluna
-#' \code{arquivo.nome} (primeira coluna) identificando o arquivo de origem.
+#' \code{empreendimento} (primeira coluna) identificando o arquivo de origem.
+#' O tibble \code{check} possui as colunas \code{empreendimento},
+#' \code{variavel}, \code{def}, \code{flx} e \code{diferenca}, contendo
+#' apenas as variáveis que aparecem em ambas as abas.
 #'
 #' @examples
 #' \dontrun{
@@ -38,7 +42,8 @@
 #' @importFrom googledrive drive_ls as_id drive_download
 #' @importFrom purrr map map_dfr set_names
 #' @importFrom stringr str_detect
-#' @importFrom dplyr mutate
+#' @importFrom dplyr mutate group_by summarise inner_join arrange
+#' @importFrom tidyr pivot_longer
 #' @importFrom fs path
 #'
 #' @export
@@ -134,18 +139,25 @@ e_viabs <- function(f_id_pasta_gdrive_c) {
       overwrite = TRUE
     )
     abas_l <- e_viab(caminho.temp_c)
+    # Derive empreendimento from the file name the same way e_viab_flx does
+    # (drop extension, strip the "Viabilidade " prefix), so that all tabs
+    # use a consistent empreendimento value.
+    empreendimento_c <- stringr::str_remove(
+      tools::file_path_sans_ext(nome_c),
+      "(?i).*viabilidade\\s+"
+    )
     purrr::map(abas_l, function(tab_t) {
       if (nrow(tab_t) == 0) {
         return(tab_t)
       }
       # If the tab already identifies the project (e.g. flx), don't add
-      # arquivo.nome. Otherwise, prepend it.
+      # empreendimento. Otherwise, prepend it.
       if ("empreendimento" %in% names(tab_t)) {
         return(tab_t)
       }
       tab_t %>%
-        mutate(arquivo.nome = nome_c) %>%
-        dplyr::relocate(arquivo.nome)
+        mutate(empreendimento = empreendimento_c) %>%
+        dplyr::relocate(empreendimento)
     })
   }
 
@@ -157,10 +169,39 @@ e_viabs <- function(f_id_pasta_gdrive_c) {
 
   # Transpose and bind: one consolidated tibble per tab name
   nomes_abas_c <- names(por_arquivo_l[[1]])
-  purrr::set_names(
+  resultado_l <- purrr::set_names(
     purrr::map(nomes_abas_c, function(nome_aba_c) {
       dplyr::bind_rows(purrr::map(por_arquivo_l, nome_aba_c))
     }),
     nomes_abas_c
   )
+
+  # Tibble de conferência: compara, por empreendimento, cada variável de
+  # `def` cujo nome também apareça como valor de `variavel` em `flx`.
+  # Mantém apenas as variáveis com correspondência nas duas abas.
+  if (all(c("def", "flx") %in% names(resultado_l))) {
+    def_t <- resultado_l$def
+    flx_t <- resultado_l$flx
+
+    flx_soma_t <- flx_t %>%
+      dplyr::group_by(empreendimento, variavel) %>%
+      dplyr::summarise(flx = sum(valor, na.rm = TRUE), .groups = "drop")
+
+    def_long_t <- def_t %>%
+      tidyr::pivot_longer(
+        cols = -empreendimento,
+        names_to = "variavel",
+        values_to = "def"
+      )
+
+    resultado_l$check <- def_long_t %>%
+      dplyr::inner_join(
+        flx_soma_t,
+        by = c("empreendimento", "variavel")
+      ) %>%
+      dplyr::mutate(diferenca = def - flx) %>%
+      dplyr::arrange(empreendimento, variavel)
+  }
+
+  resultado_l
 }
