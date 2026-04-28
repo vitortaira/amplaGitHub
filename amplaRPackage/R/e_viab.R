@@ -110,17 +110,24 @@ e_viab_flx <- function(f_caminho_arquivo_c) {
   #                 (single-column variables only)
   #   - after:      (optional) regex for a header that must occur to the LEFT
   #   - before:    (optional) regex for a header that must occur to the RIGHT
-  #   - above:      (optional) regex matched against the cells in any row
-  #                 ABOVE the header (with merged-cell values fill-forwarded
-  #                 across each row). Useful for disambiguating columns
-  #                 that share the same header but live under different
-  #                 super-headers (e.g. "Vendas Realizadas" vs.
-  #                 "Vendas Projetadas").
+  #   - under:      (optional) regex matched against the cells in any row
+  #                 ABOVE the header (i.e. the column header sits UNDER
+  #                 those super-header cells, with merged-cell values
+  #                 fill-forwarded across each row). Useful for
+  #                 disambiguating columns that share the same header but
+  #                 live under different super-headers (e.g. "Vendas
+  #                 Realizadas" vs. "Vendas Projetadas").
   #   - components: (optional) list of sub-specs (each with $header and
-  #                 optional $after/$before/$above) whose columns will be
+  #                 optional $after/$before/$under) whose columns will be
   #                 summed row-wise (NAs treated as 0). When provided, the
-  #                 top-level $header/$after/$before/$above are ignored.
-  # `after`/`before`/`above` disambiguate when `header` is not unique.
+  #                 top-level $header/$after/$before/$under are ignored.
+  #   - empreendimento: (optional) regex (or character vector of regexes)
+  #                 matched against the file's empreendimento name. The
+  #                 variable is only extracted when at least one of the
+  #                 patterns matches; if omitted, the variable applies to
+  #                 all files. Provide multiple patterns as a vector
+  #                 (instead of one long alternation) for readability.
+  # `after`/`before`/`under` disambiguate when `header` is not unique.
   variaveis_l <- list(
     "CEF obra" = list(
       header = "(?i)^fra[cç]\\s?obra$"
@@ -128,31 +135,42 @@ e_viab_flx <- function(f_caminho_arquivo_c) {
     "CEF terreno" = list(
       header = "(?i)^fra[cç]\\s?terreno$"
     ),
-    "Unidades vendidas" = list(
-      header = "(?i)^uni$",
-      after  = "(?i)^curva\\s?de\\s?venda$",
-      before = "(?i)^pr[óo]-?\\s?soluto\\s?direto$"
-    ),
-    "Repasse ABC" = list(
-      header = "(?i)^repasse\\s?abc$"
-    ),
-    "Pró soluto + Taxa extra" = list(
-      components = list(
-        list(
-          header = "(?i)^direto$",
-          above  = "(?i)vendas\\s?realizadas"
-        ),
-        list(
-          header = "(?i)^direto$",
-          above  = "(?i)vendas\\s?projetadas"
-        )
-      )
-    ),
     "Construção" = list(
       components = list(
         list(header = "(?i)^obra$"),
         list(header = "(?i)^p[óo]s-?obra$"),
         list(header = "(?i)^taxa\\s?adm$")
+      )
+    ),
+    "Despesas financeiras" = list(
+      components = list(
+        list(header = "(?i)^juros/desp$", before = "(?i)^libera[çc][ãa]o$"),
+        list(header = "(?i)^juros/desp$", before = "(?i)^pis/cofins$")
+      )
+    ),
+    "Empréstimo ABC" = list(
+      empreendimento = "(?i)pomp[ée]ia",
+      components = list(
+        list(header = "(?i)^libera[çc][ãa]o$")
+      )
+    ),
+    "Empréstimo CEF PJ" = list(
+      empreendimento = c(
+        "(?i)prud[êse]ncia",
+        "(?i)up\\s?vila\\s?sonia",
+        "(?i)select",
+        "(?i)s[ãa]o\\s?lucas",
+        "(?i)up\\s?esta[çc][ãa]o\\s?vila\\s?sonia",
+        "(?i)up\\s?move"
+      ),
+      components = list(
+        list(header = "(?i)^libera[çc][ãa]o$")
+      )
+    ),
+    "Empréstimo Cyrela" = list(
+      empreendimento = "(?i)sa[úu]de",
+      components = list(
+        list(header = "(?i)^libera[çc][ãa]o$")
       )
     ),
     "Incorporação" = list(
@@ -166,6 +184,48 @@ e_viab_flx <- function(f_caminho_arquivo_c) {
           after  = "(?i)^incorp$",
           before = "(?i)^p[óo]s-?obra$"
         )
+      )
+    ),
+    "Novos negócios" = list(
+      components = list(
+        list(header = "(?i)^desp$"),
+        list(header = "(?i)^terreno$"),
+        list(header = "(?i)^outorga$")
+      )
+    ),
+    "Pró soluto + Taxa extra" = list(
+      components = list(
+        list(
+          header = "(?i)^direto$",
+          under  = "(?i)vendas\\s?realizadas"
+        ),
+        list(
+          header = "(?i)^direto$",
+          under  = "(?i)vendas\\s?projetadas"
+        )
+      )
+    ),
+    "Repasse ABC" = list(
+      header = "(?i)^repasse\\s?abc$"
+    ),
+    "Serviço das dívidas" = list(
+      components = list(
+        list(header = "(?i)^pagamento$", under = "(?i)financ.*$"),
+        list(header = "(?i)^juros/desp$", before = "(?i)^libera[çc][ãa]o$"),
+        list(header = "(?i)^pagamento$", under = "(?i)^\\w{3}\\.?-?\\d{2}$"),
+        list(header = "(?i)^juros/desp$", before = "(?i)^pis/cofins$")
+      )
+    ),
+    "Unidades vendidas" = list(
+      header = "(?i)^uni$",
+      after  = "(?i)^curva\\s?de\\s?venda$",
+      before = "(?i)^pr[óo]-?\\s?soluto\\s?direto$"
+    ),
+    "Vendas" = list(
+      components = list(
+        list(header = "(?i)^comercial$"),
+        list(header = "(?i)^pdv$"),
+        list(header = "(?i)^marketing$")
       )
     )
   )
@@ -297,7 +357,7 @@ e_viab_flx <- function(f_caminho_arquivo_c) {
 
   # All rows above the header, each fill-forwarded across the row to
   # propagate values from merged cells (readxl returns NA for non-leading
-  # cells of a merge). A spec's `above` regex matches a column if it
+  # cells of a merge). A spec's `under` regex matches a column if it
   # matches the (filled-forward) value at that column in ANY row above.
   linhas_acima_l <- if (linha_header_n > 1) {
     lapply(seq_len(linha_header_n - 1), function(r) {
@@ -316,7 +376,7 @@ e_viab_flx <- function(f_caminho_arquivo_c) {
     list()
   }
 
-  # Helper: given a sub-spec with $header (and optional $after/$before/$above),
+  # Helper: given a sub-spec with $header (and optional $after/$before/$under),
   # returns the matching column index in `linha_header_v`, or NA. The
   # optional `excluir_n` vector lists columns already claimed by previous
   # components (within the same multi-column variable); those are skipped
@@ -337,11 +397,11 @@ e_viab_flx <- function(f_caminho_arquivo_c) {
         candidatos_n <- candidatos_n[candidatos_n < max(pos_before_n)]
       }
     }
-    if (length(candidatos_n) > 1 && !is.null(sub_spec_l$above)) {
+    if (length(candidatos_n) > 1 && !is.null(sub_spec_l$under)) {
       bate_v <- vapply(candidatos_n, function(col_n) {
         any(vapply(
           linhas_acima_l,
-          function(linha_v) cell_eq(linha_v[col_n], sub_spec_l$above),
+          function(linha_v) cell_eq(linha_v[col_n], sub_spec_l$under),
           logical(1)
         ))
       }, logical(1))
@@ -370,6 +430,14 @@ e_viab_flx <- function(f_caminho_arquivo_c) {
   # Extract one long tibble per variable, then bind them all together.
   purrr::map_dfr(names(variaveis_l), function(nome_var_c) {
     spec_l <- variaveis_l[[nome_var_c]]
+
+    # Optional empreendimento-scoped variables: skip when the file's
+    # empreendimento doesn't match any of the spec's patterns (the field
+    # may be a single regex or a character vector).
+    if (!is.null(spec_l$empreendimento) &&
+      !any(str_detect(empreendimento_c, spec_l$empreendimento))) {
+      return(vazio_t)
+    }
 
     # Single-column variable vs. multi-column (sum) variable.
     if (!is.null(spec_l$components)) {
@@ -418,5 +486,12 @@ e_viab_flx <- function(f_caminho_arquivo_c) {
     # Interior NAs (gaps within the trimmed range, including unparseable
     # cells like "#N/A" or "Invalid Number") are treated as zeros.
     dplyr::mutate(valor = dplyr::coalesce(valor, 0)) %>%
+    # Round to 2 decimals for monetary variables; "Unidades vendidas" is
+    # an integer count, so round to 0 decimals.
+    dplyr::mutate(valor = dplyr::if_else(
+      variavel == "Unidades vendidas",
+      round(valor, 0),
+      round(valor, 2)
+    )) %>%
     dplyr::ungroup()
 }
