@@ -103,32 +103,57 @@ e_viab_def <- function(f_caminho_arquivo_c) {
 # Data rows span from the header row + 1 down to the row before the first
 # row containing "SubTotal" in any of its cells.
 e_viab_flx <- function(f_caminho_arquivo_c) {
-  # Mapping: spreadsheet-header label (key) -> spec for locating the column
-  # in the Fluxo tab and naming the variable in the output.
+  # Mapping: friendly variable name (key, used as the `variavel` value
+  # in the output) -> spec for locating the column(s) in the Fluxo tab.
   # Each spec is a list with:
-  #   - header: regex matching the header text in the variable's column
-  #   - nome:   value placed in the `variavel` column of the output
-  #   - after:  (optional) regex for a header that must occur to the LEFT
-  #   - before: (optional) regex for a header that must occur to the RIGHT
-  # `after`/`before` disambiguate when `header` is not unique in the row.
+  #   - header:     regex matching the header text in the variable's column
+  #                 (single-column variables only)
+  #   - after:      (optional) regex for a header that must occur to the LEFT
+  #   - before:    (optional) regex for a header that must occur to the RIGHT
+  #   - above:      (optional) regex matched against the cells in any row
+  #                 ABOVE the header (with merged-cell values fill-forwarded
+  #                 across each row). Useful for disambiguating columns
+  #                 that share the same header but live under different
+  #                 super-headers (e.g. "Vendas Realizadas" vs.
+  #                 "Vendas Projetadas").
+  #   - components: (optional) list of sub-specs (each with $header and
+  #                 optional $after/$before/$above) whose columns will be
+  #                 summed row-wise (NAs treated as 0). When provided, the
+  #                 top-level $header/$after/$before/$above are ignored.
+  # `after`/`before`/`above` disambiguate when `header` is not unique.
   variaveis_l <- list(
-    "Fraç Obra" = list(
-      header = "(?i)^fra[cç]\\s?obra$",
-      nome   = "CEF obra"
+    "CEF obra" = list(
+      header = "(?i)^fra[cç]\\s?obra$"
     ),
-    "Fraç Terreno" = list(
-      header = "(?i)^fra[cç]\\s?terreno$",
-      nome   = "CEF terreno"
+    "CEF terreno" = list(
+      header = "(?i)^fra[cç]\\s?terreno$"
     ),
-    "Uni" = list(
+    "Unidades vendidas" = list(
       header = "(?i)^uni$",
-      nome   = "Unidades vendidas",
       after  = "(?i)^curva\\s?de\\s?venda$",
       before = "(?i)^pr[óo]-?\\s?soluto\\s?direto$"
     ),
     "Repasse ABC" = list(
-      header = "(?i)^repasse\\s?abc$",
-      nome   = "Repasse ABC"
+      header = "(?i)^repasse\\s?abc$"
+    ),
+    "Pró soluto + Taxa extra" = list(
+      components = list(
+        list(
+          header = "(?i)^direto$",
+          above  = "(?i)vendas\\s?realizadas"
+        ),
+        list(
+          header = "(?i)^direto$",
+          above  = "(?i)vendas\\s?projetadas"
+        )
+      )
+    ),
+    "Construção" = list(
+      components = list(
+        list(header = "(?i)^obra$"),
+        list(header = "(?i)^p[óo]s-?obra$"),
+        list(header = "(?i)^taxa\\s?adm$")
+      )
     )
   )
 
@@ -150,11 +175,19 @@ e_viab_flx <- function(f_caminho_arquivo_c) {
   achou_mes_lin <- apply(
     fluxo.bruto_t, 1, function(linha) any(cell_eq(linha, "(?i)^m[eê]s$"))
   )
+  # Collect all header regexes (single-column variables + components).
+  headers_v <- unlist(lapply(variaveis_l, function(spec) {
+    if (!is.null(spec$components)) {
+      vapply(spec$components, function(c) c$header, character(1))
+    } else {
+      spec$header
+    }
+  }))
   achou_qualquer_var_lin <- apply(
     fluxo.bruto_t, 1,
     function(linha) {
       any(vapply(
-        variaveis_l, function(spec) any(cell_eq(linha, spec$header)),
+        headers_v, function(h) any(cell_eq(linha, h)),
         logical(1)
       ))
     }
@@ -234,34 +267,89 @@ e_viab_flx <- function(f_caminho_arquivo_c) {
 
   mes_v <- parse_mes(unlist(fluxo.bruto_t[inicio_n:fim_n, col_mes_n]))
 
-  # Extract one long tibble per variable, then bind them all together.
-  purrr::map_dfr(names(variaveis_l), function(nome_var_c) {
-    spec_l <- variaveis_l[[nome_var_c]]
-    # Find all candidate columns matching the variable's header.
-    candidatos_n <- which(cell_eq(linha_header_v, spec_l$header))
-    # Apply optional positional constraints.
-    if (length(candidatos_n) > 1 && !is.null(spec_l$after)) {
-      pos_after_n <- which(cell_eq(linha_header_v, spec_l$after))
+  # All rows above the header, each fill-forwarded across the row to
+  # propagate values from merged cells (readxl returns NA for non-leading
+  # cells of a merge). A spec's `above` regex matches a column if it
+  # matches the (filled-forward) value at that column in ANY row above.
+  linhas_acima_l <- if (linha_header_n > 1) {
+    lapply(seq_len(linha_header_n - 1), function(r) {
+      v <- as.character(unlist(fluxo.bruto_t[r, ]))
+      ultimo_c <- NA_character_
+      for (i in seq_along(v)) {
+        if (!is.na(v[i]) && nzchar(v[i])) {
+          ultimo_c <- v[i]
+        } else {
+          v[i] <- ultimo_c
+        }
+      }
+      v
+    })
+  } else {
+    list()
+  }
+
+  # Helper: given a sub-spec with $header (and optional $after/$before/$above),
+  # returns the matching column index in `linha_header_v`, or NA.
+  achar_coluna <- function(sub_spec_l) {
+    candidatos_n <- which(cell_eq(linha_header_v, sub_spec_l$header))
+    if (length(candidatos_n) > 1 && !is.null(sub_spec_l$after)) {
+      pos_after_n <- which(cell_eq(linha_header_v, sub_spec_l$after))
       if (length(pos_after_n) > 0) {
         candidatos_n <- candidatos_n[candidatos_n > min(pos_after_n)]
       }
     }
-    if (length(candidatos_n) > 1 && !is.null(spec_l$before)) {
-      pos_before_n <- which(cell_eq(linha_header_v, spec_l$before))
+    if (length(candidatos_n) > 1 && !is.null(sub_spec_l$before)) {
+      pos_before_n <- which(cell_eq(linha_header_v, sub_spec_l$before))
       if (length(pos_before_n) > 0) {
         candidatos_n <- candidatos_n[candidatos_n < max(pos_before_n)]
       }
     }
-    col_var_n <- candidatos_n[1]
-    if (is.na(col_var_n)) {
-      return(vazio_t)
+    if (length(candidatos_n) > 1 && !is.null(sub_spec_l$above)) {
+      bate_v <- vapply(candidatos_n, function(col_n) {
+        any(vapply(
+          linhas_acima_l,
+          function(linha_v) cell_eq(linha_v[col_n], sub_spec_l$above),
+          logical(1)
+        ))
+      }, logical(1))
+      candidatos_n <- candidatos_n[bate_v]
     }
-    valor_v <- suppressWarnings(
-      as.numeric(unlist(fluxo.bruto_t[inicio_n:fim_n, col_var_n]))
+    if (length(candidatos_n) == 0) NA_integer_ else candidatos_n[1]
+  }
+
+  # Helper: read a single data column as numeric (length = number of data rows)
+  ler_coluna <- function(col_n) {
+    suppressWarnings(
+      as.numeric(unlist(fluxo.bruto_t[inicio_n:fim_n, col_n]))
     )
+  }
+
+  # Extract one long tibble per variable, then bind them all together.
+  purrr::map_dfr(names(variaveis_l), function(nome_var_c) {
+    spec_l <- variaveis_l[[nome_var_c]]
+
+    # Single-column variable vs. multi-column (sum) variable.
+    if (!is.null(spec_l$components)) {
+      cols_n <- vapply(spec_l$components, achar_coluna, integer(1))
+      cols_n <- cols_n[!is.na(cols_n)]
+      if (length(cols_n) == 0) {
+        return(vazio_t)
+      }
+      # Row-wise sum across all found component columns; NAs treated as 0
+      # so a missing month in one component doesn't blank out the total.
+      valor_m <- vapply(cols_n, ler_coluna, numeric(fim_n - inicio_n + 1))
+      valor_v <- rowSums(valor_m, na.rm = TRUE)
+    } else {
+      col_var_n <- achar_coluna(spec_l)
+      if (is.na(col_var_n)) {
+        return(vazio_t)
+      }
+      valor_v <- ler_coluna(col_var_n)
+    }
+
     tibble(
       empreendimento = empreendimento_c,
-      variavel = if (is.null(spec_l$nome)) nome_var_c else spec_l$nome,
+      variavel = nome_var_c,
       mes = mes_v,
       valor = valor_v
     )
