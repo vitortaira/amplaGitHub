@@ -55,6 +55,27 @@ e_viab_def <- function(f_caminho_arquivo_c) {
     as.numeric() %>%
     round(2)
 
+  # Há duas linhas "Corretagem" na coluna `_3`. Queremos a que está
+  # abaixo de uma célula "Comercial" na MESMA coluna (`_3`). Espelha a
+  # semântica de `under` usada em `e_viab_flx`: a referência é a própria
+  # coluna do valor de interesse, propagada de cima para baixo.
+  Corretagem <- viab.original_t %>%
+    mutate(secao = `_3`) %>%
+    mutate(secao = dplyr::if_else(
+      str_starts(secao, "(?i)corretagem"),
+      NA_character_,
+      secao
+    )) %>%
+    tidyr::fill(secao, .direction = "down") %>%
+    filter(
+      str_starts(`_3`, "(?i)corretagem"),
+      str_detect(secao, "(?i)^comercial$")
+    ) %>%
+    pull(`_7`) %>%
+    .[1] %>%
+    as.numeric() %>%
+    round(2)
+
   `Despesas financeiras` <- viab.original_t %>%
     filter(str_detect(`_3`, "(?i)juros/desp\\s?com\\s?fin.*")) %>%
     pull(`_7`) %>%
@@ -105,6 +126,7 @@ e_viab_def <- function(f_caminho_arquivo_c) {
 
   tibble(
     "Construção" = Construção,
+    Corretagem = Corretagem,
     "Despesas financeiras" = `Despesas financeiras`,
     "Incorporação" = Incorporação,
     lucro.liquido = lucro.liquido,

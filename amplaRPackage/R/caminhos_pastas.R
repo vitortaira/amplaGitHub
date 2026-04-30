@@ -47,7 +47,7 @@ caminhos_pastas <- function(alias) {
       caminho.base_c, "Relatórios - Documentos", "Relatorios - Cobrança"
     ),
     dados = fs::path(
-      caminho.base_c, "Relatórios - Documentos", "Dados", "Originais"
+      caminho.base_c, "Relatórios - Documentos", "Vitor", "Bases de dados"
     ),
     extratos = fs::path(
       caminho.base_c, "Controladoria - Documentos",
@@ -57,15 +57,15 @@ caminhos_pastas <- function(alias) {
       caminho.base_c, "Financeiro - Documentos"
     ),
     fechamento = fs::path(
-      caminho.base_c, "Relatórios - Documentos", "Dados", "Fechamento"
+      caminho.base_c, "Relatórios - Documentos", "Vitor", "Relatórios"
     ),
     fechamento_in = fs::path(
-      caminho.base_c, "Relatórios - Documentos", "Dados",
-      "Fechamento", "Inputs"
+      caminho.base_c, "Relatórios - Documentos", "Vitor",
+      "Relatórios", "Inputs"
     ),
     fechamento_out = fs::path(
-      caminho.base_c, "Relatórios - Documentos", "Dados",
-      "Fechamento", "Outputs"
+      caminho.base_c, "Relatórios - Documentos", "Vitor",
+      "Relatórios", "Outputs"
     ),
     temp = fs::path(
       "C:", "Users", "Ampla", "OneDrive - AMPLA INCORPORADORA LTDA",

@@ -34,7 +34,7 @@ a_dados_rds_xlsx <- function(
   if (!dir.exists(f_caminho.pasta.dados_c)) {
     stop(
       str_c(
-        "A pasta '.../Relatórios - Documentos/Dados/Dados originais' ",
+        "A pasta '.../Relatórios - Documentos/Vitor/Bases de dados' ",
         "não foi encontrada."
       )
     )

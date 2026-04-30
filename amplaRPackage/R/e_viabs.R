@@ -194,12 +194,50 @@ e_viabs <- function(f_id_pasta_gdrive_c) {
         values_to = "def"
       )
 
+    # Em `def`, "Novos negócios" inclui terreno.permuta.fisica e "Vendas"
+    # inclui Corretagem; em `flx`, não. Subtrai-se para tornar as duas
+    # grandezas comparáveis. Usa-se summarise para garantir uma única
+    # linha por empreendimento e evitar duplicações no left_join.
+    permuta_t <- def_long_t %>%
+      dplyr::filter(variavel == "terreno.permuta.fisica") %>%
+      dplyr::group_by(empreendimento) %>%
+      dplyr::summarise(permuta = sum(def, na.rm = TRUE), .groups = "drop")
+
+    corretagem_t <- def_long_t %>%
+      dplyr::filter(variavel == "Corretagem") %>%
+      dplyr::group_by(empreendimento) %>%
+      dplyr::summarise(corretagem = sum(def, na.rm = TRUE), .groups = "drop")
+
+    def_long_t <- def_long_t %>%
+      dplyr::left_join(permuta_t, by = "empreendimento") %>%
+      dplyr::left_join(corretagem_t, by = "empreendimento") %>%
+      dplyr::mutate(
+        def = dplyr::case_when(
+          variavel == "Novos negócios" ~
+            def - dplyr::coalesce(permuta, 0),
+          variavel == "Vendas" ~
+            def - dplyr::coalesce(corretagem, 0),
+          TRUE ~ def
+        )
+      ) %>%
+      dplyr::select(-permuta, -corretagem)
+
     resultado_l$check <- def_long_t %>%
       dplyr::inner_join(
         flx_soma_t,
         by = c("empreendimento", "variavel")
       ) %>%
-      dplyr::mutate(diferenca = def - flx) %>%
+      dplyr::filter(variavel != "Unidades vendidas") %>%
+      dplyr::mutate(
+        diferenca = round(def - flx, 2),
+        diferenca.p = dplyr::if_else(
+          def == 0,
+          NA_real_,
+          round(diferenca / def * 100, 2)
+        ),
+        ok = !is.na(diferenca.p) & abs(diferenca.p) < 1
+      ) %>%
+      dplyr::distinct() %>%
       dplyr::arrange(empreendimento, variavel)
   }
 
