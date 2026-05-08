@@ -24,7 +24,7 @@
 #'
 #' @importFrom readxl read_excel
 #' @importFrom dplyr filter pull across everything mutate select
-#' @importFrom magrittr set_names
+#' @importFrom purrr set_names
 #' @importFrom stringr str_c str_squish str_starts str_detect
 #' @importFrom tibble tibble
 #' @importFrom lubridate parse_date_time
@@ -55,26 +55,30 @@ e_viab_def <- function(f_caminho_arquivo_c) {
     as.numeric() %>%
     round(2)
 
-  # Há duas linhas "Corretagem" na coluna `_3`. Queremos a que está
-  # abaixo de uma célula "Comercial" na MESMA coluna (`_3`). Espelha a
-  # semântica de `under` usada em `e_viab_flx`: a referência é a própria
-  # coluna do valor de interesse, propagada de cima para baixo.
-  Corretagem <- viab.original_t %>%
-    mutate(secao = `_3`) %>%
-    mutate(secao = dplyr::if_else(
-      str_starts(secao, "(?i)corretagem"),
-      NA_character_,
-      secao
-    )) %>%
-    tidyr::fill(secao, .direction = "down") %>%
-    filter(
-      str_starts(`_3`, "(?i)corretagem"),
-      str_detect(secao, "(?i)^comercial$")
-    ) %>%
-    pull(`_7`) %>%
-    .[1] %>%
-    as.numeric() %>%
-    round(2)
+  # Há duas linhas "Corretagem" na coluna `_3`. Queremos a que aparece
+  # abaixo de uma linha cujo conteúdo, em QUALQUER coluna, começa com
+  # "Vendas" (rótulo de seção que pode estar em coluna diferente da
+  # própria Corretagem).
+  vendas_em_linha_v <- vapply(seq_len(nrow(viab.original_t)), function(i) {
+    any(
+      str_starts(
+        as.character(unlist(viab.original_t[i, ])),
+        "(?i)vendas"
+      ),
+      na.rm = TRUE
+    )
+  }, logical(1))
+  apos_vendas_v <- cumsum(vendas_em_linha_v) > 0
+  eh_corretagem_v <- !is.na(viab.original_t$`_3`) &
+    str_starts(viab.original_t$`_3`, "(?i)corretagem")
+  candidatas_n <- which(eh_corretagem_v & apos_vendas_v)
+  Corretagem <- if (length(candidatas_n) == 0) {
+    NA_real_
+  } else {
+    viab.original_t$`_7`[candidatas_n[1]] %>%
+      as.numeric() %>%
+      round(2)
+  }
 
   `Despesas financeiras` <- viab.original_t %>%
     filter(str_detect(`_3`, "(?i)juros/desp\\s?com\\s?fin.*")) %>%

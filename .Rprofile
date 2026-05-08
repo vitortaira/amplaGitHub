@@ -1,5 +1,5 @@
 # Set locale and encoding to UTF-8
-suppressWarnings(Sys.setlocale("LC_ALL", "pt_BR.UTF-8"))
+invisible(suppressWarnings(Sys.setlocale("LC_ALL", "pt_BR.UTF-8")))
 # Sys.setenv(LANG = "pt_BR.UTF-8", R_POPPLER_QUIET = "TRUE")
 # options(encoding = "UTF-8", tidyverse.quiet = TRUE)
 options(warn = 0)
@@ -37,5 +37,4 @@ invisible(suppressMessages(suppressPackageStartupMessages(devtools::load_all(
   "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaRPackage"
 ))))
 
-# Display a startup message
-message("Custom .Rprofile loaded: LOCALE set to pt_BR.UTF-8 and packages loaded.")
+
