@@ -36,5 +36,3 @@ if (interactive() && Sys.getenv("RSTUDIO") == "") {
 invisible(suppressMessages(suppressPackageStartupMessages(devtools::load_all(
   "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaRPackage"
 ))))
-
-
