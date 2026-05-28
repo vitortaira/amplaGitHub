@@ -39,12 +39,15 @@
 #' @importFrom dplyr rename mutate select filter group_by summarise left_join
 #'   full_join bind_rows distinct arrange across slice_max ungroup any_of
 #'   everything first coalesce pick
-#' @importFrom tidyr complete pivot_wider
+#' @importFrom tidyr complete pivot_wider nesting
 #' @importFrom tidyselect where
 #' @importFrom stringr str_remove_all str_length str_sub str_detect str_c
 #'   str_replace word
 #' @importFrom lubridate floor_date ymd
 #' @importFrom magrittr %>% %<>%
+#' @importFrom openxlsx2 wb_load wb_to_df
+#' @importFrom tibble tibble
+#' @importFrom rlang .data sym
 #'
 #' @export
 r_fechamento <- function(xlsx = FALSE) {
@@ -632,6 +635,184 @@ r_fechamento <- function(xlsx = FALSE) {
       any_of(sort(names(.)[str_detect(names(.), "^\\d{4}-\\d{2}-\\d{2}$")]))
     )
 
+  # ── Tabela `mes`: indicadores agregados por mes/empresa ────────────────
+  # Substitui formulas pesadas que viviam em Template-Fechamento.xlsx.
+  # Para preservar `arquivo`, puxamos das fontes ORIGINAIS (cmfcns/rec/desp)
+  # em vez de rec.uni, cujo pivot_wider descarta `arquivo`.
+
+  # Lookup centro.negocio -> categoria, lido da named range `ik_viab`
+  # do Template-Fechamento.xlsx.
+  caminho_template_c <- file.path(
+    caminhos_pastas("templates"), "Template-Fechamento.xlsx"
+  )
+  wb_template <- openxlsx2::wb_load(caminho_template_c)
+  ik_viab_bruto <- openxlsx2::wb_to_df(
+    wb_template,
+    named_region = "ik_viab",
+    col_names    = FALSE
+  )
+  categoria_lookup <- tibble::tibble(
+    centro.negocio = as.character(ik_viab_bruto[[1]]),
+    categoria      = as.character(ik_viab_bruto[[2]])
+  ) %>%
+    dplyr::filter(!is.na(centro.negocio), nzchar(centro.negocio)) %>%
+    dplyr::distinct(centro.negocio, .keep_all = TRUE)
+
+  # Pares (nucleo, empresa) destacados, lidos da named range `empresas`
+  # do Template-Fechamento.xlsx. So estes alimentam a tabela `mes`.
+  empresas_bruto <- openxlsx2::wb_to_df(wb_template, named_region = "empresas")
+  destacados <- empresas_bruto %>%
+    rename_with(~ c("nucleo", "empresa", "destacado")[1:length(.x)]) %>%
+    dplyr::filter(isTRUE(as.logical(destacado)) | destacado == "TRUE") %>%
+    dplyr::transmute(
+      nucleo  = as.character(nucleo),
+      empresa = as.character(empresa)
+    ) %>%
+    dplyr::filter(!is.na(empresa), nzchar(empresa))
+
+  # Aplica o lookup nas despesas (sobrescreve a coluna `categoria` vazia
+  # que vem de e_ik_desp).
+  in.desp.cat <- in.desp %>%
+    select(-any_of("categoria")) %>%
+    left_join(categoria_lookup, by = "centro.negocio")
+
+  # Lookup empresa -> nucleo, derivado de in.desp (unica fonte que tem
+  # ambas as colunas confiavelmente). Em caso de divergencia, a primeira
+  # ocorrencia prevalece.
+  empresa_nucleo_lookup <- in.desp %>%
+    dplyr::filter(!is.na(empresa), !is.na(nucleo), nzchar(empresa)) %>%
+    dplyr::distinct(empresa, nucleo) %>%
+    dplyr::group_by(empresa) %>%
+    dplyr::slice(1) %>%
+    dplyr::ungroup()
+
+  # Agregador comum: agrega por (mes, <grupo>), somando valores e
+  # concatenando `arquivo` distintos por "; ". Garante que ambas as
+  # colunas (empresa, nucleo) estejam presentes no resultado:
+  #   - grupo = "empresa": nucleo e resolvido via lookup.
+  #   - grupo = "nucleo" : empresa fica NA (grao = nucleo).
+  agregar_mes <- function(dados_t, coluna_data, coluna_valor,
+                          variavel_c, fonte_c, grupo_c) {
+    grupo_sym <- rlang::sym(grupo_c)
+
+    base_t <- dados_t %>%
+      mutate(
+        .mes   = floor_date(.data[[coluna_data]], "month"),
+        .valor = as.numeric(.data[[coluna_valor]])
+      ) %>%
+      dplyr::filter(!is.na(.mes), !is.na(!!grupo_sym)) %>%
+      group_by(.mes, !!grupo_sym) %>%
+      summarise(
+        valor   = sum(.valor, na.rm = TRUE),
+        arquivo = paste(sort(unique(arquivo)), collapse = "; "),
+        .groups = "drop"
+      ) %>%
+      rename(mes = .mes)
+
+    base_t <- if (grupo_c == "empresa") {
+      base_t %>% left_join(empresa_nucleo_lookup, by = "empresa")
+    } else {
+      base_t %>% mutate(empresa = NA_character_)
+    }
+
+    base_t %>%
+      mutate(variavel = variavel_c, fonte = fonte_c) %>%
+      select(mes, empresa, nucleo, variavel, valor, fonte, arquivo)
+  }
+
+  placeholder_mes <- function(variavel_c, fonte_c) {
+    tibble::tibble(
+      mes      = as.Date(character()),
+      empresa  = character(),
+      nucleo   = character(),
+      variavel = variavel_c,
+      valor    = numeric(),
+      fonte    = fonte_c,
+      arquivo  = character()
+    )
+  }
+
+  # Apara zeros das pontas (leading/trailing) e preenche meses internos
+  # com 0 — produzindo uma serie temporal continua e enxuta por grupo.
+  aparar_e_completar <- function(g, key) {
+    if (nrow(g) == 0) return(g)
+    g <- g %>% arrange(mes)
+    nz <- which(!is.na(g$valor) & g$valor != 0)
+    if (length(nz) == 0) return(g[0, ])
+    g <- g[min(nz):max(nz), ]
+    meses_v <- seq(min(g$mes), max(g$mes), by = "month")
+    tibble::tibble(mes = meses_v) %>%
+      dplyr::left_join(g, by = "mes") %>%
+      dplyr::mutate(valor = dplyr::coalesce(valor, 0))
+  }
+
+  in.mes <- bind_rows(
+    in.cmfcns %>%
+      dplyr::filter(natureza == "repasse.cef.obra") %>%
+      agregar_mes(
+        "data.movimento", "valor",
+        "Repasse CEF obra", "CEF", "empresa"
+      ),
+    in.cmfcns %>%
+      dplyr::filter(natureza == "repasse.cef.terreno") %>%
+      agregar_mes(
+        "data.movimento", "valor",
+        "Repasse CEF terreno", "CEF", "empresa"
+      ),
+    in.desp.cat %>%
+      dplyr::filter(categoria == "Constru\u00e7\u00e3o") %>%
+      agregar_mes(
+        "data.pagamento", "valor",
+        "Constru\u00e7\u00e3o", "Informakon", "nucleo"
+      ),
+    in.desp.cat %>%
+      dplyr::filter(categoria == "Despesas financeiras") %>%
+      agregar_mes(
+        "data.pagamento", "valor",
+        "Despesas financeiras", "Informakon", "nucleo"
+      ),
+    placeholder_mes("Empr\u00e9stimo CEF PJ", "CEF"),
+    in.desp.cat %>%
+      dplyr::filter(categoria == "Incorpora\u00e7\u00e3o") %>%
+      agregar_mes(
+        "data.pagamento", "valor",
+        "Incorpora\u00e7\u00e3o", "Informakon", "nucleo"
+      ),
+    in.desp.cat %>%
+      dplyr::filter(categoria == "Novos neg\u00f3cios") %>%
+      agregar_mes(
+        "data.pagamento", "valor",
+        "Novos neg\u00f3cios", "Informakon", "nucleo"
+      ),
+    in.rec %>%
+      dplyr::filter(natureza %in% c("pro.soluto", "taxa.extra")) %>%
+      agregar_mes(
+        "data.base", "total",
+        "Pr\u00f3 soluto + Taxa extra", "Informakon", "empresa"
+      ),
+    placeholder_mes("Unidades vendidas", "Anapro"),
+    in.desp.cat %>%
+      dplyr::filter(categoria == "Vendas") %>%
+      agregar_mes(
+        "data.pagamento", "valor",
+        "Vendas", "Informakon", "nucleo"
+      )
+  ) %>%
+    # Manter apenas empresas/nucleos destacados no Template-Fechamento.
+    # Linhas de grao empresa (CEF/rec) sao filtradas por empresa; de
+    # grao nucleo (desp), por nucleo.
+    dplyr::filter(
+      (!is.na(empresa) & empresa %in% destacados$empresa) |
+        (is.na(empresa) & nucleo %in% destacados$nucleo)
+    ) %>%
+    # Serie temporal continua por (empresa, nucleo, variavel), aparada
+    # nas pontas (sem leading/trailing zeros) e com gaps internos = 0.
+    dplyr::group_by(empresa, nucleo, variavel, fonte) %>%
+    dplyr::group_modify(aparar_e_completar) %>%
+    dplyr::ungroup() %>%
+    select(mes, empresa, nucleo, variavel, valor, fonte, arquivo) %>%
+    arrange(variavel, nucleo, empresa, mes)
+
   msg("Fase 4 concluida.")
 
   if (xlsx) {
@@ -641,6 +822,7 @@ r_fechamento <- function(xlsx = FALSE) {
         rec = in.rec,
         rec.uni = rec.uni,
         unis.cruzado = in.unis.cruzado,
+        mes = in.mes,
         contr = in.contr,
         desp = in.desp,
         ecns = in.ecns,
@@ -652,6 +834,7 @@ r_fechamento <- function(xlsx = FALSE) {
         rec = "darkgray",
         rec.uni = "darkgray",
         unis.cruzado = "darkgray",
+        mes = "darkgray",
         contr = "white",
         desp = "white",
         ecns = "white",
@@ -729,6 +912,7 @@ r_fechamento <- function(xlsx = FALSE) {
     cef.mensal = in.cef.mensal,
     cmfcn.xcef = in.cmfcn.xcef,
     cmfcn.xcef.mensal = in.cmfcn.xcef.mensal,
+    mes = in.mes,
     rec = in.rec,
     rec.uni = rec.uni,
     unis.cruzado = in.unis.cruzado,
