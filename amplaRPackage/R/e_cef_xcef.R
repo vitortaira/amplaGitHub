@@ -144,16 +144,19 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
     produto <- excel_sheets(f_caminho.arquivo_c)[1] %>%
       str_sub(6, 9)
     extrato_t <- read_excel(f_caminho.arquivo_c, skip = 1) %>%
-      rename(
-        data.lancamento = `Data Lançamento`,
-        data.movimentacao = `Data Movimento`,
-        documento = `Documento`,
-        descricao = `Histórico`,
-        valor = `Valor Lançamento`,
-        saldo = `Saldo`,
-        cpf.cnpj = `CPF/CNPJ`,
-        nome.razao = `Nome/Razão Social`
-      ) %>%
+      # Renomear por regex: alguns extratos da CEF vem sem acentuacao
+      # (ex.: "Data Lancamento" no lugar de "Data Lançamento").
+      rename_with(~ dplyr::case_when(
+        str_detect(.x, "(?i)^data\\s?lan[cç]amento$") ~ "data.lancamento",
+        str_detect(.x, "(?i)^data\\s?movimento$") ~ "data.movimentacao",
+        str_detect(.x, "(?i)^documento$") ~ "documento",
+        str_detect(.x, "(?i)^hist[oó]rico$") ~ "descricao",
+        str_detect(.x, "(?i)^valor\\s?lan[cç]amento$") ~ "valor",
+        str_detect(.x, "(?i)^saldo$") ~ "saldo",
+        str_detect(.x, "(?i)^cpf/?cnpj$") ~ "cpf.cnpj",
+        str_detect(.x, "(?i)^nome/?raz[aã]o\\s?social$") ~ "nome.razao",
+        TRUE ~ .x
+      )) %>%
       mutate(
         # Converter datas de datetime para Date
         data.lancamento = case_when(
@@ -166,8 +169,17 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
           is.character(data.movimentacao) ~ as.Date(data.movimentacao, format = "%d/%m/%Y"),
           TRUE ~ as.Date(NA)
         ),
-        valor = as.numeric(valor),
-        saldo = as.numeric(saldo),
+        # Linhas de cabecalho/totalizador (ex.: "Saldo anterior") vem
+        # como texto e geram NA na coercao — comportamento esperado, ja
+        # que essas linhas sao filtradas adiante. Alguns extratos trazem
+        # numeros no formato BR ("9.024,13"), que tambem precisam ser
+        # normalizados antes de as.numeric().
+        valor = suppressWarnings(as.numeric(
+          str_replace(str_remove_all(as.character(valor), "\\."), ",", ".")
+        )),
+        saldo = suppressWarnings(as.numeric(
+          str_replace(str_remove_all(as.character(saldo), "\\."), ",", ".")
+        )),
         # Garantir que outras colunas sejam character também
         documento = as.character(documento),
         descricao = as.character(descricao),
@@ -181,9 +193,9 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
         produto = produto,
         cnpj = cpf.cnpj,
         empresa = case_when(
-          # Tentar extrair da estrutura de diretórios (padrão esperado)
-          !is.na(str_extract(f_caminho.arquivo_c, "(?<=/)[A-Z0-9]{3}(?=/)")) ~
-            str_extract(f_caminho.arquivo_c, "(?<=/)[A-Z0-9]{3}(?=/)"),
+          # Tentar extrair da estrutura de diretórios (aceita / ou \)
+          !is.na(str_extract(f_caminho.arquivo_c, "(?<=[/\\\\])[A-Z]{3}(?=[/\\\\])")) ~
+            str_extract(f_caminho.arquivo_c, "(?<=[/\\\\])[A-Z]{3}(?=[/\\\\])"),
           # Como fallback, usar os primeiros 3 caracteres de nome.razao
           !is.na(nome.razao) ~ str_sub(nome.razao, 1, 3),
           # Último fallback: usar conta.interno

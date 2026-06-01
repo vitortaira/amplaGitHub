@@ -31,25 +31,40 @@ encontrar_combinacao <- function(alvo, valores) {
 #'
 #' Primeiro tenta correspondências exatas 1:1. Para valores restantes,
 #' busca subconjuntos de cmfcns cuja soma corresponde ao valor do extrato.
+#' As datas dos lançamentos podem divergir em até \code{tolerancia_dias}
+#' (padrão 3) para acomodar defasagens entre as duas fontes.
 #'
 #' @param ext_vals Vetor numérico de valores dos extratos.
 #' @param cmf_vals Vetor numérico de valores dos CMF_CNs.
+#' @param ext_datas Vetor de datas (Date) dos extratos.
+#' @param cmf_datas Vetor de datas (Date) dos CMF_CNs.
+#' @param tolerancia_dias Inteiro. Diferença máxima permitida em dias entre
+#'   as datas dos extratos e dos CMF_CNs. Padrão 3.
 #' @return Lista de listas com campos \code{ext} (índice do extrato),
 #'   \code{cmf} (índice do cmfcn) e \code{tipo} ("exato" ou "combinado").
 #' @keywords internal
-cruzar_grupo <- function(ext_vals, cmf_vals) {
+cruzar_grupo <- function(ext_vals, cmf_vals,
+                         ext_datas, cmf_datas,
+                         tolerancia_dias = 3) {
   n_ext <- length(ext_vals)
   n_cmf <- length(cmf_vals)
   ext_usado <- logical(n_ext)
   cmf_usado <- logical(n_cmf)
   pares <- list()
 
-  # Passo 1: correspondências exatas 1:1
+  # Verifica se a diferença em dias está dentro da tolerância
+  datas_proximas <- function(d1, d2) {
+    if (is.na(d1) || is.na(d2)) return(FALSE)
+    abs(as.numeric(difftime(d1, d2, units = "days"))) <= tolerancia_dias
+  }
+
+  # Passo 1: correspondências exatas 1:1 (valor igual + datas próximas)
   for (i in seq_len(n_ext)) {
     for (j in seq_len(n_cmf)) {
       if (!ext_usado[i] && !cmf_usado[j] &&
         !is.na(ext_vals[i]) && !is.na(cmf_vals[j]) &&
-        abs(ext_vals[i] - cmf_vals[j]) < 0.005) {
+        abs(ext_vals[i] - cmf_vals[j]) < 0.005 &&
+        datas_proximas(ext_datas[i], cmf_datas[j])) {
         ext_usado[i] <- TRUE
         cmf_usado[j] <- TRUE
         pares <- c(pares, list(list(ext = i, cmf = j, tipo = "exato")))
@@ -58,13 +73,21 @@ cruzar_grupo <- function(ext_vals, cmf_vals) {
     }
   }
 
-  # Passo 2: combinações (subset-sum) para restantes
+  # Passo 2: combinações (subset-sum) para restantes; todos os CMFs do
+  # subconjunto precisam estar dentro da tolerância da data do extrato
   cmf_livres <- which(!cmf_usado)
   for (i in which(!ext_usado)) {
     if (length(cmf_livres) == 0) break
-    idx <- encontrar_combinacao(ext_vals[i], cmf_vals[cmf_livres])
+    proximos <- vapply(
+      cmf_livres,
+      \(j) datas_proximas(ext_datas[i], cmf_datas[j]),
+      logical(1)
+    )
+    cmf_candidatos <- cmf_livres[proximos]
+    if (length(cmf_candidatos) == 0) next
+    idx <- encontrar_combinacao(ext_vals[i], cmf_vals[cmf_candidatos])
     if (length(idx) > 0) {
-      cmf_sel <- cmf_livres[idx]
+      cmf_sel <- cmf_candidatos[idx]
       for (j in cmf_sel) {
         pares <- c(pares, list(list(ext = i, cmf = j, tipo = "combinado")))
       }
@@ -165,24 +188,19 @@ r_xcef <-
     extratos_t$.id_ext <- seq_len(nrow(extratos_t))
     cmfcns_t$.id_cmf <- seq_len(nrow(cmfcns_t))
 
-    # Chave de agrupamento (empresa + contrato + data)
+    # Chave de agrupamento (empresa + contrato). A data é tratada com
+    # tolerância de 3 dias dentro de cruzar_grupo() para acomodar
+    # defasagens entre as fontes (ex.: lançamento em 31/12 no extrato
+    # vs. 03/01 no CMF_CN).
     chave_ext <- ifelse(
-      is.na(extratos_t$empresa) | is.na(extratos_t$contrato.5) |
-        is.na(extratos_t$data.movimentacao),
+      is.na(extratos_t$empresa) | is.na(extratos_t$contrato.5),
       NA_character_,
-      paste(extratos_t$empresa, extratos_t$contrato.5,
-        extratos_t$data.movimentacao,
-        sep = "|"
-      )
+      paste(extratos_t$empresa, extratos_t$contrato.5, sep = "|")
     )
     chave_cmf <- ifelse(
-      is.na(cmfcns_t$empresa) | is.na(cmfcns_t$contrato.5) |
-        is.na(cmfcns_t$data.movimento),
+      is.na(cmfcns_t$empresa) | is.na(cmfcns_t$contrato.5),
       NA_character_,
-      paste(cmfcns_t$empresa, cmfcns_t$contrato.5,
-        cmfcns_t$data.movimento,
-        sep = "|"
-      )
+      paste(cmfcns_t$empresa, cmfcns_t$contrato.5, sep = "|")
     )
 
     # Encontrar pares por grupo
@@ -194,8 +212,11 @@ r_xcef <-
       ext_idx <- which(chave_ext == g)
       cmf_idx <- which(chave_cmf == g)
       matches <- cruzar_grupo(
-        extratos_t$valor[ext_idx],
-        cmfcns_t$valor[cmf_idx]
+        ext_vals  = extratos_t$valor[ext_idx],
+        cmf_vals  = cmfcns_t$valor[cmf_idx],
+        ext_datas = extratos_t$data.movimentacao[ext_idx],
+        cmf_datas = cmfcns_t$data.movimento[cmf_idx],
+        tolerancia_dias = 3
       )
       if (length(matches) == 0) {
         return(NULL)
@@ -212,7 +233,7 @@ r_xcef <-
       cols_sufixo <- c("natureza", "data.lancamento", "arquivo", "valor")
       ext_parte <- extratos_t[pares_t$.id_ext, ]
       cmf_parte <- cmfcns_t[pares_t$.id_cmf, ] %>%
-        select(-empresa, -contrato.5, -data.movimento, -.id_cmf)
+        select(-empresa, -contrato.5, -.id_cmf)
       names(ext_parte) <- ifelse(
         names(ext_parte) %in% cols_sufixo,
         paste0(names(ext_parte), ".xcef"),
@@ -314,7 +335,8 @@ r_xcef <-
         }
       ) %>%
       select(
-        contrato.5, data.movimentacao, valor.extrato, valor.cmfcn, empresa,
+        contrato.5, data.movimentacao, data.movimento, valor.extrato,
+        valor.cmfcn, empresa,
         nome.mutuario, tipo.cruzamento, natureza.extrato, conta.interno,
         all_of(c(col_soma_xcef, col_soma_cmfcn)), checar,
         data.lancamento.extrato, documento, descricao, saldo, conta, agencia,
@@ -366,6 +388,7 @@ r_xcef <-
       # Colunas com largura automática ajustada ao conteúdo
       colunas_auto <- c(
         "data.movimentacao",
+        "data.movimento",
         "data.lancamento.extrato",
         "descricao",
         "data.lancamento.cmfcn",
@@ -431,6 +454,7 @@ r_xcef <-
           "data.consulta" = list(colour = "red", font_colour = "white", font_size = 12),
           # Blue headers with white font
           "contrato" = list(colour = "blue", font_colour = "white", font_size = 12),
+          "data.movimento" = list(colour = "blue", font_colour = "white", font_size = 12),
           "data.lancamento.cmfcn" = list(colour = "blue", font_colour = "white", font_size = 12),
           "lancamentos" = list(colour = "blue", font_colour = "white", font_size = 12),
           "np" = list(colour = "blue", font_colour = "white", font_size = 12),
