@@ -45,10 +45,20 @@ e_cef_eprs <- function() {
   for (
     i_caminho.cef.epr_c in caminhos.epr.recentes_c
   ) {
-    eprs_l[[i_caminho.cef.epr_c]] <-
-      e_cef_epr(i_caminho.cef.epr_c)
-    eprs_t <-
-      bind_rows(eprs_t, eprs_l[[i_caminho.cef.epr_c]])
+    epr <- tryCatch(
+      e_cef_epr(i_caminho.cef.epr_c),
+      error = function(e) {
+        message(sprintf(
+          "Falha ao extrair EPR: %s | erro: %s",
+          basename(i_caminho.cef.epr_c), conditionMessage(e)
+        ))
+        NULL
+      }
+    )
+    if (!is.null(epr) && nrow(epr) > 0) {
+      eprs_l[[i_caminho.cef.epr_c]] <- epr
+      eprs_t <- bind_rows(eprs_t, epr)
+    }
   }
   eprs_t %<>% distinct(across(-arquivo), .keep_all = TRUE) %>%
     as_tibble() %>%

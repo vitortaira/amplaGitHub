@@ -77,10 +77,20 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
   cmfcns_l <- list()
   cmfcns_t <- data.frame()
   for (i_caminho.cmfcn_c in caminhos.cmfcn.recentes_c) {
-    cmfcns_l[[i_caminho.cmfcn_c]] <-
-      e_cef_cmfcn(i_caminho.cmfcn_c)
-    cmfcns_t <-
-      bind_rows(cmfcns_t, cmfcns_l[[i_caminho.cmfcn_c]])
+    cmfcn <- tryCatch(
+      e_cef_cmfcn(i_caminho.cmfcn_c),
+      error = function(e) {
+        message(sprintf(
+          "Falha ao extrair CMF_CN: %s | erro: %s",
+          basename(i_caminho.cmfcn_c), conditionMessage(e)
+        ))
+        NULL
+      }
+    )
+    if (!is.null(cmfcn) && nrow(cmfcn) > 0) {
+      cmfcns_l[[i_caminho.cmfcn_c]] <- cmfcn
+      cmfcns_t <- bind_rows(cmfcns_t, cmfcn)
+    }
   }
   cmfcns_t %<>%
     mutate(
