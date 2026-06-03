@@ -193,9 +193,13 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
         produto = produto,
         cnpj = cpf.cnpj,
         empresa = case_when(
-          # Tentar extrair da estrutura de diretórios (aceita / ou \)
-          !is.na(str_extract(f_caminho.arquivo_c, "(?<=[/\\\\])[A-Z]{3}(?=[/\\\\])")) ~
-            str_extract(f_caminho.arquivo_c, "(?<=[/\\\\])[A-Z]{3}(?=[/\\\\])"),
+          # Tentar extrair da estrutura de diretórios (aceita / ou \).
+          # Aceita códigos como "AMP", "AVS", "GRA" (3 letras) e também
+          # "SN2", "SN4" (2 letras + 1 dígito).
+          !is.na(str_extract(f_caminho.arquivo_c,
+            "(?<=[/\\\\])[A-Z]{2}[A-Z0-9](?=[/\\\\])")) ~
+            str_extract(f_caminho.arquivo_c,
+              "(?<=[/\\\\])[A-Z]{2}[A-Z0-9](?=[/\\\\])"),
           # Como fallback, usar os primeiros 3 caracteres de nome.razao
           !is.na(nome.razao) ~ str_sub(nome.razao, 1, 3),
           # Último fallback: usar conta.interno
