@@ -241,5 +241,60 @@ e_viabs <- function(f_id_pasta_gdrive_c) {
       dplyr::arrange(empreendimento, variavel)
   }
 
+  # Transforma flx: adiciona fonte e padroniza empreendimento -> empresa
+  if ("flx" %in% names(resultado_l)) {
+    resultado_l$flx <- resultado_l$flx %>%
+      dplyr::mutate(
+        fonte = "Viabilidade",
+        empresa = dplyr::case_when(
+          stringr::str_detect(
+            empreendimento, "(?i)jardim\\s?prud[eê]ncia"
+          ) ~ "AMP",
+          stringr::str_detect(
+            empreendimento, "(?i)campo\\s?belo"
+          ) ~ "CBL",
+          stringr::str_detect(
+            empreendimento, "(?i)caxingui"
+          ) ~ "CXG",
+          stringr::str_detect(
+            empreendimento, "(?i)select"
+          ) ~ "GRA",
+          stringr::str_detect(
+            empreendimento, "(?i)jurupit[eé]"
+          ) ~ "JRP",
+          stringr::str_detect(
+            empreendimento, "(?i)jd\\s?s[aã]o\\s?paulo"
+          ) ~ "JSP",
+          stringr::str_detect(
+            empreendimento, "(?i)s[aã]o\\s?lucas"
+          ) ~ "LUC",
+          stringr::str_detect(
+            empreendimento, "(?i)parada\\s?inglesa"
+          ) ~ "PDI",
+          stringr::str_detect(
+            empreendimento, "(?i)up\\s?pompeia"
+          ) ~ "POM",
+          stringr::str_detect(
+            empreendimento, "(?i)up\\s?sa[uú]de"
+          ) ~ "SAU",
+          stringr::str_detect(
+            empreendimento, "(?i)ta\\s?bibiana"
+          ) ~ "SBB",
+          stringr::str_detect(
+            empreendimento, "(?i)esta[cç][aã]o\\s?vila\\s?s[oô]nia"
+          ) ~ "SN2",
+          stringr::str_detect(
+            empreendimento, "(?i)up\\s?move"
+          ) ~ "SN4",
+          stringr::str_detect(
+            empreendimento, "(?i)socorro"
+          ) ~ "SOC",
+          TRUE ~ NA_character_
+        )
+      ) %>%
+      dplyr::select(-empreendimento) %>%
+      dplyr::relocate(empresa, variavel, mes, valor, fonte)
+  }
+
   resultado_l
 }
