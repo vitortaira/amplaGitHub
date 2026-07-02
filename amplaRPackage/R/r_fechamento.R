@@ -668,7 +668,7 @@ r_fechamento <- function(xlsx = FALSE) {
   # Para preservar `arquivo`, puxamos das fontes ORIGINAIS (cmfcns/rec/desp)
   # em vez de rec.uni, cujo pivot_wider descarta `arquivo`.
 
-  # Lookup centro.negocio -> categoria, lido da named range `ik.viab`
+  # Lookup centro.negocio -> categoria, lido da named range `tb_ik_viab`
   # do Template-Fechamento.xlsx.
   caminho_template_c <- file.path(
     caminhos_pastas("templates"), "Template-Fechamento.xlsx"
@@ -676,7 +676,7 @@ r_fechamento <- function(xlsx = FALSE) {
   wb_template <- openxlsx2::wb_load(caminho_template_c)
   ikViabBruto <- openxlsx2::wb_to_df(
     wb_template,
-    named_region = "ik.viab",
+    named_region = "tb_ik_viab",
     col_names    = FALSE
   )
   categoria_lookup <- tibble::tibble(
@@ -989,7 +989,7 @@ r_fechamento <- function(xlsx = FALSE) {
       ),
       col_formulas = list(
         desp = list(
-          categoria = "VLOOKUP([@[centro.negocio]],ik.viab,2)"
+          categoria = "VLOOKUP([@[centro.negocio]],tb_ik_viab,2)"
         )
       ),
       col_width_spec = c(
