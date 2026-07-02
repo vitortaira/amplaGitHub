@@ -135,6 +135,12 @@ r_fechamento <- function(xlsx = FALSE) {
     },
     seed = TRUE
   )
+  fut_empr <- future::future(
+    {
+      e_ik_empr()
+    },
+    seed = TRUE
+  )
 
   in.estq <- future::value(fut_estq)
   .cache_ecns <- future::value(fut_ecns)
@@ -145,6 +151,7 @@ r_fechamento <- function(xlsx = FALSE) {
   .cache_xcefs <- future::value(fut_xcefs)
   .cache_eprs <- future::value(fut_eprs)
   .cache_nplpjs <- future::value(fut_nplpjs)
+  in.empr <- future::value(fut_empr)
 
   msg("Fase 1 concluida.")
 
@@ -608,17 +615,38 @@ r_fechamento <- function(xlsx = FALSE) {
     arrange(empresa, contrato, natureza) %>%
     rename(soma.meses = total)
 
+  in.unis.cruzado.join <- in.unis.cruzado
+
+  colunas.preco.tabela_c <- intersect(
+    c("Preço Tab.", "Tab. Preço", "Tab. Preço Atual", "tab.preco"),
+    names(in.unis.cruzado.join)
+  )
+  if (length(colunas.preco.tabela_c) > 0) {
+    in.unis.cruzado.join$preco.tabela <- suppressWarnings(
+      as.numeric(in.unis.cruzado.join[[colunas.preco.tabela_c[[1]]]])
+    )
+  } else {
+    in.unis.cruzado.join$preco.tabela <- NA_real_
+  }
+
+  colunas.situacao.ana_c <- intersect(
+    c("Status", "situacao.ana", "situacao"),
+    names(in.unis.cruzado.join)
+  )
+  if (length(colunas.situacao.ana_c) > 0) {
+    in.unis.cruzado.join$situacao.ana <-
+      as.character(in.unis.cruzado.join[[colunas.situacao.ana_c[[1]]]])
+  } else {
+    in.unis.cruzado.join$situacao.ana <- NA_character_
+  }
+
   rec.uni %<>% bind_rows(
     in.cef.detalhado %>%
       arrange(empresa, id, natureza)
   ) %>%
     # Adicionar colunas do R9 (Ana)
     left_join(
-      in.unis.cruzado %>%
-        rename(
-          preco.tabela = `Preço Tab.`,
-          situacao.ana = Status
-        ) %>%
+      in.unis.cruzado.join %>%
         select(id, situacao.ana, valor.venda.ana, preco.tabela) %>%
         distinct(),
       by = "id"
@@ -635,31 +663,31 @@ r_fechamento <- function(xlsx = FALSE) {
       any_of(sort(names(.)[str_detect(names(.), "^\\d{4}-\\d{2}-\\d{2}$")]))
     )
 
-  # ── Tabela `mes`: indicadores agregados por mes/empresa ────────────────
+  # ── Tabela `m.vb`: indicadores agregados por mes/empresa ─────────
   # Substitui formulas pesadas que viviam em Template-Fechamento.xlsx.
   # Para preservar `arquivo`, puxamos das fontes ORIGINAIS (cmfcns/rec/desp)
   # em vez de rec.uni, cujo pivot_wider descarta `arquivo`.
 
-  # Lookup centro.negocio -> categoria, lido da named range `ik_viab`
+  # Lookup centro.negocio -> categoria, lido da named range `ik.viab`
   # do Template-Fechamento.xlsx.
   caminho_template_c <- file.path(
     caminhos_pastas("templates"), "Template-Fechamento.xlsx"
   )
   wb_template <- openxlsx2::wb_load(caminho_template_c)
-  ik_viab_bruto <- openxlsx2::wb_to_df(
+  ikViabBruto <- openxlsx2::wb_to_df(
     wb_template,
-    named_region = "ik_viab",
+    named_region = "ik.viab",
     col_names    = FALSE
   )
   categoria_lookup <- tibble::tibble(
-    centro.negocio = as.character(ik_viab_bruto[[1]]),
-    categoria      = as.character(ik_viab_bruto[[2]])
+    centro.negocio = as.character(ikViabBruto[[1]]),
+    categoria      = as.character(ikViabBruto[[2]])
   ) %>%
     dplyr::filter(!is.na(centro.negocio), nzchar(centro.negocio)) %>%
     dplyr::distinct(centro.negocio, .keep_all = TRUE)
 
   # Pares (nucleo, empresa) destacados, lidos da named range `empresas`
-  # do Template-Fechamento.xlsx. So estes alimentam a tabela `mes`.
+  # do Template-Fechamento.xlsx. So estes alimentam a tabela `m.vb`.
   empresas_bruto <- openxlsx2::wb_to_df(wb_template, named_region = "empresas")
   destacados <- empresas_bruto %>%
     rename_with(~ c("nucleo", "empresa", "destacado")[1:length(.x)]) %>%
@@ -676,15 +704,37 @@ r_fechamento <- function(xlsx = FALSE) {
     select(-any_of("categoria")) %>%
     left_join(categoria_lookup, by = "centro.negocio")
 
-  # Lookup empresa -> nucleo, derivado de in.desp (unica fonte que tem
-  # ambas as colunas confiavelmente). Em caso de divergencia, a primeira
-  # ocorrencia prevalece.
-  empresa_nucleo_lookup <- in.desp %>%
-    dplyr::filter(!is.na(empresa), !is.na(nucleo), nzchar(empresa)) %>%
-    dplyr::distinct(empresa, nucleo) %>%
+  # Lookup empresa -> nucleo, derivado de in.empr (fonte oficial de
+  # empreendimentos). Em caso de divergencia, a primeira ocorrencia
+  # prevalece. Fallback para in.desp se in.empr nao trouxer o par.
+  empresa_nucleo_lookup <- dplyr::bind_rows(
+    in.empr %>%
+      dplyr::filter(!is.na(empresa), !is.na(nucleo), nzchar(empresa)) %>%
+      dplyr::distinct(empresa, nucleo),
+    in.desp %>%
+      dplyr::filter(!is.na(empresa), !is.na(nucleo), nzchar(empresa)) %>%
+      dplyr::distinct(empresa, nucleo)
+  ) %>%
     dplyr::group_by(empresa) %>%
     dplyr::slice(1) %>%
     dplyr::ungroup()
+
+  # Lookup reverso nucleo -> empresa, restringido aos pares destacados
+  # do Template-Fechamento. Como um nucleo pode ter varias empresas,
+  # o template define qual empresa "principal" representa o nucleo na
+  # tabela `m.vb`. Fallback: primeira empresa do nucleo em in.empr.
+  nucleo_empresa_lookup <- dplyr::bind_rows(
+    destacados %>%
+      dplyr::filter(!is.na(nucleo), !is.na(empresa), nzchar(nucleo)) %>%
+      dplyr::distinct(nucleo, empresa),
+    in.empr %>%
+      dplyr::filter(!is.na(empresa), !is.na(nucleo), nzchar(nucleo)) %>%
+      dplyr::distinct(nucleo, empresa)
+  ) %>%
+    dplyr::group_by(nucleo) %>%
+    dplyr::slice(1) %>%
+    dplyr::ungroup() %>%
+    dplyr::rename(empresa.lookup = empresa)
 
   # Agregador comum: agrega por (mes, <grupo>), somando valores e
   # concatenando `arquivo` distintos por "; ". Garante que ambas as
@@ -735,10 +785,14 @@ r_fechamento <- function(xlsx = FALSE) {
   # Apara zeros das pontas (leading/trailing) e preenche meses internos
   # com 0 — produzindo uma serie temporal continua e enxuta por grupo.
   aparar_e_completar <- function(g, key) {
-    if (nrow(g) == 0) return(g)
+    if (nrow(g) == 0) {
+      return(g)
+    }
     g <- g %>% arrange(mes)
     nz <- which(!is.na(g$valor) & g$valor != 0)
-    if (length(nz) == 0) return(g[0, ])
+    if (length(nz) == 0) {
+      return(g[0, ])
+    }
     g <- g[min(nz):max(nz), ]
     meses_v <- seq(min(g$mes), max(g$mes), by = "month")
     tibble::tibble(mes = meses_v) %>%
@@ -746,7 +800,46 @@ r_fechamento <- function(xlsx = FALSE) {
       dplyr::mutate(valor = dplyr::coalesce(valor, 0))
   }
 
-  in.mes <- bind_rows(
+  pos_processar_desp_mensal <- function(dados_t, filtrar_destacados = TRUE) {
+    if (filtrar_destacados) {
+      dados_t <- dados_t %>%
+        # Manter apenas empresas/nucleos destacados no Template-Fechamento.
+        # Linhas de grao empresa sao filtradas por empresa; de
+        # grao nucleo, por nucleo.
+        dplyr::filter(
+          (!is.na(empresa) & empresa %in% destacados$empresa) |
+            (is.na(empresa) & nucleo %in% destacados$nucleo)
+        )
+    }
+    dados_t %>%
+      # Preencher celulas vazias em empresa/nucleo cruzando com in.empr:
+      # - linhas de grao nucleo ficam com empresa NA: preencher via
+      #   nucleo_empresa_lookup (empresa principal do nucleo).
+      # - linhas de grao empresa ja recebem nucleo via empresa_nucleo_lookup
+      #   no agregar_mes(); reforcamos aqui caso algum par tenha escapado.
+      dplyr::left_join(nucleo_empresa_lookup, by = "nucleo") %>%
+      dplyr::mutate(
+        empresa = dplyr::coalesce(empresa, empresa.lookup)
+      ) %>%
+      dplyr::select(-empresa.lookup) %>%
+      dplyr::left_join(
+        empresa_nucleo_lookup %>% dplyr::rename(nucleo.lookup = nucleo),
+        by = "empresa"
+      ) %>%
+      dplyr::mutate(
+        nucleo = dplyr::coalesce(nucleo, nucleo.lookup)
+      ) %>%
+      dplyr::select(-nucleo.lookup) %>%
+      # Serie temporal continua por (empresa, nucleo, variavel), aparada
+      # nas pontas (sem leading/trailing zeros) e com gaps internos = 0.
+      dplyr::group_by(empresa, nucleo, variavel, fonte) %>%
+      dplyr::group_modify(aparar_e_completar) %>%
+      dplyr::ungroup() %>%
+      dplyr::select(mes, empresa, nucleo, variavel, valor, fonte, arquivo) %>%
+      dplyr::arrange(variavel, nucleo, empresa, mes)
+  }
+
+  in.m.vb <- bind_rows(
     in.cmfcns %>%
       dplyr::filter(natureza == "repasse.cef.obra") %>%
       agregar_mes(
@@ -760,26 +853,26 @@ r_fechamento <- function(xlsx = FALSE) {
         "Repasse CEF terreno", "CEF", "empresa"
       ),
     in.desp.cat %>%
-      dplyr::filter(categoria == "Constru\u00e7\u00e3o") %>%
+      dplyr::filter(str_detect(categoria, "(?i)^constru\u00e7\u00e3o$")) %>%
       agregar_mes(
         "data.pagamento", "valor",
         "Constru\u00e7\u00e3o", "Informakon", "nucleo"
       ),
     in.desp.cat %>%
-      dplyr::filter(categoria == "Despesas financeiras") %>%
+      dplyr::filter(str_detect(categoria, "(?i)^despesas\\s+financeiras$")) %>%
       agregar_mes(
         "data.pagamento", "valor",
         "Despesas financeiras", "Informakon", "nucleo"
       ),
     placeholder_mes("Empr\u00e9stimo CEF PJ", "CEF"),
     in.desp.cat %>%
-      dplyr::filter(categoria == "Incorpora\u00e7\u00e3o") %>%
+      dplyr::filter(str_detect(categoria, "(?i)^incorpora\u00e7\u00e3o$")) %>%
       agregar_mes(
         "data.pagamento", "valor",
         "Incorpora\u00e7\u00e3o", "Informakon", "nucleo"
       ),
     in.desp.cat %>%
-      dplyr::filter(categoria == "Novos neg\u00f3cios") %>%
+      dplyr::filter(str_detect(categoria, "(?i)^novos\\s+neg[oó]cios$")) %>%
       agregar_mes(
         "data.pagamento", "valor",
         "Novos neg\u00f3cios", "Informakon", "nucleo"
@@ -792,26 +885,33 @@ r_fechamento <- function(xlsx = FALSE) {
       ),
     placeholder_mes("Unidades vendidas", "Anapro"),
     in.desp.cat %>%
-      dplyr::filter(categoria == "Vendas") %>%
+      dplyr::filter(str_detect(categoria, "(?i)^vendas$")) %>%
       agregar_mes(
         "data.pagamento", "valor",
         "Vendas", "Informakon", "nucleo"
       )
   ) %>%
-    # Manter apenas empresas/nucleos destacados no Template-Fechamento.
-    # Linhas de grao empresa (CEF/rec) sao filtradas por empresa; de
-    # grao nucleo (desp), por nucleo.
-    dplyr::filter(
-      (!is.na(empresa) & empresa %in% destacados$empresa) |
-        (is.na(empresa) & nucleo %in% destacados$nucleo)
+    pos_processar_desp_mensal()
+
+  in.desp.m.ik <- in.desp %>%
+    dplyr::mutate(
+      mes = floor_date(data.pagamento, "month"),
+      variavel = as.character(centro.negocio),
+      valor = as.numeric(valor),
+      fonte = "Informakon"
     ) %>%
-    # Serie temporal continua por (empresa, nucleo, variavel), aparada
-    # nas pontas (sem leading/trailing zeros) e com gaps internos = 0.
-    dplyr::group_by(empresa, nucleo, variavel, fonte) %>%
-    dplyr::group_modify(aparar_e_completar) %>%
-    dplyr::ungroup() %>%
-    select(mes, empresa, nucleo, variavel, valor, fonte, arquivo) %>%
-    arrange(variavel, nucleo, empresa, mes)
+    dplyr::filter(
+      !is.na(mes), !is.na(nucleo), !is.na(variavel), nzchar(variavel)
+    ) %>%
+    dplyr::group_by(mes, nucleo, variavel, fonte) %>%
+    dplyr::summarise(
+      valor = sum(valor, na.rm = TRUE),
+      arquivo = paste(sort(unique(arquivo)), collapse = "; "),
+      .groups = "drop"
+    ) %>%
+    dplyr::mutate(empresa = NA_character_) %>%
+    dplyr::select(mes, empresa, nucleo, variavel, valor, fonte, arquivo) %>%
+    pos_processar_desp_mensal(filtrar_destacados = FALSE)
 
   msg("Fase 4 concluida.")
 
@@ -822,10 +922,12 @@ r_fechamento <- function(xlsx = FALSE) {
         rec = in.rec,
         rec.uni = rec.uni,
         unis.cruzado = in.unis.cruzado,
-        mes = in.mes,
+        m.vb = in.m.vb,
+        desp.m.ik = in.desp.m.ik,
         contr = in.contr,
         desp = in.desp,
         ecns = in.ecns,
+        empr = in.empr,
         estq = in.estq,
         unis = in.unis
       ),
@@ -834,10 +936,12 @@ r_fechamento <- function(xlsx = FALSE) {
         rec = "darkgray",
         rec.uni = "darkgray",
         unis.cruzado = "darkgray",
-        mes = "darkgray",
+        m.vb = "darkgray",
+        desp.m.ik = "darkgray",
         contr = "white",
         desp = "white",
         ecns = "white",
+        empr = "white",
         estq = "white",
         unis = "white"
       ),
@@ -885,7 +989,7 @@ r_fechamento <- function(xlsx = FALSE) {
       ),
       col_formulas = list(
         desp = list(
-          categoria = "VLOOKUP([@[centro.negocio]],ik_viab,2)"
+          categoria = "VLOOKUP([@[centro.negocio]],ik.viab,2)"
         )
       ),
       col_width_spec = c(
@@ -912,7 +1016,8 @@ r_fechamento <- function(xlsx = FALSE) {
     cef.mensal = in.cef.mensal,
     cmfcn.xcef = in.cmfcn.xcef,
     cmfcn.xcef.mensal = in.cmfcn.xcef.mensal,
-    mes = in.mes,
+    m.vb = in.m.vb,
+    desp.m.ik = in.desp.m.ik,
     rec = in.rec,
     rec.uni = rec.uni,
     unis.cruzado = in.unis.cruzado,
@@ -925,6 +1030,7 @@ r_fechamento <- function(xlsx = FALSE) {
     cr = in.cr,
     desp = in.desp,
     ecns = in.ecns,
+    empr = in.empr,
     estq = in.estq,
     unis = in.unis,
     xcef = in.xcef
