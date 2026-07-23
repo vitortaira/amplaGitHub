@@ -311,6 +311,8 @@ r_fechamento <- function(xlsx = FALSE, data = NULL) {
       ),
       list(cmfcn.xcef = inputs_l[["cmfcn.xcef"]])
     ))
+    # Ordenar abas pelo nome para facilitar a navegacao no Excel
+    inputs_xlsx_l <- inputs_xlsx_l[order(names(inputs_xlsx_l))]
     gerar_xlsx(
       data = inputs_xlsx_l,
       save = list(sprintf("inputs-%s.xlsx", data), pasta_cache_c)
