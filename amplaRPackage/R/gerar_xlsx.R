@@ -55,6 +55,12 @@
 #'   As formulas substituem os valores da coluna no Excel.
 #' @param table Booleano. Se TRUE, converte os dados em tabelas Excel.
 #'   Padrão: TRUE.
+#' @param cell_values Lista nomeada por aba, contendo listas nomeadas por
+#'   referencia de celula (ex: "A1") com o valor escalar a gravar.
+#'   Formato: list(aba = list(A1 = valor, B2 = valor)). Se a aba nao
+#'   existir no workbook, ela e criada. Os valores sao gravados apos o
+#'   processamento das abas e antes de salvar. Util para preencher celulas
+#'   avulsas (ex: data de fechamento). Se NULL, nada e gravado.
 #' @param save Lista com 2 elementos: (1) nome do arquivo, (2) caminho
 #'   de destino. Se NULL, salva automaticamente no diretório Downloads
 #'   com nome "xlsx-YYYY_MM_DD-HH_MM_SS.xlsx"
@@ -93,6 +99,7 @@ gerar_xlsx <- function(data,
                        tab_zoom = NULL,
                        col_formulas = NULL,
                        table = TRUE,
+                       cell_values = NULL,
                        save = NULL) {
   # Helper: converter cor (nome ou hex) para wb_color
   cor_para_wb <- function(cor) {
@@ -203,6 +210,22 @@ gerar_xlsx <- function(data,
   for (i in seq_along(dados_lista)) {
     df_dados <- dados_lista[[i]]
     nome_aba <- names(dados_lista)[i]
+
+    # Remover caracteres de controle ilegais no XML (OOXML) ----
+    # Caracteres 0x00-0x08, 0x0B, 0x0C, 0x0E-0x1F (exceto tab,
+    # LF e CR) sao invalidos no XML e causam "xml import
+    # unsuccessful" ao openxlsx2 reprocessar a planilha. Podem
+    # vir de textos extraidos de PDFs/extratos bancarios.
+    colunas_texto <- which(
+      vapply(df_dados, is.character, logical(1))
+    )
+    for (j in colunas_texto) {
+      df_dados[[j]] <- gsub(
+        "[\u0001-\u0008\u000B\u000C\u000E-\u001F]",
+        "", df_dados[[j]],
+        perl = TRUE
+      )
+    }
 
     # Inferir colunas monetárias (numeric não-integer)
     # Variáveis locais por aba para evitar acúmulo entre abas
@@ -1013,6 +1036,38 @@ gerar_xlsx <- function(data,
       wb <- openxlsx2::wb_set_order(
         wb, match(ordem_final, abas_atuais)
       )
+    }
+  }
+
+  # Gravar valores em celulas avulsas ----
+  if (!is.null(cell_values)) {
+    abas_wb <- unname(openxlsx2::wb_get_sheet_names(wb))
+    normalizar_cv <- function(x) {
+      stringr::str_remove_all(tolower(x), "[._]")
+    }
+    for (nome_aba_cv in names(cell_values)) {
+      idx_cv <- match(
+        normalizar_cv(nome_aba_cv), normalizar_cv(abas_wb)
+      )
+      if (is.na(idx_cv)) {
+        wb <- openxlsx2::wb_add_worksheet(
+          wb,
+          sheet = nome_aba_cv, grid_lines = FALSE
+        )
+        abas_wb <- unname(openxlsx2::wb_get_sheet_names(wb))
+        aba_alvo_cv <- nome_aba_cv
+      } else {
+        aba_alvo_cv <- abas_wb[idx_cv]
+      }
+      celulas_cv <- cell_values[[nome_aba_cv]]
+      for (ref_celula_cv in names(celulas_cv)) {
+        wb <- openxlsx2::wb_add_data(
+          wb,
+          sheet = aba_alvo_cv,
+          x = celulas_cv[[ref_celula_cv]],
+          dims = ref_celula_cv
+        )
+      }
     }
   }
 

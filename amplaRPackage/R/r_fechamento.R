@@ -25,6 +25,16 @@
 #' @param xlsx Logico. Se \code{TRUE}, gera arquivo Excel (.xlsx) com os
 #'   dados no template de fechamento. Padrao: \code{FALSE}.
 #'
+#' @param data Opcional. String no formato \code{"AAAA_MM_DD"} (ex.:
+#'   \code{"2026_12_31"}) que ativa o cache de inputs. Quando informada,
+#'   usa a subpasta correspondente em
+#'   \code{caminhos_pastas("fechamento_in")}: se existir
+#'   \code{inputs-AAAA_MM_DD.rds}, carrega os inputs do arquivo (pulando a
+#'   extracao completa); caso contrario, executa a extracao normalmente e
+#'   grava \code{inputs-AAAA_MM_DD.rds} e \code{inputs-AAAA_MM_DD.xlsx} na
+#'   pasta. A data (convertida para \code{Date}) tambem e gravada em
+#'   \code{inputs!A1} das planilhas geradas. Padrao: \code{NULL} (sem cache).
+#'
 #' @return Lista identica a retornada por \code{\link{r_fechamento0}}.
 #'
 #' @seealso \code{\link{r_fechamento0}}
@@ -50,13 +60,44 @@
 #' @importFrom rlang .data sym
 #'
 #' @export
-r_fechamento <- function(xlsx = FALSE) {
+r_fechamento <- function(xlsx = FALSE, data = NULL) {
   t0 <- Sys.time()
   msg <- function(txt) {
     d <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
     message(sprintf("[%5.1fs] %s", d, txt))
   }
 
+  # ── Configuracao de cache ──────────────────────────────────────────────────
+  usar_cache <- !is.null(data)
+  data_dt <- NULL
+  if (usar_cache) {
+    if (!is.character(data) || length(data) != 1 ||
+      !grepl("^\\d{4}_\\d{2}_\\d{2}$", data)) {
+      stop(
+        "'data' deve ser uma string no formato 'AAAA_MM_DD' ",
+        "(ex.: '2026_12_31')."
+      )
+    }
+    data_dt <- as.Date(gsub("_", "-", data))
+    pasta_cache_c <- file.path(caminhos_pastas("fechamento_in"), data)
+    arquivo_rds_c <- file.path(
+      pasta_cache_c, sprintf("inputs-%s.rds", data)
+    )
+  }
+
+  # Inputs obrigatorios que devem existir (e nao estar vazios) no cache
+  inputs_obrigatorios_c <- c(
+    "estq", "ecns", "contrs", "cr", "desp", "unis",
+    "xcefs", "empr", "cmfcns", "car", "cmfcn.xcef"
+  )
+  input_vazio <- function(x) {
+    is.null(x) ||
+      (is.data.frame(x) && nrow(x) == 0) ||
+      (is.list(x) && !is.data.frame(x) && length(x) == 0)
+  }
+
+  # Extracao completa (Fases 1-3). Retorna lista nomeada de inputs brutos.
+  extrair_inputs <- function() {
   # ── Fase 1: carregamento de dados independentes em paralelo ────────────────
   msg("Fase 1: Carregando dados independentes em paralelo...")
   .rprofile_caminho <- normalizePath(
@@ -205,6 +246,90 @@ r_fechamento <- function(xlsx = FALSE) {
   in.cmfcn.xcef_bruto <- r_xcef_com_cache()
 
   msg("Fase 3 concluida.")
+
+    # Consolidar inputs brutos (nomes usados no cache e na validacao)
+    list(
+      estq       = in.estq,
+      ecns       = .cache_ecns,
+      contrs     = .cache_contrs,
+      cr         = .cache_cr,
+      desp       = in.desp,
+      unis       = .cache_unis,
+      xcefs      = .cache_xcefs,
+      empr       = in.empr,
+      cmfcns     = .cache_cmfcns,
+      car        = .cache_car,
+      cmfcn.xcef = in.cmfcn.xcef_bruto
+    )
+  }
+
+  # ── Obter inputs: do cache (.rds) ou via extracao completa ─────────────────
+  carregou_cache <- usar_cache && file.exists(arquivo_rds_c)
+  if (carregou_cache) {
+    msg(sprintf("Carregando inputs do cache: %s", basename(arquivo_rds_c)))
+    inputs_l <- readRDS(arquivo_rds_c)
+    msg("Inputs carregados do cache.")
+  } else {
+    inputs_l <- extrair_inputs()
+  }
+
+  # Validar presenca de todos os inputs obrigatorios
+  faltantes_c <- inputs_obrigatorios_c[
+    !inputs_obrigatorios_c %in% names(inputs_l) |
+      vapply(
+        inputs_obrigatorios_c,
+        function(nm) input_vazio(inputs_l[[nm]]),
+        logical(1)
+      )
+  ]
+  if (length(faltantes_c) > 0) {
+    warning(
+      "Nem todos os inputs necessarios foram identificados. ",
+      "Faltando ou vazio: ", paste(faltantes_c, collapse = ", "), "."
+    )
+  }
+
+  # Gravar cache (.rds + .xlsx) quando 'data' foi informada e extraimos agora
+  if (usar_cache && !carregou_cache) {
+    msg(sprintf("Gravando cache em: %s", pasta_cache_c))
+    dir.create(pasta_cache_c, showWarnings = FALSE, recursive = TRUE)
+    saveRDS(inputs_l, file = arquivo_rds_c)
+
+    # Backup xlsx: uma aba por input (apenas data.frames) + data em inputs!A1
+    inputs_xlsx_l <- Filter(is.data.frame, c(
+      list(estq = inputs_l$estq),
+      inputs_l$ecns,
+      list(
+        contrs = inputs_l$contrs,
+        cr     = inputs_l$cr,
+        desp   = inputs_l$desp,
+        unis   = inputs_l$unis,
+        xcefs  = inputs_l$xcefs,
+        empr   = inputs_l$empr,
+        cmfcns = inputs_l$cmfcns,
+        car    = inputs_l$car$car
+      ),
+      list(cmfcn.xcef = inputs_l[["cmfcn.xcef"]])
+    ))
+    gerar_xlsx(
+      data = inputs_xlsx_l,
+      save = list(sprintf("inputs-%s.xlsx", data), pasta_cache_c)
+    )
+    msg("Cache (.rds + .xlsx) gravado.")
+  }
+
+  # Desempacotar inputs para as variaveis usadas na Fase 4
+  in.estq             <- inputs_l$estq
+  .cache_ecns         <- inputs_l$ecns
+  .cache_contrs       <- inputs_l$contrs
+  .cache_cr           <- inputs_l$cr
+  in.desp             <- inputs_l$desp
+  .cache_unis         <- inputs_l$unis
+  .cache_xcefs        <- inputs_l$xcefs
+  in.empr             <- inputs_l$empr
+  .cache_cmfcns       <- inputs_l$cmfcns
+  .cache_car          <- inputs_l$car
+  in.cmfcn.xcef_bruto <- inputs_l[["cmfcn.xcef"]]
 
   # ── Fase 4: processamento (logica identica ao r_fechamento0) ───────────────
   msg("Fase 4: Processando dados...")
@@ -362,7 +487,42 @@ r_fechamento <- function(xlsx = FALSE) {
     )
 
   # Unidades consolidadas (Informakon + Ana Estoque)
-  in.unis.cruzado <- full_join(in.unis, in.estq, by = "id", suffix = c(".ik", ".ana"))
+  in.unis.cruzado <- full_join(
+    in.unis, in.estq,
+    by = "id", suffix = c(".ik", ".ana")
+  ) %>%
+    rename(
+      status.ik = situacao,
+      status.ana = Status
+    ) %>%
+    mutate(
+      # Prioridade do status Informakon (menor = mais avancado no funil)
+      status.p.ik = case_when(
+        status.ik == "Permutado Terreno" ~ "1",
+        status.ik == "Reserva Técnica" ~ "2",
+        status.ik %in% c("Em Negociação", "Disponível") ~ "3",
+        status.ik == "Vendido" ~ "4",
+        is.na(status.ik) | status.ik == "" ~ "",
+        TRUE ~ NA_character_
+      ),
+      # Prioridade do status Ana Estoque (mesma escala de status.p.ik)
+      status.p.ana = case_when(
+        status.ana == "Permuta" ~ "1",
+        status.ana %in% c("Fora de venda", "Venda suspensa") ~ "2",
+        status.ana %in% c("Reservada", "Em Negociação", "Disponível") ~ "3",
+        status.ana == "Venda aprovada" ~ "4",
+        is.na(status.ana) | status.ana == "" ~ "",
+        TRUE ~ NA_character_
+      ),
+      # Sinaliza divergencia de prioridade entre as duas fontes
+      checar = !is.na(status.p.ik) & !is.na(status.p.ana) &
+        status.p.ik != "" & status.p.ana != "" &
+        status.p.ik != status.p.ana
+    ) %>%
+    select(
+      status.ik, status.ana, status.p.ik, status.p.ana, checar,
+      everything()
+    )
 
   # Extratos da CEF
   in.xcef <- .cache_xcefs
@@ -630,7 +790,7 @@ r_fechamento <- function(xlsx = FALSE) {
   }
 
   colunas.situacao.ana_c <- intersect(
-    c("Status", "situacao.ana", "situacao"),
+    c("status.ana", "Status", "situacao.ana", "situacao"),
     names(in.unis.cruzado.join)
   )
   if (length(colunas.situacao.ana_c) > 0) {
@@ -949,6 +1109,11 @@ r_fechamento <- function(xlsx = FALSE) {
         rec.uni = list(
           checar = list(colour = "yellow"),
           repasse.cef.total = list(colour = "blue", font_colour = "white")
+        ),
+        unis.cruzado = list(
+          status.p.ik = list(colour = "yellow"),
+          status.p.ana = list(colour = "yellow"),
+          checar = list(colour = "yellow")
         )
       ),
       col_dates = c(
@@ -996,6 +1161,11 @@ r_fechamento <- function(xlsx = FALSE) {
         empreendimento = 30,
         id = 22
       ),
+      cell_values = if (usar_cache) {
+        list(inputs = list(A1 = data_dt))
+      } else {
+        NULL
+      },
       save = list(
         nome_arquivo = sprintf("Fechamento-%s.xlsx", format(Sys.time(), "%Y%m%d_%H%M%S")),
         caminho_destino = normalizePath(
