@@ -54,7 +54,9 @@ cruzar_grupo <- function(ext_vals, cmf_vals,
 
   # Verifica se a diferença em dias está dentro da tolerância
   datas_proximas <- function(d1, d2) {
-    if (is.na(d1) || is.na(d2)) return(FALSE)
+    if (is.na(d1) || is.na(d2)) {
+      return(FALSE)
+    }
     abs(as.numeric(difftime(d1, d2, units = "days"))) <= tolerancia_dias
   }
 
@@ -212,8 +214,8 @@ r_xcef <-
       ext_idx <- which(chave_ext == g)
       cmf_idx <- which(chave_cmf == g)
       matches <- cruzar_grupo(
-        ext_vals  = extratos_t$valor[ext_idx],
-        cmf_vals  = cmfcns_t$valor[cmf_idx],
+        ext_vals = extratos_t$valor[ext_idx],
+        cmf_vals = cmfcns_t$valor[cmf_idx],
         ext_datas = extratos_t$data.movimentacao[ext_idx],
         cmf_datas = cmfcns_t$data.movimento[cmf_idx],
         tolerancia_dias = 3
@@ -335,7 +337,10 @@ r_xcef <-
         }
       ) %>%
       select(
-        contrato.5, data.movimentacao, data.movimento, valor.extrato,
+        contrato.5,
+        data.movimentacao.extrato = data.movimentacao,
+        data.movimentacao.cmfcn = data.movimento,
+        valor.extrato,
         valor.cmfcn, empresa,
         nome.mutuario, tipo.cruzamento, natureza.extrato, conta.interno,
         all_of(c(col_soma_xcef, col_soma_cmfcn)), checar,
@@ -389,6 +394,8 @@ r_xcef <-
       colunas_auto <- c(
         "data.movimentacao",
         "data.movimento",
+        "data.movimentacao.extrato",
+        "data.movimentacao.cmfcn",
         "data.lancamento.extrato",
         "descricao",
         "data.lancamento.cmfcn",
@@ -418,6 +425,8 @@ r_xcef <-
         "data.lancamento.extrato",
         "data.movimentacao",
         "data.movimento",
+        "data.movimentacao.extrato",
+        "data.movimentacao.cmfcn",
         "periodo.fim",
         "periodo.inicio"
       )
@@ -428,7 +437,8 @@ r_xcef <-
         Cruzados = list(
           # Purple headers with white font
           "contrato.5" = list(colour = "purple", font_colour = "white", font_size = 12),
-          "data.movimentacao" = list(colour = "purple", font_colour = "white", font_size = 12),
+          "data.movimentacao.extrato" = list(colour = "red", font_colour = "white", font_size = 12),
+          "data.movimentacao.cmfcn" = list(colour = "darkblue", font_colour = "white", font_size = 12),
           "valor.extrato" = list(colour = "purple", font_colour = "white", font_size = 12),
           "valor.cmfcn" = list(colour = "purple", font_colour = "white", font_size = 12),
           # Gray headers
@@ -454,7 +464,6 @@ r_xcef <-
           "data.consulta" = list(colour = "red", font_colour = "white", font_size = 12),
           # Blue headers with white font
           "contrato" = list(colour = "blue", font_colour = "white", font_size = 12),
-          "data.movimento" = list(colour = "blue", font_colour = "white", font_size = 12),
           "data.lancamento.cmfcn" = list(colour = "blue", font_colour = "white", font_size = 12),
           "lancamentos" = list(colour = "blue", font_colour = "white", font_size = 12),
           "np" = list(colour = "blue", font_colour = "white", font_size = 12),

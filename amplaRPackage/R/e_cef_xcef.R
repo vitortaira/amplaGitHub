@@ -62,6 +62,26 @@ caminhos.teste_c <- c(
   str_c(caminhos_pastas("testthat"), "/data/xcef8.xlsx")
 )
 
+# Normaliza valores monetarios da CEF para numeric, detectando o formato.
+# Valores ja numericos (lidos de planilhas .xls/.xlsx) sao mantidos como
+# estao — remover os pontos os multiplicaria por 100. Valores em texto no
+# formato brasileiro ("9.024,13") tem os pontos de milhar removidos e a
+# virgula decimal trocada por ponto; textos ja com ponto decimal
+# ("9157.51") sao convertidos diretamente. Nao exportada (helper interno).
+normalizar_valor_cef <- function(x) {
+  if (is.numeric(x)) {
+    return(as.numeric(x))
+  }
+  x_chr <- as.character(x)
+  tem_virgula <- str_detect(x_chr, ",")
+  x_norm <- dplyr::if_else(
+    tem_virgula,
+    str_replace(str_remove_all(x_chr, "\\."), ",", "."),
+    x_chr
+  )
+  suppressWarnings(as.numeric(x_norm))
+}
+
 e_cef_xcef <- function(f_caminho.arquivo_c) {
   if (fs::path_ext(f_caminho.arquivo_c) == "pdf") {
     # Ler PDF
@@ -172,14 +192,11 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
         # Linhas de cabecalho/totalizador (ex.: "Saldo anterior") vem
         # como texto e geram NA na coercao — comportamento esperado, ja
         # que essas linhas sao filtradas adiante. Alguns extratos trazem
-        # numeros no formato BR ("9.024,13"), que tambem precisam ser
-        # normalizados antes de as.numeric().
-        valor = suppressWarnings(as.numeric(
-          str_replace(str_remove_all(as.character(valor), "\\."), ",", ".")
-        )),
-        saldo = suppressWarnings(as.numeric(
-          str_replace(str_remove_all(as.character(saldo), "\\."), ",", ".")
-        )),
+        # numeros no formato BR ("9.024,13"), enquanto outros trazem
+        # valores ja numericos; normalizar_valor_cef trata ambos os casos
+        # sem multiplicar valores numericos por 100.
+        valor = normalizar_valor_cef(valor),
+        saldo = normalizar_valor_cef(saldo),
         # Garantir que outras colunas sejam character também
         documento = as.character(documento),
         descricao = as.character(descricao),
