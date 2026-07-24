@@ -139,6 +139,15 @@ e_cef_xcefs<-
           # Condições simples (descricao)
             (descricao == "DESB CR CX") |
             (descricao == "DESBL.SALD") ~ "repasse.cef",
+          # Amortizações PJ — DEBITO AUTORIZADO é provisional: será
+          # revertido para NA em r_xcef() se não encontrar par em cmfcn
+          descricao %in% c(
+            "AMORTIZACAO SALDO DEVEDOR",
+            "AMORTIZA\u00c7\u00c3O SALDO DEVEDOR",
+            "DEB AMORT SD DEVEDOR FIN",
+            "DEB AMT PJ",
+            "DEBITO AUTORIZADO"
+          ) ~ "amortizacao.pj",
           TRUE ~ NA_character_
         ),
         contrato.6 =

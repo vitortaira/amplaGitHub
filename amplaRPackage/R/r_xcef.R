@@ -230,6 +230,58 @@ r_xcef <-
       )
     }) %>% bind_rows()
 
+    # Cruzamento de segundo nível: por (empresa, data, natureza) --------------
+    # Para lançamentos cujos contratos diferem entre xcef e cmfcn (ex.:
+    # amortizações com identificadores distintos nas duas fontes), tenta
+    # casar linhas ainda não cruzadas usando natureza como chave de grupo.
+    # Guarda de ambiguidade: exige exatamente 1 linha de cada lado no grupo,
+    # evitando combinações ambíguas. O valor é comparado em módulo para
+    # tolerar diferenças de sinal entre as duas fontes.
+    ids_ext_usados <- if (nrow(pares_t) > 0) pares_t$.id_ext else integer(0)
+    ids_cmf_usados <- if (nrow(pares_t) > 0) pares_t$.id_cmf else integer(0)
+
+    ext_nat_t <- extratos_t %>%
+      filter(!(.id_ext %in% ids_ext_usados), !is.na(natureza))
+    cmf_nat_t <- cmfcns_t %>%
+      filter(!(.id_cmf %in% ids_cmf_usados), !is.na(natureza))
+
+    if (nrow(ext_nat_t) > 0 && nrow(cmf_nat_t) > 0) {
+      ext_nat_t <- ext_nat_t %>%
+        mutate(.chave_nat = paste(empresa, data.movimentacao, natureza, sep = "|"))
+      cmf_nat_t <- cmf_nat_t %>%
+        mutate(.chave_nat = paste(empresa, data.movimento, natureza, sep = "|"))
+
+      grupos_nat <- intersect(
+        unique(na.omit(ext_nat_t$.chave_nat)),
+        unique(na.omit(cmf_nat_t$.chave_nat))
+      )
+
+      pares_nat_t <- lapply(grupos_nat, function(g) {
+        e_ids <- ext_nat_t$.id_ext[ext_nat_t$.chave_nat == g]
+        c_ids <- cmf_nat_t$.id_cmf[cmf_nat_t$.chave_nat == g]
+
+        # Guarda de ambiguidade: exatamente 1 linha de cada lado
+        if (length(e_ids) != 1 || length(c_ids) != 1) {
+          return(NULL)
+        }
+
+        v_ext <- extratos_t$valor[e_ids]
+        v_cmf <- cmfcns_t$valor[c_ids]
+        if (is.na(v_ext) || is.na(v_cmf)) {
+          return(NULL)
+        }
+        if (abs(abs(v_ext) - abs(v_cmf)) >= 0.005) {
+          return(NULL)
+        }
+
+        tibble(.id_ext = e_ids, .id_cmf = c_ids, tipo.cruzamento = "natureza")
+      }) %>% bind_rows()
+
+      if (nrow(pares_nat_t) > 0) {
+        pares_t <- bind_rows(pares_t, pares_nat_t)
+      }
+    }
+
     # Montar tabela cruzada
     if (nrow(pares_t) > 0) {
       cols_sufixo <- c("natureza", "data.lancamento", "arquivo", "valor")
@@ -292,7 +344,14 @@ r_xcef <-
 
     # Marcar linhas cruzadas em extratos_t e cmfcns_t
     extratos_t %<>% mutate(
-      cruzada = if_else(.id_ext %in% pares_t$.id_ext, "sim", "não")
+      cruzada = if_else(.id_ext %in% pares_t$.id_ext, "sim", "não"),
+      # DEBITO AUTORIZADO recebeu natureza="amortizacao.pj" provisoriamente
+      # em e_cef_xcefs(). Reverte para NA se não encontrou par em cmfcn.
+      natureza = if_else(
+        descricao == "DEBITO AUTORIZADO" & cruzada == "não",
+        NA_character_,
+        natureza
+      )
     ) %>%
       select(
         contrato.5, data.movimentacao, valor, empresa, natureza, conta.interno,
@@ -438,7 +497,7 @@ r_xcef <-
           # Purple headers with white font
           "contrato.5" = list(colour = "purple", font_colour = "white", font_size = 12),
           "data.movimentacao.extrato" = list(colour = "red", font_colour = "white", font_size = 12),
-          "data.movimentacao.cmfcn" = list(colour = "darkblue", font_colour = "white", font_size = 12),
+          "data.movimentacao.cmfcn" = list(colour = "blue", font_colour = "white", font_size = 12),
           "valor.extrato" = list(colour = "purple", font_colour = "white", font_size = 12),
           "valor.cmfcn" = list(colour = "purple", font_colour = "white", font_size = 12),
           # Gray headers
