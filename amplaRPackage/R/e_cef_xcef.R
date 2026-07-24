@@ -73,6 +73,11 @@ normalizar_valor_cef <- function(x) {
     return(as.numeric(x))
   }
   x_chr <- as.character(x)
+  # Remover tudo que nao for digito, virgula, ponto ou sinal de menos. Alguns
+  # extratos .xlsx trazem o valor como texto com espaco nao separavel entre o
+  # sinal e o numero (ex.: "-\u00A029.809,59") ou prefixos como "R$", que
+  # fazem as.numeric() retornar NA. So os debitos (com "- ") eram afetados.
+  x_chr <- str_remove_all(x_chr, "[^0-9,.-]")
   tem_virgula <- str_detect(x_chr, ",")
   x_norm <- dplyr::if_else(
     tem_virgula,
@@ -80,6 +85,100 @@ normalizar_valor_cef <- function(x) {
     x_chr
   )
   suppressWarnings(as.numeric(x_norm))
+}
+
+# Corrige o sinal de `valor` usando o saldo corrente como fonte da verdade.
+# Alguns extratos .xls/.xlsx da CEF trazem o "Valor Lançamento" sem sinal
+# (todos positivos), enquanto o saldo é sempre o saldo acumulado. Como as
+# linhas vêm em ordem cronológica, |valor| == |saldo - saldo_anterior| e o
+# sinal correto é o sinal desse delta (saída = débito < 0; entrada = crédito
+# > 0). A magnitude de `valor` é preservada; apenas o sinal é ajustado, e
+# somente quando a magnitude do delta confirma o lançamento (guarda que evita
+# alterar dados já corretos ou linhas isoladas por saldos ausentes). A
+# primeira linha (sem saldo anterior) mantém o sinal originalmente lido.
+# Nao exportada (helper interno).
+corrigir_sinal_por_saldo <- function(valor, saldo) {
+  valor <- as.numeric(valor)
+  saldo <- as.numeric(saldo)
+  delta <- saldo - dplyr::lag(saldo)
+  confiavel <- !is.na(delta) & abs(abs(delta) - abs(valor)) < 0.01
+  dplyr::if_else(
+    confiavel & sign(delta) != 0,
+    abs(valor) * sign(delta),
+    valor
+  )
+}
+
+# Converte um token monetario de extrato CEF para numeric, aceitando formatos
+# com separadores usuais ("53.161,71 D") e tambem com blocos espacados
+# ("53 161 71 D"), vistos em linhas quebradas de alguns PDFs.
+normalizar_token_monetario_cef <- function(token) {
+  if (is.na(token) || !nzchar(token)) {
+    return(NA_real_)
+  }
+
+  token_c <- str_squish(as.character(token))
+  sinal_c <- str_extract(token_c, "[CD]$")
+  numero_c <- str_remove(token_c, "\\s?[CD]$") %>% str_trim()
+
+  if (str_detect(numero_c, ",")) {
+    numero_c <- numero_c %>%
+      str_remove_all("\\.") %>%
+      str_remove_all("\\s") %>%
+      str_replace(",", ".")
+  } else if (str_detect(numero_c, "\\s")) {
+    numero_c <- numero_c %>%
+      str_remove_all("\\s") %>%
+      str_replace("(\\d{2})$", ".\\1")
+  } else {
+    numero_c <- str_remove_all(numero_c, "\\s")
+  }
+
+  valor_n <- suppressWarnings(as.numeric(numero_c))
+  if (is.na(valor_n)) {
+    return(NA_real_)
+  }
+
+  if (!is.na(sinal_c) && sinal_c == "D") {
+    return(-abs(valor_n))
+  }
+  if (!is.na(sinal_c) && sinal_c == "C") {
+    return(abs(valor_n))
+  }
+  valor_n
+}
+
+# Extrai valor/saldo de uma linha de lancamento da CEF. Considera que os
+# dois ultimos tokens monetarios da linha correspondem a valor e saldo.
+extrair_monetarios_linha_cef <- function(linha) {
+  padrao_monetario <-
+    "(?:\\d{1,3}(?:\\.\\d{3})*,\\d{2}|\\d{1,3}(?:\\s\\d{3})*\\s\\d{2}|\\d+[\\.,]\\d{2})\\s?[CD]?"
+
+  locais <- stringr::str_locate_all(linha, padrao_monetario)[[1]]
+  if (is.null(locais) || nrow(locais) == 0) {
+    return(list(valor = NA_real_, saldo = NA_real_, descricao = str_trim(linha)))
+  }
+
+  if (nrow(locais) >= 2) {
+    idx_valor <- nrow(locais) - 1
+    idx_saldo <- nrow(locais)
+    token_valor <- str_sub(linha, locais[idx_valor, 1], locais[idx_valor, 2])
+    token_saldo <- str_sub(linha, locais[idx_saldo, 1], locais[idx_saldo, 2])
+    descricao_c <- str_sub(linha, 1, locais[idx_valor, 1] - 1) %>% str_trim()
+    return(list(
+      valor = normalizar_token_monetario_cef(token_valor),
+      saldo = normalizar_token_monetario_cef(token_saldo),
+      descricao = descricao_c
+    ))
+  }
+
+  token_unico <- str_sub(linha, locais[1, 1], locais[1, 2])
+  descricao_c <- str_sub(linha, 1, locais[1, 1] - 1) %>% str_trim()
+  list(
+    valor = NA_real_,
+    saldo = normalizar_token_monetario_cef(token_unico),
+    descricao = descricao_c
+  )
 }
 
 e_cef_xcef <- function(f_caminho.arquivo_c) {
@@ -197,6 +296,10 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
         # sem multiplicar valores numericos por 100.
         valor = normalizar_valor_cef(valor),
         saldo = normalizar_valor_cef(saldo),
+        # Corrigir o sinal de `valor` pelo saldo acumulado: alguns .xls da
+        # CEF trazem os valores sem sinal (todos positivos). O sinal do
+        # delta do saldo (linhas em ordem cronologica) e a fonte da verdade.
+        valor = corrigir_sinal_por_saldo(valor, saldo),
         # Garantir que outras colunas sejam character também
         documento = as.character(documento),
         descricao = as.character(descricao),
@@ -453,9 +556,21 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
         last()
     )
 
-    extrato_t <- linhas_c %>%
+    linhas_lancamentos_t <- linhas_c %>%
       as_tibble_col(column_name = "linhas") %>%
       slice(indice.comeco_i:indice.fim_i) %>%
+      mutate(
+        inicio.lancamento = str_detect(linhas, "^\\d{2}/\\d{2}/\\d{4}\\b"),
+        grupo.lancamento = cumsum(inicio.lancamento)
+      ) %>%
+      dplyr::filter(grupo.lancamento > 0) %>%
+      group_by(grupo.lancamento) %>%
+      summarise(
+        linhas = str_squish(str_c(linhas, collapse = " ")),
+        .groups = "drop"
+      )
+
+    extrato_t <- linhas_lancamentos_t %>%
       mutate(
         data.movimentacao = if_else(
           word(linhas) == "000000",
@@ -466,24 +581,15 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
         linhas = str_remove(linhas, "^\\d{2}/\\d{2}/\\d{4}") %>% str_trim(),
         documento = word(linhas),
         linhas = str_remove(linhas, str_c("^", word(linhas))) %>% str_trim(),
-        saldo = str_extract(linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?$") %>%
-          str_remove("\\s?C") %>% str_remove_all("\\.") %>%
-          str_replace("\\,", "\\.") %>%
-          if_else(str_detect(., "D$"),
-            str_c("-", .) %>% str_remove("\\s?D$"),
-            .
-          ) %>% as.numeric(),
-        linhas = str_remove(linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?$") %>% str_trim(),
-        valor = str_extract(linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?$") %>%
-          str_remove("\\s?C") %>% str_remove_all("\\.") %>%
-          str_replace("\\,", "\\.") %>%
-          if_else(str_detect(., "D$"),
-            str_c("-", .) %>% str_remove("\\s?D$"),
-            .
-          ) %>% as.numeric(),
-        descricao = str_remove(
-          linhas, "\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\s?[C|D]?"
-        ) %>% str_trim(),
+        .monetarios = purrr::map(linhas, extrair_monetarios_linha_cef),
+        valor = purrr::map_dbl(.monetarios, "valor"),
+        saldo = purrr::map_dbl(.monetarios, "saldo"),
+        valor = if_else(
+          is.na(valor) & !is.na(saldo) & !is.na(dplyr::lag(saldo)),
+          saldo - dplyr::lag(saldo),
+          valor
+        ),
+        descricao = purrr::map_chr(.monetarios, "descricao"),
         data.lancamento = NA,
         conta = word(conta_c, -1) %>% str_trim(),
         agencia = str_sub(conta_c, 1, 4),
@@ -499,6 +605,7 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
         data.consulta = data.consulta_h,
         conta.interno = basename(f_caminho.arquivo_c) %>%
           str_extract("\\d{4}"),
+        .monetarios = NULL,
         arquivo = f_caminho.arquivo_c,
         arquivo.subtipo = tipo_c
       ) %>%
@@ -623,6 +730,9 @@ e_cef_xcef <- function(f_caminho.arquivo_c) {
           },
           TRUE ~ as.numeric(NA)
         ),
+        # Corrigir o sinal de `valor` pelo saldo acumulado (mesma logica dos
+        # .xls): garante consistencia de sinal entre os tipos de extrato.
+        valor = corrigir_sinal_por_saldo(valor, saldo),
         # Adicionar metadados que estavam faltando
         data.lancamento = NA_Date_,
         conta = word(conta, -1) %>% str_trim(),

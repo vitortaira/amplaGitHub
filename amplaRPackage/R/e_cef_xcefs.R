@@ -160,5 +160,45 @@ e_cef_xcefs<-
         arquivo, arquivo.subtipo, arquivo.tabela.tipo, arquivo.tipo,
         arquivo.fonte, cpf.cnpj, nome.razao
       )
+
+    # Remover duplicidade por descontinuidade de conta ------------------------
+    # Contas renumeradas (contaAntiga -> contaAtual) sao mapeadas em
+    # `contasBancarias` (global_variables.R). Quando existem extratos das duas
+    # numeracoes para o mesmo (conta, mes), mantem-se apenas o da conta atual e
+    # descarta-se o da conta antiga, evitando informacao duplicada. O token da
+    # conta no nome do arquivo (`conta.interno`) coincide com os ultimos 4
+    # digitos usados para montar `id.antigo`/`id.atual` naquele mapeamento.
+    if (exists("contasBancarias") &&
+      all(c("id.antigo", "id.atual", "id.continuo") %in%
+        names(contasBancarias))) {
+      extratos_t <- extratos_t %>%
+        mutate(
+          .id.corrente = str_c(empresa, "-CEF_", conta.interno),
+          .origem.conta = case_when(
+            .id.corrente %in% contasBancarias$id.antigo ~ "antiga",
+            .id.corrente %in% contasBancarias$id.atual ~ "atual",
+            TRUE ~ "unica"
+          ),
+          .id.continuo = case_when(
+            .id.corrente %in% contasBancarias$id.antigo ~
+              contasBancarias$id.continuo[
+                match(.id.corrente, contasBancarias$id.antigo)
+              ],
+            .id.corrente %in% contasBancarias$id.atual ~
+              contasBancarias$id.continuo[
+                match(.id.corrente, contasBancarias$id.atual)
+              ],
+            TRUE ~ .id.corrente
+          ),
+          .mes = lubridate::floor_date(data.movimentacao, "month")
+        ) %>%
+        group_by(.id.continuo, .mes) %>%
+        filter(
+          !(.origem.conta == "antiga" & any(.origem.conta == "atual"))
+        ) %>%
+        ungroup() %>%
+        select(-.id.corrente, -.origem.conta, -.id.continuo, -.mes)
+    }
+
     return(extratos_t)
   }
