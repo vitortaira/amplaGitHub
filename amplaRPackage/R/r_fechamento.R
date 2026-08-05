@@ -531,7 +531,13 @@ r_fechamento <- function(xlsx = FALSE, data = NULL) {
 
   # Extratos CEF cruzados com CMF_CN
   in.cmfcn.xcef <- in.cmfcn.xcef_bruto %>%
-    rename(natureza = natureza.cmfcn)
+    rename(natureza = natureza.cmfcn) %>%
+    mutate(
+      data.movimentacao = coalesce(
+        data.movimentacao.extrato,
+        data.movimentacao.cmfcn
+      )
+    )
 
   # Determinar sequencia completa de meses para todos os tibbles CEF
   meses.cef <- c(
@@ -963,6 +969,14 @@ r_fechamento <- function(xlsx = FALSE, data = NULL) {
   }
 
   pos_processar_desp_mensal <- function(dados_t, filtrar_destacados = TRUE) {
+    coluna_chave_c <- if ("centro.negocio" %in% names(dados_t)) {
+      "centro.negocio"
+    } else {
+      "variavel"
+    }
+
+    tem_classe <- "classe" %in% names(dados_t)
+
     if (filtrar_destacados) {
       dados_t <- dados_t %>%
         # Manter apenas empresas/nucleos destacados no Template-Fechamento.
@@ -992,13 +1006,35 @@ r_fechamento <- function(xlsx = FALSE, data = NULL) {
         nucleo = dplyr::coalesce(nucleo, nucleo.lookup)
       ) %>%
       dplyr::select(-nucleo.lookup) %>%
-      # Serie temporal continua por (empresa, nucleo, variavel), aparada
+      # Serie temporal continua por (empresa, nucleo, chave), aparada
       # nas pontas (sem leading/trailing zeros) e com gaps internos = 0.
-      dplyr::group_by(empresa, nucleo, variavel, fonte) %>%
+      {
+        if (tem_classe) {
+          dplyr::group_by(
+            ., empresa, nucleo, .data[[coluna_chave_c]], classe, fonte
+          )
+        } else {
+          dplyr::group_by(
+            ., empresa, nucleo, .data[[coluna_chave_c]], fonte
+          )
+        }
+      } %>%
       dplyr::group_modify(aparar_e_completar) %>%
       dplyr::ungroup() %>%
-      dplyr::select(mes, empresa, nucleo, variavel, valor, fonte, arquivo) %>%
-      dplyr::arrange(variavel, nucleo, empresa, mes)
+      {
+        if (tem_classe) {
+          dplyr::select(
+            ., mes, empresa, nucleo, all_of(coluna_chave_c), classe,
+            valor, fonte, arquivo
+          )
+        } else {
+          dplyr::select(
+            ., mes, empresa, nucleo, all_of(coluna_chave_c), valor,
+            fonte, arquivo
+          )
+        }
+      } %>%
+      dplyr::arrange(.data[[coluna_chave_c]], nucleo, empresa, mes)
   }
 
   in.m.vb <- bind_rows(
@@ -1058,21 +1094,25 @@ r_fechamento <- function(xlsx = FALSE, data = NULL) {
   in.desp.m.ik <- in.desp %>%
     dplyr::mutate(
       mes = floor_date(data.pagamento, "month"),
-      variavel = as.character(centro.negocio),
+      centro.negocio = as.character(centro.negocio),
+      classe = as.character(classe),
       valor = as.numeric(valor),
       fonte = "Informakon"
     ) %>%
     dplyr::filter(
-      !is.na(mes), !is.na(nucleo), !is.na(variavel), nzchar(variavel)
+      !is.na(mes), !is.na(nucleo),
+      !is.na(centro.negocio), nzchar(centro.negocio)
     ) %>%
-    dplyr::group_by(mes, nucleo, variavel, fonte) %>%
+    dplyr::group_by(mes, nucleo, centro.negocio, classe, fonte) %>%
     dplyr::summarise(
       valor = sum(valor, na.rm = TRUE),
       arquivo = paste(sort(unique(arquivo)), collapse = "; "),
       .groups = "drop"
     ) %>%
     dplyr::mutate(empresa = NA_character_) %>%
-    dplyr::select(mes, empresa, nucleo, variavel, valor, fonte, arquivo) %>%
+    dplyr::select(
+      mes, empresa, nucleo, centro.negocio, classe, valor, fonte, arquivo
+    ) %>%
     pos_processar_desp_mensal(filtrar_destacados = FALSE)
 
   msg("Fase 4 concluida.")
