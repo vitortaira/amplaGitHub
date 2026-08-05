@@ -45,6 +45,7 @@ e_cef_cmfcns <- function(f_caminho.pasta.ciweb_c = caminhos_pastas("ciweb")) {
         str_detect(empreendimento, "(?i)up\\s?select\\s?vila") ~ "GRA",
         str_detect(empreendimento, "(?i)up\\s?esta[cç][aã]o\\s?s[aã]o\\s?lucas") ~ "LUC",
         str_detect(empreendimento, "(?i)up\\s?esta[cç][aã]o\\s?vila") ~ "SN2",
+        str_detect(empreendimento, "(?i)move\\s?vila\\s?s[oô]nia") ~ "SN4",
         TRUE ~ NA_character_
       )
     ) %>%
