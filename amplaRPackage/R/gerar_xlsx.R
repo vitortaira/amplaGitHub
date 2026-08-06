@@ -203,6 +203,67 @@ gerar_xlsx <- function(data,
     "gerar_xlsx: Processando %d abas...", length(dados_lista)
   ))
 
+  # Fontes de tabelas dinamicas do template ----
+  # Templates com tabelas dinamicas guardam a fonte em
+  # pivotCacheDefinition como <worksheetSource name="X"/>, onde X
+  # e o nome de uma tabela Excel (ou intervalo nomeado). Se a
+  # tabela criada nao tiver exatamente esse nome, a pivot nao
+  # resolve a fonte e o Excel abre o arquivo em modo de reparo.
+  # Detectamos esses nomes para renomear as tabelas de forma
+  # que casem com a fonte esperada.
+  nomes_fonte_pivot <- character(0)
+  if (usar_template) {
+    nomes_fonte_pivot <- tryCatch(
+      {
+        arquivos_zip <- utils::unzip(
+          wb_load,
+          list = TRUE
+        )$Name
+        pc_arquivos <- grep(
+          "^xl/pivotCache/pivotCacheDefinition\\d+\\.xml$",
+          arquivos_zip,
+          value = TRUE
+        )
+        fontes <- character(0)
+        if (length(pc_arquivos) > 0) {
+          tmpdir_pc <- tempfile("pivotcache")
+          dir.create(tmpdir_pc)
+          on.exit(
+            unlink(tmpdir_pc, recursive = TRUE),
+            add = TRUE
+          )
+          utils::unzip(
+            wb_load,
+            files = pc_arquivos, exdir = tmpdir_pc
+          )
+          for (pcf in pc_arquivos) {
+            conteudo <- paste(
+              readLines(
+                file.path(tmpdir_pc, pcf),
+                warn = FALSE
+              ),
+              collapse = ""
+            )
+            ocorrencias <- regmatches(
+              conteudo,
+              gregexpr(
+                'worksheetSource[^>]*name="([^"]+)"',
+                conteudo,
+                perl = TRUE
+              )
+            )[[1]]
+            nomes <- sub(
+              '.*name="([^"]+)".*', "\\1", ocorrencias
+            )
+            fontes <- c(fontes, nomes)
+          }
+        }
+        unique(fontes)
+      },
+      error = function(e) character(0)
+    )
+  }
+
   # Colunas calculadas para pos-processamento
   formulas_calculadas <- list()
 
@@ -474,7 +535,24 @@ gerar_xlsx <- function(data,
         aba_tem_tabela_existente) {
         nome_tabela <- nome_tabela_original
       } else {
-        nome_tabela <- paste0("t_", nome_aba)
+        # Se houver uma fonte de tabela dinamica cujo nome
+        # corresponda a esta aba (ignorando maiusculas e os
+        # separadores "._"), usar esse nome na tabela Excel
+        # para que a pivot resolva a fonte e o Excel nao abra
+        # o arquivo em modo de reparo.
+        nome_aba_norm_pivot <- stringr::str_remove_all(
+          tolower(nome_aba), "[._]"
+        )
+        fonte_correspondente <- nomes_fonte_pivot[
+          stringr::str_remove_all(
+            tolower(nomes_fonte_pivot), "[._]"
+          ) == nome_aba_norm_pivot
+        ]
+        if (length(fonte_correspondente) > 0) {
+          nome_tabela <- fonte_correspondente[1]
+        } else {
+          nome_tabela <- paste0("t_", nome_aba)
+        }
       }
       wb <- openxlsx2::wb_add_data_table(
         wb,
@@ -1207,6 +1285,98 @@ gerar_xlsx <- function(data,
       error = function(e) {
         warning(
           "Nao foi possivel restaurar customXml: ",
+          conditionMessage(e)
+        )
+      }
+    )
+  }
+
+  # Pos-processamento: corrigir tabelas dinamicas do template ----
+  # Dois problemas comuns em templates com tabelas dinamicas
+  # fazem o Excel abrir o arquivo em modo de reparo:
+  # (1) definedName com referencia quebrada (#REF!), tipicamente
+  #     "_xlnm._FilterDatabase" herdado do template;
+  # (2) pivotCache com dados defasados apontando para a fonte
+  #     antiga. Ao renomear a tabela para casar com a fonte
+  #     (feito acima) e marcar o cache com refreshOnLoad="1", o
+  #     Excel reconstroi a tabela dinamica a partir dos novos
+  #     dados ao abrir, sem disparar reparo.
+  if (usar_template) {
+    tryCatch(
+      {
+        ps_file_pv <- tempfile(fileext = ".ps1")
+        on.exit(unlink(ps_file_pv), add = TRUE)
+
+        output_path_pv <- normalizePath(
+          caminho_completo,
+          winslash = "\\"
+        )
+
+        writeLines(c(
+          "Add-Type -AssemblyName System.IO.Compression.FileSystem",
+          sprintf(
+            "$zip = [System.IO.Compression.ZipFile]::Open('%s', 'Update')",
+            output_path_pv
+          ),
+          "$enc = New-Object System.Text.UTF8Encoding($false)",
+          # (1) Remover definedName com #REF! do workbook.xml
+          "$e = $zip.GetEntry('xl/workbook.xml')",
+          "if ($e) {",
+          "  $sr = New-Object System.IO.StreamReader($e.Open())",
+          "  $xml = $sr.ReadToEnd(); $sr.Close()",
+          paste0(
+            "  $novo = [regex]::Replace($xml, ",
+            "'<definedName\\b[^>]*>[^<]*#REF![^<]*</definedName>', '')"
+          ),
+          "  $novo = $novo -replace '<definedNames>\\s*</definedNames>', ''",
+          "  if ($novo -ne $xml) {",
+          "    $e.Delete(); $ne = $zip.CreateEntry('xl/workbook.xml')",
+          "    $w = New-Object System.IO.StreamWriter($ne.Open(), $enc)",
+          "    $w.Write($novo); $w.Close()",
+          "  }",
+          "}",
+          # (2) refreshOnLoad nas pivotCacheDefinition
+          "$pcNames = @()",
+          "foreach ($en in $zip.Entries) {",
+          paste0(
+            "  if ($en.FullName -match ",
+            "'^xl/pivotCache/pivotCacheDefinition\\d+\\.xml$') ",
+            "{ $pcNames += $en.FullName }"
+          ),
+          "}",
+          "foreach ($fn in $pcNames) {",
+          "  $en = $zip.GetEntry($fn)",
+          "  $sr = New-Object System.IO.StreamReader($en.Open())",
+          "  $xml = $sr.ReadToEnd(); $sr.Close()",
+          "  if ($xml -notmatch 'refreshOnLoad=') {",
+          paste0(
+            "    $novo = $xml -replace ",
+            "'(<pivotCacheDefinition\\b)', '$1 refreshOnLoad=\"1\"'"
+          ),
+          "    $en.Delete(); $ne = $zip.CreateEntry($fn)",
+          "    $w = New-Object System.IO.StreamWriter($ne.Open(), $enc)",
+          "    $w.Write($novo); $w.Close()",
+          "  }",
+          "}",
+          "$zip.Dispose()"
+        ), ps_file_pv)
+
+        system2(
+          "powershell",
+          args = c(
+            "-NoProfile", "-ExecutionPolicy", "Bypass",
+            "-File", ps_file_pv
+          ),
+          stdout = FALSE, stderr = FALSE
+        )
+        message(
+          "  Tabelas dinamicas corrigidas ",
+          "(#REF removido, refreshOnLoad)."
+        )
+      },
+      error = function(e) {
+        warning(
+          "Nao foi possivel corrigir tabelas dinamicas: ",
           conditionMessage(e)
         )
       }
