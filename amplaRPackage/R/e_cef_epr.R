@@ -71,6 +71,7 @@ e_cef_epr <-
           str_detect(., "(?i)up\\s?select\\s?vila") ~ "GRA",
           str_detect(., "(?i)up\\s?esta[cç][aã]o\\s?s[aã]o\\s?lucas") ~ "LUC",
           str_detect(., "(?i)up\\s?esta[cç][aã]o\\s?vila") ~ "SN2",
+          str_detect(., "(?i)up\\s?move\\s?vila") ~ "SN4",
           TRUE ~ NA_character_
         )
       }
