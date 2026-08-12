@@ -1230,14 +1230,22 @@ gerar_xlsx <- function(data,
               "$dst = [System.IO.Compression.ZipFile]::Open(\"%s\", 'Update')",
               output_path
             ),
-            # Copiar arquivos customXml do template
+            # Copiar arquivos customXml do template APENAS quando
+            # ausentes no arquivo salvo. Versoes recentes do
+            # openxlsx2 (>= 1.23) preservam customXml corretamente;
+            # nesse caso nao tocamos nas partes existentes. Fazer
+            # Delete+Create de partes ja presentes pode reordenar/
+            # embaralhar os pares item<->itemProps (corrida entre
+            # etapas), gerando o reparo "Parte Removida: Repositorio
+            # de dados". So restauramos o que realmente faltar.
             "foreach ($e in $src.Entries) {",
             "  if ($e.FullName -like 'customXml/*' -and $e.Length -gt 0) {",
             "    $x = $dst.GetEntry($e.FullName)",
-            "    if ($x) { $x.Delete() }",
-            "    $n = $dst.CreateEntry($e.FullName)",
-            "    $r = $e.Open(); $w = $n.Open()",
-            "    $r.CopyTo($w); $w.Close(); $r.Close()",
+            "    if (-not $x) {",
+            "      $n = $dst.CreateEntry($e.FullName)",
+            "      $r = $e.Open(); $w = $n.Open()",
+            "      $r.CopyTo($w); $w.Close(); $r.Close()",
+            "    }",
             "  }",
             "}",
             # Atualizar [Content_Types].xml com entradas customXml

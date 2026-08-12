@@ -141,7 +141,7 @@ cruzar_grupo <- function(ext_vals, cmf_vals,
 #' @importFrom here here
 #' @importFrom magrittr %>%
 #' @importFrom dplyr mutate rename bind_rows bind_cols filter group_by
-#'   summarise left_join select
+#'   summarise left_join select arrange desc
 #' @importFrom stringr str_detect str_ends str_pad str_sub
 #'
 #' @export
@@ -358,7 +358,8 @@ r_xcef <-
         cruzada, data.lancamento, documento, descricao, saldo, conta, agencia,
         produto, cnpj, cpf.cnpj, nome.razao, periodo.inicio, periodo.fim,
         data.consulta, arquivo
-      )
+      ) %>%
+      arrange(desc(data.movimentacao))
     cmfcns_t %<>% mutate(
       cruzada = if_else(.id_cmf %in% pares_t$.id_cmf, "sim", "não")
     ) %>%
@@ -366,7 +367,8 @@ r_xcef <-
         contrato.5, data.movimento, valor, empresa, natureza, cruzada,
         data.lancamento, contrato, lancamentos, np, `conta.sidec/nsgd`,
         situacao, mot, arquivo
-      )
+      ) %>%
+      arrange(desc(data.movimento))
     extratos.cruzados_t %<>%
       rename(
         valor.extrato = valor.xcef,
@@ -407,7 +409,8 @@ r_xcef <-
         produto, periodo.inicio, periodo.fim, data.consulta, arquivo.extrato,
         natureza.cmfcn, contrato, data.lancamento.cmfcn, lancamentos, np,
         `conta.sidec/nsgd`, situacao, mot, arquivo.cmfcn, arquivo.epr
-      )
+      ) %>%
+      arrange(desc(data.movimentacao.extrato))
     # Salvando num xlsx -------------------------------------------------------
 
     if (xlsx) {
