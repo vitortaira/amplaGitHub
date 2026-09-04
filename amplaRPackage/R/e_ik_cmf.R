@@ -1,141 +1,95 @@
-#' @title Extração de dados CMF Informakon
+#' @title Extração de um relatório CMF (Conta Movimento Financeiro) Informakon
 #'
 #' @description
-#' A função e_ik_cmf() extrai os dados de CMF (Conta Movimento Financeiro)
-#' dos arquivos Excel na pasta "informakon" e os retorna em um data frame
-#' padronizado. A função automaticamente localiza o arquivo CMF mais recente,
-#' mapeia as colunas usando expressões regulares flexíveis, e converte os
-#' tipos de dados adequadamente (datas Excel, valores numéricos, etc.).
+#' A função e_ik_cmf() extrai os dados de um único arquivo de Conta Movimento
+#' Financeiro (CMF) do Informakon, informado pelo caminho, e os retorna em um
+#' \code{tibble} padronizado.
 #'
 #' @details
-#' A função realiza as seguintes operações:
-#' \itemize{
-#'   \item Busca arquivos com padrão "cmf_ik_*.xlsx" na pasta informakon
-#'   \item Seleciona automaticamente o arquivo mais recente baseado na data no nome
-#'   \item Mapeia colunas de forma flexível usando regex case-insensitive
-#'   \item Converte datas do formato serial Excel para Date
-#'   \item Converte valores numéricos adequadamente
-#'   \item Adiciona metadados de rastreamento (arquivo, tipo, fonte)
-#' }
+#' O relatório CMF organiza os lançamentos em blocos precedidos por linhas de
+#' agrupamento \code{"Agente Conta: <agente> - <código> - <conta>"}, cujos
+#' valores são propagados para baixo (fill-down) e separados nas colunas
+#' \code{agente}, \code{agente.codigo} e \code{n.conta}. As datas vêm no
+#' formato serial do Excel e são convertidas para \code{Date}; o campo
+#' \code{valor} recebe sinal negativo quando \code{d.c == "D"}.
 #'
-#' @param f_caminho.pasta.ik_c String do caminho da pasta "informakon".
-#'   Valor padrão: \code{caminhos_pastas("informakon")}.
+#' @param caminho.cmf_c String com o caminho do arquivo CMF (.xlsx).
 #'
-#' @return Data frame com dados do CMF consolidados contendo as seguintes colunas padronizadas:
-#' \itemize{
-#'   \item \code{n.mov}: Número do movimento (integer)
-#'   \item \code{data}: Data do movimento (Date)
-#'   \item \code{c}: Código C (character)
-#'   \item \code{origem}: Origem da transação (character)
-#'   \item \code{historico}: Histórico da transação (character)
-#'   \item \code{agente.financeiro}: Agente financeiro (character)
-#'   \item \code{n.conta}: Número da conta (character)
-#'   \item \code{valor}: Valor da transação (numeric)
-#'   \item \code{d.c}: Débito/Crédito (character)
-#'   \item \code{cancelado}: Status de cancelamento (character)
-#'   \item \code{nat}: Código de natureza (character)
-#'   \item \code{natureza.mov}: Natureza do movimento (character)
-#'   \item \code{emp.filial}: Empresa/Filial (character)
-#'   \item \code{nucleo}: Núcleo (character)
-#'   \item \code{conciliacao}: Data de conciliação (Date)
-#'   \item \code{cliente}: Cliente (character)
-#'   \item \code{link.natureza}: Link de natureza (character)
-#'   \item \code{saldo.caucao.cliente}: Saldo de caução do cliente (numeric)
-#'   \item \code{arquivo}: Caminho do arquivo fonte (character)
-#'   \item \code{arquivo.tipo}: Tipo do arquivo ("cmf") (character)
-#'   \item \code{arquivo.fonte}: Fonte dos dados ("ik") (character)
-#' }
+#' @return \code{tibble} com as colunas: \code{agente}, \code{agente.codigo},
+#'   \code{n.conta}, \code{n.mov}, \code{registro}, \code{data.razao},
+#'   \code{conciliacao}, \code{c}, \code{natureza.mov}, \code{origem},
+#'   \code{valor}, \code{d.c}, \code{saldo.razao}, \code{historico},
+#'   \code{arquivo}, \code{arquivo.tipo} (\code{"cmf"}) e \code{arquivo.fonte}
+#'   (\code{"ik"}).
 #'
 #' @examples
 #' \dontrun{
-#' # Chamando a função básica
-#' cmf_df <- e_ik_cmf()
-#'
-#' # Especificando caminho customizado
-#' cmf_df <- e_ik_cmf(f_caminho.pasta.ik_c = "caminho/para/informakon")
-#'
-#' # Verificando as colunas retornadas
-#' names(cmf_df)
-#'
-#' # Verificando os tipos de dados
-#' str(cmf_df)
+#' cmf_t <- e_ik_cmf("caminho/para/cmf-2026_08.xlsx")
 #' }
 #'
 #' @importFrom readxl read_excel
-#' @importFrom dplyr mutate rename
-#' @importFrom stringr str_detect str_extract str_remove str_which
-#' @importFrom fs dir_ls
+#' @importFrom tibble tibble
+#' @importFrom dplyr mutate filter select if_else
+#' @importFrom tidyr fill
+#' @importFrom stringr str_detect str_remove str_match str_trim
 #' @export
-e_ik_cmf <- function(
-    f_caminho.pasta.ik_c = caminhos_pastas("informakon")) {
-  # Função interna para buscar o arquivo CMF mais recente
-  obter_caminho_cmf <- function() {
-    if (!dir.exists(f_caminho.pasta.ik_c)) {
-      stop("A pasta 'informakon' não foi encontrada.")
-    }
-
-    # Busca arquivos que começam com "cmf_ik_"
-    caminhos_cmf <- fs::dir_ls(f_caminho.pasta.ik_c, recurse = TRUE, type = "file")
-    caminhos_cmf <- caminhos_cmf[
-      basename(caminhos_cmf) %>% stringr::str_detect("^cmf_ik_") &
-        basename(caminhos_cmf) %>% stringr::str_detect("\\.xlsx$")
-    ]
-
-    if (length(caminhos_cmf) == 0) {
-      stop("Nenhum arquivo CMF encontrado na pasta informakon.")
-    }
-
-    # Se houver múltiplos arquivos, pega o mais recente baseado na data no nome
-    if (length(caminhos_cmf) > 1) {
-      data_final_por_arquivo <- sapply(caminhos_cmf, function(path) {
-        # Extrai a data final do padrão cmf_ik_YYYYMMDD_YYYYMMDD.xlsx
-        basename(path) %>%
-          stringr::str_extract("_\\d{8}\\.xlsx$") %>%
-          stringr::str_remove("\\.xlsx$") %>%
-          stringr::str_remove("^_") %>%
-          as.Date(format = "%Y%m%d")
-      })
-      indice_recente <- which.max(data_final_por_arquivo)
-      caminhos_cmf[indice_recente]
-    } else {
-      caminhos_cmf[1]
-    }
+e_ik_cmf <- function(caminho.cmf_c) {
+  if (!file.exists(caminho.cmf_c)) {
+    stop("Arquivo CMF não encontrado: ", caminho.cmf_c)
   }
 
-  # Carrega o arquivo CMF mais recente
-  caminho_arquivo_cmf <- obter_caminho_cmf()
+  # Agente Conta: <agente> - <código> - <conta>
+  padraoAgente_c <- "^(\\S+)\\s*-\\s*(\\S+)\\s*-\\s*(.+)$"
 
-  # Lê o arquivo forçando todas as colunas como texto
-  cmf_df <- readxl::read_excel(caminho_arquivo_cmf, col_types = "text") %>%
-    rename(
-      n.mov = names(.)[str_which(names(.), "(?i)mov")[1]],
-      data = names(.)[str_which(names(.), "(?i)data")[1]],
-      c = names(.)[str_which(names(.), "^(?i)c$")[1]],
-      origem = names(.)[str_which(names(.), "(?i)origem")[1]],
-      historico = names(.)[str_which(names(.), "(?i)hist[oó]rico")[1]],
-      agente.financeiro = names(.)[str_which(names(.), "(?i)agente\\s?financeiro")[1]],
-      n.conta = names(.)[str_which(names(.), "(?i)conta\\s?nº?")[1]],
-      valor = names(.)[str_which(names(.), "(?i)valor")[1]],
-      d.c = names(.)[str_which(names(.), "(?i)d/c")[1]],
-      cancelado = names(.)[str_which(names(.), "(?i)cancelado")[1]],
-      nat = names(.)[str_which(names(.), "^(?i)nat$")[1]],
-      natureza.mov = names(.)[str_which(names(.), "(?i)natureza.*mov")[1]],
-      emp.filial = names(.)[str_which(names(.), "(?i)emp-filial")[1]],
-      nucleo = names(.)[str_which(names(.), "(?i)n[uú]cleo")[1]],
-      conciliacao = names(.)[str_which(names(.), "(?i)concilia[cç][aã]o")[1]],
-      cliente = names(.)[str_which(names(.), "(?i)cliente")[1]],
-      link.natureza = names(.)[str_which(names(.), "(?i)link\\s?natureza")[1]],
-      saldo.caucao.cliente = names(.)[str_which(names(.), "(?i)saldo\\s?cau[cç][aã]o\\s?cliente")[1]]
+  cmf_bruto <- suppressMessages(readxl::read_excel(
+    caminho.cmf_c,
+    sheet = 1,
+    col_names = FALSE,
+    col_types = "text"
+  ))
+
+  cmf_t <- tibble::tibble(
+    c1 = cmf_bruto[[1]],
+    n.mov = cmf_bruto[[2]],
+    registro = cmf_bruto[[3]],
+    data.razao = cmf_bruto[[4]],
+    conciliacao = cmf_bruto[[5]],
+    c = cmf_bruto[[6]],
+    natureza.mov = cmf_bruto[[7]],
+    origem = cmf_bruto[[8]],
+    valor = cmf_bruto[[9]],
+    d.c = cmf_bruto[[10]],
+    saldo.razao = cmf_bruto[[11]],
+    historico = cmf_bruto[[12]]
+  ) %>%
+    mutate(
+      agente.conta = if_else(
+        str_detect(c1, "^(?i)agente conta:"),
+        str_remove(c1, "^[^:]*:\\s*"),
+        NA_character_
+      )
     ) %>%
-    dplyr::mutate(
-      n.mov = as.integer(n.mov),
-      data = as.Date(as.integer(data), origin = "1899-12-30"),
-      valor = if_else(`d.c` == "D", as.numeric(valor) * -1, as.numeric(valor)),
+    tidyr::fill(agente.conta, .direction = "down") %>%
+    # Mantém apenas linhas de dados (descarta cabeçalho e linhas de agrupamento)
+    dplyr::filter(!is.na(n.mov) & !str_detect(n.mov, "(?i)movimento")) %>%
+    mutate(
+      agente = str_match(agente.conta, padraoAgente_c)[, 2],
+      agente.codigo = str_match(agente.conta, padraoAgente_c)[, 3],
+      n.conta = str_trim(str_match(agente.conta, padraoAgente_c)[, 4]),
+      registro = as.Date(as.integer(registro), origin = "1899-12-30"),
+      data.razao = as.Date(as.integer(data.razao), origin = "1899-12-30"),
       conciliacao = as.Date(as.integer(conciliacao), origin = "1899-12-30"),
-      saldo.caucao.cliente = saldo.caucao.cliente %>% as.numeric(),
-      arquivo = caminho_arquivo_cmf,
+      valor = if_else(d.c == "D", as.numeric(valor) * -1, as.numeric(valor)),
+      saldo.razao = as.numeric(saldo.razao),
+      arquivo = caminho.cmf_c,
       arquivo.tipo = "cmf",
       arquivo.fonte = "ik"
+    ) %>%
+    dplyr::select(
+      agente, agente.codigo, n.conta, n.mov, registro, data.razao,
+      conciliacao, c, natureza.mov, origem, valor, d.c, saldo.razao,
+      historico, arquivo, arquivo.tipo, arquivo.fonte
     )
-  return(cmf_df)
+
+  return(cmf_t)
 }

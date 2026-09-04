@@ -4,11 +4,21 @@
 \alias{r_fechamento}
 \title{Fechamento otimizado}
 \usage{
-r_fechamento(xlsx = FALSE)
+r_fechamento(xlsx = FALSE, data = NULL)
 }
 \arguments{
 \item{xlsx}{Logico. Se \code{TRUE}, gera arquivo Excel (.xlsx) com os
 dados no template de fechamento. Padrao: \code{FALSE}.}
+
+\item{data}{Opcional. String no formato \code{"AAAA_MM_DD"} (ex.:
+\code{"2026_12_31"}) que ativa o cache de inputs. Quando informada,
+usa a subpasta correspondente em
+\code{caminhos_pastas("fechamento_in")}: se existir
+\code{inputs-AAAA_MM_DD.rds}, carrega os inputs do arquivo (pulando a
+extracao completa); caso contrario, executa a extracao normalmente e
+grava \code{inputs-AAAA_MM_DD.rds} e \code{inputs-AAAA_MM_DD.xlsx} na
+pasta. A data (convertida para \code{Date}) tambem e gravada em
+\code{inputs!A1} das planilhas geradas. Padrao: \code{NULL} (sem cache).}
 }
 \value{
 Lista identica a retornada por \code{\link{r_fechamento0}}.

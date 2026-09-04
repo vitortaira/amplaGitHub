@@ -2,71 +2,37 @@
 % Please edit documentation in R/e_ik_cmf.R
 \name{e_ik_cmf}
 \alias{e_ik_cmf}
-\title{Extração de dados CMF Informakon}
+\title{Extração de um relatório CMF (Conta Movimento Financeiro) Informakon}
 \usage{
-e_ik_cmf(f_caminho.pasta.ik_c = caminhos_pastas("informakon"))
+e_ik_cmf(caminho.cmf_c)
 }
 \arguments{
-\item{f_caminho.pasta.ik_c}{String do caminho da pasta "informakon".
-Valor padrão: \code{caminhos_pastas("informakon")}.}
+\item{caminho.cmf_c}{String com o caminho do arquivo CMF (.xlsx).}
 }
 \value{
-Data frame com dados do CMF consolidados contendo as seguintes colunas padronizadas:
-\itemize{
-\item \code{n.mov}: Número do movimento (integer)
-\item \code{data}: Data do movimento (Date)
-\item \code{c}: Código C (character)
-\item \code{origem}: Origem da transação (character)
-\item \code{historico}: Histórico da transação (character)
-\item \code{agente.financeiro}: Agente financeiro (character)
-\item \code{n.conta}: Número da conta (character)
-\item \code{valor}: Valor da transação (numeric)
-\item \code{d.c}: Débito/Crédito (character)
-\item \code{cancelado}: Status de cancelamento (character)
-\item \code{nat}: Código de natureza (character)
-\item \code{natureza.mov}: Natureza do movimento (character)
-\item \code{emp.filial}: Empresa/Filial (character)
-\item \code{nucleo}: Núcleo (character)
-\item \code{conciliacao}: Data de conciliação (Date)
-\item \code{cliente}: Cliente (character)
-\item \code{link.natureza}: Link de natureza (character)
-\item \code{saldo.caucao.cliente}: Saldo de caução do cliente (numeric)
-\item \code{arquivo}: Caminho do arquivo fonte (character)
-\item \code{arquivo.tipo}: Tipo do arquivo ("cmf") (character)
-\item \code{arquivo.fonte}: Fonte dos dados ("ik") (character)
-}
+\code{tibble} com as colunas: \code{agente}, \code{agente.codigo},
+\code{n.conta}, \code{n.mov}, \code{registro}, \code{data.razao},
+\code{conciliacao}, \code{c}, \code{natureza.mov}, \code{origem},
+\code{valor}, \code{d.c}, \code{saldo.razao}, \code{historico},
+\code{arquivo}, \code{arquivo.tipo} (\code{"cmf"}) e \code{arquivo.fonte}
+(\code{"ik"}).
 }
 \description{
-A função e_ik_cmf() extrai os dados de CMF (Conta Movimento Financeiro)
-dos arquivos Excel na pasta "informakon" e os retorna em um data frame
-padronizado. A função automaticamente localiza o arquivo CMF mais recente,
-mapeia as colunas usando expressões regulares flexíveis, e converte os
-tipos de dados adequadamente (datas Excel, valores numéricos, etc.).
+A função e_ik_cmf() extrai os dados de um único arquivo de Conta Movimento
+Financeiro (CMF) do Informakon, informado pelo caminho, e os retorna em um
+\code{tibble} padronizado.
 }
 \details{
-A função realiza as seguintes operações:
-\itemize{
-\item Busca arquivos com padrão "cmf_ik_*.xlsx" na pasta informakon
-\item Seleciona automaticamente o arquivo mais recente baseado na data no nome
-\item Mapeia colunas de forma flexível usando regex case-insensitive
-\item Converte datas do formato serial Excel para Date
-\item Converte valores numéricos adequadamente
-\item Adiciona metadados de rastreamento (arquivo, tipo, fonte)
-}
+O relatório CMF organiza os lançamentos em blocos precedidos por linhas de
+agrupamento \code{"Agente Conta: <agente> - <código> - <conta>"}, cujos
+valores são propagados para baixo (fill-down) e separados nas colunas
+\code{agente}, \code{agente.codigo} e \code{n.conta}. As datas vêm no
+formato serial do Excel e são convertidas para \code{Date}; o campo
+\code{valor} recebe sinal negativo quando \code{d.c == "D"}.
 }
 \examples{
 \dontrun{
-# Chamando a função básica
-cmf_df <- e_ik_cmf()
-
-# Especificando caminho customizado
-cmf_df <- e_ik_cmf(f_caminho.pasta.ik_c = "caminho/para/informakon")
-
-# Verificando as colunas retornadas
-names(cmf_df)
-
-# Verificando os tipos de dados
-str(cmf_df)
+cmf_t <- e_ik_cmf("caminho/para/cmf-2026_08.xlsx")
 }
 
 }
