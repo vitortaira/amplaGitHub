@@ -1188,321 +1188,67 @@ gerar_xlsx <- function(data,
   # Forcar recalculo completo ao abrir (necessario para formulas injetadas)
   wb$workbook$calcPr <- '<calcPr calcId="191029" fullCalcOnLoad="1"/>'
 
+  # Ajustes em memoria antes de salvar ----
+  # Nao reabrir o .xlsx com System.IO.Compression (modo Update): esse
+  # rewrite gera um ZIP fora da especificacao OPC e o Excel passa a abrir
+  # o arquivo em modo de reparo. Tudo e feito no objeto wb.
+  if (usar_template) {
+    # (1) definedName com referencia quebrada (#REF!) herdado do template
+    dn <- wb$workbook$definedNames
+    if (length(dn) > 0) {
+      wb$workbook$definedNames <- dn[!grepl("#REF!", dn, fixed = TRUE)]
+    }
+    # (2) pivotCache com dados defasados: refreshOnLoad reconstroi ao abrir
+    pd <- wb$pivotDefinitions
+    if (length(pd) > 0) {
+      sem_refresh <- !grepl("refreshOnLoad=", pd, fixed = TRUE)
+      pd[sem_refresh] <- sub(
+        "<pivotCacheDefinition\\b",
+        "<pivotCacheDefinition refreshOnLoad=\"1\"",
+        pd[sem_refresh],
+        perl = TRUE
+      )
+      wb$pivotDefinitions <- pd
+    }
+    message("  Tabelas dinamicas corrigidas (#REF removido, refreshOnLoad).")
+  }
+
+  # (3) calculatedColumnFormula nas definicoes de coluna das tabelas.
+  # openxlsx2 nao suporta colunas calculadas; as celulas ja tem <f>.
+  if (length(formulas_calculadas) > 0) {
+    for (fix in formulas_calculadas) {
+      idx_tab <- which(wb$tables$tab_name == fix$tabela)
+      if (length(idx_tab) == 0) next
+      frm <- gsub(
+        "\\[@",
+        paste0(fix$tabela, "[[#This Row],"),
+        fix$formula,
+        perl = TRUE
+      )
+      frm_xml <- gsub("&", "&amp;", frm, fixed = TRUE)
+      frm_xml <- gsub("<", "&lt;", frm_xml, fixed = TRUE)
+      frm_xml <- gsub(">", "&gt;", frm_xml, fixed = TRUE)
+      padrao <- sprintf(
+        "(<tableColumn[^>]*name=\"%s\"[^/>]*)\\s*/>",
+        gsub("([.|()\\^{}+$*?\\[\\]\\\\])", "\\\\\\1", fix$coluna)
+      )
+      wb$tables$tab_xml[idx_tab] <- sub(
+        padrao,
+        sprintf(
+          "\\1><calculatedColumnFormula>%s</calculatedColumnFormula></tableColumn>",
+          frm_xml
+        ),
+        wb$tables$tab_xml[idx_tab],
+        perl = TRUE
+      )
+    }
+    message("  calculatedColumnFormula injetada no table XML.")
+  }
+
   message("Salvando arquivo...")
   suppressWarnings(
     openxlsx2::wb_save(wb, caminho_completo, overwrite = TRUE)
   )
-
-  # Restaurar customXml do template (openxlsx2 nao preserva)
-  if (usar_template) {
-    tryCatch(
-      {
-        arquivos_zip <- utils::unzip(
-          wb_load,
-          list = TRUE
-        )$Name
-        tem_custom <- any(
-          grepl("^customXml/", arquivos_zip)
-        )
-
-        if (tem_custom) {
-          # Usar .NET ZipFile via PowerShell para injetar
-          # os arquivos customXml do template no xlsx salvo
-          ps_file <- tempfile(fileext = ".ps1")
-          on.exit(unlink(ps_file), add = TRUE)
-
-          template_path <- normalizePath(
-            wb_load,
-            winslash = "\\"
-          )
-          output_path <- normalizePath(
-            caminho_completo,
-            winslash = "\\"
-          )
-
-          writeLines(c(
-            "Add-Type -AssemblyName System.IO.Compression.FileSystem",
-            sprintf(
-              "$src = [System.IO.Compression.ZipFile]::OpenRead(\"%s\")",
-              template_path
-            ),
-            sprintf(
-              "$dst = [System.IO.Compression.ZipFile]::Open(\"%s\", 'Update')",
-              output_path
-            ),
-            # Copiar arquivos customXml do template APENAS quando
-            # ausentes no arquivo salvo. Versoes recentes do
-            # openxlsx2 (>= 1.23) preservam customXml corretamente;
-            # nesse caso nao tocamos nas partes existentes. Fazer
-            # Delete+Create de partes ja presentes pode reordenar/
-            # embaralhar os pares item<->itemProps (corrida entre
-            # etapas), gerando o reparo "Parte Removida: Repositorio
-            # de dados". So restauramos o que realmente faltar.
-            "foreach ($e in $src.Entries) {",
-            "  if ($e.FullName -like 'customXml/*' -and $e.Length -gt 0) {",
-            "    $x = $dst.GetEntry($e.FullName)",
-            "    if (-not $x) {",
-            "      $n = $dst.CreateEntry($e.FullName)",
-            "      $r = $e.Open(); $w = $n.Open()",
-            "      $r.CopyTo($w); $w.Close(); $r.Close()",
-            "    }",
-            "  }",
-            "}",
-            # Atualizar [Content_Types].xml com entradas customXml
-            "$ctS = $src.GetEntry('[Content_Types].xml')",
-            "$ctD = $dst.GetEntry('[Content_Types].xml')",
-            "if ($ctS -and $ctD) {",
-            "  $r1 = New-Object System.IO.StreamReader($ctS.Open()); [xml]$xS = $r1.ReadToEnd(); $r1.Close()",
-            "  $r2 = New-Object System.IO.StreamReader($ctD.Open()); [xml]$xD = $r2.ReadToEnd(); $r2.Close()",
-            "  $ns = $xD.DocumentElement.NamespaceURI; $mod = $false",
-            "  foreach ($nd in $xS.DocumentElement.ChildNodes) {",
-            "    if ($nd.LocalName -eq 'Override' -and $nd.GetAttribute('PartName') -like '/customXml/*') {",
-            "      $pn = $nd.GetAttribute('PartName'); $dup = $false",
-            "      foreach ($ex in $xD.DocumentElement.ChildNodes) {",
-            "        if ($ex.LocalName -eq 'Override' -and $ex.GetAttribute('PartName') -eq $pn) { $dup = $true; break }",
-            "      }",
-            "      if (-not $dup) {",
-            "        $el = $xD.CreateElement('Override', $ns)",
-            "        $el.SetAttribute('PartName', $pn)",
-            "        $el.SetAttribute('ContentType', $nd.GetAttribute('ContentType'))",
-            "        $xD.DocumentElement.AppendChild($el) | Out-Null; $mod = $true",
-            "      }",
-            "    }",
-            "  }",
-            "  if ($mod) {",
-            "    $ctD.Delete(); $ctN = $dst.CreateEntry('[Content_Types].xml')",
-            "    $enc = New-Object System.Text.UTF8Encoding($false)",
-            "    $wr = New-Object System.IO.StreamWriter($ctN.Open(), $enc)",
-            "    $xD.Save($wr); $wr.Close()",
-            "  }",
-            "}",
-            "$src.Dispose(); $dst.Dispose()"
-          ), ps_file)
-
-          system2(
-            "powershell",
-            args = c(
-              "-NoProfile", "-ExecutionPolicy", "Bypass",
-              "-File", ps_file
-            ),
-            stdout = FALSE, stderr = FALSE
-          )
-          message("  customXml restaurado do template.")
-        }
-      },
-      error = function(e) {
-        warning(
-          "Nao foi possivel restaurar customXml: ",
-          conditionMessage(e)
-        )
-      }
-    )
-  }
-
-  # Pos-processamento: corrigir tabelas dinamicas do template ----
-  # Dois problemas comuns em templates com tabelas dinamicas
-  # fazem o Excel abrir o arquivo em modo de reparo:
-  # (1) definedName com referencia quebrada (#REF!), tipicamente
-  #     "_xlnm._FilterDatabase" herdado do template;
-  # (2) pivotCache com dados defasados apontando para a fonte
-  #     antiga. Ao renomear a tabela para casar com a fonte
-  #     (feito acima) e marcar o cache com refreshOnLoad="1", o
-  #     Excel reconstroi a tabela dinamica a partir dos novos
-  #     dados ao abrir, sem disparar reparo.
-  if (usar_template) {
-    tryCatch(
-      {
-        ps_file_pv <- tempfile(fileext = ".ps1")
-        on.exit(unlink(ps_file_pv), add = TRUE)
-
-        output_path_pv <- normalizePath(
-          caminho_completo,
-          winslash = "\\"
-        )
-
-        writeLines(c(
-          "Add-Type -AssemblyName System.IO.Compression.FileSystem",
-          sprintf(
-            "$zip = [System.IO.Compression.ZipFile]::Open('%s', 'Update')",
-            output_path_pv
-          ),
-          "$enc = New-Object System.Text.UTF8Encoding($false)",
-          # (1) Remover definedName com #REF! do workbook.xml
-          "$e = $zip.GetEntry('xl/workbook.xml')",
-          "if ($e) {",
-          "  $sr = New-Object System.IO.StreamReader($e.Open())",
-          "  $xml = $sr.ReadToEnd(); $sr.Close()",
-          paste0(
-            "  $novo = [regex]::Replace($xml, ",
-            "'<definedName\\b[^>]*>[^<]*#REF![^<]*</definedName>', '')"
-          ),
-          "  $novo = $novo -replace '<definedNames>\\s*</definedNames>', ''",
-          "  if ($novo -ne $xml) {",
-          "    $e.Delete(); $ne = $zip.CreateEntry('xl/workbook.xml')",
-          "    $w = New-Object System.IO.StreamWriter($ne.Open(), $enc)",
-          "    $w.Write($novo); $w.Close()",
-          "  }",
-          "}",
-          # (2) refreshOnLoad nas pivotCacheDefinition
-          "$pcNames = @()",
-          "foreach ($en in $zip.Entries) {",
-          paste0(
-            "  if ($en.FullName -match ",
-            "'^xl/pivotCache/pivotCacheDefinition\\d+\\.xml$') ",
-            "{ $pcNames += $en.FullName }"
-          ),
-          "}",
-          "foreach ($fn in $pcNames) {",
-          "  $en = $zip.GetEntry($fn)",
-          "  $sr = New-Object System.IO.StreamReader($en.Open())",
-          "  $xml = $sr.ReadToEnd(); $sr.Close()",
-          "  if ($xml -notmatch 'refreshOnLoad=') {",
-          paste0(
-            "    $novo = $xml -replace ",
-            "'(<pivotCacheDefinition\\b)', '$1 refreshOnLoad=\"1\"'"
-          ),
-          "    $en.Delete(); $ne = $zip.CreateEntry($fn)",
-          "    $w = New-Object System.IO.StreamWriter($ne.Open(), $enc)",
-          "    $w.Write($novo); $w.Close()",
-          "  }",
-          "}",
-          "$zip.Dispose()"
-        ), ps_file_pv)
-
-        system2(
-          "powershell",
-          args = c(
-            "-NoProfile", "-ExecutionPolicy", "Bypass",
-            "-File", ps_file_pv
-          ),
-          stdout = FALSE, stderr = FALSE
-        )
-        message(
-          "  Tabelas dinamicas corrigidas ",
-          "(#REF removido, refreshOnLoad)."
-        )
-      },
-      error = function(e) {
-        warning(
-          "Nao foi possivel corrigir tabelas dinamicas: ",
-          conditionMessage(e)
-        )
-      }
-    )
-  }
-
-  # Pos-processamento: injetar calculatedColumnFormula ----
-  # openxlsx2 nao suporta colunas calculadas em tabelas Excel.
-  # As celulas ja tem <f> correto (sem t="str") graças ao
-  # wb_add_formula + correcao de c_t. Falta apenas adicionar
-  # <calculatedColumnFormula> na definicao da coluna no
-  # table XML para que Excel reconheca como coluna calculada.
-  if (length(formulas_calculadas) > 0) {
-    tryCatch(
-      {
-        ps_file_f <- tempfile(fileext = ".ps1")
-        on.exit(unlink(ps_file_f), add = TRUE)
-
-        output_path_f <- normalizePath(
-          caminho_completo,
-          winslash = "\\"
-        )
-
-        ps_lines <- c(
-          "Add-Type -AssemblyName System.IO.Compression.FileSystem",
-          sprintf(
-            "$zip = [System.IO.Compression.ZipFile]::Open('%s', 'Update')",
-            output_path_f
-          ),
-          ""
-        )
-
-        for (fix in formulas_calculadas) {
-          tbl <- fix$tabela
-          col <- fix$coluna
-          frm <- fix$formula
-          # Converter [@[col]] -> tabela[[#This Row],[col]]
-          frm <- gsub(
-            "\\[@",
-            paste0(tbl, "[[#This Row],"),
-            frm,
-            perl = TRUE
-          )
-          # Escapar XML especial na formula
-          frm_xml <- gsub("&", "&amp;", frm, fixed = TRUE)
-          frm_xml <- gsub("<", "&lt;", frm_xml, fixed = TRUE)
-          frm_xml <- gsub(">", "&gt;", frm_xml, fixed = TRUE)
-
-          ps_lines <- c(
-            ps_lines,
-            sprintf(
-              "# --- Tabela: %s, Coluna: %s ---", tbl, col
-            ),
-            "foreach ($e in @($zip.Entries)) {",
-            paste0(
-              "  if ($e.FullName -match ",
-              "'^xl/tables/table\\d+\\.xml$') {"
-            ),
-            "    $sr = New-Object System.IO.StreamReader(",
-            "      $e.Open())",
-            "    $xml = $sr.ReadToEnd(); $sr.Close()",
-            sprintf(
-              "    if ($xml -match 'displayName=\"%s\"') {",
-              tbl
-            ),
-            sprintf(
-              paste0(
-                "      $newXml = $xml -replace ",
-                "'(<tableColumn[^>]*name=\"%s\"[^/]*)\\s*/>',",
-                " ('$1><calculatedColumnFormula>%s",
-                "</calculatedColumnFormula></tableColumn>')"
-              ),
-              col, frm_xml
-            ),
-            "      if ($newXml -ne $xml) {",
-            "        $fn = $e.FullName; $e.Delete()",
-            "        $ne = $zip.CreateEntry($fn)",
-            paste0(
-              "        $enc = New-Object ",
-              "System.Text.UTF8Encoding($false)"
-            ),
-            paste0(
-              "        $w = New-Object ",
-              "System.IO.StreamWriter($ne.Open(), $enc)"
-            ),
-            "        $w.Write($newXml); $w.Close()",
-            "      }",
-            "      break",
-            "    }",
-            "  }",
-            "}",
-            ""
-          )
-        }
-
-        ps_lines <- c(ps_lines, "$zip.Dispose()")
-        writeLines(ps_lines, ps_file_f)
-
-        system2(
-          "powershell",
-          args = c(
-            "-NoProfile", "-ExecutionPolicy", "Bypass",
-            "-File", ps_file_f
-          ),
-          stdout = FALSE, stderr = FALSE
-        )
-        message(
-          "  calculatedColumnFormula injetada no table XML."
-        )
-      },
-      error = function(e) {
-        warning(
-          "Nao foi possivel injetar formulas nas tabelas: ",
-          conditionMessage(e)
-        )
-      }
-    )
-  }
 
   message(sprintf("Planilha salva em: %s", caminho_completo))
 

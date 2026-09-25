@@ -86,16 +86,31 @@ e_extratos <- function(xlsx = FALSE) {
   # Obter dados CMF (Informakon)
   dadosIk <- tryCatch(
     {
-      if (exists("e_ik_cmf", mode = "function")) {
-        e_ik_cmf()
+      if (exists("e_ik_cmfs", mode = "function")) {
+        e_ik_cmfs()
       } else {
-        message("Função e_ik_cmf não encontrada. Dados CMF não serão incluídos.")
+        message("Função e_ik_cmfs não encontrada. Dados CMF não serão incluídos.")
         tibble::tibble()
       }
     },
     error = function(e) {
       message("Erro ao extrair dados CMF (Informakon): ", e$message)
       return(tibble::tibble())
+    }
+  )
+
+  # O FC fornece a empresa e o banco associados a cada conta do CMF.
+  dadosFc <- tryCatch(
+    {
+      if (exists("e_ik_fcs", mode = "function")) {
+        e_ik_fcs()
+      } else {
+        tibble::tibble()
+      }
+    },
+    error = function(e) {
+      message("Erro ao extrair FC para mapear contas CMF: ", e$message)
+      tibble::tibble()
     }
   )
 
@@ -307,15 +322,58 @@ e_extratos <- function(xlsx = FALSE) {
       }
 
       # Passo 2: Resumo dos dados IK (Informakon)
+      resumoIk <- tibble::tibble()
       if (nrow(dadosIk) > 0) {
-        # Detectar colunas automaticamente
-        coluna_valor <- if ("valor" %in% names(dadosIk)) "valor" else if ("Valor" %in% names(dadosIk)) "Valor" else NULL
-        coluna_data <- if ("data" %in% names(dadosIk)) "data" else if ("Data" %in% names(dadosIk)) "Data" else NULL
-        coluna_conta <- if ("n.conta" %in% names(dadosIk)) "n.conta" else if ("conta.interno" %in% names(dadosIk)) "conta.interno" else NULL
+        mapaContasIk <- if (all(
+          c("n.conta", "empresa", "conta") %in% names(dadosFc)
+        )) {
+          dadosFc %>%
+            dplyr::filter(
+              !is.na(.data$n.conta),
+              !is.na(.data$empresa),
+              !is.na(.data$conta)
+            ) %>%
+            dplyr::distinct(.data$n.conta, .data$empresa, .data$conta) %>%
+            dplyr::group_by(.data$n.conta) %>%
+            dplyr::slice(1) %>%
+            dplyr::ungroup() %>%
+            dplyr::rename(
+              empresa.mapa = empresa,
+              conta.mapa = conta
+            )
+        } else {
+          tibble::tibble(
+            n.conta = character(),
+            empresa.mapa = character(),
+            conta.mapa = character()
+          )
+        }
 
-        if (!is.null(coluna_valor) && !is.null(coluna_data) && !is.null(coluna_conta)) {
+        dadosIk <- dadosIk %>%
+          dplyr::left_join(mapaContasIk, by = "n.conta") %>%
+          dplyr::mutate(
+            data.ik = .data$data.razao,
+            conta.ik = as.character(.data$n.conta),
+            conta.interno = stringr::str_remove_all(
+              .data$conta.ik, "[^0-9]"
+            ) %>% stringr::str_sub(-4, -1),
+            empresa.ik = .data$empresa.mapa,
+            banco.ik = dplyr::case_when(
+              stringr::str_detect(
+                .data$conta.mapa, "(?i)ita[uú]"
+              ) ~ "Itau",
+              stringr::str_detect(
+                .data$conta.mapa, "(?i)caixa\\s?econ[oô]mica"
+              ) ~ "CEF",
+              stringr::str_detect(
+                .data$conta.mapa, "(?i)qi\\s?tech"
+              ) ~ "QIT",
+              TRUE ~ NA_character_
+            )
+          )
+
           # Debug: Verificar dados originais do IK antes do processamento
-          valores_originais <- dadosIk[[coluna_valor]]
+          valores_originais <- dadosIk$valor
           valores_positivos_orig <- sum(valores_originais > 0, na.rm = TRUE)
           valores_negativos_orig <- sum(valores_originais < 0, na.rm = TRUE)
           valores_zero_orig <- sum(valores_originais == 0, na.rm = TRUE)
@@ -328,33 +386,22 @@ e_extratos <- function(xlsx = FALSE) {
           message(sprintf("Debug valores exemplo: %s", paste(head(valores_originais, 5), collapse = ", ")))
 
           resumoIk <- dadosIk %>%
-            dplyr::filter(!is.na(.data[[coluna_valor]]), !is.na(.data[[coluna_data]])) %>%
+            dplyr::filter(
+              !is.na(.data$valor),
+              !is.na(.data$data.ik)
+            ) %>%
             dplyr::mutate(
-              mes = lubridate::floor_date(.data[[coluna_data]], "month"),
-              conta.ik = as.character(.data[[coluna_conta]]),
-              # Usar conta.interno existente ou criar baseado em conta.ik
-              conta.interno = if ("conta.interno" %in% names(dadosIk)) {
-                .data$conta.interno
-              } else {
-                # Extrair últimos 4 dígitos da conta.ik
-                stringr::str_remove_all(.data$conta.ik, "[^0-9]") %>%
-                  stringr::str_sub(-4, -1)
-              },
-              empresa = stringr::str_sub(.data$emp.filial, 1, 3),
-              banco = case_when(
-                stringr::str_detect(.data$agente.financeiro, "(?i)ita[uú]") ~ "Itau",
-                stringr::str_detect(.data$agente.financeiro, "(?i)caixa\\s?econ[oô]mica") ~ "CEF",
-                stringr::str_detect(.data$agente.financeiro, "(?i)qi\\s?tech") ~ "QIT",
-                TRUE ~ NA_character_
-              ),
+              mes = lubridate::floor_date(.data$data.ik, "month"),
+              empresa = .data$empresa.ik,
+              banco = .data$banco.ik,
               # Criar identificacao.conta baseada apenas em empresa e conta.interno (para permitir combinação)
               identificacao.conta = paste(.data$empresa, .data$banco, .data$conta.interno, sep = "-")
             ) %>%
             dplyr::group_by(.data$mes, .data$identificacao.conta, .data$empresa, .data$banco, .data$conta.ik, .data$conta.interno) %>%
             dplyr::summarise(
-              entradas.ik = sum(pmax(.data[[coluna_valor]], 0), na.rm = TRUE),
-              saidas.ik = sum(pmin(.data[[coluna_valor]], 0), na.rm = TRUE),
-              saldo.liquido.ik = sum(.data[[coluna_valor]], na.rm = TRUE),
+              entradas.ik = sum(pmax(.data$valor, 0), na.rm = TRUE),
+              saidas.ik = sum(pmin(.data$valor, 0), na.rm = TRUE),
+              saldo.liquido.ik = sum(.data$valor, na.rm = TRUE),
               qtd.transacoes.ik = dplyr::n(),
               .groups = "drop"
             ) %>%
@@ -391,13 +438,6 @@ e_extratos <- function(xlsx = FALSE) {
           }
 
           message(sprintf("Resumo dos dados IK criado: %d registros", nrow(resumoIk)))
-        } else {
-          message("Colunas necessárias não encontradas nos dados IK")
-          resumoIk <- tibble::tibble()
-        }
-      } else {
-        message("Nenhum dado IK disponível")
-        resumoIk <- tibble::tibble()
       }
 
       # Passo 3: Combinar os dados

@@ -48,6 +48,15 @@ e_ik_cmf <- function(caminho.cmf_c) {
     col_types = "text"
   ))
 
+  # Layout alternativo: tabela plana com linha de cabecalho
+  # (N Mov, Data, C, Origem, Historico, AgenteFinanceiro, Conta N, Valor, D/C...)
+  linhaCabecalho_i <- which(
+    str_detect(coalesce(cmf_bruto[[1]], ""), "^(?i)n.{0,2}\\s*mov")
+  )
+  if (length(linhaCabecalho_i) > 0) {
+    return(extrairCmfPlano(cmf_bruto, linhaCabecalho_i[1], caminho.cmf_c))
+  }
+
   cmf_t <- tibble::tibble(
     c1 = cmf_bruto[[1]],
     n.mov = cmf_bruto[[2]],
@@ -92,4 +101,56 @@ e_ik_cmf <- function(caminho.cmf_c) {
     )
 
   return(cmf_t)
+}
+
+# Extrai o layout plano do CMF (cabecalho na linha indicada) mapeando as
+# colunas pelo nome, ja que a ordem difere do layout em blocos.
+#' @importFrom dplyr coalesce
+#' @importFrom stringr str_to_lower str_replace_all
+#' @noRd
+extrairCmfPlano <- function(cmf_bruto, linhaCabecalho_i, caminho.cmf_c) {
+  normalizar <- function(x_c) {
+    x_c %>%
+      iconv(to = "ASCII//TRANSLIT", sub = "") %>%
+      str_to_lower() %>%
+      str_replace_all("[^a-z0-9]", "")
+  }
+  cabecalho_c <- normalizar(coalesce(
+    as.character(cmf_bruto[linhaCabecalho_i, ]), ""
+  ))
+  dados_t <- cmf_bruto[-seq_len(linhaCabecalho_i), ]
+
+  coluna <- function(chave_c) {
+    idx_i <- which(str_detect(cabecalho_c, chave_c))[1]
+    if (is.na(idx_i)) {
+      return(rep(NA_character_, nrow(dados_t)))
+    }
+    dados_t[[idx_i]]
+  }
+
+  dataSerial <- function(x_c) {
+    as.Date(suppressWarnings(as.integer(x_c)), origin = "1899-12-30")
+  }
+
+  tibble::tibble(
+    agente = coluna("^agentefinanceiro"),
+    agente.codigo = NA_character_,
+    n.conta = coluna("^contan"),
+    n.mov = coluna("^n.{0,2}mov"),
+    registro = dataSerial(coluna("^data$")),
+    data.razao = dataSerial(coluna("^data$")),
+    conciliacao = dataSerial(coluna("^conciliacao")),
+    c = coluna("^c$"),
+    natureza.mov = coluna("^naturezadomovimento"),
+    origem = coluna("^origem"),
+    valor = as.numeric(coluna("^valor$")),
+    d.c = coluna("^dc$"),
+    saldo.razao = NA_real_,
+    historico = coluna("^historico"),
+    arquivo = caminho.cmf_c,
+    arquivo.tipo = "cmf",
+    arquivo.fonte = "ik"
+  ) %>%
+    dplyr::filter(!is.na(n.mov)) %>%
+    mutate(valor = if_else(d.c == "D", valor * -1, valor))
 }

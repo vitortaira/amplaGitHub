@@ -154,7 +154,7 @@ e_ik_car <- function() {
       data.mes = floor_date(data.vencimento, "month")
     ) %>%
     summarise(
-      across(valor.atualizado, sum, na.rm = TRUE),
+      valor.atualizado = sum(valor.atualizado, na.rm = TRUE),
       .groups = "drop"
     ) %>%
     pivot_wider(

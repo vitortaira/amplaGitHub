@@ -15,7 +15,6 @@ Description: Pacote para análise financeira e processamento de dados da Ampla
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
 Imports:
   dplyr,
   fs,
@@ -43,3 +42,4 @@ Imports:
   visNetwork
 Suggests:
   testthat (>= 3.0.0)
+Config/roxygen2/version: 8.1.0

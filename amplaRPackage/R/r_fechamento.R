@@ -48,7 +48,7 @@
 #' @importFrom future future value plan multisession
 #' @importFrom dplyr rename mutate select filter group_by summarise left_join
 #'   full_join bind_rows distinct arrange across slice_max ungroup any_of
-#'   everything first coalesce pick
+#'   everything first coalesce pick case_when
 #' @importFrom tidyr complete pivot_wider nesting
 #' @importFrom tidyselect where
 #' @importFrom stringr str_remove_all str_length str_sub str_detect str_c
@@ -88,7 +88,8 @@ r_fechamento <- function(xlsx = FALSE, data = NULL) {
   # Inputs obrigatorios que devem existir (e nao estar vazios) no cache
   inputs_obrigatorios_c <- c(
     "estq", "ecns", "contrs", "cr", "desp", "unis",
-    "xcefs", "empr", "cmfcns", "car", "cmfcn.xcef"
+    "xcefs", "empr", "cmfcns", "car", "cmfcn.xcef",
+    "fc", "cmf", "ik"
   )
   input_vazio <- function(x) {
     is.null(x) ||
@@ -104,13 +105,26 @@ r_fechamento <- function(xlsx = FALSE, data = NULL) {
       here::here(".Rprofile"),
       winslash = "/", mustWork = FALSE
     )
+    # Workers sao nao-interativos, entao o .Rprofile nao executa load_all():
+    # replicar aqui o modo como o pacote esta carregado na sessao principal.
+    .pkg_dev <- requireNamespace("pkgload", quietly = TRUE) &&
+      pkgload::is_dev_package("amplaRPackage")
+    .pkg_caminho <- normalizePath(
+      getNamespaceInfo(asNamespace("amplaRPackage"), "path"),
+      winslash = "/", mustWork = FALSE
+    )
     cl <- parallelly::makeClusterPSOCK(
       parallelly::availableCores(),
       rscript_args = "--no-init-file",
       rscript_startup = bquote({
-        invisible(capture.output(suppressMessages(suppressWarnings(
+        invisible(capture.output(suppressMessages(suppressWarnings({
           source(.(.rprofile_caminho), local = TRUE)
-        )), type = "output"))
+          if (.(.pkg_dev)) {
+            pkgload::load_all(.(.pkg_caminho), quiet = TRUE)
+          } else {
+            library(amplaRPackage)
+          }
+        })), type = "output"))
       })
     )
     planoAnterior <- future::plan(future::cluster, workers = cl)
@@ -182,6 +196,18 @@ r_fechamento <- function(xlsx = FALSE, data = NULL) {
       },
       seed = TRUE
     )
+    fut_fc <- future::future(
+      {
+        e_ik_fcs()
+      },
+      seed = TRUE
+    )
+    fut_cmf <- future::future(
+      {
+        e_ik_cmfs()
+      },
+      seed = TRUE
+    )
 
     in.estq <- future::value(fut_estq)
     .cache_ecns <- future::value(fut_ecns)
@@ -193,6 +219,8 @@ r_fechamento <- function(xlsx = FALSE, data = NULL) {
     .cache_eprs <- future::value(fut_eprs)
     .cache_nplpjs <- future::value(fut_nplpjs)
     in.empr <- future::value(fut_empr)
+    in.fc <- future::value(fut_fc)
+    in.cmf <- future::value(fut_cmf)
 
     msg("Fase 1 concluida.")
 
@@ -247,6 +275,24 @@ r_fechamento <- function(xlsx = FALSE, data = NULL) {
 
     msg("Fase 3 concluida.")
 
+    # ── Tabela ik: full_join CMF x FC pelo numero do movimento ─────────────────
+    # status.join sinaliza a origem de cada linha: "Ambos", "fc" ou "cmf".
+    in.ik <- dplyr::full_join(
+      in.cmf %>% mutate(.em.cmf = TRUE),
+      in.fc %>% mutate(.em.fc = TRUE),
+      by = "n.mov",
+      suffix = c(".cmf", ".fc")
+    ) %>%
+      mutate(
+        status.join = case_when(
+          coalesce(.em.cmf, FALSE) & coalesce(.em.fc, FALSE) ~ "Ambos",
+          coalesce(.em.fc, FALSE) ~ "fc",
+          TRUE ~ "cmf"
+        )
+      ) %>%
+      dplyr::select(-.em.cmf, -.em.fc) %>%
+      dplyr::select(n.mov, status.join, everything())
+
     # Consolidar inputs brutos (nomes usados no cache e na validacao)
     list(
       estq       = in.estq,
@@ -259,7 +305,10 @@ r_fechamento <- function(xlsx = FALSE, data = NULL) {
       empr       = in.empr,
       cmfcns     = .cache_cmfcns,
       car        = .cache_car,
-      cmfcn.xcef = in.cmfcn.xcef_bruto
+      cmfcn.xcef = in.cmfcn.xcef_bruto,
+      fc         = in.fc,
+      cmf        = in.cmf,
+      ik         = in.ik
     )
   }
 
@@ -307,7 +356,10 @@ r_fechamento <- function(xlsx = FALSE, data = NULL) {
         xcefs  = inputs_l$xcefs,
         empr   = inputs_l$empr,
         cmfcns = inputs_l$cmfcns,
-        car    = inputs_l$car$car
+        car    = inputs_l$car$car,
+        fc     = inputs_l$fc,
+        cmf    = inputs_l$cmf,
+        ik     = inputs_l$ik
       ),
       list(cmfcn.xcef = inputs_l[["cmfcn.xcef"]])
     ))
@@ -332,6 +384,9 @@ r_fechamento <- function(xlsx = FALSE, data = NULL) {
   .cache_cmfcns <- inputs_l$cmfcns
   .cache_car <- inputs_l$car
   in.cmfcn.xcef_bruto <- inputs_l[["cmfcn.xcef"]]
+  in.fc <- inputs_l$fc
+  in.cmf <- inputs_l$cmf
+  in.ik <- inputs_l$ik
 
   # ── Fase 4: processamento (logica identica ao r_fechamento0) ───────────────
   msg("Fase 4: Processando dados...")
@@ -1126,12 +1181,15 @@ r_fechamento <- function(xlsx = FALSE, data = NULL) {
         unis.cruzado = in.unis.cruzado,
         m.vb = in.m.vb,
         desp.m.ik = in.desp.m.ik,
+        ik = in.ik,
         contr = in.contr,
         desp = in.desp,
         ecns = in.ecns,
         empr = in.empr,
         estq = in.estq,
-        unis = in.unis
+        unis = in.unis,
+        fc = in.fc,
+        cmf = in.cmf
       ),
       wb_load = str_c(caminhos_pastas("templates"), "/Template-Fechamento.xlsx"),
       tab_colours = c(
@@ -1140,12 +1198,15 @@ r_fechamento <- function(xlsx = FALSE, data = NULL) {
         unis.cruzado = "darkgray",
         m.vb = "darkgray",
         desp.m.ik = "darkgray",
+        ik = "darkgray",
         contr = "white",
         desp = "white",
         ecns = "white",
         empr = "white",
         estq = "white",
-        unis = "white"
+        unis = "white",
+        fc = "white",
+        cmf = "white"
       ),
       col_headers = list(
         rec.uni = list(
@@ -1161,7 +1222,8 @@ r_fechamento <- function(xlsx = FALSE, data = NULL) {
       col_dates = c(
         "data", "data.emissao", "data.lancamento", "data.movimentacao",
         "data.movimento", "data.pagamento", "data.venda", "data.vencimento",
-        "periodo.inicio", "periodo.fim"
+        "periodo.inicio", "periodo.fim", "data.razao", "registro",
+        "conciliacao"
       ),
       col_groups = list(
         rec.uni = list(
@@ -1186,6 +1248,7 @@ r_fechamento <- function(xlsx = FALSE, data = NULL) {
         "repasse.cef.terreno", "repasse.cef.terreno.acum", "repasse.cef.total",
         "saldo", "seguro", "soma.meses", "total", "valor", "valor.c.d",
         "valor.imovel", "valor.venda.ana", "valor.venda.ik",
+        "entrada", "saida", "saldo.razao",
         # Colunas de meses (YYYY-MM-DD)
         names(rec.uni)[str_detect(names(rec.uni), "^\\d{4}-\\d{2}-\\d{2}$")]
       ),
@@ -1245,6 +1308,9 @@ r_fechamento <- function(xlsx = FALSE, data = NULL) {
     empr = in.empr,
     estq = in.estq,
     unis = in.unis,
-    xcef = in.xcef
+    xcef = in.xcef,
+    fc = in.fc,
+    cmf = in.cmf,
+    ik = in.ik
   )
 }

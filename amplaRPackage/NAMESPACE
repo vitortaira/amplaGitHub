@@ -60,155 +60,190 @@ import(readxl)
 import(reticulate)
 import(stringr)
 import(tidyr)
-importFrom(dplyr,"%>%")
-importFrom(dplyr,across)
-importFrom(dplyr,all_of)
-importFrom(dplyr,any_of)
-importFrom(dplyr,arrange)
-importFrom(dplyr,as_tibble)
-importFrom(dplyr,bind_cols)
-importFrom(dplyr,bind_rows)
-importFrom(dplyr,case_when)
-importFrom(dplyr,coalesce)
-importFrom(dplyr,desc)
-importFrom(dplyr,distinct)
-importFrom(dplyr,everything)
-importFrom(dplyr,filter)
-importFrom(dplyr,first)
-importFrom(dplyr,full_join)
-importFrom(dplyr,group_by)
-importFrom(dplyr,if_else)
-importFrom(dplyr,inner_join)
-importFrom(dplyr,left_join)
-importFrom(dplyr,mutate)
-importFrom(dplyr,n)
-importFrom(dplyr,nth)
-importFrom(dplyr,pick)
-importFrom(dplyr,pull)
-importFrom(dplyr,rename)
-importFrom(dplyr,select)
-importFrom(dplyr,slice_max)
-importFrom(dplyr,summarise)
-importFrom(dplyr,ungroup)
-importFrom(fs,dir_ls)
-importFrom(fs,path)
-importFrom(fs,path_ext)
-importFrom(fs,path_file)
-importFrom(future,future)
-importFrom(future,multisession)
-importFrom(future,plan)
-importFrom(future,value)
-importFrom(googledrive,as_id)
-importFrom(googledrive,drive_download)
-importFrom(googledrive,drive_ls)
+importFrom(dplyr,
+  "%>%",
+  across,
+  all_of,
+  any_of,
+  arrange,
+  as_tibble,
+  bind_cols,
+  bind_rows,
+  case_when,
+  coalesce,
+  desc,
+  distinct,
+  everything,
+  filter,
+  first,
+  full_join,
+  group_by,
+  if_else,
+  inner_join,
+  left_join,
+  mutate,
+  n,
+  nth,
+  pick,
+  pull,
+  rename,
+  select,
+  slice_max,
+  summarise,
+  ungroup
+)
+importFrom(fs,
+  dir_ls,
+  path,
+  path_ext,
+  path_file
+)
+importFrom(future,
+  future,
+  multisession,
+  plan,
+  value
+)
+importFrom(googledrive,
+  as_id,
+  drive_download,
+  drive_ls
+)
 importFrom(here,here)
 importFrom(htmlwidgets,onRender)
-importFrom(lubridate,as_datetime)
-importFrom(lubridate,dmy)
-importFrom(lubridate,dmy_hms)
-importFrom(lubridate,floor_date)
-importFrom(lubridate,parse_date_time)
-importFrom(lubridate,year)
-importFrom(lubridate,ymd)
-importFrom(magrittr,"%<>%")
-importFrom(magrittr,"%>%")
-importFrom(openxlsx,addFilter)
-importFrom(openxlsx,addStyle)
-importFrom(openxlsx,addWorksheet)
-importFrom(openxlsx,createStyle)
-importFrom(openxlsx,freezePane)
-importFrom(openxlsx,loadWorkbook)
-importFrom(openxlsx,saveWorkbook)
-importFrom(openxlsx,setColWidths)
-importFrom(openxlsx,writeData)
-importFrom(openxlsx2,int2col)
-importFrom(openxlsx2,wb_add_border)
-importFrom(openxlsx2,wb_add_cell_style)
-importFrom(openxlsx2,wb_add_data)
-importFrom(openxlsx2,wb_add_data_table)
-importFrom(openxlsx2,wb_add_fill)
-importFrom(openxlsx2,wb_add_font)
-importFrom(openxlsx2,wb_add_formula)
-importFrom(openxlsx2,wb_add_named_region)
-importFrom(openxlsx2,wb_add_numfmt)
-importFrom(openxlsx2,wb_add_worksheet)
-importFrom(openxlsx2,wb_color)
-importFrom(openxlsx2,wb_freeze_pane)
-importFrom(openxlsx2,wb_get_sheet_names)
-importFrom(openxlsx2,wb_get_tables)
-importFrom(openxlsx2,wb_group_cols)
-importFrom(openxlsx2,wb_load)
-importFrom(openxlsx2,wb_remove_tables)
-importFrom(openxlsx2,wb_remove_worksheet)
-importFrom(openxlsx2,wb_save)
-importFrom(openxlsx2,wb_set_col_widths)
-importFrom(openxlsx2,wb_set_grid_lines)
-importFrom(openxlsx2,wb_set_order)
-importFrom(openxlsx2,wb_set_sheetview)
-importFrom(openxlsx2,wb_to_df)
-importFrom(openxlsx2,wb_workbook)
+importFrom(lubridate,
+  as_datetime,
+  dmy,
+  dmy_hms,
+  floor_date,
+  parse_date_time,
+  year,
+  ymd
+)
+importFrom(magrittr,
+  "%<>%",
+  "%>%"
+)
+importFrom(openxlsx,
+  addFilter,
+  addStyle,
+  addWorksheet,
+  createStyle,
+  freezePane,
+  loadWorkbook,
+  saveWorkbook,
+  setColWidths,
+  writeData
+)
+importFrom(openxlsx2,
+  int2col,
+  wb_add_border,
+  wb_add_cell_style,
+  wb_add_data,
+  wb_add_data_table,
+  wb_add_fill,
+  wb_add_font,
+  wb_add_formula,
+  wb_add_named_region,
+  wb_add_numfmt,
+  wb_add_worksheet,
+  wb_color,
+  wb_freeze_pane,
+  wb_get_sheet_names,
+  wb_get_tables,
+  wb_group_cols,
+  wb_load,
+  wb_remove_tables,
+  wb_remove_worksheet,
+  wb_save,
+  wb_set_col_widths,
+  wb_set_grid_lines,
+  wb_set_order,
+  wb_set_sheetview,
+  wb_to_df,
+  wb_workbook
+)
 importFrom(pdftools,pdf_text)
-importFrom(purrr,discard)
-importFrom(purrr,keep)
-importFrom(purrr,map)
-importFrom(purrr,map_chr)
-importFrom(purrr,map_dfr)
-importFrom(purrr,set_names)
-importFrom(purrr,walk2)
-importFrom(readr,locale)
-importFrom(readr,parse_number)
+importFrom(purrr,
+  discard,
+  keep,
+  map,
+  map_chr,
+  map_dfr,
+  set_names,
+  walk2
+)
+importFrom(readr,
+  locale,
+  parse_number
+)
 importFrom(readxl,read_excel)
-importFrom(rlang,.data)
-importFrom(rlang,sym)
-importFrom(shiny,div)
-importFrom(shiny,fluidPage)
-importFrom(shiny,inputPanel)
-importFrom(shiny,observeEvent)
-importFrom(shiny,reactive)
-importFrom(shiny,reactiveVal)
-importFrom(shiny,renderUI)
-importFrom(shiny,selectInput)
-importFrom(shiny,shinyApp)
-importFrom(stringi,stri_c)
-importFrom(stringi,stri_trans_nfc)
-importFrom(stringr,str_c)
-importFrom(stringr,str_count)
-importFrom(stringr,str_detect)
-importFrom(stringr,str_ends)
-importFrom(stringr,str_extract)
-importFrom(stringr,str_extract_all)
-importFrom(stringr,str_length)
-importFrom(stringr,str_match)
-importFrom(stringr,str_pad)
-importFrom(stringr,str_remove)
-importFrom(stringr,str_remove_all)
-importFrom(stringr,str_replace)
-importFrom(stringr,str_replace_all)
-importFrom(stringr,str_split)
-importFrom(stringr,str_squish)
-importFrom(stringr,str_starts)
-importFrom(stringr,str_sub)
-importFrom(stringr,str_trim)
-importFrom(stringr,str_which)
-importFrom(stringr,word)
-importFrom(tibble,as_tibble)
-importFrom(tibble,as_tibble_col)
-importFrom(tibble,tibble)
-importFrom(tidyr,complete)
-importFrom(tidyr,extract)
-importFrom(tidyr,fill)
-importFrom(tidyr,nesting)
-importFrom(tidyr,pivot_longer)
-importFrom(tidyr,pivot_wider)
-importFrom(tidyr,separate)
-importFrom(tidyr,separate_wider_delim)
+importFrom(rlang,
+  .data,
+  sym
+)
+importFrom(shiny,
+  div,
+  fluidPage,
+  inputPanel,
+  observeEvent,
+  reactive,
+  reactiveVal,
+  renderUI,
+  selectInput,
+  shinyApp
+)
+importFrom(stringi,
+  stri_c,
+  stri_trans_nfc
+)
+importFrom(stringr,
+  str_c,
+  str_count,
+  str_detect,
+  str_ends,
+  str_extract,
+  str_extract_all,
+  str_length,
+  str_match,
+  str_pad,
+  str_remove,
+  str_remove_all,
+  str_replace,
+  str_replace_all,
+  str_split,
+  str_squish,
+  str_starts,
+  str_sub,
+  str_to_lower,
+  str_trim,
+  str_which,
+  word
+)
+importFrom(tibble,
+  as_tibble,
+  as_tibble_col,
+  tibble
+)
+importFrom(tidyr,
+  complete,
+  extract,
+  fill,
+  nesting,
+  pivot_longer,
+  pivot_wider,
+  separate,
+  separate_wider_delim
+)
 importFrom(tidyselect,where)
-importFrom(visNetwork,visEdges)
-importFrom(visNetwork,visHierarchicalLayout)
-importFrom(visNetwork,visInteraction)
-importFrom(visNetwork,visLegend)
-importFrom(visNetwork,visNetwork)
-importFrom(visNetwork,visNetworkOutput)
-importFrom(visNetwork,visNodes)
-importFrom(visNetwork,visOptions)
-importFrom(visNetwork,visPhysics)
+importFrom(visNetwork,
+  visEdges,
+  visHierarchicalLayout,
+  visInteraction,
+  visLegend,
+  visNetwork,
+  visNetworkOutput,
+  visNodes,
+  visOptions,
+  visPhysics
+)

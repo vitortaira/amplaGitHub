@@ -22,17 +22,24 @@ packages_c <- c(
   "tidyverse", "usethis", "visNetwork"
 )
 
-# Load each package quietly
-invisible(lapply(packages_c, load_pkg))
+if (interactive()) {
+  # Load each package quietly
+  invisible(lapply(packages_c, load_pkg))
 
-if (interactive() && Sys.getenv("RSTUDIO") == "") {
-  source(file.path(
-    Sys.getenv(if (.Platform$OS.type == "windows") "USERPROFILE" else "HOME"),
-    ".vscode-R", "init.R"
-  ))
+  if (Sys.getenv("RSTUDIO") == "") {
+    source(file.path(
+      Sys.getenv(if (.Platform$OS.type == "windows") "USERPROFILE" else "HOME"),
+      ".vscode-R", "init.R"
+    ))
+    # radian doesn't auto-invoke .First.sys after .Rprofile like Rterm does,
+    # so trigger the vscode-R session watcher attach hook manually here.
+    if (exists(".First.sys", envir = globalenv())) {
+      get(".First.sys", envir = globalenv())()
+    }
+  }
+
+  # Load the 'amplaRPackage' package quietly
+  invisible(suppressMessages(suppressPackageStartupMessages(devtools::load_all(
+    "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaRPackage"
+  ))))
 }
-
-# Load the 'amplaRPackage' package quietly
-invisible(suppressMessages(suppressPackageStartupMessages(devtools::load_all(
-  "C:/Users/Ampla/AMPLA INCORPORADORA LTDA/Controladoria - Documentos/amplaGitHub/amplaRPackage"
-))))
