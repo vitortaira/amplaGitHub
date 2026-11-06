@@ -9,11 +9,16 @@ Sys.setenv(CONDA_AUTO_ACTIVATE_BASE = "false")
 
 # Define a helper function to safely load packages
 load_pkg <- function(f_pkg) {
-  if (!suppressWarnings(suppressPackageStartupMessages(
-    require(f_pkg, character.only = TRUE, quietly = TRUE)
-  ))) {
-    message(sprintf("Package '%s' not available.", f_pkg))
-  }
+  tryCatch(
+    suppressPackageStartupMessages(
+      library(f_pkg, character.only = TRUE, quietly = TRUE)
+    ),
+    error = function(e) {
+      message(sprintf(
+        "Package '%s' not available: %s", f_pkg, conditionMessage(e)
+      ))
+    }
+  )
 }
 
 # List of desired packages
@@ -25,18 +30,6 @@ packages_c <- c(
 if (interactive()) {
   # Load each package quietly
   invisible(lapply(packages_c, load_pkg))
-
-  if (Sys.getenv("RSTUDIO") == "") {
-    source(file.path(
-      Sys.getenv(if (.Platform$OS.type == "windows") "USERPROFILE" else "HOME"),
-      ".vscode-R", "init.R"
-    ))
-    # radian doesn't auto-invoke .First.sys after .Rprofile like Rterm does,
-    # so trigger the vscode-R session watcher attach hook manually here.
-    if (exists(".First.sys", envir = globalenv())) {
-      get(".First.sys", envir = globalenv())()
-    }
-  }
 
   # Load the 'amplaRPackage' package quietly
   invisible(suppressMessages(suppressPackageStartupMessages(devtools::load_all(
