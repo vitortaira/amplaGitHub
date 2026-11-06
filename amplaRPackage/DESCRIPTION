@@ -39,6 +39,7 @@ Imports:
   stringr,
   tibble,
   tidyr,
+  vctrs,
   visNetwork
 Suggests:
   testthat (>= 3.0.0)
