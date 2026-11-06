@@ -12,10 +12,14 @@
 #' \code{agente}, \code{agente.codigo} e \code{n.conta}. As datas vêm no
 #' formato serial do Excel e são convertidas para \code{Date}; o campo
 #' \code{valor} recebe sinal negativo quando \code{d.c == "D"}.
+#' No layout plano, \code{empresa} preserva a coluna \code{Emp-Filial}
+#' (ou \code{Empresa}), sem remover a filial. No layout em blocos, utiliza
+#' o agrupamento \code{Empresa: ...}; sem essa informacao retorna NA.
 #'
 #' @param caminho.cmf_c String com o caminho do arquivo CMF (.xlsx).
 #'
-#' @return \code{tibble} com as colunas: \code{agente}, \code{agente.codigo},
+#' @return \code{tibble} com as colunas: \code{empresa},
+#'   \code{agente}, \code{agente.codigo},
 #'   \code{n.conta}, \code{n.mov}, \code{registro}, \code{data.razao},
 #'   \code{conciliacao}, \code{c}, \code{natureza.mov}, \code{origem},
 #'   \code{valor}, \code{d.c}, \code{saldo.razao}, \code{historico},
@@ -72,13 +76,18 @@ e_ik_cmf <- function(caminho.cmf_c) {
     historico = cmf_bruto[[12]]
   ) %>%
     mutate(
+      empresa = if_else(
+        str_detect(c1, "^(?i)empresa:"),
+        str_trim(str_remove(c1, "^[^:]*:\\s*")),
+        NA_character_
+      ),
       agente.conta = if_else(
         str_detect(c1, "^(?i)agente conta:"),
         str_remove(c1, "^[^:]*:\\s*"),
         NA_character_
       )
     ) %>%
-    tidyr::fill(agente.conta, .direction = "down") %>%
+    tidyr::fill(empresa, agente.conta, .direction = "down") %>%
     # Mantém apenas linhas de dados (descarta cabeçalho e linhas de agrupamento)
     dplyr::filter(!is.na(n.mov) & !str_detect(n.mov, "(?i)movimento")) %>%
     mutate(
@@ -95,7 +104,7 @@ e_ik_cmf <- function(caminho.cmf_c) {
       arquivo.fonte = "ik"
     ) %>%
     dplyr::select(
-      agente, agente.codigo, n.conta, n.mov, registro, data.razao,
+      empresa, agente, agente.codigo, n.conta, n.mov, registro, data.razao,
       conciliacao, c, natureza.mov, origem, valor, d.c, saldo.razao,
       historico, arquivo, arquivo.tipo, arquivo.fonte
     )
@@ -133,6 +142,7 @@ extrairCmfPlano <- function(cmf_bruto, linhaCabecalho_i, caminho.cmf_c) {
   }
 
   tibble::tibble(
+    empresa = coluna("^(empfilial|empresa)$"),
     agente = coluna("^agentefinanceiro"),
     agente.codigo = NA_character_,
     n.conta = coluna("^contan"),

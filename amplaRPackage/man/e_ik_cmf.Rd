@@ -10,7 +10,8 @@ e_ik_cmf(caminho.cmf_c)
 \item{caminho.cmf_c}{String com o caminho do arquivo CMF (.xlsx).}
 }
 \value{
-\code{tibble} com as colunas: \code{agente}, \code{agente.codigo},
+\code{tibble} com as colunas: \code{empresa},
+\code{agente}, \code{agente.codigo},
 \code{n.conta}, \code{n.mov}, \code{registro}, \code{data.razao},
 \code{conciliacao}, \code{c}, \code{natureza.mov}, \code{origem},
 \code{valor}, \code{d.c}, \code{saldo.razao}, \code{historico},
@@ -29,6 +30,9 @@ valores são propagados para baixo (fill-down) e separados nas colunas
 \code{agente}, \code{agente.codigo} e \code{n.conta}. As datas vêm no
 formato serial do Excel e são convertidas para \code{Date}; o campo
 \code{valor} recebe sinal negativo quando \code{d.c == "D"}.
+No layout plano, \code{empresa} preserva a coluna \code{Emp-Filial}
+(ou \code{Empresa}), sem remover a filial. No layout em blocos, utiliza
+o agrupamento \code{Empresa: ...}; sem essa informacao retorna NA.
 }
 \examples{
 \dontrun{
