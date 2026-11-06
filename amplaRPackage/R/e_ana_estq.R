@@ -82,6 +82,7 @@ e_ana_estq <- function(
       empresa = case_when(
         str_detect(Empreendimento, "(?i)jardim\\s?prud") ~ "AMP",
         str_detect(Empreendimento, "(?i)up\\s?vila\\s?s[oô]nia") ~ "AVS",
+        str_detect(Empreendimento, "(?i)stay\\s*congonhas") ~ "CBL",
         str_detect(Empreendimento, "(?i)select") ~ "GRA",
         str_detect(Empreendimento, "(?i)s[aã]o\\s?lucas") ~ "LUC",
         str_detect(Empreendimento, "(?i)pomp[eé]ia") ~ "POM",
