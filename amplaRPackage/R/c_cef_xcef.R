@@ -15,7 +15,21 @@
 c_cef_xcef <- function(f_caminho.arquivo_c) {
   # Vectorize the function to handle multiple file paths
   if (length(f_caminho.arquivo_c) > 1) {
-    return(purrr::map_chr(f_caminho.arquivo_c, c_cef_xcef))
+    return(purrr::map_chr(f_caminho.arquivo_c, function(caminhoArquivo) {
+      tryCatch(
+        c_cef_xcef(caminhoArquivo),
+        error = function(erro) {
+          warning(
+            sprintf(
+              "Falha ao classificar extrato CEF '%s': %s",
+              fs::path_file(caminhoArquivo), conditionMessage(erro)
+            ),
+            call. = FALSE
+          )
+          NA_character_
+        }
+      )
+    }))
   }
 
   # Se o arquivo for em PDF
