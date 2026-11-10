@@ -3,5 +3,13 @@
     {
       "path": "."
     }
-  ]
+  ],
+  "settings": {
+    "r.rterm.windows": "C:\\Users\\Ampla\\AppData\\Roaming\\Python\\Python312\\Scripts\\radian.exe",
+    "r.rterm.option": [
+      "--no-save",
+      "--no-restore",
+      "--quiet"
+    ]
+  }
 }
